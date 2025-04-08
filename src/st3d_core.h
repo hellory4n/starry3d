@@ -15,6 +15,8 @@ typedef struct {
 	TrArena arena;
 	// internal window handle
 	void* window;
+	// mate
+	bool window_closing;
 } St3dCtx;
 
 // Initializes the engine and all of its subsystems

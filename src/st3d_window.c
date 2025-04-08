@@ -1,16 +1,19 @@
-#include <GL/gl.h>
-#include <GL/glext.h>
+// normal includes
+#include <libtrippin.h>
+#include "st3d_core.h"
+#include "st3d_window.h"
+
+// i love oepngl
 #define RGL_LOAD_IMPLEMENTATION
 #include <rglLoad.h>
-#include "st3d_core.h"
-#include <libtrippin.h>
+
 // i'm a pedantic fuck and i can't make rgfw use TR_LOG_LIB_INFO
 //#define RGFW_DEBUG
 // st3d_window.h includes st3d_core.h, which includes RGFW.h
 // i love C
 #define RGFW_IMPLEMENTATION
+// i guess i can only include rgfw from one function or else everything crashes and dies??
 #include <RGFW.h>
-#include "st3d_window.h"
 
 void st3di_window_new(St3dCtx* ctx, int32_t width, int32_t height, const char* title)
 {
