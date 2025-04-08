@@ -28,8 +28,10 @@ OBJS = $(SRCS:.c=.o)
 PLATFORM := $(shell uname -s)
 ifeq ($(PLATFORM),Linux)
     OS = linux
+    CFLAGS += -DST3D_LINUX
 else ifeq ($(PLATFORM),Windows_NT)
     OS = windows
+    CFLAGS += -DST3D_WINDOWS
 endif
 
 # cross compiling lmao

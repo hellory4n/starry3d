@@ -1,18 +1,20 @@
 #ifndef ST_ST3D_CORE_H
 #define ST_ST3D_CORE_H
 #include <libtrippin.h>
-#include <RGFW.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// starry3d version :D
+#define ST3D_VERSION "v0.1.0"
 
 // I just put the Starry3D context
 typedef struct {
 	// used for both starry3d and rgfw
 	TrArena arena;
 	// internal window handle
-	RGFW_window* window;
+	void* window;
 } St3dCtx;
 
 // Initializes the engine and all of its subsystems
