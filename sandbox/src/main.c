@@ -1,4 +1,4 @@
-#include <starry3d/core.h>
+#include <st3d_core.h>
 
 int main(void)
 {
