@@ -19,6 +19,7 @@ INCLUDE = \
 SRCS = \
     ${STARRY3D}/vendor/libtrippin/libtrippin.c \
     ${STARRY3D}/src/st3d_core.c \
+    ${STARRY3D}/src/st3d_window.c \
     \
 	src/main.c
 
@@ -65,7 +66,7 @@ ifeq ($(OS),windows)
     # -Wl,--subsystem,windows hides the console window
     LDFLAGS += -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
 else ifeq ($(OS),linux)
-    LDFLAGS += -lGL -lXrandr -lX11 -lXinerama -lm -lpthread -ldl -lrt
+    LDFLAGS += -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt
 endif
 
 all: $(TARGET)

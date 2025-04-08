@@ -2,6 +2,19 @@
 
 3d library thing. Optimized for voxel graphics (culling for each voxel, lighting implemented in the laziest way possible, idk it's not done)
 
+## man
+
+- [x] setup
+- [ ] windowing
+- [ ] get a square
+- [ ] get a cube (with perspective!)
+- [ ] get many cubes
+- [ ] load models
+- [ ] lighting
+- [ ] optimize optimize optimize
+- [ ] 2d and fonts because you need to draw UI too
+- [ ] audio (just use miniaudio lmao)
+
 ## Usage
 
 TODO make this not suck

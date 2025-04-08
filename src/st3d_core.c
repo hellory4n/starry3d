@@ -1,41 +1,27 @@
-#include <stdio.h>
 #include <stdbool.h>
-#define RGFW_DEBUG
-#define RGFW_IMPLEMENTATION
-#include <RGFW.h>
+#include <libtrippin.h>
 #include "st3d_core.h"
+#include "st3d_window.h"
 
-void st3d_show_triangle(void)
+St3dCtx st3d_init(const char* title, int32_t width, int32_t height)
 {
-	RGFW_window* win = RGFW_createWindow("a window", RGFW_RECT(0, 0, 800, 600), RGFW_windowCenter | RGFW_windowNoResize);
+	tr_init("log.txt");
 
-	while (RGFW_window_shouldClose(win) == RGFW_FALSE) {
-		while (RGFW_window_checkEvent(win)) {  // or RGFW_window_checkEvents(); if you only want callbacks
-			// you can either check the current event yourself
-			if (win->event.type == RGFW_quit) break;
+	St3dCtx ctx = {0};
+	ctx.arena = tr_arena_new(TR_MB(1));
+	st3di_window_new(&ctx, width, height, title);
 
-			if (win->event.type == RGFW_mouseButtonPressed && win->event.button == RGFW_mouseLeft) {
-				printf("You clicked at x: %d, y: %d\n", win->event.point.x, win->event.point.y);
-			}
+	tr_log(TR_LOG_LIB_INFO, "initialized starry3d");
+	return ctx;
+}
 
-			// or use the existing functions
-			if (RGFW_isMousePressed(win, RGFW_mouseRight)) {
-				printf("The right mouse button was clicked at x: %d, y: %d\n", win->event.point.x, win->event.point.y);
-			}
-		}
+void st3d_free(St3dCtx* ctx)
+{
+	// this should go in the order in which st3d_init initializes things, but backwards
 
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+	st3di_window_free(ctx);
+	tr_arena_free(ctx->arena);
 
-		// You can use modern OpenGL techniques, but this method is more straightforward for drawing just one triangle.
-		glBegin(GL_TRIANGLES);
-		glColor3f(1, 0, 0); glVertex2f(-0.6, -0.75);
-		glColor3f(0, 1, 0); glVertex2f(0.6, -0.75);
-		glColor3f(0, 0, 1); glVertex2f(0, 0.75);
-		glEnd();
-
-		RGFW_window_swapBuffers(win);
-	}
-
-	RGFW_window_close(win);
+	tr_log(TR_LOG_LIB_INFO, "deinitialized starry3d");
+	tr_free();
 }
