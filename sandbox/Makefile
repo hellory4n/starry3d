@@ -10,12 +10,14 @@ STARRY3D = ..
 INCLUDE = \
     -I${STARRY3D}/src \
     -I${STARRY3D}/vendor \
+    -I${STARRY3D}/vendor/libtrippin \
     -I${STARRY3D}/vendor/rgfw \
     \
     -Isrc
 
 # i put starry3d things first
 SRCS = \
+    ${STARRY3D}/vendor/libtrippin/libtrippin.c \
     ${STARRY3D}/src/st3d_core.c \
     \
 	src/main.c
@@ -63,7 +65,7 @@ ifeq ($(OS),windows)
     # -Wl,--subsystem,windows hides the console window
     LDFLAGS += -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
 else ifeq ($(OS),linux)
-    LDFLAGS += -lGL -lX11 -lXrandr -lm -lpthread -ldl -lrt
+    LDFLAGS += -lGL -lXrandr -lX11 -lXinerama -lm -lpthread -ldl -lrt
 endif
 
 all: $(TARGET)
