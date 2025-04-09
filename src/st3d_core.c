@@ -1,15 +1,18 @@
 #include <stdbool.h>
+#include <string.h>
 #include <libtrippin.h>
 #include "st3d_core.h"
 #include "st3d_window.h"
 
-St3dCtx st3d_init(const char* title, int32_t width, int32_t height)
+St3dCtx st3d_init(const char* app, const char* assets, int32_t width, int32_t height)
 {
 	tr_init("log.txt");
 
 	St3dCtx ctx = {0};
 	ctx.arena = tr_arena_new(TR_MB(1));
-	st3di_window_new(&ctx, width, height, title);
+	memcpy(ctx.app_dir, assets, 64);
+	memcpy(ctx.user_dir, app, 64);
+	st3di_window_new(&ctx, width, height, app);
 
 	tr_log(TR_LOG_LIB_INFO, "initialized starry3d");
 	return ctx;

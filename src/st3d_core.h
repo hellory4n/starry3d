@@ -11,16 +11,21 @@ extern "C" {
 
 // I just put the Starry3D context
 typedef struct {
-	// used for both starry3d and rgfw
 	TrArena arena;
 	// internal window handle
 	void* window;
 	// mate
 	bool window_closing;
+	double prev_time;
+	double delta_time;
+	TrSlice full_app_dir;
+	TrSlice full_user_dir;
+	char app_dir[64];
+	char user_dir[64];
 } St3dCtx;
 
 // Initializes the engine and all of its subsystems
-St3dCtx st3d_init(const char* title, int32_t width, int32_t height);
+St3dCtx st3d_init(const char* app, const char* assets, int32_t width, int32_t height);
 
 // Frees the engine and all of its subsystems
 void st3d_free(St3dCtx* ctx);

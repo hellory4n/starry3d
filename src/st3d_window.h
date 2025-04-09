@@ -137,6 +137,9 @@ void st3di_window_free(St3dCtx* ctx);
 // You know how GLFW has `glfwPollEvents`? This is the same thing
 void st3d_poll_events(St3dCtx* ctx);
 
+// yea
+void st3d_swap_buffers(St3dCtx* ctx);
+
 // As the name implies, it returns true if it's closing
 bool st3d_is_closing(St3dCtx* ctx);
 
@@ -147,14 +150,15 @@ double st3d_time(St3dCtx* ctx);
 double st3d_delta_time(St3dCtx* ctx);
 
 // Gets the directory of the executable
-const char* st3d_app_dir(void);
+const char* st3d_app_dir(St3dCtx* ctx);
 
 // Gets the directory where you're supposed to save things
-const char* st3d_user_dir(void);
+const char* st3d_user_dir(St3dCtx* ctx);
 
-// Shorthand for getting paths. Start with `app:` to get from the directory of the executable, and `user:`
-// to get from the directory where you save things. For example, `app:assets/bob.png`, and `user:espionage.txt`
-const char* st3d_path(const char* s);
+// Shorthand for getting paths. Start with `app:` to get from the directory of the executable, and `usr:`
+// to get from the directory where you save things. For example, `app:assets/bob.png`, and `usr:espionage.txt`.
+// Returns the actual path to buf, which should be at least 260 characters because Windows.
+void st3d_path(St3dCtx* ctx, const char* s, char* buf, size_t n);
 
 bool st3d_is_key_just_pressed(St3dCtx* ctx, St3dKey key);
 
