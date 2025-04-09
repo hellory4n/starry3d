@@ -142,9 +142,10 @@ const char* st3d_app_dir(St3dCtx* ctx)
 		// scary!
 		ctx->full_app_dir.buffer = dirname(ctx->full_app_dir.buffer);
 	}
-
-	tr_log(TR_LOG_WARNING, "couldn't get app directory; using relative paths");
-	*(char*)tr_slice_at(ctx->full_app_dir, 0) = '.';
+	else {
+		tr_log(TR_LOG_WARNING, "couldn't get app directory; using relative paths");
+		*(char*)tr_slice_at(ctx->full_app_dir, 0) = '.';
+	}
 	#endif
 
 	return ctx->full_app_dir.buffer;
@@ -173,15 +174,15 @@ const char* st3d_user_dir(St3dCtx* ctx)
 
 void st3d_path(St3dCtx* ctx, const char* s, char* buf, size_t n)
 {
-	// make sure it's fetched first
-	st3d_app_dir(ctx);
-	st3d_user_dir(ctx);
-
 	if (strncmp(s, "app:", 4) == 0) {
-		snprintf(buf, n, "%s/%s/%s", (char*)ctx->full_app_dir.buffer, ctx->app_dir, s);
+		// remove the prefix
+		const char* trimmed = s + 4;
+		snprintf(buf, n, "%s/%s/%s", st3d_app_dir(ctx), ctx->app_dir, trimmed);
 	}
 	else if (strncmp(s, "usr:", 4) == 0) {
-		snprintf(buf, n, "%s/%s", (char*)ctx->full_user_dir.buffer, s);
+		// remove the prefix
+		const char* trimmed = s + 4;
+		snprintf(buf, n, "%s/%s", st3d_user_dir(ctx), trimmed);
 	}
 	else {
 		tr_panic("you fucking legumes did you read the documentation for st3d_path");
