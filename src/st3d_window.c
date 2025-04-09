@@ -1,22 +1,5 @@
-// let me use readlink() :(
-#ifndef ST3D_WINDOWS
-	#define _GNU_SOURCE
-#include <stdio.h>
-#include <string.h>
-#endif
-
-// normal includes
-#include <libtrippin.h>
-#include "st3d_core.h"
-#include "st3d_window.h"
-
-// :(
-#ifdef ST3D_WINDOWS
-	#include <windows.h>
-#else
-	#include <unistd.h>
-	#include <libgen.h>
-#endif
+// used by windows.h, included by rgfw
+#define OEMRESOURCE
 
 // i love oepngl
 #define RGL_LOAD_IMPLEMENTATION
@@ -24,11 +7,31 @@
 
 // i'm a pedantic fuck and i can't make rgfw use TR_LOG_LIB_INFO
 //#define RGFW_DEBUG
-// st3d_window.h includes st3d_core.h, which includes RGFW.h
 // i love C
 #define RGFW_IMPLEMENTATION
 // i guess i can only include rgfw from one function or else everything crashes and dies??
 #include <RGFW.h>
+
+// let me use readlink() :(
+#ifdef ST3D_LINUX
+	#define _GNU_SOURCE
+#endif
+#include <stdio.h>
+#include <string.h>
+
+// normal includes
+#include <libtrippin.h>
+#include "st3d_core.h"
+#include "st3d_window.h"
+
+// :(
+// windows.h is used too but it's included by rgfw and i guess everything is fucked
+#ifdef ST3D_WINDOWS
+	#include <windows.h>
+#else
+	#include <unistd.h>
+	#include <libgen.h>
+#endif
 
 void st3di_window_new(St3dCtx* ctx, int32_t width, int32_t height, const char* title)
 {

@@ -28,14 +28,12 @@ OBJS = $(SRCS:.c=.o)
 PLATFORM := $(shell uname -s)
 ifeq ($(PLATFORM),Linux)
     OS = linux
-    CFLAGS += -DST3D_LINUX
 else ifeq ($(PLATFORM),Windows_NT)
     OS = windows
-    CFLAGS += -DST3D_WINDOWS
 endif
 
 # cross compiling lmao
-ifeq ($(platform),windows)
+ifeq ($(crosscomp),windows)
     CROSSCOMPILE = true
     OS = windows
 endif
@@ -64,11 +62,24 @@ else
     CFLAGS += -O2 -DRELEASE
 endif
 
+# make run :D
+ifeq ($(CROSSCOMPILE),true)
+    RUNCMD = wine $(TARGET)
+else
+    RUNCMD = ./$(TARGET)
+endif
+
 ifeq ($(OS),windows)
-    # -Wl,--subsystem,windows hides the console window
     LDFLAGS += -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
 else ifeq ($(OS),linux)
     LDFLAGS += -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt
+endif
+
+# compile flags :D
+ifeq ($(OS),windows)
+    CFLAGS += -DST3D_WINDOWS
+else ifeq ($(OS),linux)
+    CFLAGS += -DST3D_LINUX
 endif
 
 all: $(TARGET)
@@ -83,4 +94,4 @@ clean:
 	rm -f $(OBJS) $(TARGET) log.txt
 
 run: $(TARGET)
-	./$(TARGET)
+	$(RUNCMD)
