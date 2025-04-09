@@ -123,10 +123,16 @@ typedef enum {
 
 // mosue
 typedef enum {
-	ST3D_MOUSE_LEFT,
-	ST3D_MOUSE_MIDDLE,
-	ST3D_MOUSE_RIGHT,
+	ST3D_MOUSE_BUTTON_LEFT,
+	ST3D_MOUSE_BUTTON_MIDDLE,
+	ST3D_MOUSE_BUTTON_RIGHT,
 } St3dMouseButton;
+
+typedef enum {
+	ST3D_MOUSE_SCROLL_DOWN = -1,
+	ST3D_MOUSE_SCROLL_NONE = 0,
+	ST3D_MOUSE_SCROLL_UP = 1,
+} St3dMouseScroll;
 
 // Meant to be called from st3d_init
 void st3di_window_new(St3dCtx* ctx, int32_t width, int32_t height, const char* title);
@@ -142,6 +148,9 @@ void st3d_swap_buffers(St3dCtx* ctx);
 
 // As the name implies, it returns true if it's closing
 bool st3d_is_closing(St3dCtx* ctx);
+
+// It closes the window :D
+void st3d_close(St3dCtx* ctx);
 
 // Gets the time in seconds since the window was created
 double st3d_time(St3dCtx* ctx);
@@ -162,9 +171,6 @@ void st3d_path(St3dCtx* ctx, const char* s, char* buf, size_t n);
 
 bool st3d_is_key_just_pressed(St3dCtx* ctx, St3dKey key);
 
-// This is meant for text, use `st3d_is_key_held` for movement
-bool st3d_is_key_repeat(St3dCtx* ctx, St3dKey key);
-
 bool st3d_is_key_held(St3dCtx* ctx, St3dKey key);
 
 bool st3d_is_key_just_released(St3dCtx* ctx, St3dKey key);
@@ -180,6 +186,9 @@ bool st3d_is_mouse_button_just_released(St3dCtx* ctx, St3dMouseButton btn);
 bool st3d_is_mouse_button_not_pressed(St3dCtx* ctx, St3dMouseButton btn);
 
 TrVec2f st3d_mouse_position(St3dCtx* ctx);
+
+// scroll
+St3dMouseScroll st3d_mouse_scroll(St3dCtx* ctx);
 
 #ifdef __cplusplus
 }

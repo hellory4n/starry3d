@@ -22,6 +22,8 @@ typedef struct {
 	TrSlice full_user_dir;
 	char app_dir[64];
 	char user_dir[64];
+	bool held_keys[256];
+	bool held_mouse[12];
 } St3dCtx;
 
 // Initializes the engine and all of its subsystems

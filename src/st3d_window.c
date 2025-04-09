@@ -1,5 +1,7 @@
 // used by windows.h, included by rgfw
 #define OEMRESOURCE
+// let me use readlink() :(
+#define _GNU_SOURCE
 
 // i love oepngl
 #define RGL_LOAD_IMPLEMENTATION
@@ -9,17 +11,12 @@
 //#define RGFW_DEBUG
 // i love C
 #define RGFW_IMPLEMENTATION
-// i guess i can only include rgfw from one function or else everything crashes and dies??
+// i guess i can only include rgfw from one file or else everything crashes and dies??
 #include <RGFW.h>
 
-// let me use readlink() :(
-#ifdef ST3D_LINUX
-	#define _GNU_SOURCE
-#endif
+// normal includes
 #include <stdio.h>
 #include <string.h>
-
-// normal includes
 #include <libtrippin.h>
 #include "st3d_core.h"
 #include "st3d_window.h"
@@ -80,6 +77,22 @@ void st3d_poll_events(St3dCtx* ctx)
 		case RGFW_quit:
 			ctx->window_closing = true;
 			break;
+
+		case RGFW_keyPressed:
+			ctx->held_keys[event->button] = true;
+			tr_log(TR_LOG_ERROR, "SIGMA!!");
+			break;
+		case RGFW_keyReleased:
+			ctx->held_keys[event->button] = false;
+			//tr_log(TR_LOG_ERROR, "SIGMA!!");
+			break;
+
+		case RGFW_mouseButtonPressed:
+			ctx->held_mouse[event->button] = true;
+			break;
+		case RGFW_mouseButtonReleased:
+			ctx->held_mouse[event->button] = false;
+			break;
 		}
 	}
 
@@ -97,6 +110,11 @@ void st3d_swap_buffers(St3dCtx* ctx)
 bool st3d_is_closing(St3dCtx* ctx)
 {
 	return ctx->window_closing;
+}
+
+void st3d_close(St3dCtx* ctx)
+{
+	ctx->window_closing = true;
 }
 
 double st3d_time(St3dCtx* ctx)
@@ -192,23 +210,62 @@ void st3d_path(St3dCtx* ctx, const char* s, char* buf, size_t n)
 	}
 }
 
-bool st3d_is_key_just_pressed(St3dCtx* ctx, St3dKey key);
+bool st3d_is_key_just_pressed(St3dCtx* ctx, St3dKey key)
+{
+	return RGFW_isPressed(ctx->window, key);
+}
 
-// This is meant for text, use `st3d_is_key_held` for movement
-bool st3d_is_key_repeat(St3dCtx* ctx, St3dKey key);
+bool st3d_is_key_held(St3dCtx* ctx, St3dKey key)
+{
+	return ctx->held_keys[key];
+}
 
-bool st3d_is_key_held(St3dCtx* ctx, St3dKey key);
+bool st3d_is_key_just_released(St3dCtx* ctx, St3dKey key)
+{
+	return RGFW_isReleased(ctx->window, key);
+}
 
-bool st3d_is_key_just_released(St3dCtx* ctx, St3dKey key);
+bool st3d_is_key_not_pressed(St3dCtx* ctx, St3dKey key)
+{
+	return !ctx->held_keys[key];
+}
 
-bool st3d_is_key_not_pressed(St3dCtx* ctx, St3dKey key);
+bool st3d_is_mouse_button_just_pressed(St3dCtx* ctx, St3dMouseButton btn)
+{
+	return RGFW_isMousePressed(ctx->window, btn);
+}
 
-bool st3d_is_mouse_button_just_pressed(St3dCtx* ctx, St3dMouseButton btn);
+bool st3d_is_mouse_button_held(St3dCtx* ctx, St3dMouseButton btn)
+{
+	return ctx->held_mouse[btn];
+}
 
-bool st3d_is_mouse_button_held(St3dCtx* ctx, St3dMouseButton btn);
+bool st3d_is_mouse_button_just_released(St3dCtx* ctx, St3dMouseButton btn)
+{
+	return RGFW_isMouseReleased(ctx->window, btn);
+}
 
-bool st3d_is_mouse_button_just_released(St3dCtx* ctx, St3dMouseButton btn);
+bool st3d_is_mouse_button_not_pressed(St3dCtx* ctx, St3dMouseButton btn)
+{
+	return !ctx->held_mouse[btn];
+}
 
-bool st3d_is_mouse_button_not_pressed(St3dCtx* ctx, St3dMouseButton btn);
+TrVec2f st3d_mouse_position(St3dCtx* ctx)
+{
+	RGFW_point sogma = RGFW_window_getMousePoint(ctx->window);
+	return (TrVec2f){sogma.x, sogma.y};
+}
 
-TrVec2f st3d_mouse_position(St3dCtx* ctx);
+St3dMouseScroll st3d_mouse_scroll(St3dCtx* ctx)
+{
+	// TODO maybe its not isMouseHeld and my life is a lie
+	if (RGFW_isMouseHeld(ctx->window, RGFW_mouseScrollUp)) {
+		return ST3D_MOUSE_SCROLL_UP;
+	}
+	else if (RGFW_isMouseHeld(ctx->window, RGFW_mouseScrollDown)) {
+		return ST3D_MOUSE_SCROLL_DOWN;
+	}
+	else {
+		return ST3D_MOUSE_SCROLL_NONE;
+	}
+}
