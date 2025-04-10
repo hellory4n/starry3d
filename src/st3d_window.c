@@ -93,6 +93,10 @@ void st3d_poll_events(St3dCtx* ctx)
 		case RGFW_mouseButtonReleased:
 			ctx->held_mouse[event->button] = false;
 			break;
+
+		case RGFW_windowResized:
+			glViewport(0, 0, ((RGFW_window*)ctx->window)->r.w, ((RGFW_window*)ctx->window)->r.h);
+			break;
 		}
 	}
 

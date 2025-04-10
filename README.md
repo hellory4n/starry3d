@@ -5,7 +5,8 @@
 ## man
 
 - [x] setup
-- [ ] windowing
+- [x] windowing
+	- [ ] except i decided to deal with input later
 - [ ] get a square
 - [ ] get a cube (with perspective!)
 - [ ] get many cubes
