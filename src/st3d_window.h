@@ -166,8 +166,8 @@ const char* st3d_user_dir(St3dCtx* ctx);
 
 // Shorthand for getting paths. Start with `app:` to get from the directory of the executable, and `usr:`
 // to get from the directory where you save things. For example, `app:assets/bob.png`, and `usr:espionage.txt`.
-// Returns the actual path to buf, which should be at least 260 characters because Windows.
-void st3d_path(St3dCtx* ctx, const char* s, char* buf, size_t n);
+// Writes the actual path to buf, which should be at least 260 characters because Windows.
+void st3d_path(St3dCtx* ctx, const char* s, TrSlice buf, size_t n);
 
 bool st3d_is_key_just_pressed(St3dCtx* ctx, St3dKey key);
 

@@ -18,12 +18,16 @@ typedef struct {
 	bool window_closing;
 	double prev_time;
 	double delta_time;
+
 	TrSlice full_app_dir;
 	TrSlice full_user_dir;
 	char app_dir[64];
 	char user_dir[64];
+
 	bool held_keys[256];
 	bool held_mouse[12];
+
+	uint32_t default_shader_obj;
 } St3dCtx;
 
 // Initializes the engine and all of its subsystems

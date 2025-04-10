@@ -197,17 +197,20 @@ const char* st3d_user_dir(St3dCtx* ctx)
 	return ctx->full_user_dir.buffer;
 }
 
-void st3d_path(St3dCtx* ctx, const char* s, char* buf, size_t n)
+void st3d_path(St3dCtx* ctx, const char* s, TrSlice buf, size_t n)
 {
+	if (buf.length < 260) {
+		tr_log(TR_LOG_WARNING, "buffer may not be large enough to store path");
+	}
 	if (strncmp(s, "app:", 4) == 0) {
 		// remove the prefix
 		const char* trimmed = s + 4;
-		snprintf(buf, n, "%s/%s/%s", st3d_app_dir(ctx), ctx->app_dir, trimmed);
+		snprintf(buf.buffer, n, "%s/%s/%s", st3d_app_dir(ctx), ctx->app_dir, trimmed);
 	}
 	else if (strncmp(s, "usr:", 4) == 0) {
 		// remove the prefix
 		const char* trimmed = s + 4;
-		snprintf(buf, n, "%s/%s", st3d_user_dir(ctx), trimmed);
+		snprintf(buf.buffer, n, "%s/%s", st3d_user_dir(ctx), trimmed);
 	}
 	else {
 		tr_panic("you fucking legumes did you read the documentation for st3d_path");
