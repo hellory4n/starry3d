@@ -1,9 +1,11 @@
 CC = clang
-CFLAGS = -std=c99 -Wall -Wextra -Wpedantic -Wshadow -fno-strict-aliasing
+CFLAGS = -std=c99 -Wall -Wextra -Wpedantic -Wshadow
 LDFLAGS = -L.
 
-# you should probably edit these
+# you should probably edit this
 PROGRAM = sandbox
+# this is where you put starry3d
+# for example `vendor/starry3d`
 STARRY3D = ..
 
 # i put starry3d things first
@@ -11,7 +13,7 @@ INCLUDE = \
     -I${STARRY3D}/src \
     -I${STARRY3D}/vendor \
     -I${STARRY3D}/vendor/libtrippin \
-    -I${STARRY3D}/vendor/rgfw \
+    -I${STARRY3D}/vendor/wgpu-native/include \
     \
     -Isrc
 
@@ -24,6 +26,8 @@ SRCS = \
 	src/main.c
 
 OBJS = $(SRCS:.c=.o)
+
+# TODO more platforms also arm exists
 
 PLATFORM := $(shell uname -s)
 ifeq ($(PLATFORM),Linux)
@@ -69,6 +73,13 @@ else
     RUNCMD = ./$(TARGET)
 endif
 
+# we need to copy the wgpu-native .dll/.so :D
+ifeq ($(OS),windows)
+    WGPUCOPYCMD = cp $(STARRY3D)/vendor/wgpu-native/bin/windows-x86_64/wgpu_native.dll wgpu_native.dll
+else ifeq ($(OS),linux)
+    WGPUCOPYCMD = cp $(STARRY3D)/vendor/wgpu-native/bin/linux-x86_64/libwgpu_native.so libwgpu_native.so
+endif
+
 ifeq ($(OS),windows)
     LDFLAGS += -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
 else ifeq ($(OS),linux)
@@ -85,7 +96,7 @@ endif
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) && $(WGPUCOPYCMD)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
