@@ -5,16 +5,18 @@
 ## man
 
 - [x] setup
-- [x] windowing
+- [ ] windowing
 	- [ ] except i decided to deal with input later
 - [ ] get a square
 - [ ] get a cube (with perspective!)
 - [ ] get many cubes
+- [ ] bring back that esoteric path fuckery
 - [ ] load models
 - [ ] lighting
 - [ ] optimize optimize optimize
 - [ ] 2d and fonts because you need to draw UI too
 - [ ] audio (just use miniaudio lmao)
+- [ ] try compiling to more platforms (arm and mac ok maybe not mac) because i hate myself
 
 ## Usage
 

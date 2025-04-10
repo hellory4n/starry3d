@@ -21,7 +21,6 @@ INCLUDE = \
 SRCS = \
     ${STARRY3D}/vendor/libtrippin/libtrippin.c \
     ${STARRY3D}/src/st3d_core.c \
-    ${STARRY3D}/src/st3d_window.c \
     \
 	src/main.c
 
