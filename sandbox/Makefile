@@ -20,7 +20,7 @@ INCLUDE = \
 # i put starry3d things first
 SRCS = \
     ${STARRY3D}/vendor/libtrippin/libtrippin.c \
-    ${STARRY3D}/src/st3d_core.c \
+    ${STARRY3D}/src/st3d.c \
     \
 	src/main.c
 
@@ -101,7 +101,7 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) $(TARGET) log.txt
+	rm -f $(OBJS) $(TARGET) log.txt *wgpu*
 
 run: $(TARGET)
 	$(RUNCMD)
