@@ -47,6 +47,24 @@
 #include <emscripten.h>
 #endif
 
+#ifdef _MSVC_LANG
+#  if _MSVC_LANG >= 202002L
+#   define NO_DISCARD [[nodiscard("You should keep this handle alive for as long as the callback may get invoked.")]]
+#  elif _MSVC_LANG >= 201703L
+#   define NO_DISCARD [[nodiscard]]
+#  else
+#   define NO_DISCARD
+#  endif
+#else
+#  if __cplusplus >= 202002L
+#    define NO_DISCARD [[nodiscard("You should keep this handle alive for as long as the callback may get invoked.")]]
+#  elif __cplusplus >= 201703L
+#    define NO_DISCARD [[nodiscard]]
+#  else
+#    define NO_DISCARD
+#  endif
+#endif
+
 /**
  * A namespace providing a more C++ idiomatic API to WebGPU.
  */
@@ -60,6 +78,7 @@ class Type { \
 public: \
 	typedef Type S; /* S == Self */ \
 	typedef WGPU ## Type W; /* W == WGPU Type */ \
+	Type() : m_raw(nullptr) {} \
 	Type(const W& w) : m_raw(w) {} \
 	operator W&() { return m_raw; } \
 	operator const W&() const { return m_raw; } \
@@ -1133,7 +1152,7 @@ HANDLE(Adapter)
 	Bool getLimits(SupportedLimits * limits);
 	void getProperties(AdapterProperties * properties);
 	Bool hasFeature(FeatureName feature);
-	std::unique_ptr<RequestDeviceCallback> requestDevice(const DeviceDescriptor& descriptor, RequestDeviceCallback&& callback);
+	NO_DISCARD std::unique_ptr<RequestDeviceCallback> requestDevice(const DeviceDescriptor& descriptor, RequestDeviceCallback&& callback);
 	void reference();
 	void release();
 	Device requestDevice(const DeviceDescriptor& descriptor);
@@ -1158,7 +1177,7 @@ HANDLE(Buffer)
 	void * getMappedRange(size_t offset, size_t size);
 	uint64_t getSize();
 	BufferUsageFlags getUsage();
-	std::unique_ptr<BufferMapCallback> mapAsync(MapModeFlags mode, size_t offset, size_t size, BufferMapCallback&& callback);
+	NO_DISCARD std::unique_ptr<BufferMapCallback> mapAsync(MapModeFlags mode, size_t offset, size_t size, BufferMapCallback&& callback);
 	void setLabel(char const * label);
 	void unmap();
 	void reference();
@@ -1206,6 +1225,8 @@ HANDLE(ComputePassEncoder)
 	void setPipeline(ComputePipeline pipeline);
 	void reference();
 	void release();
+	void beginPipelineStatisticsQuery(QuerySet querySet, uint32_t queryIndex);
+	void endPipelineStatisticsQuery();
 END
 
 HANDLE(ComputePipeline)
@@ -1222,12 +1243,12 @@ HANDLE(Device)
 	CommandEncoder createCommandEncoder(const CommandEncoderDescriptor& descriptor);
 	CommandEncoder createCommandEncoder();
 	ComputePipeline createComputePipeline(const ComputePipelineDescriptor& descriptor);
-	std::unique_ptr<CreateComputePipelineAsyncCallback> createComputePipelineAsync(const ComputePipelineDescriptor& descriptor, CreateComputePipelineAsyncCallback&& callback);
+	NO_DISCARD std::unique_ptr<CreateComputePipelineAsyncCallback> createComputePipelineAsync(const ComputePipelineDescriptor& descriptor, CreateComputePipelineAsyncCallback&& callback);
 	PipelineLayout createPipelineLayout(const PipelineLayoutDescriptor& descriptor);
 	QuerySet createQuerySet(const QuerySetDescriptor& descriptor);
 	RenderBundleEncoder createRenderBundleEncoder(const RenderBundleEncoderDescriptor& descriptor);
 	RenderPipeline createRenderPipeline(const RenderPipelineDescriptor& descriptor);
-	std::unique_ptr<CreateRenderPipelineAsyncCallback> createRenderPipelineAsync(const RenderPipelineDescriptor& descriptor, CreateRenderPipelineAsyncCallback&& callback);
+	NO_DISCARD std::unique_ptr<CreateRenderPipelineAsyncCallback> createRenderPipelineAsync(const RenderPipelineDescriptor& descriptor, CreateRenderPipelineAsyncCallback&& callback);
 	Sampler createSampler(const SamplerDescriptor& descriptor);
 	Sampler createSampler();
 	ShaderModule createShaderModule(const ShaderModuleDescriptor& descriptor);
@@ -1237,20 +1258,23 @@ HANDLE(Device)
 	Bool getLimits(SupportedLimits * limits);
 	Queue getQueue();
 	Bool hasFeature(FeatureName feature);
-	std::unique_ptr<ErrorCallback> popErrorScope(ErrorCallback&& callback);
+	NO_DISCARD std::unique_ptr<ErrorCallback> popErrorScope(ErrorCallback&& callback);
 	void pushErrorScope(ErrorFilter filter);
 	void setLabel(char const * label);
-	std::unique_ptr<ErrorCallback> setUncapturedErrorCallback(ErrorCallback&& callback);
+	NO_DISCARD std::unique_ptr<ErrorCallback> setUncapturedErrorCallback(ErrorCallback&& callback);
 	void reference();
 	void release();
+	Bool poll(Bool wait, const WrappedSubmissionIndex& wrappedSubmissionIndex);
+	Bool poll(Bool wait);
 END
 
 HANDLE(Instance)
 	Surface createSurface(const SurfaceDescriptor& descriptor);
 	void processEvents();
-	std::unique_ptr<RequestAdapterCallback> requestAdapter(const RequestAdapterOptions& options, RequestAdapterCallback&& callback);
+	NO_DISCARD std::unique_ptr<RequestAdapterCallback> requestAdapter(const RequestAdapterOptions& options, RequestAdapterCallback&& callback);
 	void reference();
 	void release();
+	size_t enumerateAdapters(const InstanceEnumerateAdapterOptions& options, Adapter * adapters);
 	Adapter requestAdapter(const RequestAdapterOptions& options);
 END
 
@@ -1270,7 +1294,7 @@ HANDLE(QuerySet)
 END
 
 HANDLE(Queue)
-	std::unique_ptr<QueueWorkDoneCallback> onSubmittedWorkDone(QueueWorkDoneCallback&& callback);
+	NO_DISCARD std::unique_ptr<QueueWorkDoneCallback> onSubmittedWorkDone(QueueWorkDoneCallback&& callback);
 	void setLabel(char const * label);
 	void submit(size_t commandCount, CommandBuffer const * commands);
 	void submit(const std::vector<WGPUCommandBuffer>& commands);
@@ -1279,6 +1303,9 @@ HANDLE(Queue)
 	void writeTexture(const ImageCopyTexture& destination, void const * data, size_t dataSize, const TextureDataLayout& dataLayout, const Extent3D& writeSize);
 	void reference();
 	void release();
+	SubmissionIndex submitForIndex(size_t commandCount, CommandBuffer const * commands);
+	SubmissionIndex submitForIndex(const std::vector<WGPUCommandBuffer>& commands);
+	SubmissionIndex submitForIndex(const WGPUCommandBuffer& commands);
 END
 
 HANDLE(RenderBundle)
@@ -1335,6 +1362,13 @@ HANDLE(RenderPassEncoder)
 	void setViewport(float x, float y, float width, float height, float minDepth, float maxDepth);
 	void reference();
 	void release();
+	void setPushConstants(ShaderStageFlags stages, uint32_t offset, uint32_t sizeBytes, void const * data);
+	void multiDrawIndirect(Buffer buffer, uint64_t offset, uint32_t count);
+	void multiDrawIndexedIndirect(Buffer buffer, uint64_t offset, uint32_t count);
+	void multiDrawIndirectCount(Buffer buffer, uint64_t offset, Buffer count_buffer, uint64_t count_buffer_offset, uint32_t max_count);
+	void multiDrawIndexedIndirectCount(Buffer buffer, uint64_t offset, Buffer count_buffer, uint64_t count_buffer_offset, uint32_t max_count);
+	void beginPipelineStatisticsQuery(QuerySet querySet, uint32_t queryIndex);
+	void endPipelineStatisticsQuery();
 END
 
 HANDLE(RenderPipeline)
@@ -1351,7 +1385,7 @@ HANDLE(Sampler)
 END
 
 HANDLE(ShaderModule)
-	std::unique_ptr<CompilationInfoCallback> getCompilationInfo(CompilationInfoCallback&& callback);
+	NO_DISCARD std::unique_ptr<CompilationInfoCallback> getCompilationInfo(CompilationInfoCallback&& callback);
 	void setLabel(char const * label);
 	void reference();
 	void release();
@@ -1492,37 +1526,38 @@ void InstanceDescriptor::setDefault() {
 
 // Methods of Limits
 void Limits::setDefault() {
-	maxTextureDimension1D = 0;
-	maxTextureDimension2D = 0;
-	maxTextureDimension3D = 0;
-	maxTextureArrayLayers = 0;
-	maxBindGroups = 0;
-	maxBindingsPerBindGroup = 0;
-	maxDynamicUniformBuffersPerPipelineLayout = 0;
-	maxDynamicStorageBuffersPerPipelineLayout = 0;
-	maxSampledTexturesPerShaderStage = 0;
-	maxSamplersPerShaderStage = 0;
-	maxStorageBuffersPerShaderStage = 0;
-	maxStorageTexturesPerShaderStage = 0;
-	maxUniformBuffersPerShaderStage = 0;
-	maxUniformBufferBindingSize = 0;
-	maxStorageBufferBindingSize = 0;
-	minUniformBufferOffsetAlignment = 64;
-	minStorageBufferOffsetAlignment = 16;
-	maxVertexBuffers = 0;
-	maxBufferSize = 0;
-	maxVertexAttributes = 0;
-	maxVertexBufferArrayStride = 0;
-	maxInterStageShaderComponents = 0;
-	maxInterStageShaderVariables = 0;
-	maxColorAttachments = 0;
-	maxColorAttachmentBytesPerSample = 0;
-	maxComputeWorkgroupStorageSize = 0;
-	maxComputeInvocationsPerWorkgroup = 0;
-	maxComputeWorkgroupSizeX = 0;
-	maxComputeWorkgroupSizeY = 0;
-	maxComputeWorkgroupSizeZ = 0;
-	maxComputeWorkgroupsPerDimension = 0;
+	maxTextureDimension1D = WGPU_LIMIT_U32_UNDEFINED;
+	maxTextureDimension2D = WGPU_LIMIT_U32_UNDEFINED;
+	maxTextureDimension3D = WGPU_LIMIT_U32_UNDEFINED;
+	maxTextureArrayLayers = WGPU_LIMIT_U32_UNDEFINED;
+	maxBindGroups = WGPU_LIMIT_U32_UNDEFINED;
+	maxBindGroupsPlusVertexBuffers = WGPU_LIMIT_U32_UNDEFINED;
+	maxBindingsPerBindGroup = WGPU_LIMIT_U32_UNDEFINED;
+	maxDynamicUniformBuffersPerPipelineLayout = WGPU_LIMIT_U32_UNDEFINED;
+	maxDynamicStorageBuffersPerPipelineLayout = WGPU_LIMIT_U32_UNDEFINED;
+	maxSampledTexturesPerShaderStage = WGPU_LIMIT_U32_UNDEFINED;
+	maxSamplersPerShaderStage = WGPU_LIMIT_U32_UNDEFINED;
+	maxStorageBuffersPerShaderStage = WGPU_LIMIT_U32_UNDEFINED;
+	maxStorageTexturesPerShaderStage = WGPU_LIMIT_U32_UNDEFINED;
+	maxUniformBuffersPerShaderStage = WGPU_LIMIT_U32_UNDEFINED;
+	maxUniformBufferBindingSize = WGPU_LIMIT_U64_UNDEFINED;
+	maxStorageBufferBindingSize = WGPU_LIMIT_U64_UNDEFINED;
+	minUniformBufferOffsetAlignment = WGPU_LIMIT_U32_UNDEFINED;
+	minStorageBufferOffsetAlignment = WGPU_LIMIT_U32_UNDEFINED;
+	maxVertexBuffers = WGPU_LIMIT_U32_UNDEFINED;
+	maxBufferSize = WGPU_LIMIT_U64_UNDEFINED;
+	maxVertexAttributes = WGPU_LIMIT_U32_UNDEFINED;
+	maxVertexBufferArrayStride = WGPU_LIMIT_U32_UNDEFINED;
+	maxInterStageShaderComponents = WGPU_LIMIT_U32_UNDEFINED;
+	maxInterStageShaderVariables = WGPU_LIMIT_U32_UNDEFINED;
+	maxColorAttachments = WGPU_LIMIT_U32_UNDEFINED;
+	maxColorAttachmentBytesPerSample = WGPU_LIMIT_U32_UNDEFINED;
+	maxComputeWorkgroupStorageSize = WGPU_LIMIT_U32_UNDEFINED;
+	maxComputeInvocationsPerWorkgroup = WGPU_LIMIT_U32_UNDEFINED;
+	maxComputeWorkgroupSizeX = WGPU_LIMIT_U32_UNDEFINED;
+	maxComputeWorkgroupSizeY = WGPU_LIMIT_U32_UNDEFINED;
+	maxComputeWorkgroupSizeZ = WGPU_LIMIT_U32_UNDEFINED;
+	maxComputeWorkgroupsPerDimension = WGPU_LIMIT_U32_UNDEFINED;
 }
 
 
@@ -2273,6 +2308,12 @@ void ComputePassEncoder::reference() {
 void ComputePassEncoder::release() {
 	return wgpuComputePassEncoderRelease(m_raw);
 }
+void ComputePassEncoder::beginPipelineStatisticsQuery(QuerySet querySet, uint32_t queryIndex) {
+	return wgpuComputePassEncoderBeginPipelineStatisticsQuery(m_raw, querySet, queryIndex);
+}
+void ComputePassEncoder::endPipelineStatisticsQuery() {
+	return wgpuComputePassEncoderEndPipelineStatisticsQuery(m_raw);
+}
 
 
 // Methods of ComputePipeline
@@ -2396,6 +2437,12 @@ void Device::reference() {
 void Device::release() {
 	return wgpuDeviceRelease(m_raw);
 }
+Bool Device::poll(Bool wait, const WrappedSubmissionIndex& wrappedSubmissionIndex) {
+	return wgpuDevicePoll(m_raw, wait, &wrappedSubmissionIndex);
+}
+Bool Device::poll(Bool wait) {
+	return wgpuDevicePoll(m_raw, wait, nullptr);
+}
 
 
 // Methods of Instance
@@ -2419,6 +2466,9 @@ void Instance::reference() {
 }
 void Instance::release() {
 	return wgpuInstanceRelease(m_raw);
+}
+size_t Instance::enumerateAdapters(const InstanceEnumerateAdapterOptions& options, Adapter * adapters) {
+	return wgpuInstanceEnumerateAdapters(m_raw, &options, reinterpret_cast<WGPUAdapter *>(adapters));
 }
 
 
@@ -2488,6 +2538,15 @@ void Queue::reference() {
 }
 void Queue::release() {
 	return wgpuQueueRelease(m_raw);
+}
+SubmissionIndex Queue::submitForIndex(size_t commandCount, CommandBuffer const * commands) {
+	return wgpuQueueSubmitForIndex(m_raw, commandCount, reinterpret_cast<WGPUCommandBuffer const *>(commands));
+}
+SubmissionIndex Queue::submitForIndex(const std::vector<WGPUCommandBuffer>& commands) {
+	return wgpuQueueSubmitForIndex(m_raw, static_cast<size_t>(commands.size()), commands.data());
+}
+SubmissionIndex Queue::submitForIndex(const WGPUCommandBuffer& commands) {
+	return wgpuQueueSubmitForIndex(m_raw, 1, &commands);
 }
 
 
@@ -2638,6 +2697,27 @@ void RenderPassEncoder::reference() {
 }
 void RenderPassEncoder::release() {
 	return wgpuRenderPassEncoderRelease(m_raw);
+}
+void RenderPassEncoder::setPushConstants(ShaderStageFlags stages, uint32_t offset, uint32_t sizeBytes, void const * data) {
+	return wgpuRenderPassEncoderSetPushConstants(m_raw, stages, offset, sizeBytes, data);
+}
+void RenderPassEncoder::multiDrawIndirect(Buffer buffer, uint64_t offset, uint32_t count) {
+	return wgpuRenderPassEncoderMultiDrawIndirect(m_raw, buffer, offset, count);
+}
+void RenderPassEncoder::multiDrawIndexedIndirect(Buffer buffer, uint64_t offset, uint32_t count) {
+	return wgpuRenderPassEncoderMultiDrawIndexedIndirect(m_raw, buffer, offset, count);
+}
+void RenderPassEncoder::multiDrawIndirectCount(Buffer buffer, uint64_t offset, Buffer count_buffer, uint64_t count_buffer_offset, uint32_t max_count) {
+	return wgpuRenderPassEncoderMultiDrawIndirectCount(m_raw, buffer, offset, count_buffer, count_buffer_offset, max_count);
+}
+void RenderPassEncoder::multiDrawIndexedIndirectCount(Buffer buffer, uint64_t offset, Buffer count_buffer, uint64_t count_buffer_offset, uint32_t max_count) {
+	return wgpuRenderPassEncoderMultiDrawIndexedIndirectCount(m_raw, buffer, offset, count_buffer, count_buffer_offset, max_count);
+}
+void RenderPassEncoder::beginPipelineStatisticsQuery(QuerySet querySet, uint32_t queryIndex) {
+	return wgpuRenderPassEncoderBeginPipelineStatisticsQuery(m_raw, querySet, queryIndex);
+}
+void RenderPassEncoder::endPipelineStatisticsQuery() {
+	return wgpuRenderPassEncoderEndPipelineStatisticsQuery(m_raw);
 }
 
 

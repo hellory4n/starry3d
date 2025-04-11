@@ -15,12 +15,14 @@ INCLUDE = \
     -I$(STARRY3D)/vendor/libtrippin \
     -I$(STARRY3D)/vendor/wgpu-native/include \
     -I$(STARRY3D)/vendor/glfw/include \
+    -I$(STARRY3D)/vendor/glfw3webgpu \
     \
     -Isrc
 
 # i put starry3d things first
 SRCS = \
     $(STARRY3D)/vendor/libtrippin/libtrippin.c \
+    $(STARRY3D)/vendor/glfw3webgpu/glfw3webgpu.c \
     $(STARRY3D)/src/st3d.c \
     \
 	src/main.c
@@ -89,6 +91,7 @@ else ifeq ($(OS),linux)
 endif
 
 # yeah
+# the glfw defines are so glfw3webgpu works
 ifeq ($(OS),windows)
     CFLAGS += -DST3D_WINDOWS
 else ifeq ($(OS),linux)

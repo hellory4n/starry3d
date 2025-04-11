@@ -1,5 +1,6 @@
 #include <webgpu/wgpu.h>
 #include <GLFW/glfw3.h>
+#include <glfw3webgpu.h>
 #include <libtrippin.h>
 #include "st3d.h"
 
@@ -153,6 +154,7 @@ static void wgpu_init(void)
 	// adapter :D
 	WGPURequestAdapterOptions adapter_opts = {0};
 	adapter_opts.nextInChain = NULL;
+	adapter_opts.compatibleSurface = glfwGetWGPUSurface(instance, window);
 	WGPUAdapter adapter = request_adapter(instance, &adapter_opts);
 	wgpuInstanceRelease(instance);
 	tr_log(TR_LOG_LIB_INFO, "wgpu: requested adapter");
@@ -260,8 +262,8 @@ void st3d_init(const char* app, const char* assets, int32_t width, int32_t heigh
 
 	tr_init("log.txt");
 	arena = tr_arena_new(TR_MB(1));
-	wgpu_init();
 	window_init(app, width, height);
+	wgpu_init();
 
 	tr_log(TR_LOG_LIB_INFO, "initialized starry3d %s", ST3D_VERSION);
 }
