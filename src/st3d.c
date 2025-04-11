@@ -9,6 +9,9 @@ static TrArena arena;
 
 // webgpu crap
 static WGPUDevice device;
+static WGPUQueue queue;
+
+// i love callbacks
 
 typedef struct {
 	WGPUAdapter adapter;
@@ -58,6 +61,30 @@ static WGPUDevice request_device(WGPUAdapter adapter, WGPUDeviceDescriptor const
 	wgpuAdapterRequestDevice(adapter, descriptor, on_device_received, &data);
 	tr_assert(data.request_ended, "uh oh");
 	return data.device;
+}
+
+static void on_device_lost(WGPUDeviceLostReason reason, char const* message, void* data)
+{
+	(void)data;
+	tr_log(TR_LOG_WARNING, "wgpu: device lost (reason %i): %s", reason, message);
+	tr_log(TR_LOG_WARNING, "wgpu: this is either normal or a catastrophic internal failure");
+}
+
+static void on_device_error(WGPUErrorType type, char const* message, void* data)
+{
+	(void)data;
+	// not sure if it should panic
+	#ifdef DEBUG
+	tr_panic("wgpu: uncaptured device error (type %i): %s", type, message);
+	#else
+	tr_log(TR_LOG_ERROR, "wgpu: uncaptured device error (type %i): %s", type, message);
+	#endif
+}
+
+static void on_queue_submitted_work_done(WGPUQueueWorkDoneStatus status, void* data)
+{
+	(void)data;
+	tr_log(TR_LOG_LIB_INFO, "wgpu: queue work finished with status %i", status);
 }
 
 static void wgpu_init(void)
@@ -121,8 +148,6 @@ static void wgpu_init(void)
 	tr_log(TR_LOG_LIB_INFO, "- adapterType: 0x%X", props.adapterType);
 	tr_log(TR_LOG_LIB_INFO, "- backendType: 0x%X", props.backendType);
 
-	tr_log(TR_LOG_LIB_INFO, "wgpu: initialized");
-
 	// request device
 	WGPUDeviceDescriptor device_desc = {0};
 	device_desc.nextInChain = NULL;
@@ -131,9 +156,11 @@ static void wgpu_init(void)
 	device_desc.requiredLimits = NULL;
 	device_desc.defaultQueue.nextInChain = NULL;
 	device_desc.defaultQueue.label = "default queue";
-	device_desc.deviceLostCallback = NULL;
+	device_desc.deviceLostCallback = on_device_lost;
 	device = request_device(adapter, &device_desc);
+	wgpuDeviceSetUncapturedErrorCallback(device, on_device_error, NULL);
 	wgpuAdapterRelease(adapter);
+	tr_log(TR_LOG_LIB_INFO, "wgpu: requested device");
 
 	// we don't have required limits/features so the device has different limits
 	// it uses the minimum available i guess?
@@ -156,6 +183,12 @@ static void wgpu_init(void)
 		WGPUFeatureName feature = *(WGPUFeatureName*)tr_slice_at(features, i);
 		tr_log(TR_LOG_LIB_INFO, "- 0x%.8x", feature);
 	}
+
+	// get the bloody queue
+	queue = wgpuDeviceGetQueue(device);
+	wgpuQueueOnSubmittedWorkDone(queue, on_queue_submitted_work_done, NULL);
+
+	tr_log(TR_LOG_LIB_INFO, "wgpu: initialized");
 }
 
 void st3d_init(const char* app, const char* assets, int32_t width, int32_t height)
@@ -171,7 +204,12 @@ void st3d_init(const char* app, const char* assets, int32_t width, int32_t heigh
 }
 
 static void wgpu_free(void)
-{}
+{
+	wgpuQueueRelease(queue);
+	wgpuDeviceRelease(device);
+
+	tr_log(TR_LOG_LIB_INFO, "wgpu: deinitialized");
+}
 
 void st3d_free(void)
 {
