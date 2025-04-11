@@ -1,4 +1,4 @@
-#include <webgpu/webgpu.h>
+#include <webgpu/wgpu.h>
 #include <libtrippin.h>
 #include "st3d.h"
 
@@ -195,6 +195,9 @@ void st3d_init(const char* app, const char* assets, int32_t width, int32_t heigh
 {
 	// gonna use that later :)
 	(void)assets;
+	(void)app;
+	(void)width;
+	(void)height;
 
 	tr_init("log.txt");
 	arena = tr_arena_new(TR_MB(1));
@@ -218,4 +221,9 @@ void st3d_free(void)
 	tr_arena_free(arena);
 	tr_log(TR_LOG_LIB_INFO, "deinitialized starry3d");
 	tr_free();
+}
+
+void st3di_tick(void)
+{
+	wgpuDevicePoll(device, false, NULL);
 }
