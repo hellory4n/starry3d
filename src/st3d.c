@@ -1,4 +1,5 @@
 #include <webgpu/wgpu.h>
+#include <GLFW/glfw3.h>
 #include <libtrippin.h>
 #include "st3d.h"
 
@@ -7,9 +8,62 @@
 // disaster (variables)
 static TrArena arena;
 
-// webgpu crap
+// render crap
 static WGPUDevice device;
 static WGPUQueue queue;
+
+// window crap
+static GLFWwindow* window;
+
+// WINDOW CRAP
+
+static void window_init(const char* title, int32_t width, int32_t height)
+{
+	if (!glfwInit()) {
+		tr_panic("glfw: couldn't initialize");
+	}
+
+	// glfw doesn't know about webgpu
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+	// for now that's gonna crash and die??
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+	window = glfwCreateWindow(width, height, title, NULL, NULL);
+	if (window == NULL) {
+		tr_panic("glfw: couldn't create window");
+	}
+
+	tr_log(TR_LOG_LIB_INFO, "glfw: created window");
+}
+
+static void window_free(void)
+{
+	glfwDestroyWindow(window);
+	tr_log(TR_LOG_LIB_INFO, "glfw: closed window");
+}
+
+void st3d_end_drawing(void)
+{
+	st3di_tick();
+	glfwSwapBuffers(window);
+}
+
+void st3d_poll_events(void)
+{
+	glfwPollEvents();
+}
+
+bool st3d_is_closing(void)
+{
+	return glfwWindowShouldClose(window);
+}
+
+void st3d_close(void)
+{
+	glfwSetWindowShouldClose(window, true);
+}
+
+// RENDER CRAP
 
 // i love callbacks
 
@@ -191,21 +245,6 @@ static void wgpu_init(void)
 	tr_log(TR_LOG_LIB_INFO, "wgpu: initialized");
 }
 
-void st3d_init(const char* app, const char* assets, int32_t width, int32_t height)
-{
-	// gonna use that later :)
-	(void)assets;
-	(void)app;
-	(void)width;
-	(void)height;
-
-	tr_init("log.txt");
-	arena = tr_arena_new(TR_MB(1));
-	wgpu_init();
-
-	tr_log(TR_LOG_LIB_INFO, "initialized starry3d %s", ST3D_VERSION);
-}
-
 static void wgpu_free(void)
 {
 	wgpuQueueRelease(queue);
@@ -214,9 +253,23 @@ static void wgpu_free(void)
 	tr_log(TR_LOG_LIB_INFO, "wgpu: deinitialized");
 }
 
+void st3d_init(const char* app, const char* assets, int32_t width, int32_t height)
+{
+	// gonna use that later :)
+	(void)assets;
+
+	tr_init("log.txt");
+	arena = tr_arena_new(TR_MB(1));
+	wgpu_init();
+	window_init(app, width, height);
+
+	tr_log(TR_LOG_LIB_INFO, "initialized starry3d %s", ST3D_VERSION);
+}
+
 void st3d_free(void)
 {
 	wgpu_free();
+	window_free();
 
 	tr_arena_free(arena);
 	tr_log(TR_LOG_LIB_INFO, "deinitialized starry3d");

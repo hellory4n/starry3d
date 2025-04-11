@@ -19,6 +19,18 @@ void st3d_init(const char* app, const char* assets, int32_t width, int32_t heigh
 // Frees the engine and all of its subsystems
 void st3d_free(void);
 
+// If true, the window is closing and dying.
+bool st3d_is_closing(void);
+
+// It closes the window :)
+void st3d_close(void);
+
+// Does some fuckery that ends drawing.
+void st3d_end_drawing(void);
+
+// It's just `glfwPollEvents()`
+void st3d_poll_events(void);
+
 // WebGPU has to tick.
 void st3di_tick(void);
 

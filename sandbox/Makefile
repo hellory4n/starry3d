@@ -10,17 +10,18 @@ STARRY3D = ..
 
 # i put starry3d things first
 INCLUDE = \
-    -I${STARRY3D}/src \
-    -I${STARRY3D}/vendor \
-    -I${STARRY3D}/vendor/libtrippin \
-    -I${STARRY3D}/vendor/wgpu-native/include \
+    -I$(STARRY3D)/src \
+    -I$(STARRY3D)/vendor \
+    -I$(STARRY3D)/vendor/libtrippin \
+    -I$(STARRY3D)/vendor/wgpu-native/include \
+    -I$(STARRY3D)/vendor/glfw/include \
     \
     -Isrc
 
 # i put starry3d things first
 SRCS = \
-    ${STARRY3D}/vendor/libtrippin/libtrippin.c \
-    ${STARRY3D}/src/st3d.c \
+    $(STARRY3D)/vendor/libtrippin/libtrippin.c \
+    $(STARRY3D)/src/st3d.c \
     \
 	src/main.c
 
@@ -42,9 +43,9 @@ ifeq ($(crosscomp),windows)
 endif
 
 ifeq ($(OS),windows)
-    TARGET := ${PROGRAM}.exe
+    TARGET := $(PROGRAM).exe
 else
-    TARGET := ${PROGRAM}
+    TARGET := $(PROGRAM)
 endif
 
 # mingw doesn't always have clang
@@ -72,20 +73,22 @@ else
     RUNCMD = ./$(TARGET)
 endif
 
-# we need to copy the wgpu-native .dll/.so :D
+# we need to copy the wgpu-native and glfw .dll/.so :D
 ifeq ($(OS),windows)
     WGPUCOPYCMD = cp $(STARRY3D)/vendor/wgpu-native/bin/windows-x86_64/wgpu_native.dll wgpu_native.dll
+    GLFWCOPYCMD = cp $(STARRY3D)/vendor/glfw/bin/windows-x86_64/glfw3.dll glfw3.dll
 else ifeq ($(OS),linux)
     WGPUCOPYCMD = cp $(STARRY3D)/vendor/wgpu-native/bin/linux-x86_64/libwgpu_native.so libwgpu_native.so
+    GLFWCOPYCMD = cp $(STARRY3D)/vendor/glfw/bin/linux-x86_64/libglfw.so.3.4 libglfw.so.3.4
 endif
 
 ifeq ($(OS),windows)
-    LDFLAGS += -lwgpu_native -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
+    LDFLAGS += -lwgpu_native -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
 else ifeq ($(OS),linux)
-    LDFLAGS += -lwgpu_native -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt
+    LDFLAGS += -lwgpu_native -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt
 endif
 
-# compile flags :D
+# yeah
 ifeq ($(OS),windows)
     CFLAGS += -DST3D_WINDOWS
 else ifeq ($(OS),linux)
@@ -98,10 +101,10 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ && $(WGPUCOPYCMD)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ && $(WGPUCOPYCMD) && $(GLFWCOPYCMD)
 
 clean:
-	rm -f $(OBJS) $(TARGET) log.txt *wgpu*
+	rm -f $(OBJS) $(TARGET) log.txt *wgpu* *glfw*
 
 run: $(TARGET)
 	$(RUNCMD)
