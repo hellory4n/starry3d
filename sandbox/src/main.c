@@ -1,4 +1,4 @@
-#include <st3d_core.h>
+#include <st3d.h>
 
 int main(void)
 {

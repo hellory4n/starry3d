@@ -1,6 +1,6 @@
 CC = clang
 CFLAGS = -std=c99 -Wall -Wextra -Wpedantic -Wshadow
-LDFLAGS = -L.
+LDFLAGS = -L. -Wl,-rpath=.
 
 # you should probably edit this
 PROGRAM = sandbox
@@ -80,9 +80,9 @@ else ifeq ($(OS),linux)
 endif
 
 ifeq ($(OS),windows)
-    LDFLAGS += -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
+    LDFLAGS += -lwgpu_native -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
 else ifeq ($(OS),linux)
-    LDFLAGS += -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt
+    LDFLAGS += -lwgpu_native -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt
 endif
 
 # compile flags :D
@@ -95,10 +95,10 @@ endif
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) && $(WGPUCOPYCMD)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ && $(WGPUCOPYCMD)
 
 clean:
 	rm -f $(OBJS) $(TARGET) log.txt *wgpu*
