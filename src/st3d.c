@@ -3,6 +3,7 @@
 #include <glfw3webgpu.h>
 #include <libtrippin.h>
 #include "st3d.h"
+#include "webgpu/webgpu.h"
 
 // btw st3di means st3d internal :D
 
@@ -12,6 +13,7 @@ static TrArena arena;
 // render crap
 static WGPUDevice device;
 static WGPUQueue queue;
+static WGPUSurface surface;
 
 // window crap
 static GLFWwindow* window;
@@ -152,9 +154,10 @@ static void wgpu_init(void)
 	tr_log(TR_LOG_LIB_INFO, "wgpu: created instance");
 
 	// adapter :D
+	surface = glfwGetWGPUSurface(instance, window);
 	WGPURequestAdapterOptions adapter_opts = {0};
 	adapter_opts.nextInChain = NULL;
-	adapter_opts.compatibleSurface = glfwGetWGPUSurface(instance, window);
+	adapter_opts.compatibleSurface = surface;
 	WGPUAdapter adapter = request_adapter(instance, &adapter_opts);
 	wgpuInstanceRelease(instance);
 	tr_log(TR_LOG_LIB_INFO, "wgpu: requested adapter");
@@ -251,6 +254,7 @@ static void wgpu_free(void)
 {
 	wgpuQueueRelease(queue);
 	wgpuDeviceRelease(device);
+	wgpuSurfaceRelease(surface);
 
 	tr_log(TR_LOG_LIB_INFO, "wgpu: deinitialized");
 }

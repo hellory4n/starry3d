@@ -91,11 +91,11 @@ else ifeq ($(OS),linux)
 endif
 
 # yeah
-# the glfw defines are so glfw3webgpu works
+# the glfw defines are for glfw3webgpu to work
 ifeq ($(OS),windows)
-    CFLAGS += -DST3D_WINDOWS
+    CFLAGS += -DST3D_WINDOWS -D_GLFW_WIN32
 else ifeq ($(OS),linux)
-    CFLAGS += -DST3D_LINUX
+    CFLAGS += -DST3D_LINUX -D_GLFW_X11 -D_GLFW_WAYLAND
 endif
 
 all: $(TARGET)
