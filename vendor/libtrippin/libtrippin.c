@@ -1,69 +1,63 @@
 /*
- * libtrippin v1.0.2
+ * libtrippin v1.1.0
  *
  * Most biggest most massive standard library thing for C of all time
  * More information at https://github.com/hellory4n/libtrippin
  *
- * This is free and unencumbered software released into the public domain.
+ * Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
  *
- * Anyone is free to copy, modify, publish, use, compile, sell, or
- * distribute this software, either in source code form or as a compiled
- * binary, for any purpose, commercial or non-commercial, and by any
- * means.
+ * Permission to use, copy, modify, and/or distribute this
+ * software for any purpose with or without fee is hereby
+ * granted.
  *
- * In jurisdictions that recognize copyright laws, the author or authors
- * of this software dedicate any and all copyright interest in the
- * software to the public domain. We make this dedication for the benefit
- * of the public at large and to the detriment of our heirs and
- * successors. We intend this dedication to be an overt act of
- * relinquishment in perpetuity of all present and future rights to this
- * software under copyright law.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+ * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+ * WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+ * USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- *
- * For more information, please refer to <https://unlicense.org/>
  */
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// so clang shuts up
-#ifdef DEBUG
+#ifndef _WIN32
 #include <signal.h>
 #endif
 #include <time.h>
 #include <math.h>
 #include "libtrippin.h"
 
-static FILE* logfile;
-static TrRand randdeez;
+static FILE* tr_logfile;
+static TrRand tr_randdeez;
 
 void tr_init(const char* log_file)
 {
-	logfile = fopen(log_file, "w");
+	tr_logfile = fopen(log_file, "w");
 	tr_assert(log_file != NULL, "couldn't open %s", log_file);
 
-	randdeez = tr_rand_new(time(NULL));
+	tr_randdeez = tr_rand_new(time(NULL));
 
-	tr_log(TR_LOG_LIB_INFO, "initialized libtrippin %s", TR_VERSION);
+	tr_liblog("initialized libtrippin %s", TR_VERSION);
 }
 
 void tr_free(void)
 {
-	fclose(logfile);
+	fclose(tr_logfile);
 
 	// this causes a leak in the math example??????????????????????? according to asan
-	// tr_log(TR_LOG_LIB_INFO, "deinitialized libtripping");
+	// tr_liblog("deinitialized libtripping");
 }
 
-void tr_log(TrLogLevel level, const char* fmt, ...)
+// TODO maybe don't copy the same function 6 times with slightly different formatting and
+// sometimes it dies
+
+void tr_log(const char* fmt, ...)
 {
 	// you understand mechanical hands are the ruler of everything (ah)
 	char timestr[32];
@@ -77,22 +71,75 @@ void tr_log(TrLogLevel level, const char* fmt, ...)
 	va_start(args, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, args);
 
-	fprintf(logfile, "[%s] %s\n", timestr, buf);
-	switch (level) {
-	case TR_LOG_LIB_INFO:
-		printf(TR_CONSOLE_COLOR_LIB_INFO "[%s] %s\n" TR_CONSOLE_COLOR_RESET, timestr, buf);
-		break;
-	case TR_LOG_INFO:
-		printf("[%s] %s\n", timestr, buf);
-		break;
-	case TR_LOG_WARNING:
-		printf(TR_CONSOLE_COLOR_WARN "[%s] %s\n" TR_CONSOLE_COLOR_RESET, timestr, buf);
-		break;
-	case TR_LOG_ERROR:
-		printf(TR_CONSOLE_COLOR_ERROR "[%s] %s\n" TR_CONSOLE_COLOR_RESET, timestr, buf);
-		break;
-	}
-	fflush(logfile);
+	fprintf(tr_logfile, "[%s] %s\n", timestr, buf);
+	printf("[%s] %s\n", timestr, buf);
+	fflush(tr_logfile);
+	fflush(stdout);
+
+	va_end(args);
+}
+
+void tr_liblog(const char* fmt, ...)
+{
+	// you understand mechanical hands are the ruler of everything (ah)
+	char timestr[32];
+	time_t now = time(NULL);
+	struct tm* tm_info = localtime(&now);
+	strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", tm_info);
+
+	// TODO maybe increase in the future?
+	char buf[256];
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, args);
+
+	fprintf(tr_logfile, "[%s] %s\n", timestr, buf);
+	printf(TR_CONSOLE_COLOR_LIB_INFO "[%s] %s\n" TR_CONSOLE_COLOR_RESET, timestr, buf);
+	fflush(tr_logfile);
+	fflush(stdout);
+
+	va_end(args);
+}
+
+void tr_warn(const char* fmt, ...)
+{
+	// you understand mechanical hands are the ruler of everything (ah)
+	char timestr[32];
+	time_t now = time(NULL);
+	struct tm* tm_info = localtime(&now);
+	strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", tm_info);
+
+	// TODO maybe increase in the future?
+	char buf[256];
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, args);
+
+	fprintf(tr_logfile, "[%s] %s\n", timestr, buf);
+	printf(TR_CONSOLE_COLOR_WARN "[%s] %s\n" TR_CONSOLE_COLOR_RESET, timestr, buf);
+	fflush(tr_logfile);
+	fflush(stdout);
+
+	va_end(args);
+}
+
+void tr_error(const char* fmt, ...)
+{
+	// you understand mechanical hands are the ruler of everything (ah)
+	char timestr[32];
+	time_t now = time(NULL);
+	struct tm* tm_info = localtime(&now);
+	strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", tm_info);
+
+	// TODO maybe increase in the future?
+	char buf[256];
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, args);
+
+	fprintf(tr_logfile, "[%s] %s\n", timestr, buf);
+	printf(TR_CONSOLE_COLOR_ERROR "[%s] %s\n" TR_CONSOLE_COLOR_RESET, timestr, buf);
+	fflush(tr_logfile);
 	fflush(stdout);
 
 	va_end(args);
@@ -116,17 +163,15 @@ void tr_assert(bool x, const char* msg, ...)
 	va_start(args, msg);
 	vsnprintf(buf, sizeof(buf), msg, args);
 
-	fprintf(logfile, "[%s] %s\n", timestr, buf);
+	fprintf(tr_logfile, "[%s] %s\n", timestr, buf);
 	printf(TR_CONSOLE_COLOR_ERROR "[%s] failed assert: %s\n" TR_CONSOLE_COLOR_RESET, timestr, buf);
-	fflush(logfile);
+	fflush(tr_logfile);
 	fflush(stdout);
 
 	va_end(args);
-
-	#ifdef DEBUG
+	// TODO there's probably a windows equivalent but i don't care
+	#ifndef _WIN32
 	raise(SIGTRAP);
-	#else
-	exit(1);
 	#endif
 }
 
@@ -144,17 +189,15 @@ void tr_panic(const char* msg, ...)
 	va_start(args, msg);
 	vsnprintf(buf, sizeof(buf), msg, args);
 
-	fprintf(logfile, "[%s] %s\n", timestr, buf);
+	fprintf(tr_logfile, "[%s] %s\n", timestr, buf);
 	printf(TR_CONSOLE_COLOR_ERROR "[%s] panic: %s\n" TR_CONSOLE_COLOR_RESET, timestr, buf);
-	fflush(logfile);
+	fflush(tr_logfile);
 	fflush(stdout);
 
 	va_end(args);
-
-	#ifdef DEBUG
+	// TODO there's probably a windows equivalent but i don't care
+	#ifndef _WIN32
 	raise(SIGTRAP);
-	#else
-	exit(1);
 	#endif
 }
 
@@ -182,7 +225,7 @@ void* tr_arena_alloc(TrArena arena, size_t size)
 		tr_panic("arena allocation out of bounds");
 	}
 
-	void* data = (void*)((char*)arena.buffer + arena.alloc_pos);
+	void* data = (void*)((uint8_t*)arena.buffer + arena.alloc_pos);
 	return data;
 }
 
@@ -195,7 +238,7 @@ TrSlice tr_slice_new(TrArena arena, size_t length, size_t elem_size)
 
 void* tr_slice_at(TrSlice slice, size_t idx)
 {
-	if (idx >= slice.length || idx < 0) {
+	if (idx >= slice.length) {
 		tr_panic("index out of range: %zu", idx);
 	}
 
@@ -212,7 +255,7 @@ TrSlice2D tr_slice2d_new(TrArena arena, size_t width, size_t height, size_t elem
 
 void* tr_slice2d_at(TrSlice2D slice, size_t x, size_t y)
 {
-	if (x >= slice.width || x < 0 || y >= slice.height || y < 0) {
+	if (x >= slice.width || y >= slice.height) {
 		tr_panic("index out of range: %zu, %zu", x, y);
 	}
 
@@ -220,51 +263,9 @@ void* tr_slice2d_at(TrSlice2D slice, size_t x, size_t y)
 	return (void*)((char*)slice.buffer + offset);
 }
 
-double tr_rect_area(TrRect r)
-{
-	return r.w * r.h;
-}
-
-bool tr_rect_intersects(TrRect a, TrRect b)
-{
-	// man
-	if (a.x >= (b.x + b.w)) {
-		return false;
-	}
-	if ((a.x + a.w) <= b.y) {
-		return false;
-	}
-	if (a.y >= (b.y + b.h)) {
-		return false;
-	}
-	if ((a.y + a.h) <= b.y) {
-		return false;
-	}
-	return true;
-}
-
-bool tr_rect_has_point(TrRect rect, TrVec2f point)
-{
-	if (point.x < rect.x) {
-		return false;
-	}
-	if (point.y < rect.y) {
-		return false;
-	}
-
-	if (point.x >= (rect.x + rect.w)) {
-		return false;
-	}
-	if (point.y >= (rect.y + rect.h)) {
-		return false;
-	}
-
-	return true;
-}
-
 TrRand* tr_default_rand(void)
 {
-	return &randdeez;
+	return &tr_randdeez;
 }
 
 TrRand tr_rand_new(uint64_t seed)
@@ -320,54 +321,17 @@ int64_t tr_rand_i64(TrRand* rand, int64_t min, int64_t max)
 	return (int64_t)round(tr_rand_double(rand, (double)min, (double)max));
 }
 
-double tr_deg2rad(double deg)
-{
-	return deg * (PI / 180.0);
-}
-
-double tr_rad2deg(double rad)
-{
-	return rad * (180 / PI);
-}
-
-double tr_clamp(double val, double min, double max)
-{
-	if (val < min) return min;
-	else if (val > max) return max;
-	else return val;
-}
-
-double tr_lerp(double a, double b, double t)
-{
-	return (1.0 - t) * a + t * b;
-}
-
-double tr_inverse_lerp(double a, double b, double v)
-{
-	return (v - a) / (b - a);
-}
-
-double st_remap(double v, double src_min, double src_max, double dst_min, double dst_max)
-{
-	return tr_lerp(dst_min, dst_max, tr_inverse_lerp(src_min, src_max, v));
-}
-
-TrColor tr_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
-	return (TrColor){.r = r, .g = g, .b = b, .a = a};
-}
-
-TrColor tr_rgb(uint8_t r, uint8_t g, uint8_t b)
-{
-	return (TrColor){.r = r, .g = g, .b = b, .a = 255};
-}
-
-TrColor tr_hex_rgba(int32_t hex)
-{
-	return (TrColor){
-		.r = (hex >> 24) & 0xFF,
-		.g = (hex >> 16) & 0xFF,
-		.b = (hex >> 8) & 0xFF,
-		.a = hex & 0xFF,
-	};
-}
+// apparently the linker has a skill issue so we have to put inline functions here
+double tr_rect_area(TrRect r);
+bool tr_rect_intersects(TrRect a, TrRect b);
+bool tr_rect_has_point(TrRect rect, TrVec2f point);
+TrColor tr_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+TrColor tr_rgb(uint8_t r, uint8_t g, uint8_t b);
+TrColor tr_hex_rgba(uint32_t hex);
+TrColor tr_hex_rgb(uint32_t hex);
+double tr_deg2rad(double deg);
+double tr_rad2deg(double rad);
+double tr_clamp(double val, double min, double max);
+double tr_lerp(double a, double b, double t);
+double tr_inverse_lerp(double a, double b, double v);
+double tr_remap(double v, double src_min, double src_max, double dst_min, double dst_max);

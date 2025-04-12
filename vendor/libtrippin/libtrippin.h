@@ -1,37 +1,29 @@
 /*
- * libtrippin v1.0.2
+ * libtrippin v1.1.0
  *
  * Most biggest most massive standard library thing for C of all time
  * More information at https://github.com/hellory4n/libtrippin
  *
- * This is free and unencumbered software released into the public domain.
+ * Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
  *
- * Anyone is free to copy, modify, publish, use, compile, sell, or
- * distribute this software, either in source code form or as a compiled
- * binary, for any purpose, commercial or non-commercial, and by any
- * means.
+ * Permission to use, copy, modify, and/or distribute this
+ * software for any purpose with or without fee is hereby
+ * granted.
  *
- * In jurisdictions that recognize copyright laws, the author or authors
- * of this software dedicate any and all copyright interest in the
- * software to the public domain. We make this dedication for the benefit
- * of the public at large and to the detriment of our heirs and
- * successors. We intend this dedication to be an overt act of
- * relinquishment in perpetuity of all present and future rights to this
- * software under copyright law.
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS
+ * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+ * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+ * WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+ * USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- *
- * For more information, please refer to <https://unlicense.org/>
  */
 
-#ifndef TRIPPIN_H
-#define TRIPPIN_H
+#ifndef _TRIPPIN_H
+#define _TRIPPIN_H
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -41,7 +33,7 @@ extern "C" {
 #endif
 
 // Idk why I added this
-#define TR_VERSION "v1.0.2"
+#define TR_VERSION "v1.1.0"
 
 // It initializes libtrippin.
 void tr_init(const char* log_file);
@@ -97,53 +89,95 @@ typedef struct {
 	int64_t z;
 } TrVec3i;
 
-#define TR_V2_ADD(a, b)  {a.x + b.x, a.y + b.y}
-#define TR_V2_SUB(a, b)  {a.x - b.x, a.y - b.y}
-#define TR_V2_MUL(a, b)  {a.x * b.x, a.y * b.y}
-#define TR_V2_SMUL(a, b) {a.x * b,   a.y * b}
-#define TR_V2_DIV(a, b)  {a.x / b.x, a.y / b.y}
-#define TR_V2_SDIV(a, b) {a.x / b,   a.y / b}
+typedef struct {
+	double x;
+	double y;
+	double z;
+	double w;
+} TrVec4f;
+
+typedef struct {
+	int64_t x;
+	int64_t y;
+	int64_t z;
+	int64_t w;
+} TrVec4i;
+
+#define TR_V2_ADD(a, b)  { a.x + b.x, a.y + b.y}
+#define TR_V2_SUB(a, b)  { a.x - b.x, a.y - b.y}
+#define TR_V2_MUL(a, b)  { a.x * b.x, a.y * b.y}
+#define TR_V2_SMUL(a, b) { a.x * b,   a.y * b}
+#define TR_V2_DIV(a, b)  { a.x / b.x, a.y / b.y}
+#define TR_V2_SDIV(a, b) { a.x / b,   a.y / b}
+#define TR_V2_NEG(a, b)  {-a.x,      -a.y}
 
 #define TR_V2_EQ(a, b)   (a.x == b.x && a.y == b.y)
-#define TR_V2_NEQ(a, b)  (a.x != b.x && a.y != b.y)
+#define TR_V2_NEQ(a, b)  !TR_V2_EQ(a, b)
 #define TR_V2_LT(a, b)   (a.x < b.x  && a.y < b.y)
 #define TR_V2_LTE(a, b)  (a.x <= b.x && a.y <= b.y)
 // shout out to lua
 #define TR_V2_GT(a, b)   TR_V2_LT(b, a)
 #define TR_V2_GTE(a, b)  TR_V2_LTE(b, a)
 
-#define TR_V3_ADD(a, b)  {a.x + b.x, a.y + b.y, a.z + b.z}
-#define TR_V3_SUB(a, b)  {a.x - b.x, a.y - b.y, a.z - b.z}
-#define TR_V3_MUL(a, b)  {a.x * b.x, a.y * b.y, a.z * b.z}
-#define TR_V3_SMUL(a, b) {a.x * b,   a.y * b,   a.z * b}
-#define TR_V3_DIV(a, b)  {a.x / b.x, a.y / b.y, a.z / b.z}
-#define TR_V3_SDIV(a, b) {a.x / b,   a.y / b,   a.z / b}
+#define TR_V3_ADD(a, b)  { a.x + b.x, a.y + b.y, a.z + b.z}
+#define TR_V3_SUB(a, b)  { a.x - b.x, a.y - b.y, a.z - b.z}
+#define TR_V3_MUL(a, b)  { a.x * b.x, a.y * b.y, a.z * b.z}
+#define TR_V3_SMUL(a, b) { a.x * b,   a.y * b,   a.z * b}
+#define TR_V3_DIV(a, b)  { a.x / b.x, a.y / b.y, a.z / b.z}
+#define TR_V3_SDIV(a, b) { a.x / b,   a.y / b,   a.z / b}
+#define TR_V3_NEG(a, b)  {-a.x,      -a.y,      -a.z}
 
 #define TR_V3_EQ(a, b)   (a.x == b.x && a.y == b.y && a.z == b.z)
-#define TR_V3_NEQ(a, b)  (a.x != b.x && a.y != b.y && a.z != b.z)
-#define TR_V3_LT(a, b)   (a.x < b.x  && a.y < b.y  && a.z <  b.z)
+#define TR_V3_NEQ(a, b)  !TR_V3_EQ(a, b)
+#define TR_V3_LT(a, b)   (a.x <  b.x && a.y <  b.y && a.z <  b.z)
 #define TR_V3_LTE(a, b)  (a.x <= b.x && a.y <= b.y && a.z <= b.z)
 // shout out to lua
 #define TR_V3_GT(a, b)   TR_V3_LT(b, a)
 #define TR_V3_GTE(a, b)  TR_V3_LTE(b, a)
 
+// idk why you would need those on vec4s but ok
+#define TR_V4_ADD(a, b)  { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w}
+#define TR_V4_SUB(a, b)  { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w}
+#define TR_V4_MUL(a, b)  { a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w}
+#define TR_V4_SMUL(a, b) { a.x * b,   a.y * b,   a.z * b,   a.w * b}
+#define TR_V4_DIV(a, b)  { a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w}
+#define TR_V4_SDIV(a, b) { a.x / b,   a.y / b,   a.z / b,   a.w / b}
+#define TR_V4_NEG(a, b)  {-a.x,      -a.y,      -a.z,      -a.w}
+
+#define TR_V4_EQ(a, b)   (a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w)
+#define TR_V4_NEQ(a, b)  !TR_V4_EQ(a, b)
+#define TR_V4_LT(a, b)   (a.x <  b.x && a.y <  b.y && a.z <  b.z && a.w <  b.w)
+#define TR_V4_LTE(a, b)  (a.x <= b.x && a.y <= b.y && a.z <= b.z && a.w <= b.w)
+// shout out to lua
+#define TR_V4_GT(a, b)   TR_V4_LT(b, a)
+#define TR_V4_GTE(a, b)  TR_V4_LTE(b, a)
+
 // logging
 
+// TODO colored output doesn't work on windows and i can't be bothered to fix it
+#ifndef _WIN32
 #define TR_CONSOLE_COLOR_RESET    "\033[0m"
 #define TR_CONSOLE_COLOR_LIB_INFO "\033[0;90m"
 #define TR_CONSOLE_COLOR_WARN     "\033[0;93m"
 #define TR_CONSOLE_COLOR_ERROR    "\033[0;91m"
-
-typedef enum {
-	// literally just for use with raylib
-	TR_LOG_LIB_INFO,
-	TR_LOG_INFO,
-	TR_LOG_WARNING,
-	TR_LOG_ERROR,
-} TrLogLevel;
+#else
+#define TR_CONSOLE_COLOR_RESET
+#define TR_CONSOLE_COLOR_LIB_INFO
+#define TR_CONSOLE_COLOR_WARN
+#define TR_CONSOLE_COLOR_ERROR
+#endif
 
 // Log.
-void tr_log(TrLogLevel level, const char* fmt, ...);
+void tr_log(const char* fmt, ...);
+
+// Log but for libraries that use libtrippin so your log isn't flooded with crap.
+void tr_liblog(const char* fmt, ...);
+
+// Oh nose.
+void tr_warn(const char* fmt, ...);
+
+// Oh god oh fuck.
+void tr_error(const char* fmt, ...);
 
 // Formatted assert?!!!??!?!??!?1
 void tr_assert(bool x, const char* msg, ...);
@@ -163,8 +197,8 @@ typedef struct {
 // e.g. sizeof(int) for a slice of ints.
 TrSlice tr_slice_new(TrArena arena, size_t length, size_t elem_size);
 
-// Gets the element at the specified index. Note this returns a pointer to the element so this is also
-// how you change elements.
+// Gets the element at the specified index. Note this returns a pointer to the element so this is
+// also how you change elements.
 void* tr_slice_at(TrSlice slice, size_t idx);
 
 // slice but 2d lmao
@@ -179,12 +213,43 @@ typedef struct {
 // e.g. sizeof(int) for a slice of ints.
 TrSlice2D tr_slice2d_new(TrArena arena, size_t width, size_t height, size_t elem_size);
 
-// Gets the element at the specified index. Note this returns a pointer to the element so this is also
-// how you change elements.
+// Gets the element at the specified index. Note this returns a pointer to the element so this is
+// also how you change elements.
 void* tr_slice2d_at(TrSlice2D slice, size_t x, size_t y);
 
-// rectnagle
+// these aren't really necessary, it's just for clarity
+typedef TrSlice TrSlice_int64;
+typedef TrSlice TrSlice_uint64;
+typedef TrSlice TrSlice_int32;
+typedef TrSlice TrSlice_uint32;
+typedef TrSlice TrSlice_int16;
+typedef TrSlice TrSlice_uint16;
+typedef TrSlice TrSlice_int8;
+typedef TrSlice TrSlice_uint8;
+typedef TrSlice TrSlice_double;
+typedef TrSlice TrSlice_float;
+typedef TrSlice TrString;
+typedef TrSlice TrSlice_Vec2f;
+typedef TrSlice TrSlice_Vec2i;
+typedef TrSlice TrSlice_Vec3f;
+typedef TrSlice TrSlice_Vec3i;
+typedef TrSlice TrSlice_Vec4f;
+typedef TrSlice TrSlice_Vec4i;
 
+// idk why you would need 2d slices for anything else
+// idk if i'm gonna keep 2d slices lmao
+typedef TrSlice2D TrSlice2D_int64;
+typedef TrSlice2D TrSlice2D_uint64;
+typedef TrSlice2D TrSlice2D_int32;
+typedef TrSlice2D TrSlice2D_uint32;
+typedef TrSlice2D TrSlice2D_int16;
+typedef TrSlice2D TrSlice2D_uint16;
+typedef TrSlice2D TrSlice2D_int8;
+typedef TrSlice2D TrSlice2D_uint8;
+typedef TrSlice2D TrSlice2D_double;
+typedef TrSlice2D TrSlice2D_float;
+
+// rectnagle
 typedef struct {
 	double x;
 	double y;
@@ -193,28 +258,89 @@ typedef struct {
 } TrRect;
 
 // Returns the area of the rectangle
-double tr_rect_area(TrRect r);
+inline double tr_rect_area(TrRect r)
+{
+	return r.w * r.h;
+}
 
-/// If true, the 2 rects intersect
-bool tr_rect_intersects(TrRect a, TrRect b);
+// If true, the 2 rects intersect
+inline bool tr_rect_intersects(TrRect a, TrRect b)
+{
+	// man
+	if (a.x >= (b.x + b.w)) {
+		return false;
+	}
+	if ((a.x + a.w) <= b.y) {
+		return false;
+	}
+	if (a.y >= (b.y + b.h)) {
+		return false;
+	}
+	if ((a.y + a.h) <= b.y) {
+		return false;
+	}
+	return true;
+}
 
-/// If true, the rect, in fact, has that point
-bool tr_rect_has_point(TrRect rect, TrVec2f point);
+// If true, the rect, in fact, has that point
+inline bool tr_rect_has_point(TrRect rect, TrVec2f point)
+{
+	if (point.x < rect.x) {
+		return false;
+	}
+	if (point.y < rect.y) {
+		return false;
+	}
+
+	if (point.x >= (rect.x + rect.w)) {
+		return false;
+	}
+	if (point.y >= (rect.y + rect.h)) {
+		return false;
+	}
+
+	return true;
+}
 
 // mate
 typedef struct {
 	uint8_t r, g, b, a;
 } TrColor;
 
-TrColor tr_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+inline TrColor tr_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+	return (TrColor){.r = r, .g = g, .b = b, .a = a};
+}
 
-TrColor tr_rgb(uint8_t r, uint8_t g, uint8_t b);
+inline TrColor tr_rgb(uint8_t r, uint8_t g, uint8_t b)
+{
+	return (TrColor){.r = r, .g = g, .b = b, .a = 255};
+}
 
 // format is 0xRRGGBBAA for red, green, blue, and alpha respectively
-TrColor tr_hex_rgba(int32_t hex);
+inline TrColor tr_hex_rgba(uint32_t hex)
+{
+	return (TrColor){
+		.r = (hex >> 24) & 0xFF,
+		.g = (hex >> 16) & 0xFF,
+		.b = (hex >> 8) & 0xFF,
+		.a = hex & 0xFF,
+	};
+}
 
-#define TR_WHITE tr_hex_rgba(0xffffffff)
-#define TR_BLACK tr_hex_rgba(0x000000ff)
+// format is 0xRRGGBB for red, green, and blue respectively
+inline TrColor tr_hex_rgb(uint32_t hex)
+{
+	return (TrColor){
+		.r = (hex >> 16) & 0xFF,
+		.g = (hex >> 8) & 0xFF,
+		.b = hex & 0xFF,
+		.a = 255,
+	};
+}
+
+#define TR_WHITE tr_hex_rgb(0xffffff)
+#define TR_BLACK tr_hex_rgb(0x000000)
 #define TR_TRANSPARENT tr_hex_rgba(0x00000000)
 
 // meth
@@ -243,22 +369,42 @@ int64_t tr_rand_i64(TrRand* rand, int64_t min, int64_t max);
 #endif
 
 // Converts degrees to radians
-double tr_deg2rad(double deg);
+inline double tr_deg2rad(double deg)
+{
+	return deg * (PI / 180.0);
+}
 
 // Converts radians to degrees
-double tr_rad2deg(double rad);
+inline double tr_rad2deg(double rad)
+{
+	return rad * (180 / PI);
+}
 
 // clamp
-double tr_clamp(double val, double min, double max);
+inline double tr_clamp(double val, double min, double max)
+{
+	if (val < min) return min;
+	else if (val > max) return max;
+	else return val;
+}
 
 // lerp
-double tr_lerp(double a, double b, double t);
+inline double tr_lerp(double a, double b, double t)
+{
+	return (1.0 - t) * a + t * b;
+}
 
 // Similar to lerp, but inverse.
-double tr_inverse_lerp(double a, double b, double v);
+inline double tr_inverse_lerp(double a, double b, double v)
+{
+	return (v - a) / (b - a);
+}
 
 // Converts a number from one scale to another
-double tr_remap(double v, double src_min, double src_max, double dst_min, double dst_max);
+inline double tr_remap(double v, double src_min, double src_max, double dst_min, double dst_max)
+{
+	return tr_lerp(dst_min, dst_max, tr_inverse_lerp(src_min, src_max, v));
+}
 
 #ifdef __cplusplus
 }

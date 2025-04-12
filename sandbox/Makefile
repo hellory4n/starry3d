@@ -13,17 +13,15 @@ INCLUDE = \
     -I$(STARRY3D)/src \
     -I$(STARRY3D)/vendor \
     -I$(STARRY3D)/vendor/libtrippin \
-    -I$(STARRY3D)/vendor/wgpu-native/include \
     -I$(STARRY3D)/vendor/glfw/include \
-    -I$(STARRY3D)/vendor/glfw3webgpu \
     \
     -Isrc
 
 # i put starry3d things first
 SRCS = \
     $(STARRY3D)/vendor/libtrippin/libtrippin.c \
-    $(STARRY3D)/vendor/glfw3webgpu/glfw3webgpu.c \
     $(STARRY3D)/src/st3d.c \
+    $(STARRY3D)/src/st3d_render.c \
     \
 	src/main.c
 
@@ -75,27 +73,25 @@ else
     RUNCMD = ./$(TARGET)
 endif
 
-# we need to copy the wgpu-native and glfw .dll/.so :D
+# i would put glfw as a submodule and then compile from source but
+# it uses cmake and cmake fucking sucks
 ifeq ($(OS),windows)
-    WGPUCOPYCMD = cp $(STARRY3D)/vendor/wgpu-native/bin/windows-x86_64/wgpu_native.dll wgpu_native.dll
     GLFWCOPYCMD = cp $(STARRY3D)/vendor/glfw/bin/windows-x86_64/glfw3.dll glfw3.dll
 else ifeq ($(OS),linux)
-    WGPUCOPYCMD = cp $(STARRY3D)/vendor/wgpu-native/bin/linux-x86_64/libwgpu_native.so libwgpu_native.so
     GLFWCOPYCMD = cp $(STARRY3D)/vendor/glfw/bin/linux-x86_64/libglfw.so.3.4 libglfw.so.3.4
 endif
 
 ifeq ($(OS),windows)
-    LDFLAGS += -lwgpu_native -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
+    LDFLAGS += -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
 else ifeq ($(OS),linux)
-    LDFLAGS += -lwgpu_native -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt
+    LDFLAGS += -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt
 endif
 
 # yeah
-# the glfw defines are for glfw3webgpu to work
 ifeq ($(OS),windows)
-    CFLAGS += -DST3D_WINDOWS -D_GLFW_WIN32
+    CFLAGS += -DST3D_WINDOWS
 else ifeq ($(OS),linux)
-    CFLAGS += -DST3D_LINUX -D_GLFW_X11 -D_GLFW_WAYLAND
+    CFLAGS += -DST3D_LINUX
 endif
 
 all: $(TARGET)
@@ -104,10 +100,10 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ && $(WGPUCOPYCMD) && $(GLFWCOPYCMD)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ && $(GLFWCOPYCMD)
 
 clean:
-	rm -f $(OBJS) $(TARGET) log.txt *wgpu* *glfw*
+	rm -f $(OBJS) $(TARGET) log.txt *glfw*
 
 run: $(TARGET)
 	$(RUNCMD)

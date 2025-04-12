@@ -1,22 +1,6 @@
-# starry3d
+# starry3d v0.3.0
 
-3d library thing. Optimized for voxel graphics (culling for each voxel, lighting implemented in the laziest way possible, idk it's not done)
-
-## man
-
-- [x] setup
-- [ ] windowing
-	- [ ] except i decided to deal with input later
-- [ ] get a square
-- [ ] get a cube (with perspective!)
-- [ ] get many cubes
-- [ ] bring back that esoteric path fuckery
-- [ ] load models
-- [ ] lighting
-- [ ] optimize optimize optimize
-- [ ] 2d and fonts because you need to draw UI too
-- [ ] audio (just use miniaudio lmao)
-- [ ] try compiling to more platforms (arm and mac ok maybe not mac) because i hate myself
+3D library for voxel graphics and other fancy bullshit.
 
 ## Usage
 
@@ -26,7 +10,7 @@ step 1 make project
 
 step 2 include starry3d as a subproject
 
-step 3 install opengl dependencies and shit
+step 3 install opengl/glfw dependencies and shit
 
 step 4 steal the makefile from the sandbox folder
 
@@ -35,3 +19,15 @@ step 5 change the makefile probably
 step 6 `make`
 
 step 7 profit
+
+## FAQ
+
+### Have you tried [game engine] you fucking moron
+
+No fuck off.
+
+### Why?
+
+Turns out raylib is giving me esoteric memory issues and it doesn't help that it intentionally avoids
+checks for esoteric memory issues. I would rather make my own graphics framework than debug that. Quite the
+pickle.
