@@ -355,8 +355,11 @@ void st3d_end_drawing(TrColor clear_color)
 	death.loadOp = WGPULoadOp_Clear;
 	death.storeOp = WGPUStoreOp_Store;
 	death.clearValue = (WGPUColor){clear_color.r / 255.0, clear_color.g / 255.0, clear_color.b / 255.0, clear_color.a / 255.0};
+
 	render_pass_desc.colorAttachmentCount = 1;
 	render_pass_desc.colorAttachments = &death;
+	render_pass_desc.depthStencilAttachment = NULL;
+	render_pass_desc.timestampWrites = NULL;
 
 	WGPURenderPassEncoder render_pass = wgpuCommandEncoderBeginRenderPass(encoder, &render_pass_desc);
 	wgpuRenderPassEncoderEnd(render_pass);
@@ -370,8 +373,8 @@ void st3d_end_drawing(TrColor clear_color)
 	wgpuCommandEncoderRelease(encoder);
 
 	wgpuQueueSubmit(queue, 1, &command);
-	wgpuCommandBufferRelease(command);
 
+	wgpuCommandBufferRelease(command);
 	wgpuTextureViewRelease(next.target_view);
 
 	wgpuDevicePoll(device, false, NULL);
