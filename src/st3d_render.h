@@ -1,18 +1,18 @@
-#ifndef _ST3D_RENDER_H
-#define _ST3D_RENDER_H
+#ifndef ST_ST3D_RENDER_H
+#define ST_ST3D_RENDER_H
 #include <libtrippin.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define ST3D_DEFAULT_VERTEX_SHADER                        \
-	"#version 330 core\n"                                 \
-	"layout (location = 0) in vec3 apos;"                 \
-	""                                                    \
-	"void main()"                                         \
-	"{"                                                   \
-	"	gl_Position = vec4(apos.x, apos.y, apos.z, 1.0);" \
+#define ST3D_DEFAULT_VERTEX_SHADER                     \
+	"#version 330 core\n"                              \
+	"layout (location = 0) in vec3 pos;"               \
+	""                                                 \
+	"void main()"                                      \
+	"{"                                                \
+	"	gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);" \
 	"}\n\0"
 
 #define ST3D_DEFAULT_FRAGMENT_SHADER               \
@@ -35,6 +35,10 @@ void st3d_begin_drawing(TrColor clear_color);
 // Does some fuckery that ends drawing.
 void st3d_end_drawing(void);
 
+// If true, everything is rendered in wireframe mode, which shows a bunch of lines instead of the
+// actual 3D objects.
+void st3d_set_wireframe(bool wireframe);
+
 // Shade deez nuts.
 typedef struct {
 	uint32_t program;
@@ -56,13 +60,14 @@ void st3d_shader_stop_using(void);
 typedef struct {
 	uint32_t vao;
 	uint32_t vbo;
-	// How many vertices the mesh has
-	int32_t vert_count;
+	uint32_t ebo;
+	// How many indices the mesh has
+	int32_t index_count;
 } St3dMesh;
 
 // Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
 // leave it false.
-St3dMesh st3d_mesh_new(TrSlice_float verts, bool readonly);
+St3dMesh st3d_mesh_new(TrSlice_float vertices, TrSlice_uint32 indices, bool readonly);
 
 // It frees the mesh.
 void st3d_mesh_free(St3dMesh mesh);
@@ -74,4 +79,4 @@ void st3d_mesh_draw(St3dMesh mesh);
 }
 #endif
 
-#endif
+#endif // ST_ST3D_RENDER_H

@@ -6,20 +6,21 @@
 #include "st3d_render.h"
 
 static St3dShader st3d_default_shader;
+static bool st3d_wireframe;
 
 void st3di_init_render(void)
 {
 	gladLoadGL(glfwGetProcAddress);
 
 	// opengl? i hardly know el
-	tr_liblog("GL vendor: %s", glGetString(GL_VENDOR));
-	tr_liblog("GL renderer: %s", glGetString(GL_RENDERER));
-	tr_liblog("GL version: %s", glGetString(GL_VERSION));
-	tr_liblog("GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	tr_liblog("- GL vendor: %s", glGetString(GL_VENDOR));
+	tr_liblog("- GL renderer: %s", glGetString(GL_RENDERER));
+	tr_liblog("- GL version: %s", glGetString(GL_VERSION));
+	tr_liblog("- GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-	const char* vertsrc = ST3D_DEFAULT_VERTEX_SHADER;
+	const char* verticesrc = ST3D_DEFAULT_VERTEX_SHADER;
 	const char* fragsrc = ST3D_DEFAULT_FRAGMENT_SHADER;
-	st3d_default_shader = st3d_shader_new(vertsrc, fragsrc);
+	st3d_default_shader = st3d_shader_new(verticesrc, fragsrc);
 }
 
 void st3di_free_render(void)
@@ -41,28 +42,38 @@ void st3d_end_drawing(void)
 	glfwSwapBuffers(st3d_get_window_handle());
 }
 
-St3dMesh st3d_mesh_new(TrSlice_float verts, bool readonly)
+St3dMesh st3d_mesh_new(TrSlice_float vertices, TrSlice_uint32 indices, bool readonly)
 {
 	St3dMesh mesh = {0};
-	mesh.vert_count = verts.length / 3;
+	mesh.index_count = indices.length;
 	glGenVertexArrays(1, &mesh.vao);
+	glBindVertexArray(mesh.vao);
 
 	// vbo
 	glGenBuffers(1, &mesh.vbo);
-	glBindVertexArray(mesh.vao);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 
 	if (readonly) {
-		glBufferData(GL_ARRAY_BUFFER, verts.length * sizeof(float),
-			verts.buffer, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, vertices.length * sizeof(float),
+			vertices.buffer, GL_STATIC_DRAW);
 	}
 	else {
-		glBufferData(GL_ARRAY_BUFFER, verts.length * sizeof(float),
-			verts.buffer, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, vertices.length * sizeof(float),
+			vertices.buffer, GL_DYNAMIC_DRAW);
 	}
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
 	glEnableVertexAttribArray(0);
+
+	// ebo
+	glGenBuffers(1, &mesh.ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+	if (readonly) {
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.length * sizeof(uint32_t), indices.buffer, GL_STATIC_DRAW);
+	}
+	else {
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.length * sizeof(uint32_t), indices.buffer, GL_DYNAMIC_DRAW);
+	}
 
 	// unbind vao
 	glBindVertexArray(0);
@@ -81,7 +92,12 @@ void st3d_mesh_free(St3dMesh mesh)
 void st3d_mesh_draw(St3dMesh mesh)
 {
 	glBindVertexArray(mesh.vao);
-	glDrawArrays(GL_TRIANGLES, 0, mesh.vert_count);
+	if (st3d_wireframe) {
+		glDrawElements(GL_LINE_LOOP, mesh.index_count, GL_UNSIGNED_INT, 0);
+	}
+	else {
+		glDrawElements(GL_TRIANGLES, mesh.index_count, GL_UNSIGNED_INT, 0);
+	}
 	// unbind vao
 	glBindVertexArray(0);
 }
@@ -143,4 +159,11 @@ void st3d_shader_free(St3dShader shader)
 void st3d_shader_use(St3dShader shader)
 {
 	glUseProgram(shader.program);
+}
+
+void st3d_set_wireframe(bool wireframe)
+{
+	// i would use glPolygonMode but it just doesn't work??
+	// it's actually used in st3d_mesh_draw
+	st3d_wireframe = wireframe;
 }
