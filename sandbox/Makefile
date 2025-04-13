@@ -14,6 +14,8 @@ INCLUDE = \
     -I$(STARRY3D)/vendor \
     -I$(STARRY3D)/vendor/libtrippin \
     -I$(STARRY3D)/vendor/glfw/include \
+    -I$(STARRY3D)/vendor/linmath \
+    -I$(STARRY3D)/vendor/stb \
     \
     -Isrc
 
