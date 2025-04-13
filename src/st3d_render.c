@@ -56,8 +56,12 @@ St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool re
 	glBufferData(GL_ARRAY_BUFFER, vertices->length * sizeof(float),
 		vertices->buffer, readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), 0);
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), NULL);
 	glEnableVertexAttribArray(0);
+	// color attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	// ebo
 	glGenBuffers(1, &mesh.ebo);

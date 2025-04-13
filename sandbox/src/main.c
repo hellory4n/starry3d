@@ -10,10 +10,11 @@ int main(void)
 	// ttriangel
 	TrSlice_float vertices;
 	TR_SET_SLICE(&arena, &vertices, float,
-		 0.5f,  0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		-0.5f, -0.5f, 0.0f,
-		-0.5f,  0.5f, 0.0f,
+		// vertices            // colors
+		 0.5f,  0.5f, 0.0f,    1.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f, 0.0f,    0.0f, 1.0f, 0.0f,
+		-0.5f, -0.5f, 0.0f,    0.0f, 0.0f, 1.0f,
+		-0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 0.0f,
 	);
 
 	TrSlice_uint32 indices;

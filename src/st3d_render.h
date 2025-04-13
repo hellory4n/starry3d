@@ -9,20 +9,26 @@ extern "C" {
 #define ST3D_DEFAULT_VERTEX_SHADER                     \
 	"#version 330 core\n"                              \
 	"layout (location = 0) in vec3 pos;"               \
+	"layout (location = 1) in vec3 color;"             \
+	""                                                 \
+	"out vec3 out_color;"                              \
 	""                                                 \
 	"void main()"                                      \
 	"{"                                                \
 	"	gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);" \
-	"}\n\0"
+	"	out_color = color;"                            \
+	"}"
 
 #define ST3D_DEFAULT_FRAGMENT_SHADER               \
 	"#version 330 core\n"                          \
+	"in vec3 out_color;"                           \
+	""                                             \
 	"out vec4 FragColor;"                          \
 	""                                             \
 	"void main()"                                  \
 	"{"                                            \
-	"	FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);" \
-	"}\n\0"
+	"	FragColor = vec4(out_color, 1.0f);"        \
+	"}"
 
 // INTERNAL
 void st3di_init_render(void);
