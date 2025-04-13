@@ -42,10 +42,10 @@ void st3d_end_drawing(void)
 	glfwSwapBuffers(st3d_get_window_handle());
 }
 
-St3dMesh st3d_mesh_new(TrSlice_float vertices, TrSlice_uint32 indices, bool readonly)
+St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly)
 {
 	St3dMesh mesh = {0};
-	mesh.index_count = indices.length;
+	mesh.index_count = indices->length;
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
 
@@ -53,32 +53,26 @@ St3dMesh st3d_mesh_new(TrSlice_float vertices, TrSlice_uint32 indices, bool read
 	glGenBuffers(1, &mesh.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 
-	if (readonly) {
-		glBufferData(GL_ARRAY_BUFFER, vertices.length * sizeof(float),
-			vertices.buffer, GL_STATIC_DRAW);
-	}
-	else {
-		glBufferData(GL_ARRAY_BUFFER, vertices.length * sizeof(float),
-			vertices.buffer, GL_DYNAMIC_DRAW);
-	}
+	glBufferData(GL_ARRAY_BUFFER, vertices->length * sizeof(float),
+		vertices->buffer, readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), 0);
 	glEnableVertexAttribArray(0);
 
 	// ebo
 	glGenBuffers(1, &mesh.ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
 	if (readonly) {
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.length * sizeof(uint32_t), indices.buffer, GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->length * sizeof(uint32_t), indices->buffer, GL_STATIC_DRAW);
 	}
 	else {
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.length * sizeof(uint32_t), indices.buffer, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->length * sizeof(uint32_t), indices->buffer, GL_DYNAMIC_DRAW);
 	}
 
 	// unbind vao
 	glBindVertexArray(0);
 
-	tr_liblog("uploaded mesh (vao %u)", mesh.vao);
+	tr_liblog("uploaded mesh (vao %u, vbo %u, ebo %u)", mesh.vao, mesh.vbo, mesh.ebo);
 	return mesh;
 }
 
@@ -92,6 +86,8 @@ void st3d_mesh_free(St3dMesh mesh)
 void st3d_mesh_draw(St3dMesh mesh)
 {
 	glBindVertexArray(mesh.vao);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 	if (st3d_wireframe) {
 		glDrawElements(GL_LINE_LOOP, mesh.index_count, GL_UNSIGNED_INT, 0);
 	}

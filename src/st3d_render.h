@@ -67,7 +67,7 @@ typedef struct {
 
 // Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
 // leave it false.
-St3dMesh st3d_mesh_new(TrSlice_float vertices, TrSlice_uint32 indices, bool readonly);
+St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly);
 
 // It frees the mesh.
 void st3d_mesh_free(St3dMesh mesh);

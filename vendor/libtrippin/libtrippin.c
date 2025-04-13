@@ -211,56 +211,57 @@ TrArena tr_arena_new(size_t size)
 	return arena;
 }
 
-void tr_arena_free(TrArena arena)
+void tr_arena_free(TrArena* arena)
 {
-	free(arena.buffer);
+	free(arena->buffer);
 }
 
-void* tr_arena_alloc(TrArena arena, size_t size)
+void* tr_arena_alloc(TrArena* arena, size_t size)
 {
 	// it's gonna segfault anyway
 	// might as well complain instead of mysteriously dying
-	size_t end = (size_t)arena.alloc_pos + size;
-	if (end > arena.size) {
+	size_t end = (size_t)arena->alloc_pos + size;
+	if (end > arena->size) {
 		tr_panic("arena allocation out of bounds");
 	}
 
-	void* data = (void*)((uint8_t*)arena.buffer + arena.alloc_pos);
+	void* data = (void*)((uint8_t*)arena->buffer + arena->alloc_pos);
+	arena->alloc_pos += size;
 	return data;
 }
 
-TrSlice tr_slice_new(TrArena arena, size_t length, size_t elem_size)
+TrSlice tr_slice_new(TrArena* arena, size_t length, size_t elem_size)
 {
 	TrSlice slicema = {.length = length, .elem_size = elem_size};
 	slicema.buffer = tr_arena_alloc(arena, length * elem_size);
 	return slicema;
 }
 
-void* tr_slice_at(TrSlice slice, size_t idx)
+void* tr_slice_at(TrSlice* slice, size_t idx)
 {
-	if (idx >= slice.length) {
+	if (idx >= slice->length) {
 		tr_panic("index out of range: %zu", idx);
 	}
 
-	size_t offset = slice.elem_size * idx;
-	return (void*)((char*)slice.buffer + offset);
+	size_t offset = slice->elem_size * idx;
+	return (void*)((char*)slice->buffer + offset);
 }
 
-TrSlice2D tr_slice2d_new(TrArena arena, size_t width, size_t height, size_t elem_size)
+TrSlice2D tr_slice2d_new(TrArena* arena, size_t width, size_t height, size_t elem_size)
 {
 	TrSlice2D slicema = {.elem_size = elem_size, .width = width, .height = height};
 	slicema.buffer = tr_arena_alloc(arena, width * height * elem_size);
 	return slicema;
 }
 
-void* tr_slice2d_at(TrSlice2D slice, size_t x, size_t y)
+void* tr_slice2d_at(TrSlice2D* slice, size_t x, size_t y)
 {
-	if (x >= slice.width || y >= slice.height) {
+	if (x >= slice->width || y >= slice->height) {
 		tr_panic("index out of range: %zu, %zu", x, y);
 	}
 
-	size_t offset = slice.elem_size * (slice.width * x + y);
-	return (void*)((char*)slice.buffer + offset);
+	size_t offset = slice->elem_size * (slice->width * x + y);
+	return (void*)((char*)slice->buffer + offset);
 }
 
 TrRand* tr_default_rand(void)

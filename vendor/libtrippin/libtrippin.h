@@ -60,10 +60,10 @@ typedef struct {
 TrArena tr_arena_new(size_t size);
 
 // Frees the arena and everything inside it.
-void tr_arena_free(TrArena arena);
+void tr_arena_free(TrArena* arena);
 
 // Allocates space in the arena.
-void* tr_arena_alloc(TrArena arena, size_t size);
+void* tr_arena_alloc(TrArena* arena, size_t size);
 
 // vectors
 
@@ -195,11 +195,11 @@ typedef struct {
 
 // Creates a new slice in an arena. The element size is supposed to be used with sizeof,
 // e.g. sizeof(int) for a slice of ints.
-TrSlice tr_slice_new(TrArena arena, size_t length, size_t elem_size);
+TrSlice tr_slice_new(TrArena* arena, size_t length, size_t elem_size);
 
 // Gets the element at the specified index. Note this returns a pointer to the element so this is
 // also how you change elements.
-void* tr_slice_at(TrSlice slice, size_t idx);
+void* tr_slice_at(TrSlice* slice, size_t idx);
 
 // slice but 2d lmao
 typedef struct {
@@ -211,11 +211,11 @@ typedef struct {
 
 // Creates a new 2D slice in an arena. The element size is supposed to be used with sizeof,
 // e.g. sizeof(int) for a slice of ints.
-TrSlice2D tr_slice2d_new(TrArena arena, size_t width, size_t height, size_t elem_size);
+TrSlice2D tr_slice2d_new(TrArena* arena, size_t width, size_t height, size_t elem_size);
 
 // Gets the element at the specified index. Note this returns a pointer to the element so this is
 // also how you change elements.
-void* tr_slice2d_at(TrSlice2D slice, size_t x, size_t y);
+void* tr_slice2d_at(TrSlice2D* slice, size_t x, size_t y);
 
 // these aren't really necessary, it's just for clarity
 typedef TrSlice TrSlice_int64;
