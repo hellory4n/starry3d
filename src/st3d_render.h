@@ -9,10 +9,10 @@ extern "C" {
 #define ST3D_DEFAULT_VERTEX_SHADER                     \
 	"#version 330 core\n"                              \
 	"layout (location = 0) in vec3 pos;"               \
-	"layout (location = 1) in vec3 color;"             \
+	"layout (location = 1) in vec4 color;"             \
 	"layout (location = 2) in vec2 texcoord;"          \
 	""                                                 \
-	"out vec3 out_color;"                              \
+	"out vec4 out_color;"                              \
 	"out vec2 TexCoord;"                               \
 	""                                                 \
 	"void main()"                                      \
@@ -24,7 +24,7 @@ extern "C" {
 
 #define ST3D_DEFAULT_FRAGMENT_SHADER               \
 	"#version 330 core\n"                          \
-	"in vec3 out_color;"                           \
+	"in vec4 out_color;"                           \
 	"in vec2 TexCoord;"                            \
 	""                                             \
 	"out vec4 FragColor;"                          \
@@ -33,7 +33,7 @@ extern "C" {
 	""                                             \
 	"void main()"                                  \
 	"{"                                            \
-	"	FragColor = texture(tex, TexCoord) * vec4(out_color, 1.0);" \
+	"	FragColor = texture(tex, TexCoord) * out_color;" \
 	"}"
 
 // INTERNAL
