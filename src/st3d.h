@@ -9,6 +9,10 @@ extern "C" {
 // starry3d version :D
 #define ST3D_VERSION "v0.2.0"
 
+// Euler rotation in degrees
+// TODO move into libtrippin
+typedef TrVec3f TrRotation;
+
 // Initializes the engine and all of its subsystems
 void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t height);
 

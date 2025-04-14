@@ -1,6 +1,7 @@
 #ifndef ST_ST3D_RENDER_H
 #define ST_ST3D_RENDER_H
 #include <libtrippin.h>
+#include "st3d.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,9 +16,11 @@ extern "C" {
 	"out vec4 out_color;"                              \
 	"out vec2 TexCoord;"                               \
 	""                                                 \
+	"uniform mat4 transform;"                          \
+	""                                                 \
 	"void main()"                                      \
 	"{"                                                \
-	"	gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);" \
+	"	gl_Position = transform * vec4(pos, 1.0);"     \
 	"	out_color = color;"                            \
 	"	TexCoord = texcoord;"                          \
 	"}"
@@ -101,6 +104,10 @@ void st3d_shader_set_vec4f(St3dShader shader, const char* name, TrVec4f val);
 // OpenGL works.
 void st3d_shader_set_vec4i(St3dShader shader, const char* name, TrVec4i val);
 
+// Sets the uniform to a 4x4 matrix of floats value. This takes in an array of floats because
+// I don't care anymore.
+void st3d_shader_set_mat4x4f(St3dShader shader, const char* name, float* val);
+
 // Image on the GPU and stuff.
 typedef struct {
 	uint32_t id;
@@ -133,7 +140,7 @@ St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool re
 void st3d_mesh_free(St3dMesh mesh);
 
 // Draws a mesh.
-void st3d_mesh_draw(St3dMesh mesh);
+void st3d_mesh_draw(St3dMesh mesh, TrVec3f position, TrRotation rotation, TrVec3f scale);
 
 #ifdef __cplusplus
 }

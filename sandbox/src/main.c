@@ -4,7 +4,7 @@
 
 int main(void)
 {
-	st3d_init("sandbox", "assets", 640, 640);
+	st3d_init("sandbox", "assets", 800, 600);
 	TrArena arena = tr_arena_new(TR_MB(1));
 
 	// ttriangel
@@ -30,7 +30,7 @@ int main(void)
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing(TR_BLACK);
 
-		st3d_mesh_draw(mtriranfgs);
+		st3d_mesh_draw(mtriranfgs, (TrVec3f){-0.5, 0.5, 0}, (TrRotation){65, 65, 65}, (TrVec3f){2, 1, 1});
 
 		st3d_end_drawing();
 		st3d_poll_events();

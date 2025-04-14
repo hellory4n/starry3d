@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <linmath.h>
 #include <libtrippin.h>
 #include "st3d.h"
 #include "st3d_render.h"
@@ -20,9 +21,9 @@ void st3di_init_render(void)
 	tr_liblog("- GL version: %s", glGetString(GL_VERSION));
 	tr_liblog("- GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-	const char* verticesrc = ST3D_DEFAULT_VERTEX_SHADER;
+	const char* vertsrc = ST3D_DEFAULT_VERTEX_SHADER;
 	const char* fragsrc = ST3D_DEFAULT_FRAGMENT_SHADER;
-	st3d_default_shader = st3d_shader_new(verticesrc, fragsrc);
+	st3d_default_shader = st3d_shader_new(vertsrc, fragsrc);
 
 	// we're not australian
 	// get it get it get it get it
@@ -57,6 +58,7 @@ St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool re
 {
 	St3dMesh mesh = {0};
 	mesh.index_count = indices->length;
+
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
 
@@ -98,14 +100,59 @@ void st3d_mesh_free(St3dMesh mesh)
 {
 	glDeleteVertexArrays(1, &mesh.vao);
 	glDeleteBuffers(1, &mesh.vbo);
+	glDeleteBuffers(1, &mesh.ebo);
 	tr_liblog("freed mesh (vao %u)", mesh.vao);
 }
 
-void st3d_mesh_draw(St3dMesh mesh)
+void st3d_mesh_draw(St3dMesh mesh, TrVec3f position, TrRotation rotation, TrVec3f scale)
 {
+	// TODO make a separate function that just takes in the matrix
+	// and then another function that handles this matrix faffery
+	// TODO this is a voxel engine, we're not gonna be calculating
+	// scale and rotation that often
+
+	// matrix faffery :D
+	mat4x4 transform;
+	mat4x4_identity(transform);
+
+	mat4x4 rx, ry, rz, rotation_matrix;
+	mat4x4_identity(rx);
+	mat4x4_identity(ry);
+	mat4x4_identity(rz);
+
+	mat4x4_rotate_X(rx, rx, tr_deg2rad(rotation.x));
+	mat4x4_rotate_Y(ry, ry, tr_deg2rad(rotation.y));
+	mat4x4_rotate_Z(rz, rz, tr_deg2rad(rotation.z));
+
+	mat4x4 tmp1;
+	mat4x4_mul(tmp1, ry, rx);
+	mat4x4_mul(rotation_matrix, rz, tmp1);
+
+	mat4x4 scale_matrix;
+	mat4x4_identity(scale_matrix);
+	scale_matrix[0][0] = scale.x;
+	scale_matrix[1][1] = scale.y;
+	scale_matrix[2][2] = scale.z;
+
+	mat4x4 translation_matrix;
+	mat4x4_identity(translation_matrix);
+	translation_matrix[3][0] = position.x;
+	translation_matrix[3][1] = position.y;
+	translation_matrix[3][2] = position.z;
+
+	mat4x4 tmp2;
+	mat4x4_mul(tmp2, rotation_matrix, scale_matrix);
+	mat4x4_mul(transform, translation_matrix, tmp2);
+
+	// TODO idk if this is gonna work if you have your own shaders
+	// engines are hard.
+	st3d_shader_set_mat4x4f(st3d_default_shader, "transform", (float*)transform);
+
 	// 0 means no texture
 	// because i didn't want to use a pointer just to have null
 	if (mesh.texture.id != 0) {
+		// doing this glActiveTexture crap is required on some drivers i think
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, mesh.texture.id);
 	}
 
@@ -224,6 +271,11 @@ void st3d_shader_set_vec4f(St3dShader shader, const char* name, TrVec4f val)
 void st3d_shader_set_vec4i(St3dShader shader, const char* name, TrVec4i val)
 {
 	glUniform4i(glGetUniformLocation(shader.program, name), val.x, val.y, val.z, val.w);
+}
+
+void st3d_shader_set_mat4x4f(St3dShader shader, const char* name, float* val)
+{
+	glUniformMatrix4fv(glGetUniformLocation(shader.program, name), 1, false, val);
 }
 
 void st3d_set_wireframe(bool wireframe)
