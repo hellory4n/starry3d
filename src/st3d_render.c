@@ -11,6 +11,12 @@
 static St3dShader st3d_default_shader;
 static bool st3d_wireframe;
 
+static TrVec3f st3d_cam_pos;
+static TrRotation st3d_cam_rot;
+static float st3d_cam_fov;
+// x is near, y is far
+static TrVec2f st3d_cam_nearfar;
+
 void st3di_init_render(void)
 {
 	gladLoadGL(glfwGetProcAddress);
@@ -52,6 +58,26 @@ void st3d_begin_drawing(TrColor clear_color)
 void st3d_end_drawing(void)
 {
 	glfwSwapBuffers(st3d_get_window_handle());
+}
+
+void st3d_set_camera_position(TrVec3f pos)
+{
+	st3d_cam_pos = pos;
+}
+
+void st3d_set_camera_rotation(TrRotation rot)
+{
+	st3d_cam_rot = rot;
+}
+
+void st3d_set_camera_fov(float fov)
+{
+	st3d_cam_fov = fov;
+}
+
+void st3d_set_camera_near_far(float near, float far)
+{
+	st3d_cam_nearfar = (TrVec2f){near, far};
 }
 
 St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly)
@@ -104,49 +130,60 @@ void st3d_mesh_free(St3dMesh mesh)
 	tr_liblog("freed mesh (vao %u)", mesh.vao);
 }
 
-void st3d_mesh_draw(St3dMesh mesh, TrVec3f position, TrRotation rotation, TrVec3f scale)
+void st3d_mesh_draw(St3dMesh mesh, TrVec3f pos, TrRotation rot)
 {
-	// TODO make a separate function that just takes in the matrix
-	// and then another function that handles this matrix faffery
-	// TODO this is a voxel engine, we're not gonna be calculating
-	// scale and rotation that often
+	// world space
+	mat4x4 translation;
+	mat4x4_identity(translation);
+	mat4x4_translate(translation, pos.x, pos.y, pos.z);
 
-	// matrix faffery :D
-	mat4x4 transform;
-	mat4x4_identity(transform);
-
-	mat4x4 rx, ry, rz, rotation_matrix;
+	// rotation
+	mat4x4 rx, ry, rz, rotation;
 	mat4x4_identity(rx);
 	mat4x4_identity(ry);
 	mat4x4_identity(rz);
 
-	mat4x4_rotate_X(rx, rx, tr_deg2rad(rotation.x));
-	mat4x4_rotate_Y(ry, ry, tr_deg2rad(rotation.y));
-	mat4x4_rotate_Z(rz, rz, tr_deg2rad(rotation.z));
+	mat4x4_rotate_X(rx, rx, rot.x);
+	mat4x4_rotate_Y(ry, ry, rot.y);
+	mat4x4_rotate_Z(rz, rz, rot.z);
 
 	mat4x4 tmp1;
 	mat4x4_mul(tmp1, ry, rx);
-	mat4x4_mul(rotation_matrix, rz, tmp1);
+	mat4x4_mul(rotation, rz, tmp1);
 
-	mat4x4 scale_matrix;
-	mat4x4_identity(scale_matrix);
-	scale_matrix[0][0] = scale.x;
-	scale_matrix[1][1] = scale.y;
-	scale_matrix[2][2] = scale.z;
+	// combine translation and rotation
+	mat4x4 model;
+	mat4x4_mul(translation, translation, rotation);
 
-	mat4x4 translation_matrix;
-	mat4x4_identity(translation_matrix);
-	translation_matrix[3][0] = position.x;
-	translation_matrix[3][1] = position.y;
-	translation_matrix[3][2] = position.z;
+	// camera
+	mat4x4 view;
+	mat4x4_identity(view);
+	// TODO maybe i have to negate that?
+	mat4x4_translate(view, st3d_cam_pos.x, st3d_cam_pos.y, st3d_cam_pos.z);
+
+	mat4x4 view_rx, view_ry, view_rz, view_rot;
+	mat4x4_identity(view_rx);
+	mat4x4_identity(view_ry);
+	mat4x4_identity(view_rz);
+
+	mat4x4_rotate_X(view_rx, view_rx, tr_deg2rad(st3d_cam_rot.x));
+	mat4x4_rotate_Y(view_ry, view_ry, tr_deg2rad(st3d_cam_rot.y));
+	mat4x4_rotate_Z(view_rz, view_rz, tr_deg2rad(st3d_cam_rot.z));
 
 	mat4x4 tmp2;
-	mat4x4_mul(tmp2, rotation_matrix, scale_matrix);
-	mat4x4_mul(transform, translation_matrix, tmp2);
+	mat4x4_mul(tmp2, view_ry, view_rx);
+	mat4x4_mul(view_rot, view_rz, tmp2);
 
-	// TODO idk if this is gonna work if you have your own shaders
-	// engines are hard.
-	st3d_shader_set_mat4x4f(st3d_default_shader, "transform", (float*)transform);
+	// project deez
+	TrVec2i winsize = st3d_window_size();
+	mat4x4 projection;
+	mat4x4_perspective(projection, st3d_cam_fov, (float)winsize.x / winsize.y, st3d_cam_nearfar.x,
+		st3d_cam_nearfar.y);
+
+	// actually render
+	st3d_shader_set_mat4x4f(st3d_default_shader, "model", (float*)model);
+	st3d_shader_set_mat4x4f(st3d_default_shader, "view", (float*)view);
+	st3d_shader_set_mat4x4f(st3d_default_shader, "projection", (float*)projection);
 
 	// 0 means no texture
 	// because i didn't want to use a pointer just to have null

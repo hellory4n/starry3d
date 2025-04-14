@@ -1,15 +1,17 @@
-#include <GL/gl.h>
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <libtrippin.h>
 #include "st3d.h"
 #include "st3d_render.h"
 
 static GLFWwindow* tr_window;
+static TrVec2i tr_winsize;
 
 static void on_framebuffer_resize(GLFWwindow* window, int width, int height)
 {
 	(void)window;
 	glViewport(0, 0, width, height);
+	tr_winsize = (TrVec2i){width, height};
 }
 
 static void on_error(int error_code, const char* description)
@@ -91,4 +93,9 @@ void st3d_close(void)
 bool st3d_is_closing(void)
 {
 	return glfwWindowShouldClose(tr_window);
+}
+
+TrVec2i st3d_window_size(void)
+{
+	return tr_winsize;
 }

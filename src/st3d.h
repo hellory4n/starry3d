@@ -31,6 +31,9 @@ void st3d_poll_events(void);
 // Returns the internal window handle. This is just a `GLFWwindow*` because we only use GLFW.
 void* st3d_get_window_handle(void);
 
+// Returns the window size.
+TrVec2i st3d_window_size(void);
+
 #ifdef __cplusplus
 }
 #endif

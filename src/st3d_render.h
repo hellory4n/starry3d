@@ -1,5 +1,5 @@
-#ifndef ST_ST3D_RENDER_H
-#define ST_ST3D_RENDER_H
+#ifndef _ST3D_RENDER_H
+#define _ST3D_RENDER_H
 #include <libtrippin.h>
 #include "st3d.h"
 
@@ -7,22 +7,24 @@
 extern "C" {
 #endif
 
-#define ST3D_DEFAULT_VERTEX_SHADER                     \
-	"#version 330 core\n"                              \
-	"layout (location = 0) in vec3 pos;"               \
-	"layout (location = 1) in vec4 color;"             \
-	"layout (location = 2) in vec2 texcoord;"          \
-	""                                                 \
-	"out vec4 out_color;"                              \
-	"out vec2 TexCoord;"                               \
-	""                                                 \
-	"uniform mat4 transform;"                          \
-	""                                                 \
-	"void main()"                                      \
-	"{"                                                \
-	"	gl_Position = transform * vec4(pos, 1.0);"     \
-	"	out_color = color;"                            \
-	"	TexCoord = texcoord;"                          \
+#define ST3D_DEFAULT_VERTEX_SHADER                                 \
+	"#version 330 core\n"                                          \
+	"layout (location = 0) in vec3 pos;"                           \
+	"layout (location = 1) in vec4 color;"                         \
+	"layout (location = 2) in vec2 texcoord;"                      \
+	""                                                             \
+	"out vec4 out_color;"                                          \
+	"out vec2 TexCoord;"                                           \
+	""                                                             \
+	"uniform mat4 model;"                                          \
+	"uniform mat4 view;"                                           \
+	"uniform mat4 projection;"                                     \
+	""                                                             \
+	"void main()"                                                  \
+	"{"                                                            \
+	"	gl_Position = projection * view * model * vec4(pos, 1.0);" \
+	"	out_color = color;"                                        \
+	"	TexCoord = texcoord;"                                      \
 	"}"
 
 #define ST3D_DEFAULT_FRAGMENT_SHADER               \
@@ -139,11 +141,23 @@ St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool re
 // It frees the mesh.
 void st3d_mesh_free(St3dMesh mesh);
 
-// Draws a mesh.
-void st3d_mesh_draw(St3dMesh mesh, TrVec3f position, TrRotation rotation, TrVec3f scale);
+// Draws a mesh using all of the fancy math so it eventually becomes 3D.
+void st3d_mesh_draw(St3dMesh mesh, TrVec3f pos, TrRotation rot);
+
+// As the name implies, it sets the camera position.
+void st3d_set_camera_position(TrVec3f pos);
+
+// As the name implies, it sets the camera rotation.
+void st3d_set_camera_rotation(TrRotation rot);
+
+// As the name implies, it sets the camera field of view.
+void st3d_set_camera_fov(float fov);
+
+// Near and far sets how close/far you can look before the renderer gives up
+void st3d_set_camera_near_far(float near, float far);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // ST_ST3D_RENDER_H
+#endif
