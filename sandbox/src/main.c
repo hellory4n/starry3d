@@ -10,11 +10,11 @@ int main(void)
 	// ttriangel
 	TrSlice_float vertices;
 	TR_SET_SLICE(&arena, &vertices, float,
-		// vertices            // colors
-		 0.5f,  0.5f, 0.0f,    1.0f, 0.0f, 0.0f,
-		 0.5f, -0.5f, 0.0f,    0.0f, 1.0f, 0.0f,
-		-0.5f, -0.5f, 0.0f,    0.0f, 0.0f, 1.0f,
-		-0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 0.0f,
+		// vertices            // colors            // texcoords
+		 0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 1.0f,
+		 0.5f, -0.5f, 0.0f,    1.0f, 1.0f, 1.0f,    1.0f, 0.0f,
+		-0.5f, -0.5f, 0.0f,    1.0f, 1.0f, 1.0f,    0.0f, 0.0f,
+		-0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 1.0f,    0.0f, 1.0f,
 	);
 
 	TrSlice_uint32 indices;
@@ -24,6 +24,7 @@ int main(void)
 	);
 
 	St3dMesh mtriranfgs = st3d_mesh_new(&vertices, &indices, true);
+	mtriranfgs.texture = st3d_texture_new("assets/enough_fckery.jpg");
 	// st3d_set_wireframe(true);
 
 	while (!st3d_is_closing()) {
@@ -34,5 +35,8 @@ int main(void)
 		st3d_end_drawing();
 		st3d_poll_events();
 	}
+
+	st3d_texture_free(mtriranfgs.texture);
+	st3d_mesh_free(mtriranfgs);
 	st3d_free();
 }
