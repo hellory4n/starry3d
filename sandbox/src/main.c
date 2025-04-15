@@ -1,6 +1,7 @@
 #include <libtrippin.h>
-#include <st3d_render.h>
 #include <st3d.h>
+#include <st3d_render.h>
+#include <st3d_imgui.h>
 
 int main(void)
 {
@@ -32,14 +33,26 @@ int main(void)
 	// st3d_set_camera_position((TrVec3f){0, 0, -3});
 	// st3d_set_camera_rotation((TrRotation){-55, 0, 0});
 
+	st3d_imgui_new();
+	bool demo_window;
+
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing(tr_hex_rgb(0x550877));
 
 		st3d_mesh_draw_2d(mtriranfgs, (TrVec2f){200, 200});
 
+		// imgui calls go inside here
+		st3d_imgui_begin(); {
+			if (demo_window) {
+				igShowDemoWindow(&demo_window);
+			}
+		} st3d_imgui_end();
+
 		st3d_end_drawing();
 		st3d_poll_events();
 	}
+
+	st3d_imgui_free();
 
 	st3d_texture_free(mtriranfgs.texture);
 	st3d_mesh_free(mtriranfgs);

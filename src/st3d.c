@@ -49,6 +49,7 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 	tr_window = glfwCreateWindow(width, height, app, NULL, NULL);
 	tr_assert(tr_window != NULL, "couldn't create window");
 	glfwMakeContextCurrent(tr_window);
+	glfwSwapInterval(1);
 
 	// callbacks
 	glfwSetFramebufferSizeCallback(tr_window, on_framebuffer_resize);

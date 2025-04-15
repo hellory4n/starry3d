@@ -16,6 +16,7 @@ INCLUDE = \
     -I$(STARRY3D)/vendor/glfw/include \
     -I$(STARRY3D)/vendor/linmath \
     -I$(STARRY3D)/vendor/stb \
+    -I$(STARRY3D)/vendor/cimgui/include \
     \
     -Isrc
 
@@ -24,6 +25,7 @@ SRCS = \
     $(STARRY3D)/vendor/libtrippin/libtrippin.c \
     $(STARRY3D)/src/st3d.c \
     $(STARRY3D)/src/st3d_render.c \
+    $(STARRY3D)/src/st3d_imgui.c \
     \
 	src/main.c
 
@@ -79,9 +81,11 @@ endif
 # also we need to copy pthread for the windows version to work lmao
 ifeq ($(OS),windows)
     COPYCMDS = cp $(STARRY3D)/vendor/glfw/bin/windows-x86_64/glfw3.dll glfw3.dll && \
+               cp $(STARRY3D)/vendor/cimgui/bin/windows/x86_64/cimgui.dll cimgui.dll && \
                cp /usr/x86_64-w64-mingw32/sys-root/mingw/bin/libwinpthread-1.dll libwinpthread-1.dll
 else ifeq ($(OS),linux)
-    COPYCMDS = cp $(STARRY3D)/vendor/glfw/bin/linux-x86_64/libglfw.so.3.4 libglfw.so.3.4
+    COPYCMDS = cp $(STARRY3D)/vendor/glfw/bin/linux-x86_64/libglfw.so.3.4 libglfw.so.3.4 && \
+               cp $(STARRY3D)/vendor/cimgui/bin/linux-x86_64/libcimgui.so libcimgui.so
 endif
 
 ifeq ($(OS),windows)
@@ -106,7 +110,7 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ && $(COPYCMDS)
 
 clean:
-	rm -f $(OBJS) $(TARGET) log.txt *glfw* libwinpthread-1.dll
+	rm -f $(OBJS) $(TARGET) log.txt *glfw* libwinpthread-1.dll *cimgui*
 
 run: $(TARGET)
 	$(RUNCMD)
