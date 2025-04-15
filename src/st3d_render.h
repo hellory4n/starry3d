@@ -38,6 +38,11 @@ extern "C" {
 	"	FragColor = texture(u_texture, TexCoord) * out_color;" \
 	"}"
 
+#define ST3D_2D_LEFT 0
+#define ST3D_2D_RIGHT 1280
+#define ST3D_2D_TOP 0
+#define ST3D_2D_BOTTOM 720
+
 // INTERNAL
 void st3di_init_render(void);
 // INTERNAL
@@ -139,6 +144,9 @@ void st3d_mesh_free(St3dMesh mesh);
 
 // Draws a mesh with a transform thingy.
 void st3d_mesh_draw_transform(St3dMesh mesh, float* transform);
+
+// Draws a mesh in 2D using an orthographic projection.
+void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos);
 
 #ifdef __cplusplus
 }

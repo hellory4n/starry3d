@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <linmath.h>
 #include <libtrippin.h>
 #include "st3d.h"
 #include "st3d_render.h"
@@ -26,7 +27,8 @@ void st3di_init_render(void)
 
 	// we're not australian
 	// get it get it get it get it
-	stbi_set_flip_vertically_on_load(true);
+	// disabled bcuz it gets unflipped in the transformations apparently
+	// stbi_set_flip_vertically_on_load(true);
 
 	// transparency
 	// TODO being able to set the blending modes would be cool
@@ -127,6 +129,22 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* transform)
 	}
 	// unbind vao
 	glBindVertexArray(0);
+}
+
+void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos)
+{
+	mat4x4 model;
+	mat4x4_identity(model);
+	mat4x4_translate(model, pos.x, pos.y, 0);
+
+	mat4x4 proj;
+	mat4x4_ortho(proj, ST3D_2D_LEFT, ST3D_2D_RIGHT, ST3D_2D_BOTTOM, ST3D_2D_TOP, 1.0f, -1.0f);
+
+	mat4x4 mvp;
+	mat4x4_identity(mvp);
+	mat4x4_mul(mvp, proj, model);
+
+	st3d_mesh_draw_transform(mesh, (float*)mvp);
 }
 
 static void check_shader(uint32_t obj)

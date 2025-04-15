@@ -1,7 +1,6 @@
 #include <libtrippin.h>
 #include <st3d_render.h>
 #include <st3d.h>
-#include <linmath.h>
 
 int main(void)
 {
@@ -12,10 +11,10 @@ int main(void)
 	TrSlice_float vertices;
 	TR_SET_SLICE(&arena, &vertices, float,
 		// vertices            // colors                  // texcoords
-	     0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f,    1.0f, 1.0f,
-		 0.5f, -0.5f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f,
-		-0.5f, -0.5f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f,
-		-0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f,    0.0f, 1.0f,
+	     100.0f,  100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f,    1.0f, 1.0f,
+		 100.0f, -100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f,
+		-100.0f, -100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f,
+		-100.0f,  100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f,    0.0f, 1.0f,
 	);
 
 	TrSlice_uint32 indices;
@@ -34,11 +33,9 @@ int main(void)
 	// st3d_set_camera_rotation((TrRotation){-55, 0, 0});
 
 	while (!st3d_is_closing()) {
-		st3d_begin_drawing(TR_BLACK);
+		st3d_begin_drawing(tr_hex_rgb(0x550877));
 
-		mat4x4 damn;
-		mat4x4_identity(damn);
-		st3d_mesh_draw_transform(mtriranfgs, (float*)damn);
+		st3d_mesh_draw_2d(mtriranfgs, (TrVec2f){100, 100});
 
 		st3d_end_drawing();
 		st3d_poll_events();
