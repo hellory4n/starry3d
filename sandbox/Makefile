@@ -75,16 +75,17 @@ else
     RUNCMD = ./$(TARGET)
 endif
 
-# i would put glfw as a submodule and then compile from source but
-# it uses cmake and cmake fucking sucks
+# i don't want to setup the build system to compile everything from source
+# also we need to copy pthread for the windows version to work lmao
 ifeq ($(OS),windows)
-    GLFWCOPYCMD = cp $(STARRY3D)/vendor/glfw/bin/windows-x86_64/glfw3.dll glfw3.dll
+    COPYCMDS = cp $(STARRY3D)/vendor/glfw/bin/windows-x86_64/glfw3.dll glfw3.dll && \
+               cp /usr/x86_64-w64-mingw32/sys-root/mingw/bin/libwinpthread-1.dll libwinpthread-1.dll
 else ifeq ($(OS),linux)
-    GLFWCOPYCMD = cp $(STARRY3D)/vendor/glfw/bin/linux-x86_64/libglfw.so.3.4 libglfw.so.3.4
+    COPYCMDS = cp $(STARRY3D)/vendor/glfw/bin/linux-x86_64/libglfw.so.3.4 libglfw.so.3.4
 endif
 
 ifeq ($(OS),windows)
-    LDFLAGS += -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32
+    LDFLAGS += -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lpthread
 else ifeq ($(OS),linux)
     LDFLAGS += -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt
 endif
@@ -102,10 +103,10 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ && $(GLFWCOPYCMD)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ && $(COPYCMDS)
 
 clean:
-	rm -f $(OBJS) $(TARGET) log.txt *glfw*
+	rm -f $(OBJS) $(TARGET) log.txt *glfw* libwinpthread-1.dll
 
 run: $(TARGET)
 	$(RUNCMD)
