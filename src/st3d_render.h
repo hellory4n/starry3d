@@ -1,51 +1,40 @@
 #ifndef _ST3D_RENDER_H
 #define _ST3D_RENDER_H
 #include <libtrippin.h>
-#include "st3d.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define ST3D_DEFAULT_VERTEX_SHADER                                       \
-	"#version 330 core\n"                                                \
-	"layout (location = 0) in vec3 pos;"                                 \
-	"layout (location = 1) in vec4 color;"                               \
-	"layout (location = 2) in vec2 texcoord;"                            \
-	""                                                                   \
-	"out vec4 out_color;"                                                \
-	"out vec2 TexCoord;"                                                 \
-	""                                                                   \
-	"uniform mat4 u_model;"                                              \
-	"uniform mat4 u_view;"                                               \
-	"uniform mat4 u_projection;"                                         \
-	""                                                                   \
-	"void main()"                                                        \
-	"{"                                                                  \
-	"	gl_Position = vec4(pos, 1.0);" \
-	"	out_color = color;"                                              \
-	"	TexCoord = texcoord;"                                            \
+#define ST3D_DEFAULT_VERTEX_SHADER                     \
+	"#version 330 core\n"                              \
+	"layout (location = 0) in vec3 pos;"               \
+	"layout (location = 1) in vec4 color;"             \
+	"layout (location = 2) in vec2 texcoord;"          \
+	""                                                 \
+	"out vec4 out_color;"                              \
+	"out vec2 TexCoord;"                               \
+	""                                                 \
+	"void main()"                                      \
+	"{"                                                \
+	"	gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);" \
+	"	out_color = color;"                            \
+	"	TexCoord = texcoord;"                          \
 	"}"
 
-#define ST3D_DEFAULT_FRAGMENT_SHADER                           \
-	"#version 330 core\n"                                      \
-	"in vec4 out_color;"                                       \
-	"in vec2 TexCoord;"                                        \
-	""                                                         \
-	"out vec4 FragColor;"                                      \
-	""                                                         \
-	"uniform sampler2D u_texture;"                             \
-	""                                                         \
-	"void main()"                                              \
-	"{"                                                        \
-	"	FragColor = texture(u_texture, TexCoord) * out_color;" \
+#define ST3D_DEFAULT_FRAGMENT_SHADER               \
+	"#version 330 core\n"                          \
+	"in vec4 out_color;"                           \
+	"in vec2 TexCoord;"                            \
+	""                                             \
+	"out vec4 FragColor;"                          \
+	""                                             \
+	"uniform sampler2D tex;"                   \
+	""                                             \
+	"void main()"                                  \
+	"{"                                            \
+	"	FragColor = texture(tex, TexCoord) * out_color;" \
 	"}"
-
-// You do need 2D.
-#define ST3D_2D_LEFT 0
-#define ST3D_2D_TOP 0
-#define ST3D_2D_RIGHT 1280
-#define ST3D_2D_BOTTOM 720
 
 // INTERNAL
 void st3di_init_render(void);
@@ -112,10 +101,6 @@ void st3d_shader_set_vec4f(St3dShader shader, const char* name, TrVec4f val);
 // OpenGL works.
 void st3d_shader_set_vec4i(St3dShader shader, const char* name, TrVec4i val);
 
-// Sets the uniform to a 4x4 matrix of floats value. This takes in an array of floats because
-// I don't care anymore.
-void st3d_shader_set_mat4x4f(St3dShader shader, const char* name, float* val);
-
 // Image on the GPU and stuff.
 typedef struct {
 	uint32_t id;
@@ -147,20 +132,8 @@ St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool re
 // It frees the mesh.
 void st3d_mesh_free(St3dMesh mesh);
 
-// Draws a mesh using all of the fancy math so it eventually becomes 3D.
-void st3d_mesh_draw(St3dMesh mesh, TrVec3f pos, TrRotation rot, bool perspective);
-
-// As the name implies, it sets the camera position.
-void st3d_set_camera_position(TrVec3f pos);
-
-// As the name implies, it sets the camera rotation.
-void st3d_set_camera_rotation(TrRotation rot);
-
-// As the name implies, it sets the camera field of view.
-void st3d_set_camera_fov(float fov);
-
-// Near and far sets how close/far you can look before the renderer gives up
-void st3d_set_camera_near_far(float near, float far);
+// Draws a mesh.
+void st3d_mesh_draw(St3dMesh mesh);
 
 #ifdef __cplusplus
 }

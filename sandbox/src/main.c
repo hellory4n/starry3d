@@ -11,7 +11,7 @@ int main(void)
 	TrSlice_float vertices;
 	TR_SET_SLICE(&arena, &vertices, float,
 		// vertices            // colors                  // texcoords
-		 100.5f,  0.5f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f,    1.0f, 1.0f,
+	     0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f,    1.0f, 1.0f,
 		 0.5f, -0.5f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f,
 		-0.5f, -0.5f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f,
 		-0.5f,  0.5f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f,    0.0f, 1.0f,
@@ -27,15 +27,15 @@ int main(void)
 	mtriranfgs.texture = st3d_texture_new("assets/enough_fckery.jpg");
 	// st3d_set_wireframe(true);
 
-	st3d_set_camera_fov(80);
-	st3d_set_camera_near_far(0.01, 1000);
-	st3d_set_camera_position((TrVec3f){0, 0, -3});
-	st3d_set_camera_rotation((TrRotation){-55, 0, 0});
+	// st3d_set_camera_fov(80);
+	// st3d_set_camera_near_far(0.01, 1000);
+	// st3d_set_camera_position((TrVec3f){0, 0, -3});
+	// st3d_set_camera_rotation((TrRotation){-55, 0, 0});
 
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing(TR_BLACK);
 
-		st3d_mesh_draw(mtriranfgs, (TrVec3f){-0.5, 0.5, 0}, (TrRotation){65, 65, 65}, false);
+		st3d_mesh_draw(mtriranfgs);
 
 		st3d_end_drawing();
 		st3d_poll_events();
