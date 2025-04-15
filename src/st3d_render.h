@@ -6,34 +6,36 @@
 extern "C" {
 #endif
 
-#define ST3D_DEFAULT_VERTEX_SHADER                     \
-	"#version 330 core\n"                              \
-	"layout (location = 0) in vec3 pos;"               \
-	"layout (location = 1) in vec4 color;"             \
-	"layout (location = 2) in vec2 texcoord;"          \
-	""                                                 \
-	"out vec4 out_color;"                              \
-	"out vec2 TexCoord;"                               \
-	""                                                 \
-	"void main()"                                      \
-	"{"                                                \
-	"	gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);" \
-	"	out_color = color;"                            \
-	"	TexCoord = texcoord;"                          \
+#define ST3D_DEFAULT_VERTEX_SHADER             \
+	"#version 330 core\n"                      \
+	"layout (location = 0) in vec3 pos;"       \
+	"layout (location = 1) in vec4 color;"     \
+	"layout (location = 2) in vec2 texcoord;"  \
+	""                                         \
+	"out vec4 out_color;"                      \
+	"out vec2 TexCoord;"                       \
+	""                                         \
+	"uniform mat4 u_mvp;"                      \
+	""                                         \
+	"void main()"                              \
+	"{"                                        \
+	"	gl_Position = u_mvp * vec4(pos, 1.0);" \
+	"	out_color = color;"                    \
+	"	TexCoord = texcoord;"                  \
 	"}"
 
-#define ST3D_DEFAULT_FRAGMENT_SHADER               \
-	"#version 330 core\n"                          \
-	"in vec4 out_color;"                           \
-	"in vec2 TexCoord;"                            \
-	""                                             \
-	"out vec4 FragColor;"                          \
-	""                                             \
-	"uniform sampler2D tex;"                   \
-	""                                             \
-	"void main()"                                  \
-	"{"                                            \
-	"	FragColor = texture(tex, TexCoord) * out_color;" \
+#define ST3D_DEFAULT_FRAGMENT_SHADER                           \
+	"#version 330 core\n"                                      \
+	"in vec4 out_color;"                                       \
+	"in vec2 TexCoord;"                                        \
+	""                                                         \
+	"out vec4 FragColor;"                                      \
+	""                                                         \
+	"uniform sampler2D u_texture;"                             \
+	""                                                         \
+	"void main()"                                              \
+	"{"                                                        \
+	"	FragColor = texture(u_texture, TexCoord) * out_color;" \
 	"}"
 
 // INTERNAL
@@ -101,6 +103,9 @@ void st3d_shader_set_vec4f(St3dShader shader, const char* name, TrVec4f val);
 // OpenGL works.
 void st3d_shader_set_vec4i(St3dShader shader, const char* name, TrVec4i val);
 
+// Sets the uniform to a 4x4 matrix value. Takes in a float array because I don't know anymore.
+void st3d_shader_set_mat4f(St3dShader shader, const char* name, float* val);
+
 // Image on the GPU and stuff.
 typedef struct {
 	uint32_t id;
@@ -132,8 +137,8 @@ St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool re
 // It frees the mesh.
 void st3d_mesh_free(St3dMesh mesh);
 
-// Draws a mesh.
-void st3d_mesh_draw(St3dMesh mesh);
+// Draws a mesh with a transform thingy.
+void st3d_mesh_draw_transform(St3dMesh mesh, float* transform);
 
 #ifdef __cplusplus
 }

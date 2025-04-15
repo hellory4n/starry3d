@@ -1,6 +1,7 @@
 #include <libtrippin.h>
 #include <st3d_render.h>
 #include <st3d.h>
+#include <linmath.h>
 
 int main(void)
 {
@@ -35,7 +36,9 @@ int main(void)
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing(TR_BLACK);
 
-		st3d_mesh_draw(mtriranfgs);
+		mat4x4 damn;
+		mat4x4_identity(damn);
+		st3d_mesh_draw_transform(mtriranfgs, (float*)damn);
 
 		st3d_end_drawing();
 		st3d_poll_events();

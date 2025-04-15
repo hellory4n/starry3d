@@ -101,12 +101,19 @@ void st3d_mesh_free(St3dMesh mesh)
 	tr_liblog("freed mesh (vao %u)", mesh.vao);
 }
 
-void st3d_mesh_draw(St3dMesh mesh)
+void st3d_mesh_draw_transform(St3dMesh mesh, float* transform)
 {
+	// help.
+	st3d_shader_set_mat4f(st3d_default_shader, "u_mvp", transform);
+
 	// 0 means no texture
 	// because i didn't want to use a pointer just to have null
 	if (mesh.texture.id != 0) {
 		glBindTexture(GL_TEXTURE_2D, mesh.texture.id);
+	}
+	else {
+		// i love the state machine !!
+		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	glBindVertexArray(mesh.vao);
@@ -224,6 +231,11 @@ void st3d_shader_set_vec4f(St3dShader shader, const char* name, TrVec4f val)
 void st3d_shader_set_vec4i(St3dShader shader, const char* name, TrVec4i val)
 {
 	glUniform4i(glGetUniformLocation(shader.program, name), val.x, val.y, val.z, val.w);
+}
+
+void st3d_shader_set_mat4f(St3dShader shader, const char* name, float* val)
+{
+	glUniformMatrix4fv(glGetUniformLocation(shader.program, name), 1, false, val);
 }
 
 void st3d_set_wireframe(bool wireframe)
