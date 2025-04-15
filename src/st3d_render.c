@@ -30,11 +30,6 @@ void st3di_init_render(void)
 	// get it get it get it get it
 	// disabled bcuz it gets unflipped in the transformations apparently
 	// stbi_set_flip_vertically_on_load(true);
-
-	// transparency
-	// TODO being able to set the blending modes would be cool
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void st3di_free_render(void)
@@ -49,6 +44,13 @@ void st3d_begin_drawing(TrColor clear_color)
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	st3d_shader_use(st3d_default_shader);
+
+	// we set these here because nuklear changes the state and then resets everything
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void st3d_end_drawing(void)
