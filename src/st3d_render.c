@@ -14,8 +14,8 @@ static bool st3d_wireframe;
 static TrVec3f st3d_cam_pos;
 static TrRotation st3d_cam_rot;
 static float st3d_cam_fov;
-// x is near, y is far
-static TrVec2f st3d_cam_nearfar;
+static float st3d_cam_near;
+static float st3d_cam_far;
 
 void st3di_init_render(void)
 {
@@ -35,9 +35,9 @@ void st3di_init_render(void)
 	// get it get it get it get it
 	stbi_set_flip_vertically_on_load(true);
 
-	// transparency
 	// TODO being able to set the blending modes would be cool
 	glEnable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
@@ -50,7 +50,7 @@ void st3d_begin_drawing(TrColor clear_color)
 {
 	glClearColor(clear_color.r / 255.0f, clear_color.g / 255.0f,
 		clear_color.b / 255.0f, clear_color.a / 255.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	st3d_shader_use(st3d_default_shader);
 }
@@ -77,7 +77,8 @@ void st3d_set_camera_fov(float fov)
 
 void st3d_set_camera_near_far(float near, float far)
 {
-	st3d_cam_nearfar = (TrVec2f){near, far};
+	st3d_cam_near = near;
+	st3d_cam_far = far;
 }
 
 St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly)
@@ -130,55 +131,68 @@ void st3d_mesh_free(St3dMesh mesh)
 	tr_liblog("freed mesh (vao %u)", mesh.vao);
 }
 
-void st3d_mesh_draw(St3dMesh mesh, TrVec3f pos, TrRotation rot)
+void st3d_mesh_draw(St3dMesh mesh, TrVec3f pos, TrRotation rot, bool perspective)
 {
 	// world space
 	mat4x4 translation;
 	mat4x4_identity(translation);
-	mat4x4_translate(translation, pos.x, pos.y, pos.z);
+	// mat4x4_translate(translation, -pos.x, -pos.y, -pos.z);
 
 	// rotation
 	mat4x4 rx, ry, rz, rotation;
 	mat4x4_identity(rx);
 	mat4x4_identity(ry);
 	mat4x4_identity(rz);
+	// mat4x4_identity(rotation);
 
-	mat4x4_rotate_X(rx, rx, rot.x);
-	mat4x4_rotate_Y(ry, ry, rot.y);
-	mat4x4_rotate_Z(rz, rz, rot.z);
+	// mat4x4_rotate_X(rx, rx, rot.x);
+	// mat4x4_rotate_Y(ry, ry, rot.y);
+	// mat4x4_rotate_Z(rz, rz, rot.z);
 
 	mat4x4 tmp1;
+	mat4x4_identity(tmp1);
 	mat4x4_mul(tmp1, ry, rx);
 	mat4x4_mul(rotation, rz, tmp1);
 
 	// combine translation and rotation
 	mat4x4 model;
-	mat4x4_mul(translation, translation, rotation);
+	mat4x4_identity(model);
+	mat4x4_mul(model, translation, rotation);
 
-	// camera
-	mat4x4 view;
+	// :(
+	mat4x4 view, projection;
 	mat4x4_identity(view);
-	// TODO maybe i have to negate that?
-	mat4x4_translate(view, st3d_cam_pos.x, st3d_cam_pos.y, st3d_cam_pos.z);
+	mat4x4_identity(projection);
+	if (perspective) {
+		// camera
+		mat4x4_translate(view, -st3d_cam_pos.x, -st3d_cam_pos.y, -st3d_cam_pos.z);
 
-	mat4x4 view_rx, view_ry, view_rz, view_rot;
-	mat4x4_identity(view_rx);
-	mat4x4_identity(view_ry);
-	mat4x4_identity(view_rz);
+		mat4x4 view_rx, view_ry, view_rz, view_rot;
+		mat4x4_identity(view_rx);
+		mat4x4_identity(view_ry);
+		mat4x4_identity(view_rz);
+		mat4x4_identity(view_rot);
 
-	mat4x4_rotate_X(view_rx, view_rx, tr_deg2rad(st3d_cam_rot.x));
-	mat4x4_rotate_Y(view_ry, view_ry, tr_deg2rad(st3d_cam_rot.y));
-	mat4x4_rotate_Z(view_rz, view_rz, tr_deg2rad(st3d_cam_rot.z));
+		mat4x4_rotate_X(view_rx, view_rx, -tr_deg2rad(st3d_cam_rot.x));
+		mat4x4_rotate_Y(view_ry, view_ry, -tr_deg2rad(st3d_cam_rot.y));
+		mat4x4_rotate_Z(view_rz, view_rz, -tr_deg2rad(st3d_cam_rot.z));
 
-	mat4x4 tmp2;
-	mat4x4_mul(tmp2, view_ry, view_rx);
-	mat4x4_mul(view_rot, view_rz, tmp2);
+		mat4x4 tmp2;
+		mat4x4_identity(tmp2);
+		mat4x4_mul(tmp2, view_ry, view_rx);
+		mat4x4_mul(view_rot, view_rz, tmp2);
 
-	// project deez
-	TrVec2i winsize = st3d_window_size();
-	mat4x4 projection;
-	mat4x4_perspective(projection, st3d_cam_fov, (float)winsize.x / winsize.y, st3d_cam_nearfar.x,
-		st3d_cam_nearfar.y);
+		mat4x4_mul(view, view, view_rot);
+
+		// project deez
+		TrVec2i winsize = st3d_window_size();
+		mat4x4_perspective(projection, tr_deg2rad(st3d_cam_fov), (float)winsize.x / winsize.y,
+			st3d_cam_near, st3d_cam_far);
+	}
+	else {
+		mat4x4_ortho(projection, ST3D_2D_LEFT, ST3D_2D_RIGHT, ST3D_2D_BOTTOM, ST3D_2D_TOP,
+			st3d_cam_near, st3d_cam_far);
+	}
 
 	// actually render
 	st3d_shader_set_mat4x4f(st3d_default_shader, "model", (float*)model);
