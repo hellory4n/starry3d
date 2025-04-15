@@ -10,6 +10,7 @@
 
 static St3dShader st3d_default_shader;
 static bool st3d_wireframe;
+static St3dCamera st3d_cam;
 
 void st3di_init_render(void)
 {
@@ -138,6 +139,8 @@ void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos)
 	mat4x4_translate(model, pos.x, pos.y, 0);
 
 	mat4x4 proj;
+	// TODO this is probably stretching things if it doesn't fit the aspect ratio
+	// so don't do that
 	mat4x4_ortho(proj, ST3D_2D_LEFT, ST3D_2D_RIGHT, ST3D_2D_BOTTOM, ST3D_2D_TOP, 1.0f, -1.0f);
 
 	mat4x4 mvp;
@@ -145,6 +148,15 @@ void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos)
 	mat4x4_mul(mvp, proj, model);
 
 	st3d_mesh_draw_transform(mesh, (float*)mvp);
+}
+
+void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
+{
+	// TODO camera position needs to be negated :)
+	// didnt make this yet so im just gonna tell the compiler to shut up
+	(void)mesh;
+	(void)pos;
+	(void)rot;
 }
 
 static void check_shader(uint32_t obj)
@@ -305,4 +317,14 @@ void st3d_texture_free(St3dTexture texture)
 {
 	glDeleteTextures(1, &texture.id);
 	tr_liblog("freed texture (id %u)", texture.id);
+}
+
+St3dCamera st3d_camera(void)
+{
+	return st3d_cam;
+}
+
+void st3d_set_camera(St3dCamera cam)
+{
+	st3d_cam = cam;
 }

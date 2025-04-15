@@ -124,6 +124,25 @@ St3dTexture st3d_texture_new(const char* path);
 // Frees the texture
 void st3d_texture_free(St3dTexture texture);
 
+// Camera.
+typedef struct {
+	TrVec3f position;
+	// In euler degrees
+	TrVec3f rotation;
+	// In degrees
+	float fov;
+	// How near can you see before it gets clipped out
+	float near;
+	// How far can you see before it gets clipped out
+	float far;
+} St3dCamera;
+
+// Returns the current camera
+St3dCamera st3d_camera(void);
+
+// Sets the current camera
+void st3d_set_camera(St3dCamera cam);
+
 // M<esh
 typedef struct {
 	uint32_t vao;
@@ -148,8 +167,11 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* transform);
 // Draws a mesh in 2D using an orthographic projection.
 void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos);
 
+// Draws a mesh in the 3D world using an orthographic projection. Rotation is in euler degrees.
+void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // _ST3D_RENDER_H

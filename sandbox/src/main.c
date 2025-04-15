@@ -10,7 +10,7 @@ int main(void)
 	// ttriangel
 	TrSlice_float vertices;
 	TR_SET_SLICE(&arena, &vertices, float,
-		// vertices            // colors                  // texcoords
+		// vertices                // colors                  // texcoords
 	     100.0f,  100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f,    1.0f, 1.0f,
 		 100.0f, -100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f,
 		-100.0f, -100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f,
@@ -35,7 +35,7 @@ int main(void)
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing(tr_hex_rgb(0x550877));
 
-		st3d_mesh_draw_2d(mtriranfgs, (TrVec2f){100, 100});
+		st3d_mesh_draw_2d(mtriranfgs, (TrVec2f){200, 200});
 
 		st3d_end_drawing();
 		st3d_poll_events();
