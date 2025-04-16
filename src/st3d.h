@@ -6,12 +6,11 @@
 extern "C" {
 #endif
 
-// starry3d version :D
-#define ST3D_VERSION "v0.2.0"
+// Starry3D version :D
+#define ST3D_VERSION "v0.1.0"
 
-// Euler rotation in degrees
-// TODO move into libtrippin
-typedef TrVec3f TrRotation;
+// Default size for buffers storing paths. It's 260 because that's the limit on Windows.
+#define ST3D_PATH_SIZE 260
 
 // Initializes the engine and all of its subsystems
 void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t height);
@@ -33,6 +32,17 @@ void* st3d_get_window_handle(void);
 
 // Returns the window size.
 TrVec2i st3d_window_size(void);
+
+// Gets the directory of the executable, and outputs it into out
+void st3d_app_dir(TrString* out);
+
+// Gets the directory where you're supposed to save things, and outputs it into out
+void st3d_user_dir(TrString* out);
+
+// Shorthand for getting paths. Start with `app:` to get from the assets directory, and `usr:`
+// to get from the directory where you save things. For example, `app:images/bob.png`, and `usr:espionage.txt`.
+// Writes the actual path to out, which should be at least 260 characters because Windows.
+void st3d_path(const char* s, TrString* out);
 
 #ifdef __cplusplus
 }

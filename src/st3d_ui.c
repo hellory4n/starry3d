@@ -20,18 +20,24 @@ struct nk_context* st3d_nkctx(void)
 
 void st3d_ui_new(const char* font_path, int64_t font_size)
 {
+	// path.
+	TrArena tmp = tr_arena_new(TR_KB(1));
+	TrString sitrnmvhz = tr_slice_new(&tmp, ST3D_PATH_SIZE, sizeof(char));
+	st3d_path(font_path, &sitrnmvhz);
+
 	st3d_nk = nk_glfw3_init(&st3d_glfw, st3d_get_window_handle(), NK_GLFW3_DEFAULT);
 
 	// font.
 	struct nk_font_atlas* atlas;
 	nk_glfw3_font_stash_begin(&st3d_glfw, &atlas);
-	struct nk_font* font = nk_font_atlas_add_from_file(atlas, font_path, font_size, NULL);
+	struct nk_font* font = nk_font_atlas_add_from_file(atlas, sitrnmvhz.buffer, font_size, NULL);
 	nk_glfw3_font_stash_end(&st3d_glfw);
 	// it look bad
 	// nk_style_load_all_cursors(st3d_nk, atlas->cursors);
 	nk_style_set_font(st3d_nk, &font->handle);
 
 	tr_liblog("initialized nuklear");
+	tr_arena_free(&tmp);
 }
 
 void st3d_ui_free(void)

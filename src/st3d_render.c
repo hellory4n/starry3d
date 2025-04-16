@@ -300,9 +300,14 @@ void st3d_set_wireframe(bool wireframe)
 
 St3dTexture st3d_texture_new(const char* path)
 {
+	// path.
+	TrArena tmp = tr_arena_new(ST3D_PATH_SIZE);
+	TrString sitrnmvhz = tr_slice_new(&tmp, ST3D_PATH_SIZE, sizeof(char));
+	st3d_path(path, &sitrnmvhz);
+
 	// TODO no need to load textures multiple times, put it in a cache
 	int32_t width, height, channels;
-	uint8_t* data = stbi_load(path, &width, &height, &channels, 0);
+	uint8_t* data = stbi_load(sitrnmvhz.buffer, &width, &height, &channels, 0);
 	if (data == NULL) {
 		tr_panic("couldn't load image");
 	}
@@ -332,6 +337,7 @@ St3dTexture st3d_texture_new(const char* path)
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	stbi_image_free(data);
+	tr_arena_free(&tmp);
 	tr_liblog("loaded texture from %s (id %u)", path, texture.id);
 	return texture;
 }

@@ -126,20 +126,22 @@ the renderer instead of trying to hack some esoteric library.
 
 Also why not.
 
-### Why C?
+### Why C? Can't you be a normal human being and use C++ C# Rust Go Zig Odin Nim Sip Cliff Swig Beef (this one is real) Swag S'mores?
 
 I like C.
-
-Also C allows making bindings to other languages so that's cool I guess.
 
 ## Todo
 - [x] the bloody renderer
 - [ ] load .vox files
 	- [ ] load data
-	- [ ] turn it into meshes
+	- [ ] actually draw it (by having 1 square and then applying different transforms to it)
 - [ ] i had a fancy path loader, bring back that (put it in `st3d.h`)
 - [ ] lighting
-- [ ] fancy voxel optimizations
-- [ ] window (just a wrapper around glfw)
+- [ ] windowing (just a wrapper around glfw)
 - [ ] [fancy audio](https://www.youtube.com/watch?v=u6EuAUjq92k)
 - [ ] more documentation probably
+- [ ] fancy optimization bcuz why not
+	- [ ] don't draw a square if you can't even see it
+	- [ ] turn it into one draw command because Fast
+	- [ ] greedy meshing
+	- [ ] lod

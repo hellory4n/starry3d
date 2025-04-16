@@ -15,7 +15,7 @@ static float st_rot_z;
 static void camera_ui(void) {
 	struct nk_context* ctx = st3d_nkctx();
 
-	if (nk_begin(ctx, "camera test", nk_rect(25, 350, 300, 250),
+	if (nk_begin(ctx, "debug", nk_rect(25, 350, 300, 250),
 	NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
 		nk_layout_row_dynamic(ctx, 20, 1);
 		nk_label(ctx, "position", NK_TEXT_ALIGN_LEFT);
@@ -72,7 +72,7 @@ int main(void)
 	);
 
 	St3dMesh mtriranfgs = st3d_mesh_new(&vertices, &indices, true);
-	mtriranfgs.texture = st3d_texture_new("assets/enough_fckery.jpg");
+	mtriranfgs.texture = st3d_texture_new("app:enough_fckery.jpg");
 	// st3d_set_wireframe(true);
 
 	// st3d_set_camera_fov(80);
@@ -80,7 +80,7 @@ int main(void)
 	// st3d_set_camera_position((TrVec3f){0, 0, -3});
 	// st3d_set_camera_rotation((TrRotation){-55, 0, 0});
 
-	st3d_ui_new("assets/figtree/Figtree-Medium.ttf", 16);
+	st3d_ui_new("app:figtree/Figtree-Medium.ttf", 16);
 
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing(tr_hex_rgb(0x550877));
