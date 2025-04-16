@@ -58,11 +58,11 @@ int main(void)
 	// ttriangel
 	TrSlice_float vertices;
 	TR_SET_SLICE(&arena, &vertices, float,
-		// vertices                // colors                  // texcoords
-	     100.0f,  100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f,    1.0f, 1.0f,
-		 100.0f, -100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f,
-		-100.0f, -100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f,
-		-100.0f,  100.0f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f,    0.0f, 1.0f,
+		// vertices            // colors                  // texcoords
+	     1.0f,  1.0f, -1.0f,    1.0f, 1.0f, 1.0f, 0.0f,    1.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f,
+		-1.0f, -1.0f,  1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f,
+		-1.0f,  1.0f, -1.0f,    1.0f, 1.0f, 1.0f, 0.0f,    0.0f, 1.0f,
 	);
 
 	TrSlice_uint32 indices;
@@ -85,12 +85,20 @@ int main(void)
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing(tr_hex_rgb(0x550877));
 
-		st3d_mesh_draw_2d(mtriranfgs, (TrVec2f){200, 200});
+		st3d_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){64, 65, 62});
 
 		// nuklear calls go inside here
 		st3d_ui_begin();
-		camera_ui();
+			camera_ui();
 		st3d_ui_end();
+
+		st3d_set_camera((St3dCamera){
+			.position = (TrVec3f){st_pos_x, st_pos_y, st_pos_z},
+			.rotation = (TrVec3f){st_rot_x, st_rot_y, st_rot_z},
+			.fov = 90,
+			.near = 0.01,
+			.far = 1000,
+		});
 
 		st3d_end_drawing();
 		st3d_poll_events();

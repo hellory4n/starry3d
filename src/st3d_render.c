@@ -154,11 +154,32 @@ void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos)
 
 void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 {
-	// TODO camera position needs to be negated :)
-	// didnt make this yet so im just gonna tell the compiler to shut up
-	(void)mesh;
-	(void)pos;
-	(void)rot;
+	mat4x4 model;
+	mat4x4_identity(model);
+	mat4x4_translate(model, pos.x, pos.y, pos.z);
+
+	mat4x4_rotate_Z(model, model, tr_deg2rad(rot.z));
+	mat4x4_rotate_Y(model, model, tr_deg2rad(rot.y));
+	mat4x4_rotate_X(model, model, tr_deg2rad(rot.x));
+
+	mat4x4 view;
+	mat4x4_identity(view);
+	mat4x4_translate(view, -st3d_cam.position.x, -st3d_cam.position.y, -st3d_cam.position.z);
+
+	mat4x4_rotate_Z(view, view, tr_deg2rad(st3d_cam.rotation.z));
+	mat4x4_rotate_Y(view, view, tr_deg2rad(st3d_cam.rotation.y));
+	mat4x4_rotate_X(view, view, tr_deg2rad(st3d_cam.rotation.x));
+
+	TrVec2i winsize = st3d_window_size();
+	mat4x4 proj;
+	mat4x4_perspective(proj, tr_deg2rad(st3d_cam.fov), (double)winsize.x / winsize.y,
+		st3d_cam.near, st3d_cam.far);
+
+	mat4x4 mvp;
+	mat4x4_mul(mvp, proj, view);
+	mat4x4_mul(mvp, mvp, model);
+
+	st3d_mesh_draw_transform(mesh, (float*)mvp);
 }
 
 static void check_shader(uint32_t obj)
