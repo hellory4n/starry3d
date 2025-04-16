@@ -1,5 +1,5 @@
 /*
- * libtrippin v1.2.0
+ * libtrippin v1.2.1
  *
  * Most biggest most massive standard library thing for C of all time
  * More information at https://github.com/hellory4n/libtrippin
@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 // Idk why I added this
-#define TR_VERSION "v1.2.0"
+#define TR_VERSION "v1.2.1"
 
 // It initializes libtrippin.
 void tr_init(const char* log_file);
@@ -153,6 +153,47 @@ typedef struct {
 #define TR_V4_GT(a, b)   TR_V4_LT(b, a)
 #define TR_V4_GTE(a, b)  TR_V4_LTE(b, a)
 
+// mate
+typedef struct {
+	uint8_t r, g, b, a;
+} TrColor;
+
+inline TrColor tr_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+	return (TrColor){.r = r, .g = g, .b = b, .a = a};
+}
+
+inline TrColor tr_rgb(uint8_t r, uint8_t g, uint8_t b)
+{
+	return (TrColor){.r = r, .g = g, .b = b, .a = 255};
+}
+
+// format is 0xRRGGBBAA for red, green, blue, and alpha respectively
+inline TrColor tr_hex_rgba(uint32_t hex)
+{
+	return (TrColor){
+		.r = (hex >> 24) & 0xFF,
+		.g = (hex >> 16) & 0xFF,
+		.b = (hex >> 8) & 0xFF,
+		.a = hex & 0xFF,
+	};
+}
+
+// format is 0xRRGGBB for red, green, and blue respectively
+inline TrColor tr_hex_rgb(uint32_t hex)
+{
+	return (TrColor){
+		.r = (hex >> 16) & 0xFF,
+		.g = (hex >> 8) & 0xFF,
+		.b = hex & 0xFF,
+		.a = 255,
+	};
+}
+
+#define TR_WHITE tr_hex_rgb(0xffffff)
+#define TR_BLACK tr_hex_rgb(0x000000)
+#define TR_TRANSPARENT tr_hex_rgba(0x00000000)
+
 // logging
 
 // TODO colored output doesn't work on windows and i can't be bothered to fix it
@@ -236,6 +277,7 @@ typedef TrSlice TrSlice_Vec3f;
 typedef TrSlice TrSlice_Vec3i;
 typedef TrSlice TrSlice_Vec4f;
 typedef TrSlice TrSlice_Vec4i;
+typedef TrSlice TrSlice_Color;
 
 // idk why you would need 2d slices for anything else
 // idk if i'm gonna keep 2d slices lmao
@@ -249,6 +291,7 @@ typedef TrSlice2D TrSlice2D_int8;
 typedef TrSlice2D TrSlice2D_uint8;
 typedef TrSlice2D TrSlice2D_double;
 typedef TrSlice2D TrSlice2D_float;
+typedef TrSlice2D TrSlice2D_Color;
 
 // also not really necessary
 // it's just that the regular function is quite the mouthful
@@ -319,47 +362,6 @@ inline bool tr_rect_has_point(TrRect rect, TrVec2f point)
 
 	return true;
 }
-
-// mate
-typedef struct {
-	uint8_t r, g, b, a;
-} TrColor;
-
-inline TrColor tr_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
-	return (TrColor){.r = r, .g = g, .b = b, .a = a};
-}
-
-inline TrColor tr_rgb(uint8_t r, uint8_t g, uint8_t b)
-{
-	return (TrColor){.r = r, .g = g, .b = b, .a = 255};
-}
-
-// format is 0xRRGGBBAA for red, green, blue, and alpha respectively
-inline TrColor tr_hex_rgba(uint32_t hex)
-{
-	return (TrColor){
-		.r = (hex >> 24) & 0xFF,
-		.g = (hex >> 16) & 0xFF,
-		.b = (hex >> 8) & 0xFF,
-		.a = hex & 0xFF,
-	};
-}
-
-// format is 0xRRGGBB for red, green, and blue respectively
-inline TrColor tr_hex_rgb(uint32_t hex)
-{
-	return (TrColor){
-		.r = (hex >> 16) & 0xFF,
-		.g = (hex >> 8) & 0xFF,
-		.b = hex & 0xFF,
-		.a = 255,
-	};
-}
-
-#define TR_WHITE tr_hex_rgb(0xffffff)
-#define TR_BLACK tr_hex_rgb(0x000000)
-#define TR_TRANSPARENT tr_hex_rgba(0x00000000)
 
 // meth
 

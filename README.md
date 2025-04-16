@@ -14,6 +14,7 @@ For the points with asterisks look at the limitations section
 - UI through [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear), you don't have to do anything, it's
   already there
 - Built on [libtrippin](https://github.com/hellory4n/libtrippin) the biggest most massive library of all time
+- Licensed under 0BSD so you can do like anything ever with it
 
 ## Limitations
 
@@ -130,3 +131,15 @@ Also why not.
 I like C.
 
 Also C allows making bindings to other languages so that's cool I guess.
+
+## Todo
+- [x] the bloody renderer
+- [ ] load .vox files
+	- [ ] load data
+	- [ ] turn it into meshes
+- [ ] i had a fancy path loader, bring back that (put it in `st3d.h`)
+- [ ] lighting
+- [ ] fancy voxel optimizations
+- [ ] window (just a wrapper around glfw)
+- [ ] [fancy audio](https://www.youtube.com/watch?v=u6EuAUjq92k)
+- [ ] more documentation probably
