@@ -146,9 +146,9 @@ void st3d_app_dir(TrString* out)
 	}
 
 	// remove the executable filename
-	for (DWORD i = len - 1; i >= 0; i--) {
+	for (int i = len - 1; i >= 0; i--) {
 		char* c = TR_AT(st3d_full_exe_dir, char, len);
-		if (*c == '\\' || *c == '/') {
+		if (*c == '\\' || *c == '/' || *c == '\0') {
 			*c = '\0';
 			break;
 		}

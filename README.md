@@ -4,13 +4,11 @@
 
 ## Features
 
-For the points with asterisks look at the limitations section
-
 - Pure C99 and OpenGL 3.3
-- Cross platform\*
+- Cross platform ish. (windows and linux)
 - Probably runs on anything ever
-- No external dependencies\*
-- Optimized for voxel graphics\*
+- No external dependencies
+- Optimized for voxel graphics
 - UI through [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear), you don't have to do anything, it's
   already there
 - Built on [libtrippin](https://github.com/hellory4n/libtrippin) the biggest most massive library of all time
@@ -66,29 +64,30 @@ Now put this in `src/main.c` and run `make run` to check if it worked:
 
 int main(void)
 {
-	st3d_init("program", "assets", 800, 600);
-	// you need a font for nuklear to work
-	st3d_ui_new("assets/default-font.ttf", 16);
+    // "assets" is your assets folder
+    st3d_init("program", "assets", 800, 600);
+    // you need a font for nuklear to work
+    st3d_ui_new("app:default-font.ttf", 16);
 
-	tr_log("initialize your program here");
+    tr_log("initialize your program here");
 
-	while (!st3d_is_closing()) {
-		st3d_begin_drawing(TR_WHITE);
+    while (!st3d_is_closing()) {
+        st3d_begin_drawing(TR_WHITE);
 
-		tr_log("main loop goes here");
+        tr_log("main loop goes here");
 
-		st3d_ui_begin();
-			tr_log("nuklear calls go here");
-		st3d_ui_end();
+        st3d_ui_begin();
+            tr_log("nuklear calls go here");
+        st3d_ui_end();
 
-		st3d_end_drawing();
-		st3d_poll_events();
-	}
+        st3d_end_drawing();
+        st3d_poll_events();
+    }
 
-	tr_log("deinitialize your program here");
+    tr_log("deinitialize your program here");
 
-	st3d_ui_free();
-	st3d_free();
+    st3d_ui_free();
+    st3d_free();
 }
 ```
 
@@ -117,14 +116,7 @@ No fuck off.
 
 ### Why?
 
-Turns out raylib is giving me esoteric memory issues and it doesn't help that it intentionally avoids
-checks for esoteric memory issues. I would rather make my own graphics framework than debug that. Quite the
-pickle.
-
-Also voxel graphics require a lot more optimization than usual so it's nice to be able to do that directly in
-the renderer instead of trying to hack some esoteric library.
-
-Also why not.
+Why not.
 
 ### Why C? Can't you be a normal human being and use C++ C# Rust Go Zig Odin Nim Sip Cliff Swig Beef (this one is real) Swag S'mores?
 

@@ -311,6 +311,7 @@ St3dTexture st3d_texture_new(const char* path)
 	TrArena tmp = tr_arena_new(ST3D_PATH_SIZE);
 	TrString sitrnmvhz = tr_slice_new(&tmp, ST3D_PATH_SIZE, sizeof(char));
 	st3d_path(path, &sitrnmvhz);
+	tr_liblog("loaded texture from %s (id %u)", path, 0);
 
 	// TODO no need to load textures multiple times, put it in a cache
 	int32_t width, height, channels;

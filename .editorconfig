@@ -1,5 +1,8 @@
-# theres code examples in markdown files
-[*.c, *.h, *.md]
+[*.c, *.h]
 indent_style = tab
-indent_size = tab
+tab_size = 4
+
+# github uses 8 spaces for tabs
+[*.md]
+indent_style = space
 tab_size = 4
