@@ -1,16 +1,11 @@
-// let me use readlink() :(
-#define _GNU_SOURCE
-
-// for the path fuckery
-#ifdef ST3D_WINDOWS
-	#include <windows.h>
-#else
-	#include <unistd.h>
-	#include <libgen.h>
-#endif
+// yes this is intentional
+// don't want to make users have to compile a lot of random crap
+#include <whereami.c>
 
 #include <stdio.h>
 #include <math.h>
+#include <libgen.h>
+
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <libtrippin.h>
@@ -138,34 +133,11 @@ void st3d_app_dir(TrString* out)
 	}
 
 	// actually get the path :)
-	// :(
-	#ifdef ST3D_WINDOWS
-	DWORD len = GetModuleFileNameA(NULL, st3d_full_exe_dir.buffer, st3d_full_exe_dir.length);
-	if (len == 0 || len == st3d_full_exe_dir.length) {
-		tr_warn("couldn't get executable directory; using relative paths");
-	}
-
-	// remove the executable filename
-	for (int i = len - 1; i >= 0; i--) {
-		char* c = TR_AT(st3d_full_exe_dir, char, len);
-		if (*c == '\\' || *c == '/' || *c == '\0') {
-			*c = '\0';
-			break;
-		}
-	}
-	#else
-	ssize_t len = readlink("/proc/self/exe", st3d_full_exe_dir.buffer, st3d_full_exe_dir.length - 1);
-
-	if (len > 0) {
-		*TR_AT(st3d_full_exe_dir, char, len) = '\0';
-		// scary!
-		st3d_full_exe_dir.buffer = dirname(st3d_full_exe_dir.buffer);
-	}
-	else {
-		tr_warn("couldn't get executable directory; using relative paths");
-		*TR_AT(st3d_full_exe_dir, char, 0) = '.';
-	}
-	#endif
+	// yes this is how you're supposed to use whereami
+	int dirname_len;
+	wai_getExecutablePath(st3d_full_exe_dir.buffer, st3d_full_exe_dir.length, &dirname_len);
+	*TR_AT(st3d_full_exe_dir, char, dirname_len) = '\0';
+	tr_log("%s", (char*)st3d_full_exe_dir.buffer);
 
 	memcpy(out->buffer, st3d_full_exe_dir.buffer, (size_t)fmin(out->length, st3d_full_exe_dir.length));
 	st3d_exe_dir_fetched = true;

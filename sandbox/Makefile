@@ -17,6 +17,7 @@ INCLUDE = \
     -I$(STARRY3D)/vendor/linmath \
     -I$(STARRY3D)/vendor/stb \
     -I$(STARRY3D)/vendor/nuklear \
+    -I$(STARRY3D)/vendor/whereami \
     \
     -Isrc
 
