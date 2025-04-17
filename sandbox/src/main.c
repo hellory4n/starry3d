@@ -6,7 +6,7 @@
 // used for the sliders :D
 static float st_pos_x;
 static float st_pos_y;
-static float st_pos_z;
+static float st_pos_z = 3;
 
 static float st_rot_x;
 static float st_rot_y;
@@ -73,7 +73,7 @@ int main(void)
 
 	St3dMesh mtriranfgs = st3d_mesh_new(&vertices, &indices, true);
 	mtriranfgs.texture = st3d_texture_new("app:enough_fckery.jpg");
-	st3d_set_wireframe(true);
+	// st3d_set_wireframe(true);
 
 	// st3d_set_camera_fov(80);
 	// st3d_set_camera_near_far(0.01, 1000);

@@ -28,8 +28,7 @@ void st3di_init_render(void)
 
 	// we're not australian
 	// get it get it get it get it
-	// disabled bcuz it gets unflipped in the transformations apparently
-	// stbi_set_flip_vertically_on_load(true);
+	stbi_set_flip_vertically_on_load(true);
 }
 
 void st3di_free_render(void)
@@ -51,7 +50,7 @@ void st3d_begin_drawing(TrColor clear_color)
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_DEPTH);
+	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -121,13 +120,10 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* transform)
 		glBindTexture(GL_TEXTURE_2D, mesh.texture.id);
 	}
 	else {
-		// i love the state machine !!
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
 	glBindVertexArray(mesh.vao);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 	if (st3d_wireframe) {
 		glDrawElements(GL_LINE_LOOP, mesh.index_count, GL_UNSIGNED_INT, 0);
 	}
@@ -339,7 +335,7 @@ St3dTexture st3d_texture_new(const char* path)
 		.width = width,
 		.height = height,
 	};
-	glGenBuffers(1, &texture.id);
+	glGenTextures(1, &texture.id);
 	glBindTexture(GL_TEXTURE_2D, texture.id);
 	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 	glGenerateMipmap(GL_TEXTURE_2D);

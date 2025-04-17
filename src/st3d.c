@@ -61,7 +61,8 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 	#endif
 
-	// i use a tiling window manager and it's fucking with everything
+	// i use a tiling window manager and i want it to float
+	// TODO don't
 	#ifdef DEBUG
 	glfwWindowHint(GLFW_RESIZABLE, false);
 	#else
@@ -81,6 +82,9 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 
 	// sbsubsytestesmysmys
 	st3di_init_render();
+
+	// apparently windows is shit so i have to do this immediately
+	on_framebuffer_resize(st3d_window, width, height);
 
 	tr_liblog("initialized starry3d");
 }
@@ -137,7 +141,7 @@ void st3d_app_dir(TrString* out)
 	int dirname_len;
 	wai_getExecutablePath(st3d_full_exe_dir.buffer, st3d_full_exe_dir.length, &dirname_len);
 	*TR_AT(st3d_full_exe_dir, char, dirname_len) = '\0';
-	tr_log("%s", (char*)st3d_full_exe_dir.buffer);
+	tr_liblog("executable directory: %s", (char*)st3d_full_exe_dir.buffer);
 
 	memcpy(out->buffer, st3d_full_exe_dir.buffer, (size_t)fmin(out->length, st3d_full_exe_dir.length));
 	st3d_exe_dir_fetched = true;
@@ -161,6 +165,7 @@ void st3d_user_dir(TrString* out)
 	snprintf(st3d_full_user_dir.buffer, st3d_full_user_dir.length, "%s/.local/share/%s", sigma,
 		(char*)st3d_app.buffer);
 	#endif
+	tr_liblog("user directory: %s", (char*)st3d_full_user_dir.buffer);
 
 	memcpy(out->buffer, st3d_full_user_dir.buffer, (size_t)fmin(out->length, st3d_full_user_dir.length));
 	st3d_user_dir_fetched = true;
