@@ -131,17 +131,19 @@ Also why not.
 I like C.
 
 ## Todo
+
 - [x] the bloody renderer
 - [ ] load .vox files
 	- [ ] load data
 	- [ ] actually draw it (by having 1 square and then applying different transforms to it)
-- [ ] i had a fancy path loader, bring back that (put it in `st3d.h`)
 - [ ] lighting
 - [ ] windowing (just a wrapper around glfw)
+	- [ ] fancy input crap
+	- [ ] remember to include delta time/fps
 - [ ] [fancy audio](https://www.youtube.com/watch?v=u6EuAUjq92k)
 - [ ] more documentation probably
 - [ ] fancy optimization bcuz why not
 	- [ ] don't draw a square if you can't even see it
 	- [ ] turn it into one draw command because Fast
 	- [ ] greedy meshing
-	- [ ] lod
+	- [ ] level of detail
