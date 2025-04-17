@@ -46,6 +46,9 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 {
 	tr_init("log.txt");
 	st3d_arena = tr_arena_new(TR_MB(1));
+
+	st3d_full_exe_dir = tr_slice_new(&st3d_arena, ST3D_PATH_SIZE, sizeof(char));
+	st3d_full_user_dir = tr_slice_new(&st3d_arena, ST3D_PATH_SIZE, sizeof(char));
 	st3d_app = tr_slice_new(&st3d_arena, ST3D_PATH_SIZE, sizeof(char));
 	st3d_assets = tr_slice_new(&st3d_arena, ST3D_PATH_SIZE, sizeof(char));
 	strncpy(st3d_app.buffer, app, ST3D_PATH_SIZE);
@@ -153,7 +156,7 @@ void st3d_app_dir(TrString* out)
 	#else
 	ssize_t len = readlink("/proc/self/exe", st3d_full_exe_dir.buffer, st3d_full_exe_dir.length - 1);
 
-	if (len != -1) {
+	if (len > 0) {
 		*TR_AT(st3d_full_exe_dir, char, len) = '\0';
 		// scary!
 		st3d_full_exe_dir.buffer = dirname(st3d_full_exe_dir.buffer);
@@ -201,7 +204,7 @@ void st3d_path(const char* s, TrString* out)
 		const char* trimmed = s + 4;
 		TrString stigma = tr_slice_new(&st3d_arena, ST3D_PATH_SIZE, sizeof(char));
 		st3d_app_dir(&stigma);
-		snprintf(out->buffer, out->length, "%s/%s/%s", (char*)stigma.buffer, (char*)st3d_app.buffer, trimmed);
+		snprintf(out->buffer, out->length, "%s/%s/%s", (char*)stigma.buffer, (char*)st3d_assets.buffer, trimmed);
 	}
 	else if (strncmp(s, "usr:", 4) == 0) {
 		// remove the prefix

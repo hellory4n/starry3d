@@ -41,7 +41,7 @@ void st3d_begin_drawing(TrColor clear_color)
 {
 	glClearColor(clear_color.r / 255.0f, clear_color.g / 255.0f,
 		clear_color.b / 255.0f, clear_color.a / 255.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	st3d_shader_use(st3d_default_shader);
 
@@ -51,6 +51,10 @@ void st3d_begin_drawing(TrColor clear_color)
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_DEPTH);
+	glDepthFunc(GL_LESS);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 }
 
 void st3d_end_drawing(void)
@@ -162,13 +166,16 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 	mat4x4_rotate_Y(model, model, tr_deg2rad(rot.y));
 	mat4x4_rotate_X(model, model, tr_deg2rad(rot.x));
 
-	mat4x4 view;
-	mat4x4_identity(view);
-	mat4x4_translate(view, -st3d_cam.position.x, -st3d_cam.position.y, -st3d_cam.position.z);
+	mat4x4 view, view_pos, view_rot;
+	mat4x4_identity(view_pos);
+	mat4x4_identity(view_rot);
+	mat4x4_translate(view_pos, -st3d_cam.position.x, -st3d_cam.position.y, -st3d_cam.position.z);
 
-	mat4x4_rotate_Z(view, view, tr_deg2rad(st3d_cam.rotation.z));
-	mat4x4_rotate_Y(view, view, tr_deg2rad(st3d_cam.rotation.y));
-	mat4x4_rotate_X(view, view, tr_deg2rad(st3d_cam.rotation.x));
+	mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.z));
+	mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.y));
+	mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.x));
+
+	mat4x4_mul(view, view_rot, view_pos);
 
 	TrVec2i winsize = st3d_window_size();
 	mat4x4 proj;
