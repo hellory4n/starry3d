@@ -1,6 +1,6 @@
 #ifndef _ST3D_VOXEL_H
 #define _ST3D_VOXEL_H
-#include "st3d_render.h"
+#include <libtrippin.h>
 
 #ifdef __cplusplus
 extern "C" {
