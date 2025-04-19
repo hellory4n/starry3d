@@ -28,6 +28,11 @@ static TrVec2i st3d_winsize;
 static TrSlice_int32 st3d_key_state;
 // type is bool
 static TrSlice_uint8 st3d_key_prev_down;
+// type is St3dInputState
+static TrSlice_int32 st3d_mouse_state;
+// type is bool
+static TrSlice_uint8 st3d_mouse_prev_down;
+static TrVec2f st3d_cur_mouse_scroll;
 
 static TrString st3d_app;
 static TrString st3d_assets;
@@ -49,6 +54,12 @@ static void on_error(int error_code, const char* description)
 	tr_panic("gl error %i: %s", error_code, description);
 }
 
+static void on_scroll(GLFWwindow* window, double x, double y)
+{
+	(void)window;
+	st3d_cur_mouse_scroll = (TrVec2f){x, y};
+}
+
 void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t height)
 {
 	tr_init("log.txt");
@@ -63,6 +74,8 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 
 	st3d_key_state = tr_slice_new(&st3d_arena, ST3D_KEY_LAST + 1, sizeof(int32_t));
 	st3d_key_prev_down = tr_slice_new(&st3d_arena, ST3D_KEY_LAST + 1, sizeof(uint8_t));
+	st3d_mouse_state = tr_slice_new(&st3d_arena, ST3D_MOUSE_BUTTON_LAST + 1, sizeof(int32_t));
+	st3d_mouse_prev_down = tr_slice_new(&st3d_arena, ST3D_MOUSE_BUTTON_LAST + 1, sizeof(uint8_t));
 
 	// initialize window
 	if (!glfwInit()) {
@@ -92,8 +105,13 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 	// callbacks
 	glfwSetFramebufferSizeCallback(st3d_window, on_framebuffer_resize);
 	glfwSetErrorCallback(on_error);
+	glfwSetScrollCallback(st3d_window, on_scroll);
 
 	tr_liblog("created window");
+
+	if (!glfwRawMouseMotionSupported()) {
+		tr_warn("raw mouse motion isn't supported");
+	}
 
 	// sbsubsytestesmysmys
 	st3di_init_render();
@@ -151,6 +169,27 @@ void st3d_poll_events(void)
 
 		*was_down = is_down;
 	}
+
+	// christ
+	for (int32_t btn = ST3D_MOUSE_BUTTON_1; btn <= ST3D_MOUSE_BUTTON_LAST; btn++) {
+		bool is_down = glfwGetMouseButton(st3d_window, btn) == GLFW_PRESS;
+
+		uint8_t* was_down = TR_AT(st3d_mouse_prev_down, uint8_t, btn);
+		if (!(*was_down) && is_down) {
+			*TR_AT(st3d_mouse_state, int32_t, btn) = ST3D_INPUT_STATE_JUST_PRESSED;
+		}
+		else if ((*was_down) && is_down) {
+			*TR_AT(st3d_mouse_state, int32_t, btn) = ST3D_INPUT_STATE_HELD;
+		}
+		else if ((*was_down) && !is_down) {
+			*TR_AT(st3d_mouse_state, int32_t, btn) = ST3D_INPUT_STATE_JUST_RELEASED;
+		}
+		else {
+			*TR_AT(st3d_mouse_state, int32_t, btn) = ST3D_INPUT_STATE_NOT_PRESSED;
+		}
+
+		*was_down = is_down;
+	}
 }
 
 void st3d_close(void)
@@ -188,6 +227,45 @@ bool st3d_is_key_held(St3dKey key)
 bool st3d_is_key_not_pressed(St3dKey key)
 {
 	return *TR_AT(st3d_key_state, int32_t, key) == ST3D_INPUT_STATE_NOT_PRESSED;
+}
+
+bool st3d_is_mouse_just_pressed(St3dMouseButton btn)
+{
+	return *TR_AT(st3d_mouse_state, int32_t, btn) == ST3D_INPUT_STATE_JUST_PRESSED;
+}
+
+bool st3d_is_mouse_just_released(St3dMouseButton btn)
+{
+	return *TR_AT(st3d_mouse_state, int32_t, btn) == ST3D_INPUT_STATE_JUST_RELEASED;
+}
+
+bool st3d_is_mouse_held(St3dMouseButton btn)
+{
+	return *TR_AT(st3d_mouse_state, int32_t, btn) == ST3D_INPUT_STATE_JUST_PRESSED ||
+	       *TR_AT(st3d_mouse_state, int32_t, btn) == ST3D_INPUT_STATE_JUST_RELEASED ||
+		   *TR_AT(st3d_mouse_state, int32_t, btn) == ST3D_INPUT_STATE_HELD;
+}
+
+bool st3d_is_mouse_not_pressed(St3dMouseButton btn)
+{
+	return *TR_AT(st3d_mouse_state, int32_t, btn) == ST3D_INPUT_STATE_NOT_PRESSED;
+}
+
+TrVec2f st3d_mouse_position(void)
+{
+	double x, y;
+	glfwGetCursorPos(st3d_window, &x, &y);
+	return (TrVec2f){x, y};
+}
+
+TrVec2f st3d_mouse_scroll(void)
+{
+	return st3d_cur_mouse_scroll;
+}
+
+void st3d_set_mouse_enabled(bool val)
+{
+	glfwSetInputMode(st3d_window, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
 
 void st3d_app_dir(TrString* out)

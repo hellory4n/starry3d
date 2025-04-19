@@ -179,6 +179,22 @@ bool st3d_is_key_just_released(St3dKey key);
 bool st3d_is_key_held(St3dKey key);
 bool st3d_is_key_not_pressed(St3dKey key);
 
+bool st3d_is_mouse_just_pressed(St3dMouseButton btn);
+bool st3d_is_mouse_just_released(St3dMouseButton btn);
+bool st3d_is_mouse_held(St3dMouseButton btn);
+bool st3d_is_mouse_not_pressed(St3dMouseButton btn);
+
+// Returns the mouse position lmao. (0, 0) is the top left
+TrVec2f st3d_mouse_position(void);
+
+// Returns the current mouse scroll. (0, 0) is no scroll, positive values are towards the bottom/right,
+// and negative values are towards the top/left
+TrVec2f st3d_mouse_scroll(void);
+
+// If false, the mouse gets disabled, which enables raw mouse input, which is useful for FPS controllers
+// and stuff.
+void st3d_set_mouse_enabled(bool val);
+
 // Gets the directory of the executable, and outputs it into out
 void st3d_app_dir(TrString* out);
 

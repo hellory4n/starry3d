@@ -81,20 +81,26 @@ int main(void)
 	// st3d_set_camera_rotation((TrRotation){-55, 0, 0});
 
 	st3d_ui_new("app:figtree/Figtree-Medium.ttf", 16);
+	bool ui = true;
 
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing(tr_hex_rgb(0x550877));
 
 		st3d_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){64, 65, 62});
 
-		if (st3d_is_key_just_released(ST3D_KEY_SPACE)) {
-			tr_log("stigma");
+		if (st3d_is_key_just_pressed(ST3D_KEY_ESCAPE)) {
+			ui = !ui;
+			st3d_set_mouse_enabled(ui);
 		}
+		TrVec2f pee = st3d_mouse_position();
+		tr_log("sjgs %f %f", pee.x, pee.y);
 
 		// nuklear calls go inside here
-		st3d_ui_begin();
+		if (ui) {
+			st3d_ui_begin();
 			camera_ui();
-		st3d_ui_end();
+			st3d_ui_end();
+		}
 
 		st3d_set_camera((St3dCamera){
 			.position = (TrVec3f){st_pos_x, st_pos_y, st_pos_z},
