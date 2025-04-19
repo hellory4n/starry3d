@@ -12,10 +12,22 @@
 #include "st3d.h"
 #include "st3d_render.h"
 
+typedef enum {
+	ST3D_INPUT_STATE_NOT_PRESSED,
+	ST3D_INPUT_STATE_JUST_PRESSED,
+	ST3D_INPUT_STATE_HELD,
+	ST3D_INPUT_STATE_JUST_RELEASED,
+} St3dInputState;
+
 static TrArena st3d_arena;
 
 static GLFWwindow* st3d_window;
 static TrVec2i st3d_winsize;
+
+// type is St3dInputState
+static TrSlice_int32 st3d_key_state;
+// type is bool
+static TrSlice_uint8 st3d_key_prev_down;
 
 static TrString st3d_app;
 static TrString st3d_assets;
@@ -48,6 +60,9 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 	st3d_assets = tr_slice_new(&st3d_arena, ST3D_PATH_SIZE, sizeof(char));
 	strncpy(st3d_app.buffer, app, ST3D_PATH_SIZE);
 	strncpy(st3d_assets.buffer, assets, ST3D_PATH_SIZE);
+
+	st3d_key_state = tr_slice_new(&st3d_arena, ST3D_KEY_LAST + 1, sizeof(int32_t));
+	st3d_key_prev_down = tr_slice_new(&st3d_arena, ST3D_KEY_LAST + 1, sizeof(uint8_t));
 
 	// initialize window
 	if (!glfwInit()) {
@@ -111,6 +126,31 @@ void* st3d_get_window_handle(void)
 void st3d_poll_events(void)
 {
 	glfwPollEvents();
+
+	// we have more fancy states :)
+
+	// valid keys start at space
+	// it gets mad if you try to check for anything before that
+	for (int32_t key = ST3D_KEY_SPACE; key <= ST3D_KEY_LAST; key++) {
+		bool is_down = glfwGetKey(st3d_window, key) == GLFW_PRESS;
+
+		// help
+		uint8_t* was_down = TR_AT(st3d_key_prev_down, uint8_t, key);
+		if (!(*was_down) && is_down) {
+			*TR_AT(st3d_key_state, int32_t, key) = ST3D_INPUT_STATE_JUST_PRESSED;
+		}
+		else if ((*was_down) && is_down) {
+			*TR_AT(st3d_key_state, int32_t, key) = ST3D_INPUT_STATE_HELD;
+		}
+		else if ((*was_down) && !is_down) {
+			*TR_AT(st3d_key_state, int32_t, key) = ST3D_INPUT_STATE_JUST_RELEASED;
+		}
+		else {
+			*TR_AT(st3d_key_state, int32_t, key) = ST3D_INPUT_STATE_NOT_PRESSED;
+		}
+
+		*was_down = is_down;
+	}
 }
 
 void st3d_close(void)
@@ -126,6 +166,28 @@ bool st3d_is_closing(void)
 TrVec2i st3d_window_size(void)
 {
 	return st3d_winsize;
+}
+
+bool st3d_is_key_just_pressed(St3dKey key)
+{
+	return *TR_AT(st3d_key_state, int32_t, key) == ST3D_INPUT_STATE_JUST_PRESSED;
+}
+
+bool st3d_is_key_just_released(St3dKey key)
+{
+	return *TR_AT(st3d_key_state, int32_t, key) == ST3D_INPUT_STATE_JUST_RELEASED;
+}
+
+bool st3d_is_key_held(St3dKey key)
+{
+	return *TR_AT(st3d_key_state, int32_t, key) == ST3D_INPUT_STATE_JUST_PRESSED ||
+	       *TR_AT(st3d_key_state, int32_t, key) == ST3D_INPUT_STATE_JUST_RELEASED ||
+		   *TR_AT(st3d_key_state, int32_t, key) == ST3D_INPUT_STATE_HELD;
+}
+
+bool st3d_is_key_not_pressed(St3dKey key)
+{
+	return *TR_AT(st3d_key_state, int32_t, key) == ST3D_INPUT_STATE_NOT_PRESSED;
 }
 
 void st3d_app_dir(TrString* out)

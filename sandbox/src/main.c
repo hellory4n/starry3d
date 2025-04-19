@@ -87,6 +87,10 @@ int main(void)
 
 		st3d_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){64, 65, 62});
 
+		if (st3d_is_key_just_released(ST3D_KEY_SPACE)) {
+			tr_log("stigma");
+		}
+
 		// nuklear calls go inside here
 		st3d_ui_begin();
 			camera_ui();
