@@ -1,6 +1,8 @@
 # starry3d v0.1.0
 
-3D library for voxel graphics and other fancy crapfrick.
+## WARNING: This is in active development. It may be janky, or worse, busted.
+
+3D renderer for voxel graphics and other fancy crapfrick.
 
 ## Features
 
@@ -21,7 +23,7 @@
 	- macOS support is possible but I don't have a Mac
 	- WebGL support is also possible but I don't really care about that, so I didn't implement that
 	- Only tested on Clang and GCC, I don't know if MSVC works
-- You do need to install the usual GLFW/OpenGL dependencies on Linux (see the usage section)
+- You do have to install the usual GLFW/OpenGL dependencies on Linux (see the usage section)
 - I haven't implemented those fancy optimizations yet
 
 ## Usage

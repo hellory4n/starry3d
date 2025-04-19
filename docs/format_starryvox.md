@@ -82,5 +82,4 @@ While being able to change palettes is what we in the community refer to as "coo
 palettes could use completely different indexes. So for example on one palette 57 is blue, and on the other
 one it's red. Quite the pickle.
 
-To solve that, here's a list of colors indexes that should look somewhat similar across palettes,
-based on [X11 color names](https://en.wikipedia.org/wiki/X11_color_names#Color_name_chart)
+I'm eventually gonna do a list of colors later lmao.

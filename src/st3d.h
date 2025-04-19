@@ -7,7 +7,7 @@ extern "C" {
 #endif
 
 // Starry3D version :D
-#define ST3D_VERSION "v0.1.0"
+#define ST3D_VERSION "v0.1.1"
 
 // Default size for buffers storing paths. It's 260 because that's the limit on Windows.
 #define ST3D_PATH_SIZE 260
