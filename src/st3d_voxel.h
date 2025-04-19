@@ -1,4 +1,4 @@
-#ifndef _ST3D_VOXEL_H
+/*#ifndef _ST3D_VOXEL_H
 #define _ST3D_VOXEL_H
 #include <libtrippin.h>
 
@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-// Your voxel models are expected to have the same size :)
+// Used for coordinates
 #ifndef ST3D_VOXEL_SIZE
 	#define ST3D_VOXEL_SIZE 16
 #endif
@@ -19,6 +19,8 @@ typedef struct {
 	// Index from the palette
 	uint8_t color;
 } St3dVoxel;
+
+typedef TrSlice St3dVoxM
 
 typedef struct {
 	TrSlice voxels;
@@ -38,3 +40,4 @@ St3dVoxModel st3d_voxel_new(const char* path);
 #endif
 
 #endif
+*/

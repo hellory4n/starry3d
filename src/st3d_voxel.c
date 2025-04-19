@@ -1,6 +1,8 @@
-#include <stdio.h>
+/*#include <stdio.h>
 #include "st3d.h"
 #include "st3d_voxel.h"
+
+// vox loader based on https://paulbourke.net/dataformats/vox/
 
 // structs to be used with fread
 
@@ -32,8 +34,6 @@ St3dVoxModel st3d_voxel_new(const char* path)
 	// we do have to read the file
 	FILE* file = fopen(real_path.buffer, "rb");
 
-	// based on https://paulbourke.net/dataformats/vox/
-
 	// magic number thing
 	// we don't care about the version so we just check for the magic number
 	VoxHeader header;
@@ -60,3 +60,4 @@ St3dVoxModel st3d_voxel_new(const char* path)
 	tr_liblog("loaded vox model at %s", path);
 	return model;
 }
+*/
