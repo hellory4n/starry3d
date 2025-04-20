@@ -3,7 +3,7 @@
 #include <st3d_render.h>
 #include <st3d_ui.h>
 
-static void ui_voxel_placer_5000(void);
+static void player_controller(void);
 
 int main(void)
 {
@@ -44,7 +44,7 @@ int main(void)
 
 		// nuklear calls go inside here
 		st3d_ui_begin();
-			ui_voxel_placer_5000();
+			player_controller();
 		st3d_ui_end();
 
 		// st3d_set_camera((St3dCamera){
@@ -66,12 +66,36 @@ int main(void)
 	st3d_free();
 }
 
-static void ui_voxel_placer_5000(void)
+const double speed = 2;
+TrVec3f cam_pos;
+
+static void player_controller(void)
 {
-	struct nk_context* ctx = st3d_nkctx();
-	if (nk_begin(ctx, "jankler", nk_rect(0, 0, 200, 200), NK_WINDOW_BORDER | NK_WINDOW_TITLE)) {
-		// nk_layout_row_dynamic(ctx, 20, 1);
-		// nk_button_label(ctx)
+	double dt = st3d_delta_time();
+
+	if (st3d_is_key_held(ST3D_KEY_W)) {
+		cam_pos.z -= speed * dt;
 	}
-	nk_end(ctx);
+	if (st3d_is_key_held(ST3D_KEY_S)) {
+		cam_pos.z += speed * dt;
+	}
+	if (st3d_is_key_held(ST3D_KEY_A)) {
+		cam_pos.x -= speed * dt;
+	}
+	if (st3d_is_key_held(ST3D_KEY_D)) {
+		cam_pos.x += speed * dt;
+	}
+	if (st3d_is_key_held(ST3D_KEY_LEFT_SHIFT)) {
+		cam_pos.y -= speed * dt;
+	}
+	if (st3d_is_key_held(ST3D_KEY_SPACE)) {
+		cam_pos.y += speed * dt;
+	}
+
+	st3d_set_camera((St3dCamera){
+		.position = cam_pos,
+		.fov = 90,
+		.near = 0.001,
+		.far = 10000,
+	});
 }

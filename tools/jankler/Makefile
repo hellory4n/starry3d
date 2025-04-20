@@ -97,13 +97,13 @@ else ifeq ($(OS),linux)
     CFLAGS += -DST3D_LINUX
 endif
 
-all: $(TARGET)
+all: $(COPYCMDS) $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ && $(COPYCMDS)
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 clean:
 	rm -f $(OBJS) $(TARGET) log.txt *glfw* libwinpthread-1.dll

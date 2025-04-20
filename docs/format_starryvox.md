@@ -17,8 +17,6 @@ struct StarryvoxHeader {
     uint32_t version;
 
     struct {
-        // coordinates follow the same convention as opengl
-        // but (0, 0, 0) is the bottom left instead of the center
         uint8_t x;
         uint8_t y;
         uint8_t z;
@@ -57,8 +55,7 @@ The difference between Starryvox and Starrypal is in what's stored in those 4 by
 
 ```c
 struct StarryvoxChunk {
-    // coordinates follow the same convention as opengl
-    // but (0, 0, 0) is the bottom left instead of the center
+    // aligned to the bottom left
     uint8_t x;
     uint8_t y;
     uint8_t z;

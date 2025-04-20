@@ -24,6 +24,10 @@ static TrArena st3d_arena;
 static GLFWwindow* st3d_window;
 static TrVec2i st3d_winsize;
 
+static double st3d_prev_time;
+static double st3d_cur_time;
+static double st3d_delta_tim;
+
 // type is St3dInputState
 static TrSlice_int32 st3d_key_state;
 // type is bool
@@ -190,6 +194,16 @@ void st3d_poll_events(void)
 
 		*was_down = is_down;
 	}
+
+	// YOU UNDERSTAND MECHANICAL HANDS ARE THE RULER OF EVERYTHING
+	// ah
+	// RULER OF EVERYTHING
+	// ah
+	// IM THE RULER OF EVERYTHING
+	// in the end...
+	st3d_cur_time = st3d_time();
+	st3d_delta_tim = st3d_cur_time - st3d_prev_time;
+	st3d_prev_time = st3d_cur_time;
 }
 
 void st3d_close(void)
@@ -266,6 +280,21 @@ TrVec2f st3d_mouse_scroll(void)
 void st3d_set_mouse_enabled(bool val)
 {
 	glfwSetInputMode(st3d_window, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+}
+
+double st3d_time(void)
+{
+	return glfwGetTime();
+}
+
+double st3d_delta_time(void)
+{
+	return st3d_delta_tim;
+}
+
+double st3d_fps(void)
+{
+	return 1.0 / st3d_delta_tim;
 }
 
 void st3d_app_dir(TrString* out)

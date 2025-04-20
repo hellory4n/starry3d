@@ -195,6 +195,15 @@ TrVec2f st3d_mouse_scroll(void);
 // and stuff.
 void st3d_set_mouse_enabled(bool val);
 
+// Gets the time since the window started, in seconds
+double st3d_time(void);
+
+// Gets the time between frames, in seconds
+double st3d_delta_time(void);
+
+// Gets the frames per second (FPS) that the program is running on
+double st3d_fps(void);
+
 // Gets the directory of the executable, and outputs it into out
 void st3d_app_dir(TrString* out);
 
