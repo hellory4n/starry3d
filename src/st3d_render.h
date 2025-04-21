@@ -13,29 +13,40 @@ extern "C" {
 	"layout (location = 2) in vec2 texcoord;"  \
 	""                                         \
 	"out vec4 out_color;"                      \
-	"out vec2 TexCoord;"                       \
+	"out vec2 out_texcoord;"                       \
+	"out vec4 out_tint;"                       \
 	""                                         \
 	"uniform mat4 u_mvp;"                      \
+	"uniform vec4 u_tint;"                     \
+	"uniform bool u_has_texture;" \
 	""                                         \
 	"void main()"                              \
 	"{"                                        \
 	"	gl_Position = u_mvp * vec4(pos, 1.0);" \
 	"	out_color = color;"                    \
-	"	TexCoord = texcoord;"                  \
+	"	out_texcoord = texcoord;"                  \
+	"	out_tint = u_tint;"                    \
 	"}"
 
-#define ST3D_DEFAULT_FRAGMENT_SHADER                           \
-	"#version 330 core\n"                                      \
-	"in vec4 out_color;"                                       \
-	"in vec2 TexCoord;"                                        \
-	""                                                         \
-	"out vec4 FragColor;"                                      \
-	""                                                         \
-	"uniform sampler2D u_texture;"                             \
-	""                                                         \
-	"void main()"                                              \
-	"{"                                                        \
-	"	FragColor = texture(u_texture, TexCoord) * out_color;" \
+#define ST3D_DEFAULT_FRAGMENT_SHADER                                      \
+	"#version 330 core\n"                                                 \
+	"in vec4 out_color;"                                                  \
+	"in vec2 out_texcoord;"                                                   \
+	"in vec4 out_tint;"                                                   \
+	""                                                                    \
+	"out vec4 FragColor;"                                                 \
+	""                                                                    \
+	"uniform sampler2D u_texture;"                                        \
+	"uniform bool u_has_texture;" \
+	""                                                                    \
+	"void main()"                                                         \
+	"{"                                                                   \
+	"	if (u_has_texture) {" \
+	"		FragColor = texture(u_texture, out_texcoord) * out_color * out_tint;" \
+	"	}" \
+	"	else {" \
+	"		FragColor = out_color * out_tint;" \
+	"	}" \
 	"}"
 
 #define ST3D_2D_LEFT 0
@@ -129,8 +140,8 @@ typedef struct {
 	TrVec3f position;
 	// In euler degrees
 	TrVec3f rotation;
-	// In degrees
-	float fov;
+	// On perspective, this is the FOV in degrees. On orthographic, this is the width, which does something.
+	float view;
 	// How near can you see before it gets clipped out
 	float near;
 	// How far can you see before it gets clipped out
@@ -154,6 +165,8 @@ typedef struct {
 	int32_t index_count;
 	// The texture of the mesh, if any
 	St3dTexture texture;
+	// It tints the crapfrick.
+	TrColor tint;
 } St3dMesh;
 
 // Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually

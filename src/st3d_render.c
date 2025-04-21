@@ -113,6 +113,9 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* transform)
 {
 	// help.
 	st3d_shader_set_mat4f(st3d_default_shader, "u_mvp", transform);
+	st3d_shader_set_vec4f(st3d_default_shader, "u_tint",
+		(TrVec4f){mesh.tint.r / 255.0f, mesh.tint.g / 255.0f, mesh.tint.b / 255.0f, mesh.tint.a / 255.0f});
+	st3d_shader_set_bool(st3d_default_shader, "u_has_texture", mesh.texture.id != 0);
 
 	// 0 means no texture
 	// because i didn't want to use a pointer just to have null
@@ -177,7 +180,7 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 		mat4x4_mul(view, view_rot, view_pos);
 
 		TrVec2i winsize = st3d_window_size();
-		mat4x4_perspective(proj, tr_deg2rad(st3d_cam.fov), (double)winsize.x / winsize.y,
+		mat4x4_perspective(proj, tr_deg2rad(st3d_cam.view), (double)winsize.x / winsize.y,
 			st3d_cam.near, st3d_cam.far);
 	}
 	// orthographic
@@ -201,11 +204,10 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 		mat4x4_mul(view, view_rot, view_pos);
 
 		TrVec2i winsize = st3d_window_size();
-		double ortho_width = 5.0;
-		double ortho_height = ortho_width * ((double)winsize.y / winsize.x);
+		double ortho_height = st3d_cam.view * ((double)winsize.y / winsize.x);
 
-		double left = -ortho_width / 2.0;
-		double right = ortho_width / 2.0;
+		double left = -st3d_cam.view / 2.0;
+		double right = st3d_cam.view / 2.0;
 		double bottom = -ortho_height / 2.0;
 		double top = ortho_height / 2.0;
 

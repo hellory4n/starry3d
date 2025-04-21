@@ -44,6 +44,7 @@ int main(void)
 		-0.5f, -0.5f,  0.5f,  1,1,1,1,  0.0f, 1.0f
 	);
 
+	// TODO for individual faces, just reuse the vert slice and only add more slices for indices
 	TrSlice_uint32 indices;
 	TR_SET_SLICE(&arena, &indices, uint32_t,
 		// front
@@ -62,34 +63,21 @@ int main(void)
 
 	St3dMesh mtriranfgs = st3d_mesh_new(&vertices, &indices, true);
 	mtriranfgs.texture = st3d_texture_new("app:enough_fckery.jpg");
+	mtriranfgs.tint = tr_hex_rgb(0x550877);
 	// st3d_set_wireframe(true);
-
-	// st3d_set_camera_fov(80);
-	// st3d_set_camera_near_far(0.01, 1000);
-	// st3d_set_camera_position((TrVec3f){0, 0, -3});
-	// st3d_set_camera_rotation((TrRotation){-55, 0, 0});
 
 	st3d_ui_new("app:figtree/Figtree-Medium.ttf", 16);
 
-	st3d_set_mouse_enabled(false);
-
 	while (!st3d_is_closing()) {
-		st3d_begin_drawing(tr_hex_rgb(0x550877));
+		st3d_begin_drawing(TR_WHITE);
 
 		st3d_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){0, 0, 0});
 
+		player_controller();
+
 		// nuklear calls go inside here
 		st3d_ui_begin();
-			player_controller();
 		st3d_ui_end();
-
-		// st3d_set_camera((St3dCamera){
-		// 	.position = (TrVec3f){st_pos_x, st_pos_y, st_pos_z},
-		// 	.rotation = (TrVec3f){st_rot_x, st_rot_y, st_rot_z},
-		// 	.fov = 90,
-		// 	.near = 0.01,
-		// 	.far = 1000,
-		// });
 
 		st3d_end_drawing();
 		st3d_poll_events();
@@ -117,7 +105,7 @@ static void player_controller(void)
 	st3d_set_camera((St3dCamera){
 		.position = (TrVec3f){0, 0, 0},
 		.rotation = cam_rot,
-		.fov = 90,
+		.view = 10,
 		.near = -1,
 		.far = 10000,
 		.perspective = false,
