@@ -74,71 +74,16 @@ int main(void)
 	// el_cubo.texture = st3d_texture_new("app:enough_fckery.jpg");
 	// st3d_set_wireframe(true);
 
-	// just a bigger cube
-	// bcuz i cant be bothered to scale shit
-	TrSlice_float massive_vertices;
-	TR_SET_SLICE(&arena, &massive_vertices, float,
-		-8.0f, -8.0f,  8.0f,  1,1,1,1,  0.0f, 0.0f,
-		 8.0f, -8.0f,  8.0f,  1,1,1,1,  1.0f, 0.0f,
-		 8.0f,  8.0f,  8.0f,  1,1,1,1,  1.0f, 1.0f,
-		-8.0f,  8.0f,  8.0f,  1,1,1,1,  0.0f, 1.0f,
-
-		 8.0f, -8.0f, -8.0f,  1,1,1,1,  0.0f, 0.0f,
-		-8.0f, -8.0f, -8.0f,  1,1,1,1,  1.0f, 0.0f,
-		-8.0f,  8.0f, -8.0f,  1,1,1,1,  1.0f, 1.0f,
-		 8.0f,  8.0f, -8.0f,  1,1,1,1,  0.0f, 1.0f,
-
-		-8.0f, -8.0f, -8.0f,  1,1,1,1,  0.0f, 0.0f,
-		-8.0f, -8.0f,  8.0f,  1,1,1,1,  1.0f, 0.0f,
-		-8.0f,  8.0f,  8.0f,  1,1,1,1,  1.0f, 1.0f,
-		-8.0f,  8.0f, -8.0f,  1,1,1,1,  0.0f, 1.0f,
-
-		 8.0f, -8.0f,  8.0f,  1,1,1,1,  0.0f, 0.0f,
-		 8.0f, -8.0f, -8.0f,  1,1,1,1,  1.0f, 0.0f,
-		 8.0f,  8.0f, -8.0f,  1,1,1,1,  1.0f, 1.0f,
-		 8.0f,  8.0f,  8.0f,  1,1,1,1,  0.0f, 1.0f,
-
-		-8.0f,  8.0f,  8.0f,  1,1,1,1,  0.0f, 0.0f,
-		 8.0f,  8.0f,  8.0f,  1,1,1,1,  1.0f, 0.0f,
-		 8.0f,  8.0f, -8.0f,  1,1,1,1,  1.0f, 1.0f,
-		-8.0f,  8.0f, -8.0f,  1,1,1,1,  0.0f, 1.0f,
-
-		-8.0f, -8.0f, -8.0f,  1,1,1,1,  0.0f, 0.0f,
-		 8.0f, -8.0f, -8.0f,  1,1,1,1,  1.0f, 0.0f,
-		 8.0f, -8.0f,  8.0f,  1,1,1,1,  1.0f, 1.0f,
-		-8.0f, -8.0f,  8.0f,  1,1,1,1,  0.0f, 1.0f
-	);
-
-	TrSlice_uint32 massive_indices;
-	TR_SET_SLICE(&arena, &massive_indices, uint32_t,
-		// front
-		// 0,  1,  2,    2,  3,  0,
-		// back
-		4,  5,  6,    6,  7,  4,
-		// left
-		8,  9,  10,   10, 11, 8,
-		// right
-		// 12, 13, 14,   14, 15, 12,
-		// top
-		16, 17, 18,   18, 19, 16,
-		// bottom
-		// 20, 21, 22,   22, 23, 20
-	);
-	St3dMesh most_massive_cube = st3d_mesh_new(&massive_vertices, &massive_indices, true);
-
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing(TR_BLACK);
 
-		// lmao
-		// the wireframe fuckery is to get an outline
-		glDisable(GL_DEPTH_TEST);
-		st3d_set_wireframe(true);
-		st3d_mesh_draw_3d(most_massive_cube, (TrVec3f){8, 8, 8}, (TrVec3f){0, 0, 0}, TR_WHITE);
-		st3d_set_wireframe(false);
-		st3d_mesh_draw_3d(most_massive_cube, (TrVec3f){8, 8, 8}, (TrVec3f){0, 0, 0}, tr_hex_rgba(0xffffff22));
-		glEnable(GL_DEPTH_TEST);
-
-		st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, 0, 0}, (TrVec3f){0, 0, 0}, tr_hex_rgb(0x550877));
+		for (size_t x = 0; x < 16; x++) {
+			for (size_t y = 0; y < 16; y++) {
+				for (size_t z = 0; z < 16; z++) {
+					st3d_mesh_draw_3d(el_cubo, (TrVec3f){x, y, z}, (TrVec3f){0, 0, 0}, tr_hex_rgb(0x550877));
+				}
+			}
+		}
 
 		camera_controller();
 
@@ -160,18 +105,18 @@ int main(void)
 	st3d_free();
 }
 
-const double speed = 50;
-static TrVec3f cam_rot;
+const double speed_ish = 45.0 / 2;
+static TrVec3f cam_rot = {-speed_ish, speed_ish, 0};
 static double view = 10;
 
 static void camera_controller(void)
 {
-	double dt = st3d_delta_time();
+	// double dt = st3d_delta_time();
 
-	if (st3d_is_key_held(ST3D_KEY_LEFT))  cam_rot.y += speed * dt;
-	if (st3d_is_key_held(ST3D_KEY_RIGHT)) cam_rot.y -= speed * dt;
-	if (st3d_is_key_held(ST3D_KEY_UP))    cam_rot.x += speed * dt;
-	if (st3d_is_key_held(ST3D_KEY_DOWN))  cam_rot.x -= speed * dt;
+	if (st3d_is_key_just_pressed(ST3D_KEY_LEFT))  cam_rot.y += speed_ish;
+	if (st3d_is_key_just_pressed(ST3D_KEY_RIGHT)) cam_rot.y -= speed_ish;
+	if (st3d_is_key_just_pressed(ST3D_KEY_UP))    cam_rot.x += speed_ish;
+	if (st3d_is_key_just_pressed(ST3D_KEY_DOWN))  cam_rot.x -= speed_ish;
 
 	// zoom,
 	TrVec2f scroll = st3d_mouse_scroll();
@@ -206,20 +151,14 @@ static void model_controller(void)
 	if (st3d_is_key_just_pressed(ST3D_KEY_SPACE))      selection_pos.y += 1;
 
 	// TODO we should probably be able to change the dimensions
-	// this just so the user doesn't think its a bug lmao
-	if (selection_pos.x > 15 || selection_pos.x < 0 || selection_pos.y > 15 || selection_pos.y < 0 ||
-	selection_pos.z > 15 || selection_pos.z < 0) {
-		struct nk_context* ctx = st3d_nkctx();
-		if (nk_begin(ctx, "Jankler has encountered an inconvenience.", nk_rect(25, 25, 700, 100),
-	NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
-			nk_layout_row_dynamic(ctx, 20, 1);
-			nk_label(ctx, "you fucking doofus the model is 16x16x16 not fucking infinite x infinite x infinite do you even know how to", NK_TEXT_ALIGN_LEFT);
-			nk_label(ctx, "model you should be ashamed of yourself", NK_TEXT_ALIGN_LEFT);
-		}
-		nk_end(ctx);
-	}
+	selection_pos.x = tr_clamp(selection_pos.x, 0, 15);
+	selection_pos.y = tr_clamp(selection_pos.y, 0, 15);
+	selection_pos.z = tr_clamp(selection_pos.z, 0, 15);
 
+	// help.
+	st3d_set_wireframe(true);
 	st3d_mesh_draw_3d(el_cubo, selection_pos, (TrVec3f){0, 0, 0}, ST3D_SELECTION_COLOR);
+	st3d_set_wireframe(false);
 }
 
 static void main_ui(void)

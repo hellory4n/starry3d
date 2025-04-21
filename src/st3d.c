@@ -55,7 +55,11 @@ static void on_framebuffer_resize(GLFWwindow* window, int width, int height)
 static void on_error(int error_code, const char* description)
 {
 	// tr_panic puts a breakpoint and that's cool
+	#ifdef DEBUG
 	tr_panic("gl error %i: %s", error_code, description);
+	#else
+	tr_warn("gl error: %i: %s", error_code, description);
+	#endif
 }
 
 static void on_scroll(GLFWwindow* window, double x, double y)
