@@ -186,7 +186,8 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint)
 	// orthographic
 	else {
 		mat4x4_identity(model);
-		mat4x4_translate(model, pos.x, pos.y, pos.z);
+		// ???????
+		mat4x4_translate(model, pos.x, -pos.y, pos.z);
 
 		mat4x4_rotate_Z(model, model, tr_deg2rad(rot.z));
 		mat4x4_rotate_Y(model, model, tr_deg2rad(rot.y));
@@ -195,7 +196,7 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint)
 		mat4x4 view_pos, view_rot;
 		mat4x4_identity(view_pos);
 		mat4x4_identity(view_rot);
-		mat4x4_translate(view_pos, -st3d_cam.position.x, -st3d_cam.position.y, -st3d_cam.position.z);
+		mat4x4_translate(view_pos, -st3d_cam.position.x, st3d_cam.position.y, -st3d_cam.position.z);
 
 		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.z));
 		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.y));
@@ -211,7 +212,7 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint)
 		double bottom = -ortho_height / 2.0;
 		double top = ortho_height / 2.0;
 
-		mat4x4_ortho(proj, left, right, bottom, top, st3d_cam.near, st3d_cam.far);
+		mat4x4_ortho(proj, left, right, top, bottom, st3d_cam.near, st3d_cam.far);
 	}
 
 	mat4x4 mvp;

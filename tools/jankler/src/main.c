@@ -1,15 +1,22 @@
+#include <glad/gl.h>
 #include <stdio.h>
 #include <libtrippin.h>
 #include <st3d.h>
 #include <st3d_render.h>
 #include <st3d_ui.h>
 
-static void player_controller(void);
+#define ST3D_SELECTION_COLOR tr_hex_rgba(0xffffff77)
+
+static void camera_controller(void);
+static void model_controller(void);
 static void main_ui(void);
+
+static St3dMesh el_cubo;
 
 int main(void)
 {
 	st3d_init("jankler", "assets", 800, 600);
+	st3d_ui_new("app:figtree/Figtree-Medium.ttf", 16);
 	TrArena arena = tr_arena_new(TR_MB(1));
 
 	// ttriangel
@@ -63,23 +70,84 @@ int main(void)
 		20, 21, 22,   22, 23, 20
 	);
 
-	St3dMesh mtriranfgs = st3d_mesh_new(&vertices, &indices, true);
-	mtriranfgs.texture = st3d_texture_new("app:enough_fckery.jpg");
+	el_cubo = st3d_mesh_new(&vertices, &indices, true);
+	// el_cubo.texture = st3d_texture_new("app:enough_fckery.jpg");
 	// st3d_set_wireframe(true);
 
-	st3d_ui_new("app:figtree/Figtree-Medium.ttf", 16);
+	// just a bigger cube
+	// bcuz i cant be bothered to scale shit
+	TrSlice_float massive_vertices;
+	TR_SET_SLICE(&arena, &massive_vertices, float,
+		-8.0f, -8.0f,  8.0f,  1,1,1,1,  0.0f, 0.0f,
+		 8.0f, -8.0f,  8.0f,  1,1,1,1,  1.0f, 0.0f,
+		 8.0f,  8.0f,  8.0f,  1,1,1,1,  1.0f, 1.0f,
+		-8.0f,  8.0f,  8.0f,  1,1,1,1,  0.0f, 1.0f,
+
+		 8.0f, -8.0f, -8.0f,  1,1,1,1,  0.0f, 0.0f,
+		-8.0f, -8.0f, -8.0f,  1,1,1,1,  1.0f, 0.0f,
+		-8.0f,  8.0f, -8.0f,  1,1,1,1,  1.0f, 1.0f,
+		 8.0f,  8.0f, -8.0f,  1,1,1,1,  0.0f, 1.0f,
+
+		-8.0f, -8.0f, -8.0f,  1,1,1,1,  0.0f, 0.0f,
+		-8.0f, -8.0f,  8.0f,  1,1,1,1,  1.0f, 0.0f,
+		-8.0f,  8.0f,  8.0f,  1,1,1,1,  1.0f, 1.0f,
+		-8.0f,  8.0f, -8.0f,  1,1,1,1,  0.0f, 1.0f,
+
+		 8.0f, -8.0f,  8.0f,  1,1,1,1,  0.0f, 0.0f,
+		 8.0f, -8.0f, -8.0f,  1,1,1,1,  1.0f, 0.0f,
+		 8.0f,  8.0f, -8.0f,  1,1,1,1,  1.0f, 1.0f,
+		 8.0f,  8.0f,  8.0f,  1,1,1,1,  0.0f, 1.0f,
+
+		-8.0f,  8.0f,  8.0f,  1,1,1,1,  0.0f, 0.0f,
+		 8.0f,  8.0f,  8.0f,  1,1,1,1,  1.0f, 0.0f,
+		 8.0f,  8.0f, -8.0f,  1,1,1,1,  1.0f, 1.0f,
+		-8.0f,  8.0f, -8.0f,  1,1,1,1,  0.0f, 1.0f,
+
+		-8.0f, -8.0f, -8.0f,  1,1,1,1,  0.0f, 0.0f,
+		 8.0f, -8.0f, -8.0f,  1,1,1,1,  1.0f, 0.0f,
+		 8.0f, -8.0f,  8.0f,  1,1,1,1,  1.0f, 1.0f,
+		-8.0f, -8.0f,  8.0f,  1,1,1,1,  0.0f, 1.0f
+	);
+
+	TrSlice_uint32 massive_indices;
+	TR_SET_SLICE(&arena, &massive_indices, uint32_t,
+		// front
+		// 0,  1,  2,    2,  3,  0,
+		// back
+		4,  5,  6,    6,  7,  4,
+		// left
+		8,  9,  10,   10, 11, 8,
+		// right
+		// 12, 13, 14,   14, 15, 12,
+		// top
+		16, 17, 18,   18, 19, 16,
+		// bottom
+		// 20, 21, 22,   22, 23, 20
+	);
+	St3dMesh most_massive_cube = st3d_mesh_new(&massive_vertices, &massive_indices, true);
 
 	while (!st3d_is_closing()) {
-		st3d_begin_drawing(TR_WHITE);
+		st3d_begin_drawing(TR_BLACK);
 
-		st3d_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){0, 0, 0}, tr_hex_rgb(0x550877));
+		// lmao
+		// the wireframe fuckery is to get an outline
+		glDisable(GL_DEPTH_TEST);
+		st3d_set_wireframe(true);
+		st3d_mesh_draw_3d(most_massive_cube, (TrVec3f){8, 8, 8}, (TrVec3f){0, 0, 0}, TR_WHITE);
+		st3d_set_wireframe(false);
+		st3d_mesh_draw_3d(most_massive_cube, (TrVec3f){8, 8, 8}, (TrVec3f){0, 0, 0}, tr_hex_rgba(0xffffff22));
+		glEnable(GL_DEPTH_TEST);
+
+		st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, 0, 0}, (TrVec3f){0, 0, 0}, tr_hex_rgb(0x550877));
+
+		camera_controller();
 
 		// nuklear calls go inside here
 		st3d_ui_begin();
 			main_ui();
+			// i put a dialog thingy in there
+			model_controller();
 		st3d_ui_end();
-
-		player_controller();
 
 		st3d_end_drawing();
 		st3d_poll_events();
@@ -87,8 +155,8 @@ int main(void)
 
 	st3d_ui_free();
 
-	st3d_texture_free(mtriranfgs.texture);
-	st3d_mesh_free(mtriranfgs);
+	st3d_texture_free(el_cubo.texture);
+	st3d_mesh_free(el_cubo);
 	st3d_free();
 }
 
@@ -96,7 +164,7 @@ const double speed = 50;
 static TrVec3f cam_rot;
 static double view = 10;
 
-static void player_controller(void)
+static void camera_controller(void)
 {
 	double dt = st3d_delta_time();
 
@@ -115,14 +183,43 @@ static void player_controller(void)
 	}
 
 	st3d_set_camera((St3dCamera){
-		.position = (TrVec3f){0, 0, 0},
+		// position is in the middle
+		.position = (TrVec3f){8, 8, 8},
 		.rotation = cam_rot,
 		.view = view,
 		// ??
-		.near = -1,
+		.near = -10000,
 		.far = 10000,
 		.perspective = false,
 	});
+}
+
+TrVec3f selection_pos;
+
+static void model_controller(void)
+{
+	if (st3d_is_key_just_pressed(ST3D_KEY_W))          selection_pos.z -= 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_A))          selection_pos.x -= 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_S))          selection_pos.z += 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_D))          selection_pos.x += 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_LEFT_SHIFT)) selection_pos.y -= 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_SPACE))      selection_pos.y += 1;
+
+	// TODO we should probably be able to change the dimensions
+	// this just so the user doesn't think its a bug lmao
+	if (selection_pos.x > 15 || selection_pos.x < 0 || selection_pos.y > 15 || selection_pos.y < 0 ||
+	selection_pos.z > 15 || selection_pos.z < 0) {
+		struct nk_context* ctx = st3d_nkctx();
+		if (nk_begin(ctx, "Jankler has encountered an inconvenience.", nk_rect(25, 25, 700, 100),
+	NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
+			nk_layout_row_dynamic(ctx, 20, 1);
+			nk_label(ctx, "you fucking doofus the model is 16x16x16 not fucking infinite x infinite x infinite do you even know how to", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "model you should be ashamed of yourself", NK_TEXT_ALIGN_LEFT);
+		}
+		nk_end(ctx);
+	}
+
+	st3d_mesh_draw_3d(el_cubo, selection_pos, (TrVec3f){0, 0, 0}, ST3D_SELECTION_COLOR);
 }
 
 static void main_ui(void)
@@ -135,15 +232,23 @@ static void main_ui(void)
 		nk_label(ctx, "Advanced Voxel Modelling Software", NK_TEXT_ALIGN_CENTERED);
 
 		struct nk_color istg = {255, 255, 255, 255};
-		nk_label_colored(ctx, "Camera", NK_TEXT_ALIGN_CENTERED, istg);
+		nk_label_colored(ctx, "How To Use This Disaster", NK_TEXT_ALIGN_CENTERED, istg);
+		nk_label(ctx, "scroll to zoom", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "arrow keys to rotate", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "wasd and shift or space to select", NK_TEXT_ALIGN_LEFT);
+
+		nk_label_colored(ctx, "Help Me", NK_TEXT_ALIGN_CENTERED, istg);
 
 		// man
 		char fucky1[64];
 		char fucky2[64];
+		char fucky3[64];
 		snprintf(fucky1, sizeof(fucky1), "view: %f", view);
 		snprintf(fucky2, sizeof(fucky2), "rotation: %.2f %.2f %.2f", cam_rot.x, cam_rot.y, cam_rot.z);
+		snprintf(fucky3, sizeof(fucky3), "selection: %.0f %.0f %.0f", selection_pos.x, selection_pos.y, selection_pos.z);
 		nk_label(ctx, fucky1, NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, fucky2, NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, fucky3, NK_TEXT_ALIGN_LEFT);
 	}
 	nk_end(ctx);
 }
