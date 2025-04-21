@@ -201,7 +201,7 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 		mat4x4_mul(view, view_rot, view_pos);
 
 		TrVec2i winsize = st3d_window_size();
-		double ortho_width = 10.0;
+		double ortho_width = 5.0;
 		double ortho_height = ortho_width * ((double)winsize.y / winsize.x);
 
 		double left = -ortho_width / 2.0;
