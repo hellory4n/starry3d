@@ -15,8 +15,8 @@ int main(void)
 	TR_SET_SLICE(&arena, &vertices, float,
 		// vertices            // colors                  // texcoords
 		-1.0f, -1.0f,  1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f,
-		 1.0f, -1.0f,  1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f,
-	     1.0f,  1.0f, -1.0f,    1.0f, 1.0f, 1.0f, 0.0f,    1.0f, 1.0f,
+		1.0f, -1.0f,  1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f,
+		1.0f,  1.0f, -1.0f,    1.0f, 1.0f, 1.0f, 0.0f,    1.0f, 1.0f,
 		-1.0f,  1.0f, -1.0f,    1.0f, 1.0f, 1.0f, 0.0f,    0.0f, 1.0f,
 	);
 
@@ -37,10 +37,12 @@ int main(void)
 
 	st3d_ui_new("app:figtree/Figtree-Medium.ttf", 16);
 
+	st3d_set_mouse_enabled(false);
+
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing(tr_hex_rgb(0x550877));
 
-		st3d_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){64, 65, 62});
+		st3d_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){0, 0, 0});
 
 		// nuklear calls go inside here
 		st3d_ui_begin();
@@ -66,36 +68,24 @@ int main(void)
 	st3d_free();
 }
 
-const double speed = 2;
-TrVec3f cam_pos;
+const double speed = 50;
+static TrVec3f cam_rot;
 
 static void player_controller(void)
 {
 	double dt = st3d_delta_time();
 
-	if (st3d_is_key_held(ST3D_KEY_W)) {
-		cam_pos.z -= speed * dt;
-	}
-	if (st3d_is_key_held(ST3D_KEY_S)) {
-		cam_pos.z += speed * dt;
-	}
-	if (st3d_is_key_held(ST3D_KEY_A)) {
-		cam_pos.x -= speed * dt;
-	}
-	if (st3d_is_key_held(ST3D_KEY_D)) {
-		cam_pos.x += speed * dt;
-	}
-	if (st3d_is_key_held(ST3D_KEY_LEFT_SHIFT)) {
-		cam_pos.y -= speed * dt;
-	}
-	if (st3d_is_key_held(ST3D_KEY_SPACE)) {
-		cam_pos.y += speed * dt;
-	}
+	if (st3d_is_key_held(ST3D_KEY_LEFT))  cam_rot.y += speed * dt;
+	if (st3d_is_key_held(ST3D_KEY_RIGHT)) cam_rot.y -= speed * dt;
+	if (st3d_is_key_held(ST3D_KEY_UP))    cam_rot.x += speed * dt;
+	if (st3d_is_key_held(ST3D_KEY_DOWN))  cam_rot.x -= speed * dt;
 
 	st3d_set_camera((St3dCamera){
-		.position = cam_pos,
+		.position = (TrVec3f){0, 0, 0},
+		.rotation = cam_rot,
 		.fov = 90,
-		.near = 0.001,
+		.near = -10,
 		.far = 10000,
+		.perspective = false,
 	});
 }

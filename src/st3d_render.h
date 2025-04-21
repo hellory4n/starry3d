@@ -135,6 +135,8 @@ typedef struct {
 	float near;
 	// How far can you see before it gets clipped out
 	float far;
+	// If true, the camera is perspective. Else, it's orthographic.
+	bool perspective;
 } St3dCamera;
 
 // Returns the current camera

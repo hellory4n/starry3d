@@ -89,16 +89,9 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, true);
 	#ifdef DEBUG
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
-	#endif
-
-	// i use a tiling window manager and i want it to float
-	// TODO don't
-	#ifdef DEBUG
-	glfwWindowHint(GLFW_RESIZABLE, false);
-	#else
-	glfwWindowHint(GLFW_RESIZABLE, true);
 	#endif
 
 	st3d_window = glfwCreateWindow(width, height, app, NULL, NULL);
