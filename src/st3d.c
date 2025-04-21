@@ -140,6 +140,9 @@ void* st3d_get_window_handle(void)
 
 void st3d_poll_events(void)
 {
+	// sir.
+	st3d_cur_mouse_scroll = (TrVec2f){0, 0};
+
 	glfwPollEvents();
 
 	// we have more fancy states :)

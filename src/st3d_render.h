@@ -6,41 +6,41 @@
 extern "C" {
 #endif
 
-#define ST3D_DEFAULT_VERTEX_SHADER             \
-	"#version 330 core\n"                      \
-	"layout (location = 0) in vec3 pos;"       \
-	"layout (location = 1) in vec4 color;"     \
-	"layout (location = 2) in vec2 texcoord;"  \
-	""                                         \
-	"out vec4 out_color;"                      \
-	"out vec2 out_texcoord;"                       \
-	"out vec4 out_tint;"                       \
-	""                                         \
-	"uniform mat4 u_mvp;"                      \
-	"uniform vec4 u_tint;"                     \
+#define ST3D_DEFAULT_VERTEX_SHADER \
+	"#version 330 core\n" \
+	"layout (location = 0) in vec3 pos;" \
+	"layout (location = 1) in vec4 color;" \
+	"layout (location = 2) in vec2 texcoord;" \
+	"" \
+	"out vec4 out_color;" \
+	"out vec2 out_texcoord;" \
+	"out vec4 out_tint;" \
+	"" \
+	"uniform mat4 u_mvp;" \
+	"uniform vec4 u_tint;" \
 	"uniform bool u_has_texture;" \
-	""                                         \
-	"void main()"                              \
-	"{"                                        \
+	"" \
+	"void main()" \
+	"{" \
 	"	gl_Position = u_mvp * vec4(pos, 1.0);" \
-	"	out_color = color;"                    \
-	"	out_texcoord = texcoord;"                  \
-	"	out_tint = u_tint;"                    \
+	"	out_color = color;" \
+	"	out_texcoord = texcoord;" \
+	"	out_tint = u_tint;" \
 	"}"
 
-#define ST3D_DEFAULT_FRAGMENT_SHADER                                      \
-	"#version 330 core\n"                                                 \
-	"in vec4 out_color;"                                                  \
-	"in vec2 out_texcoord;"                                                   \
-	"in vec4 out_tint;"                                                   \
-	""                                                                    \
-	"out vec4 FragColor;"                                                 \
-	""                                                                    \
-	"uniform sampler2D u_texture;"                                        \
+#define ST3D_DEFAULT_FRAGMENT_SHADER \
+	"#version 330 core\n" \
+	"in vec4 out_color;" \
+	"in vec2 out_texcoord;" \
+	"in vec4 out_tint;" \
+	"" \
+	"out vec4 FragColor;" \
+	"" \
+	"uniform sampler2D u_texture;" \
 	"uniform bool u_has_texture;" \
-	""                                                                    \
-	"void main()"                                                         \
-	"{"                                                                   \
+	"" \
+	"void main()" \
+	"{" \
 	"	if (u_has_texture) {" \
 	"		FragColor = texture(u_texture, out_texcoord) * out_color * out_tint;" \
 	"	}" \
@@ -165,25 +165,24 @@ typedef struct {
 	int32_t index_count;
 	// The texture of the mesh, if any
 	St3dTexture texture;
-	// It tints the crapfrick.
-	TrColor tint;
 } St3dMesh;
 
 // Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
-// leave it false.
+// leave it false. The format for vertices is XYZRGBAUV, for the position, color, and texcoords,
+// where each letter is a float. Remember this is OpenGL so colors are 0-1, not 0-255.
 St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly);
 
 // It frees the mesh.
 void st3d_mesh_free(St3dMesh mesh);
 
 // Draws a mesh with a transform thingy.
-void st3d_mesh_draw_transform(St3dMesh mesh, float* transform);
+void st3d_mesh_draw_transform(St3dMesh mesh, float* transform, TrColor tint);
 
 // Draws a mesh in 2D using an orthographic projection.
-void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos);
+void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos, TrColor tint);
 
 // Draws a mesh in the 3D world using an orthographic projection. Rotation is in euler degrees.
-void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot);
+void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint);
 
 #ifdef __cplusplus
 }

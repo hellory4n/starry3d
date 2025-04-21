@@ -109,12 +109,12 @@ void st3d_mesh_free(St3dMesh mesh)
 	tr_liblog("freed mesh (vao %u)", mesh.vao);
 }
 
-void st3d_mesh_draw_transform(St3dMesh mesh, float* transform)
+void st3d_mesh_draw_transform(St3dMesh mesh, float* transform, TrColor tint)
 {
 	// help.
 	st3d_shader_set_mat4f(st3d_default_shader, "u_mvp", transform);
 	st3d_shader_set_vec4f(st3d_default_shader, "u_tint",
-		(TrVec4f){mesh.tint.r / 255.0f, mesh.tint.g / 255.0f, mesh.tint.b / 255.0f, mesh.tint.a / 255.0f});
+		(TrVec4f){tint.r / 255.0f, tint.g / 255.0f, tint.b / 255.0f, tint.a / 255.0f});
 	st3d_shader_set_bool(st3d_default_shader, "u_has_texture", mesh.texture.id != 0);
 
 	// 0 means no texture
@@ -137,7 +137,7 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* transform)
 	glBindVertexArray(0);
 }
 
-void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos)
+void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos, TrColor tint)
 {
 	mat4x4 model;
 	mat4x4_identity(model);
@@ -152,10 +152,10 @@ void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos)
 	mat4x4_identity(mvp);
 	mat4x4_mul(mvp, proj, model);
 
-	st3d_mesh_draw_transform(mesh, (float*)mvp);
+	st3d_mesh_draw_transform(mesh, (float*)mvp, tint);
 }
 
-void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
+void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint)
 {
 	mat4x4 model, view, proj;
 
@@ -218,7 +218,7 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 	mat4x4_mul(mvp, proj, view);
 	mat4x4_mul(mvp, mvp, model);
 
-	st3d_mesh_draw_transform(mesh, (float*)mvp);
+	st3d_mesh_draw_transform(mesh, (float*)mvp, tint);
 }
 
 static void check_shader(uint32_t obj)

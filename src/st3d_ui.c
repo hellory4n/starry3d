@@ -47,6 +47,13 @@ void st3d_ui_free(void)
 
 void st3d_ui_begin(void)
 {
+	// starry3d and nuklear both try to set the scroll callback
+	// so this is just passing the scroll shitfuck back to nuklear
+	TrVec2f scroll = st3d_mouse_scroll();
+	struct nk_glfw* glfw = (struct nk_glfw*)glfwGetWindowUserPointer(st3d_get_window_handle());
+    glfw->scroll.x += (float)scroll.x;
+    glfw->scroll.y += (float)scroll.y;
+
 	nk_glfw3_new_frame(&st3d_glfw);
 }
 
