@@ -110,14 +110,16 @@ void st3d_mesh_free(St3dMesh mesh)
 	tr_liblog("freed mesh (vao %u)", mesh.vao);
 }
 
-void st3d_mesh_draw_transform(St3dMesh mesh, float* transform)
+void st3d_mesh_draw_transform(St3dMesh mesh, float* model, float* view, float* proj)
 {
 	// help.
-	st3d_shader_set_mat4f(st3d_default_shader, "u_mvp", transform);
+	st3d_shader_set_mat4f(st3d_default_shader, "u_model", model);
+	st3d_shader_set_mat4f(st3d_default_shader, "u_view", view);
+	st3d_shader_set_mat4f(st3d_default_shader, "u_proj", proj);
 	st3d_shader_set_bool(st3d_default_shader, "u_has_texture", mesh.texture.id != 0);
 	st3d_shader_set_vec4f(st3d_default_shader, "u_sun_color",
-		(TrVec4f){st3d_env.sun_color.r / 255.0f, st3d_env.sun_color.g / 255.0f,
-		st3d_env.sun_color.b / 255.0f, st3d_env.sun_color.a / 255.0f});
+		(TrVec4f){st3d_env.sun.color.r / 255.0f, st3d_env.sun.color.g / 255.0f,
+		st3d_env.sun.color.b / 255.0f, st3d_env.sun.color.a / 255.0f});
 	st3d_shader_set_vec4f(st3d_default_shader, "u_obj_color",
 		(TrVec4f){mesh.material.color.r / 255.0f, mesh.material.color.g / 255.0f,
 		mesh.material.color.b / 255.0f, mesh.material.color.a / 255.0f});
@@ -202,11 +204,7 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 		mat4x4_ortho(proj, left, right, top, bottom, st3d_cam.near, st3d_cam.far);
 	}
 
-	mat4x4 mvp;
-	mat4x4_mul(mvp, proj, view);
-	mat4x4_mul(mvp, mvp, model);
-
-	st3d_mesh_draw_transform(mesh, (float*)mvp);
+	st3d_mesh_draw_transform(mesh, (float*)model, (float*)view, (float*)proj);
 }
 
 static void check_shader(uint32_t obj)

@@ -64,7 +64,11 @@ int main(void)
 
 	st3d_set_environment((St3dEnvironment){
 		.sky_color = tr_hex_rgb(0x03A9F4),
-		.sun_color = TR_WHITE,
+		.sun = {
+			// you can probably make a daylight cycle with this
+			.position = {100, 1000000, 100},
+			.color = TR_WHITE,
+		},
 	});
 
 	while (!st3d_is_closing()) {

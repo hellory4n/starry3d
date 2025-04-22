@@ -9,24 +9,32 @@ extern "C" {
 #define ST3D_DEFAULT_VERTEX_SHADER \
 	"#version 330 core\n" \
 	"layout (location = 0) in vec3 pos;" \
-	"layout (location = 1) in vec3 normals;" \
+	"layout (location = 1) in vec3 normal;" \
 	"layout (location = 2) in vec2 texcoord;" \
 	"" \
+	"out vec3 out_normal;" \
 	"out vec2 out_texcoord;" \
+	"out vec3 out_pos;" \
 	"" \
-	"uniform mat4 u_mvp;" \
+	"uniform mat4 u_model;" \
+	"uniform mat4 u_view;" \
+	"uniform mat4 u_proj;" \
 	"uniform vec4 u_tint;" \
 	"uniform bool u_has_texture;" \
 	"" \
 	"void main()" \
 	"{" \
-	"	gl_Position = u_mvp * vec4(pos, 1.0);" \
+	"	gl_Position = u_proj * u_view * u_model * vec4(pos, 1.0);" \
 	"	out_texcoord = texcoord;" \
+	"	out_normal = normal;" \
+	"	out_pos = pos;" \
 	"}"
 
 #define ST3D_DEFAULT_FRAGMENT_SHADER \
 	"#version 330 core\n" \
+	"in vec3 out_normal;" \
 	"in vec2 out_texcoord;" \
+	"in vec3 out_pos;" \
 	"" \
 	"out vec4 FragColor;" \
 	"" \
@@ -37,6 +45,8 @@ extern "C" {
 	"" \
 	"void main()" \
 	"{" \
+	/* TODO do the bloody lighting calculation https://learnopengl.com/Lighting/Basic-Lighting
+	   at the "Calculating the diffuse color" */ \
 	"	if (u_has_texture) {" \
 	"		FragColor = texture(u_texture, out_texcoord) * u_obj_color * u_sun_color;" \
 	"	}" \
@@ -103,9 +113,13 @@ void st3d_set_camera(St3dCamera cam);
 typedef struct {
 	// This is actually just the clear color because I'm lazy.
 	TrColor sky_color;
-	// As the sun hits, she'll be waiting, with her cool things, and her heaven, hey hey lover, you still
-	// burn me, you're a song yeah, hey hey.
-	TrColor sun_color;
+	struct {
+		// As the sun hits, she'll be waiting, with her cool things, and her heaven, hey hey lover,
+		// you still burn me, you're a song yeah, hey hey.
+		TrColor color;
+		// This is used to get the direction of the lights and stuff.
+		TrVec3f position;
+	} sun;
 } St3dEnvironment;
 
 // Returns the current environment
@@ -137,8 +151,9 @@ St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool re
 // It frees the mesh.
 void st3d_mesh_free(St3dMesh mesh);
 
-// Draws a mesh with a transform thingy.
-void st3d_mesh_draw_transform(St3dMesh mesh, float* transform);
+// Draws a mesh with a transform thingy. There's 3 matrices because the final translation
+// faffery is handled in the shader.
+void st3d_mesh_draw_transform(St3dMesh mesh, float* model, float* view, float* proj);
 
 // Draws a mesh in the 3D world using whatever camera you set. Rotation is in euler degrees.
 void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot);
