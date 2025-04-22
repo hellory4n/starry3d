@@ -20,7 +20,6 @@ extern "C" {
 	"uniform mat4 u_view;" \
 	"uniform mat4 u_proj;" \
 	"uniform vec4 u_tint;" \
-	"uniform bool u_has_texture;" \
 	"" \
 	"void main()" \
 	"{" \
@@ -40,19 +39,27 @@ extern "C" {
 	"" \
 	"uniform sampler2D u_texture;" \
 	"uniform bool u_has_texture;" \
+	"uniform vec4 u_ambient;" \
 	"uniform vec4 u_obj_color;" \
 	"uniform vec4 u_sun_color;" \
+	"uniform vec3 u_sun_dir;" \
 	"" \
 	"void main()" \
 	"{" \
-	/* TODO do the bloody lighting calculation https://learnopengl.com/Lighting/Basic-Lighting
-	   at the "Calculating the diffuse color" */ \
+	"	vec4 obj_color;" \
 	"	if (u_has_texture) {" \
-	"		FragColor = texture(u_texture, out_texcoord) * u_obj_color * u_sun_color;" \
+	"		obj_color = texture(u_texture, out_texcoord) * u_obj_color;" \
 	"	}" \
 	"	else {" \
-	"		FragColor = u_obj_color * u_sun_color;" \
+	"		obj_color = u_obj_color;" \
 	"	}" \
+	"" \
+	"	// make sure it's normalized\n" \
+	"	vec3 normal = normalize(out_normal);" \
+	"	vec3 sundir = normalize(u_sun_dir);" \
+	"" \
+	"	float diff = max(dot(normal, sundir), 0.0);" \
+	"	FragColor = obj_color * (u_ambient + diff * (1.0 - u_ambient));" \
 	"}"
 
 #define ST3D_2D_LEFT 0
@@ -113,13 +120,18 @@ void st3d_set_camera(St3dCamera cam);
 typedef struct {
 	// This is actually just the clear color because I'm lazy.
 	TrColor sky_color;
+	// Even if it's dark there's still some light somewhere. That is not life advice.
+	TrColor ambient_color;
+
+	// this is how you get clangd to accept my documentation comments??
 	struct {
-		// As the sun hits, she'll be waiting, with her cool things, and her heaven, hey hey lover,
-		// you still burn me, you're a song yeah, hey hey.
 		TrColor color;
-		// This is used to get the direction of the lights and stuff.
-		TrVec3f position;
-	} sun;
+		// As the name implies, it's the direction of the sun. Should be normalized (-1 to 1)
+		TrVec3f direction;
+	}
+	// As the sun hits, she'll be waiting, with her cool things, and her heaven, hey hey lover,
+	// you still burn me, you're a song yeah, hey hey.
+	sun;
 } St3dEnvironment;
 
 // Returns the current environment

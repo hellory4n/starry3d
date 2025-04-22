@@ -1,5 +1,5 @@
 /*
- * libtrippin v1.2.1
+ * libtrippin v1.2.2
  *
  * Most biggest most massive standard library thing for C of all time
  * More information at https://github.com/hellory4n/libtrippin
@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 // Idk why I added this
-#define TR_VERSION "v1.2.1"
+#define TR_VERSION "v1.2.2"
 
 // It initializes libtrippin.
 void tr_init(const char* log_file);
@@ -158,18 +158,18 @@ typedef struct {
 	uint8_t r, g, b, a;
 } TrColor;
 
-inline TrColor tr_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+static inline TrColor tr_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
 	return (TrColor){.r = r, .g = g, .b = b, .a = a};
 }
 
-inline TrColor tr_rgb(uint8_t r, uint8_t g, uint8_t b)
+static inline TrColor tr_rgb(uint8_t r, uint8_t g, uint8_t b)
 {
 	return (TrColor){.r = r, .g = g, .b = b, .a = 255};
 }
 
 // format is 0xRRGGBBAA for red, green, blue, and alpha respectively
-inline TrColor tr_hex_rgba(uint32_t hex)
+static inline TrColor tr_hex_rgba(uint32_t hex)
 {
 	return (TrColor){
 		.r = (hex >> 24) & 0xFF,
@@ -180,7 +180,7 @@ inline TrColor tr_hex_rgba(uint32_t hex)
 }
 
 // format is 0xRRGGBB for red, green, and blue respectively
-inline TrColor tr_hex_rgb(uint32_t hex)
+static inline TrColor tr_hex_rgb(uint32_t hex)
 {
 	return (TrColor){
 		.r = (hex >> 16) & 0xFF,
@@ -209,23 +209,30 @@ inline TrColor tr_hex_rgb(uint32_t hex)
 #define TR_CONSOLE_COLOR_ERROR
 #endif
 
+#if defined(__GNUC__) || defined(__clang__)
+// counting starts at 1 lmao
+#define TR_LOG_FUNC(fmt_idx, varargs_idx) __attribute__((format(printf, fmt_idx, varargs_idx)))
+#else
+#define TR_LOG_FUNC(fmt_idx, varargs_idx)
+#endif
+
 // Log.
-void tr_log(const char* fmt, ...);
+TR_LOG_FUNC(1, 2) void tr_log(const char* fmt, ...);
 
 // Log but for libraries that use libtrippin so your log isn't flooded with crap.
-void tr_liblog(const char* fmt, ...);
+TR_LOG_FUNC(1, 2) void tr_liblog(const char* fmt, ...);
 
 // Oh nose.
-void tr_warn(const char* fmt, ...);
+TR_LOG_FUNC(1, 2) void tr_warn(const char* fmt, ...);
 
 // Oh god oh fuck.
-void tr_error(const char* fmt, ...);
+TR_LOG_FUNC(1, 2) void tr_error(const char* fmt, ...);
 
 // Formatted assert?!!!??!?!??!?1
-void tr_assert(bool x, const char* msg, ...);
+TR_LOG_FUNC(2, 3) void tr_assert(bool x, const char* msg, ...);
 
 // uh oh
-void tr_panic(const char* msg, ...);
+TR_LOG_FUNC(1, 2) void tr_panic(const char* msg, ...);
 
 // slices
 
@@ -268,6 +275,7 @@ typedef TrSlice TrSlice_int16;
 typedef TrSlice TrSlice_uint16;
 typedef TrSlice TrSlice_int8;
 typedef TrSlice TrSlice_uint8;
+typedef TrSlice TrSlice_bool;
 typedef TrSlice TrSlice_double;
 typedef TrSlice TrSlice_float;
 typedef TrSlice TrString;
@@ -289,6 +297,7 @@ typedef TrSlice2D TrSlice2D_int16;
 typedef TrSlice2D TrSlice2D_uint16;
 typedef TrSlice2D TrSlice2D_int8;
 typedef TrSlice2D TrSlice2D_uint8;
+typedef TrSlice2D TrSlice2D_bool;
 typedef TrSlice2D TrSlice2D_double;
 typedef TrSlice2D TrSlice2D_float;
 typedef TrSlice2D TrSlice2D_Color;
@@ -319,13 +328,13 @@ typedef struct {
 } TrRect;
 
 // Returns the area of the rectangle
-inline double tr_rect_area(TrRect r)
+static inline double tr_rect_area(TrRect r)
 {
 	return r.w * r.h;
 }
 
 // If true, the 2 rects intersect
-inline bool tr_rect_intersects(TrRect a, TrRect b)
+static inline bool tr_rect_intersects(TrRect a, TrRect b)
 {
 	// man
 	if (a.x >= (b.x + b.w)) {
@@ -344,7 +353,7 @@ inline bool tr_rect_intersects(TrRect a, TrRect b)
 }
 
 // If true, the rect, in fact, has that point
-inline bool tr_rect_has_point(TrRect rect, TrVec2f point)
+static inline bool tr_rect_has_point(TrRect rect, TrVec2f point)
 {
 	if (point.x < rect.x) {
 		return false;
@@ -389,19 +398,19 @@ int64_t tr_rand_i64(TrRand* rand, int64_t min, int64_t max);
 #endif
 
 // Converts degrees to radians
-inline double tr_deg2rad(double deg)
+static inline double tr_deg2rad(double deg)
 {
 	return deg * (PI / 180.0);
 }
 
 // Converts radians to degrees
-inline double tr_rad2deg(double rad)
+static inline double tr_rad2deg(double rad)
 {
 	return rad * (180 / PI);
 }
 
 // clamp
-inline double tr_clamp(double val, double min, double max)
+static inline double tr_clamp(double val, double min, double max)
 {
 	if (val < min) return min;
 	else if (val > max) return max;
@@ -409,19 +418,19 @@ inline double tr_clamp(double val, double min, double max)
 }
 
 // lerp
-inline double tr_lerp(double a, double b, double t)
+static inline double tr_lerp(double a, double b, double t)
 {
 	return (1.0 - t) * a + t * b;
 }
 
 // Similar to lerp, but inverse.
-inline double tr_inverse_lerp(double a, double b, double v)
+static inline double tr_inverse_lerp(double a, double b, double v)
 {
 	return (v - a) / (b - a);
 }
 
 // Converts a number from one scale to another
-inline double tr_remap(double v, double src_min, double src_max, double dst_min, double dst_max)
+static inline double tr_remap(double v, double src_min, double src_max, double dst_min, double dst_max)
 {
 	return tr_lerp(dst_min, dst_max, tr_inverse_lerp(src_min, src_max, v));
 }

@@ -120,9 +120,13 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* model, float* view, float* p
 	st3d_shader_set_vec4f(st3d_default_shader, "u_sun_color",
 		(TrVec4f){st3d_env.sun.color.r / 255.0f, st3d_env.sun.color.g / 255.0f,
 		st3d_env.sun.color.b / 255.0f, st3d_env.sun.color.a / 255.0f});
+	st3d_shader_set_vec4f(st3d_default_shader, "u_ambient_color",
+		(TrVec4f){st3d_env.ambient_color.r / 255.0f, st3d_env.ambient_color.g / 255.0f,
+		st3d_env.ambient_color.b / 255.0f, st3d_env.ambient_color.a / 255.0f});
 	st3d_shader_set_vec4f(st3d_default_shader, "u_obj_color",
 		(TrVec4f){mesh.material.color.r / 255.0f, mesh.material.color.g / 255.0f,
 		mesh.material.color.b / 255.0f, mesh.material.color.a / 255.0f});
+	st3d_shader_set_vec3f(st3d_default_shader, "u_sun_dir", st3d_env.sun.direction);
 
 	// 0 means no texture
 	// because i didn't want to use a pointer just to have null
