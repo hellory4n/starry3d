@@ -9,7 +9,8 @@ extern "C" {
 #define ST3D_DEFAULT_VERTEX_SHADER \
 	"#version 330 core\n" \
 	"layout (location = 0) in vec3 pos;" \
-	"layout (location = 1) in vec2 texcoord;" \
+	"layout (location = 1) in vec3 normals;" \
+	"layout (location = 2) in vec2 texcoord;" \
 	"" \
 	"out vec2 out_texcoord;" \
 	"" \
@@ -129,8 +130,8 @@ typedef struct {
 } St3dMesh;
 
 // Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
-// leave it false. The format for vertices is XYZUV, for the position and texcoords, where each
-// letter is a float.
+// leave it false. The format for vertices is XYZXYZUV, for the position (3 floats), normals
+// (3 floats), and texcoords (2 floats), where each letter is a float.
 St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly);
 
 // It frees the mesh.
