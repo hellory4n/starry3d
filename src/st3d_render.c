@@ -11,6 +11,7 @@
 static St3dShader st3d_default_shader;
 static bool st3d_wireframe;
 static St3dCamera st3d_cam;
+static St3dEnvironment st3d_env;
 
 void st3di_init_render(void)
 {
@@ -36,10 +37,10 @@ void st3di_free_render(void)
 	st3d_shader_free(st3d_default_shader);
 }
 
-void st3d_begin_drawing(TrColor clear_color)
+void st3d_begin_drawing(void)
 {
-	glClearColor(clear_color.r / 255.0f, clear_color.g / 255.0f,
-		clear_color.b / 255.0f, clear_color.a / 255.0f);
+	glClearColor(st3d_env.sky_color.r / 255.0f, st3d_env.sky_color.g / 255.0f,
+		st3d_env.sky_color.b / 255.0f, st3d_env.sky_color.a / 255.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	st3d_shader_use(st3d_default_shader);
@@ -116,6 +117,12 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* transform, TrColor tint)
 	st3d_shader_set_vec4f(st3d_default_shader, "u_tint",
 		(TrVec4f){tint.r / 255.0f, tint.g / 255.0f, tint.b / 255.0f, tint.a / 255.0f});
 	st3d_shader_set_bool(st3d_default_shader, "u_has_texture", mesh.texture.id != 0);
+	// st3d_shader_set_vec4f(st3d_default_shader, "u_ambient",
+	// 	(TrVec4f){st3d_env.ambient_color.r / 255.0f, st3d_env.ambient_color.g / 255.0f,
+	// 	st3d_env.ambient_color.b / 255.0f, st3d_env.ambient_color.a / 255.0f});
+	// st3d_shader_set_vec4f(st3d_default_shader, "u_obj_color",
+	// 	(TrVec4f){mesh.material.color.r / 255.0f, mesh.material.color.g / 255.0f,
+	// 	mesh.material.color.b / 255.0f, mesh.material.color.a / 255.0f});
 
 	// 0 means no texture
 	// because i didn't want to use a pointer just to have null
@@ -135,24 +142,6 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* transform, TrColor tint)
 	}
 	// unbind vao
 	glBindVertexArray(0);
-}
-
-void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos, TrColor tint)
-{
-	mat4x4 model;
-	mat4x4_identity(model);
-	mat4x4_translate(model, pos.x, pos.y, 0);
-
-	mat4x4 proj;
-	// TODO this is probably stretching things if it doesn't fit the aspect ratio
-	// so don't do that
-	mat4x4_ortho(proj, ST3D_2D_LEFT, ST3D_2D_RIGHT, ST3D_2D_BOTTOM, ST3D_2D_TOP, 1.0f, -1.0f);
-
-	mat4x4 mvp;
-	mat4x4_identity(mvp);
-	mat4x4_mul(mvp, proj, model);
-
-	st3d_mesh_draw_transform(mesh, (float*)mvp, tint);
 }
 
 void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint)
@@ -396,4 +385,14 @@ St3dCamera st3d_camera(void)
 void st3d_set_camera(St3dCamera cam)
 {
 	st3d_cam = cam;
+}
+
+St3dEnvironment st3d_environment(void)
+{
+	return st3d_env;
+}
+
+void st3d_set_environment(St3dEnvironment env)
+{
+	st3d_env = env;
 }

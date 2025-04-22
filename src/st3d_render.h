@@ -14,7 +14,6 @@ extern "C" {
 	"" \
 	"out vec4 out_color;" \
 	"out vec2 out_texcoord;" \
-	"out vec4 out_tint;" \
 	"" \
 	"uniform mat4 u_mvp;" \
 	"uniform vec4 u_tint;" \
@@ -25,27 +24,28 @@ extern "C" {
 	"	gl_Position = u_mvp * vec4(pos, 1.0);" \
 	"	out_color = color;" \
 	"	out_texcoord = texcoord;" \
-	"	out_tint = u_tint;" \
 	"}"
 
 #define ST3D_DEFAULT_FRAGMENT_SHADER \
 	"#version 330 core\n" \
 	"in vec4 out_color;" \
 	"in vec2 out_texcoord;" \
-	"in vec4 out_tint;" \
 	"" \
 	"out vec4 FragColor;" \
 	"" \
 	"uniform sampler2D u_texture;" \
 	"uniform bool u_has_texture;" \
+	"uniform vec4 u_ambient;" \
+	"uniform vec4 u_obj_color;" \
+	"uniform vec4 u_tint;" \
 	"" \
 	"void main()" \
 	"{" \
 	"	if (u_has_texture) {" \
-	"		FragColor = texture(u_texture, out_texcoord) * out_color * out_tint;" \
+	"		FragColor = texture(u_texture, out_texcoord) * out_color * u_tint;" \
 	"	}" \
 	"	else {" \
-	"		FragColor = out_color * out_tint;" \
+	"		FragColor = out_color * u_tint;" \
 	"	}" \
 	"}"
 
@@ -60,7 +60,7 @@ void st3di_init_render(void);
 void st3di_free_render(void);
 
 // Begins drawing and clears the screen
-void st3d_begin_drawing(TrColor clear_color);
+void st3d_begin_drawing(void);
 
 // Does some fuckery that ends drawing.
 void st3d_end_drawing(void);
@@ -68,6 +68,86 @@ void st3d_end_drawing(void);
 // If true, everything is rendered in wireframe mode, which shows a bunch of lines instead of the
 // actual 3D objects.
 void st3d_set_wireframe(bool wireframe);
+
+// Image on the GPU and stuff.
+typedef struct {
+	uint32_t id;
+	uint32_t width;
+	uint32_t height;
+} St3dTexture;
+
+// Loads a texture from a path
+St3dTexture st3d_texture_new(const char* path);
+
+// Frees the texture
+void st3d_texture_free(St3dTexture texture);
+
+// Camera.
+typedef struct {
+	TrVec3f position;
+	// In euler degrees
+	TrVec3f rotation;
+	// On perspective, this is the FOV in degrees. On orthographic, this is the width, which does something.
+	float view;
+	// How near can you see before it gets clipped out
+	float near;
+	// How far can you see before it gets clipped out
+	float far;
+	// If true, the camera is perspective. Else, it's orthographic.
+	bool perspective;
+} St3dCamera;
+
+// Returns the current camera
+St3dCamera st3d_camera(void);
+
+// Sets the current camera
+void st3d_set_camera(St3dCamera cam);
+
+// Sets global lighting settings.
+typedef struct {
+	// This is actually just the clear color because I'm lazy.
+	TrColor sky_color;
+	// Even when it's dark there's still some light somewhere. That is not life advice.
+	TrColor ambient_color;
+	// As the sun hits, she'll be waiting, with her cool things, and her heaven, hey hey lover, you still
+	// burn me, you're a song yeah, hey hey.
+	TrColor sun_color;
+} St3dEnvironment;
+
+// Returns the current environment
+St3dEnvironment st3d_environment(void);
+
+// Sets the current environment
+void st3d_set_environment(St3dEnvironment env);
+
+// M<esh
+typedef struct {
+	uint32_t vao;
+	uint32_t vbo;
+	uint32_t ebo;
+	// How many indices the mesh has
+	int32_t index_count;
+	// The texture of the mesh, if any
+	St3dTexture texture;
+
+	struct {
+		TrColor color;
+	} material;
+} St3dMesh;
+
+// Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
+// leave it false. The format for vertices is XYZRGBAUV, for the position, color, and texcoords,
+// where each letter is a float. Remember this is OpenGL so colors are 0-1, not 0-255.
+St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly);
+
+// It frees the mesh.
+void st3d_mesh_free(St3dMesh mesh);
+
+// Draws a mesh with a transform thingy.
+void st3d_mesh_draw_transform(St3dMesh mesh, float* transform, TrColor tint);
+
+// Draws a mesh in the 3D world using whatever camera you set. Rotation is in euler degrees.
+void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint);
 
 // Shade deez nuts.
 typedef struct {
@@ -121,68 +201,6 @@ void st3d_shader_set_vec4i(St3dShader shader, const char* name, TrVec4i val);
 
 // Sets the uniform to a 4x4 matrix value. Takes in a float array because I don't know anymore.
 void st3d_shader_set_mat4f(St3dShader shader, const char* name, float* val);
-
-// Image on the GPU and stuff.
-typedef struct {
-	uint32_t id;
-	uint32_t width;
-	uint32_t height;
-} St3dTexture;
-
-// Loads a texture from a path
-St3dTexture st3d_texture_new(const char* path);
-
-// Frees the texture
-void st3d_texture_free(St3dTexture texture);
-
-// Camera.
-typedef struct {
-	TrVec3f position;
-	// In euler degrees
-	TrVec3f rotation;
-	// On perspective, this is the FOV in degrees. On orthographic, this is the width, which does something.
-	float view;
-	// How near can you see before it gets clipped out
-	float near;
-	// How far can you see before it gets clipped out
-	float far;
-	// If true, the camera is perspective. Else, it's orthographic.
-	bool perspective;
-} St3dCamera;
-
-// Returns the current camera
-St3dCamera st3d_camera(void);
-
-// Sets the current camera
-void st3d_set_camera(St3dCamera cam);
-
-// M<esh
-typedef struct {
-	uint32_t vao;
-	uint32_t vbo;
-	uint32_t ebo;
-	// How many indices the mesh has
-	int32_t index_count;
-	// The texture of the mesh, if any
-	St3dTexture texture;
-} St3dMesh;
-
-// Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
-// leave it false. The format for vertices is XYZRGBAUV, for the position, color, and texcoords,
-// where each letter is a float. Remember this is OpenGL so colors are 0-1, not 0-255.
-St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly);
-
-// It frees the mesh.
-void st3d_mesh_free(St3dMesh mesh);
-
-// Draws a mesh with a transform thingy.
-void st3d_mesh_draw_transform(St3dMesh mesh, float* transform, TrColor tint);
-
-// Draws a mesh in 2D using an orthographic projection.
-void st3d_mesh_draw_2d(St3dMesh mesh, TrVec2f pos, TrColor tint);
-
-// Draws a mesh in the 3D world using an orthographic projection. Rotation is in euler degrees.
-void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint);
 
 #ifdef __cplusplus
 }

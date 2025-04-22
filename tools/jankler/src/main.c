@@ -74,8 +74,12 @@ int main(void)
 	// el_cubo.texture = st3d_texture_new("app:enough_fckery.jpg");
 	// st3d_set_wireframe(true);
 
+	st3d_set_environment((St3dEnvironment){
+		.sky_color = TR_WHITE,
+	});
+
 	while (!st3d_is_closing()) {
-		st3d_begin_drawing(TR_BLACK);
+		st3d_begin_drawing();
 
 		for (size_t x = 0; x < 16; x++) {
 			for (size_t y = 0; y < 16; y++) {
@@ -182,12 +186,15 @@ static void main_ui(void)
 		char fucky1[64];
 		char fucky2[64];
 		char fucky3[64];
+		char fucky4[64];
 		snprintf(fucky1, sizeof(fucky1), "view: %f", view);
 		snprintf(fucky2, sizeof(fucky2), "rotation: %.2f %.2f %.2f", cam_rot.x, cam_rot.y, cam_rot.z);
 		snprintf(fucky3, sizeof(fucky3), "selection: %.0f %.0f %.0f", selection_pos.x, selection_pos.y, selection_pos.z);
+		snprintf(fucky4, sizeof(fucky4), "fps: %.0f", st3d_fps());
 		nk_label(ctx, fucky1, NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, fucky2, NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, fucky3, NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, fucky4, NK_TEXT_ALIGN_LEFT);
 	}
 	nk_end(ctx);
 }
