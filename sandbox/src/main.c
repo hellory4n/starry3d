@@ -84,7 +84,7 @@ int main(void)
 	bool ui = true;
 
 	while (!st3d_is_closing()) {
-		st3d_begin_drawing(tr_hex_rgb(0x550877));
+		st3d_begin_drawing();
 
 		st3d_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){64, 65, 62});
 
@@ -105,7 +105,7 @@ int main(void)
 		st3d_set_camera((St3dCamera){
 			.position = (TrVec3f){st_pos_x, st_pos_y, st_pos_z},
 			.rotation = (TrVec3f){st_rot_x, st_rot_y, st_rot_z},
-			.fov = 90,
+			.view = 90,
 			.near = 0.01,
 			.far = 1000,
 		});

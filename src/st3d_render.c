@@ -77,14 +77,11 @@ St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool re
 		vertices->buffer, readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
 
 	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	// color attribute
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
 	// texcoords attribute
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(7 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	// ebo
 	glGenBuffers(1, &mesh.ebo);
@@ -110,19 +107,17 @@ void st3d_mesh_free(St3dMesh mesh)
 	tr_liblog("freed mesh (vao %u)", mesh.vao);
 }
 
-void st3d_mesh_draw_transform(St3dMesh mesh, float* transform, TrColor tint)
+void st3d_mesh_draw_transform(St3dMesh mesh, float* transform)
 {
 	// help.
 	st3d_shader_set_mat4f(st3d_default_shader, "u_mvp", transform);
-	st3d_shader_set_vec4f(st3d_default_shader, "u_tint",
-		(TrVec4f){tint.r / 255.0f, tint.g / 255.0f, tint.b / 255.0f, tint.a / 255.0f});
 	st3d_shader_set_bool(st3d_default_shader, "u_has_texture", mesh.texture.id != 0);
-	// st3d_shader_set_vec4f(st3d_default_shader, "u_ambient",
-	// 	(TrVec4f){st3d_env.ambient_color.r / 255.0f, st3d_env.ambient_color.g / 255.0f,
-	// 	st3d_env.ambient_color.b / 255.0f, st3d_env.ambient_color.a / 255.0f});
-	// st3d_shader_set_vec4f(st3d_default_shader, "u_obj_color",
-	// 	(TrVec4f){mesh.material.color.r / 255.0f, mesh.material.color.g / 255.0f,
-	// 	mesh.material.color.b / 255.0f, mesh.material.color.a / 255.0f});
+	st3d_shader_set_vec4f(st3d_default_shader, "u_sun_color",
+		(TrVec4f){st3d_env.sun_color.r / 255.0f, st3d_env.sun_color.g / 255.0f,
+		st3d_env.sun_color.b / 255.0f, st3d_env.sun_color.a / 255.0f});
+	st3d_shader_set_vec4f(st3d_default_shader, "u_obj_color",
+		(TrVec4f){mesh.material.color.r / 255.0f, mesh.material.color.g / 255.0f,
+		mesh.material.color.b / 255.0f, mesh.material.color.a / 255.0f});
 
 	// 0 means no texture
 	// because i didn't want to use a pointer just to have null
@@ -144,7 +139,7 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* transform, TrColor tint)
 	glBindVertexArray(0);
 }
 
-void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint)
+void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 {
 	mat4x4 model, view, proj;
 
@@ -208,7 +203,7 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint)
 	mat4x4_mul(mvp, proj, view);
 	mat4x4_mul(mvp, mvp, model);
 
-	st3d_mesh_draw_transform(mesh, (float*)mvp, tint);
+	st3d_mesh_draw_transform(mesh, (float*)mvp);
 }
 
 static void check_shader(uint32_t obj)

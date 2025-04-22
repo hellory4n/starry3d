@@ -22,35 +22,35 @@ int main(void)
 	// ttriangel
 	TrSlice_float vertices;
 	TR_SET_SLICE(&arena, &vertices, float,
-		-0.5f, -0.5f,  0.5f,  1,1,1,1,  0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1,1,1,1,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1,1,1,1,  1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  1,1,1,1,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
 
-		 0.5f, -0.5f, -0.5f,  1,1,1,1,  0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  1,1,1,1,  1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  1,1,1,1,  1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  1,1,1,1,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
 
-		-0.5f, -0.5f, -0.5f,  1,1,1,1,  0.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  1,1,1,1,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  1,1,1,1,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  1,1,1,1,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
 
-		 0.5f, -0.5f,  0.5f,  1,1,1,1,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  1,1,1,1,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1,1,1,1,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  1,1,1,1,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
 
-		-0.5f,  0.5f,  0.5f,  1,1,1,1,  0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1,1,1,1,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1,1,1,1,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  1,1,1,1,  0.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
 
-		-0.5f, -0.5f, -0.5f,  1,1,1,1,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  1,1,1,1,  1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1,1,1,1,  1.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  1,1,1,1,  0.0f, 1.0f
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 1.0f
 	);
 
 	// TODO for individual faces, just reuse the vert slice and only add more slices for indices
@@ -71,11 +71,13 @@ int main(void)
 	);
 
 	el_cubo = st3d_mesh_new(&vertices, &indices, true);
+	el_cubo.material.color = tr_hex_rgb(0xffff00);
 	// el_cubo.texture = st3d_texture_new("app:enough_fckery.jpg");
 	// st3d_set_wireframe(true);
 
 	st3d_set_environment((St3dEnvironment){
-		.sky_color = TR_WHITE,
+		.sky_color = tr_hex_rgb(0x03A9F4),
+		.sun_color = TR_WHITE,
 	});
 
 	while (!st3d_is_closing()) {
@@ -84,18 +86,17 @@ int main(void)
 		for (size_t x = 0; x < 16; x++) {
 			for (size_t y = 0; y < 16; y++) {
 				for (size_t z = 0; z < 16; z++) {
-					st3d_mesh_draw_3d(el_cubo, (TrVec3f){x, y, z}, (TrVec3f){0, 0, 0}, tr_hex_rgb(0x550877));
+					st3d_mesh_draw_3d(el_cubo, (TrVec3f){x, y, z}, (TrVec3f){0, 0, 0});
 				}
 			}
 		}
 
 		camera_controller();
+		model_controller();
 
 		// nuklear calls go inside here
 		st3d_ui_begin();
 			main_ui();
-			// i put a dialog thingy in there
-			model_controller();
 		st3d_ui_end();
 
 		st3d_end_drawing();
@@ -160,9 +161,11 @@ static void model_controller(void)
 	selection_pos.z = tr_clamp(selection_pos.z, 0, 15);
 
 	// help.
-	st3d_set_wireframe(true);
-	st3d_mesh_draw_3d(el_cubo, selection_pos, (TrVec3f){0, 0, 0}, ST3D_SELECTION_COLOR);
-	st3d_set_wireframe(false);
+	// st3d_set_wireframe(true);
+	// el_cubo.material.color = ST3D_SELECTION_COLOR;
+	// st3d_mesh_draw_3d(el_cubo, selection_pos, (TrVec3f){0, 0, 0});
+	// el_cubo.material.color = TR_WHITE;
+	// st3d_set_wireframe(false);
 }
 
 static void main_ui(void)

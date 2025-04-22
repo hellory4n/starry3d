@@ -9,10 +9,8 @@ extern "C" {
 #define ST3D_DEFAULT_VERTEX_SHADER \
 	"#version 330 core\n" \
 	"layout (location = 0) in vec3 pos;" \
-	"layout (location = 1) in vec4 color;" \
-	"layout (location = 2) in vec2 texcoord;" \
+	"layout (location = 1) in vec2 texcoord;" \
 	"" \
-	"out vec4 out_color;" \
 	"out vec2 out_texcoord;" \
 	"" \
 	"uniform mat4 u_mvp;" \
@@ -22,30 +20,27 @@ extern "C" {
 	"void main()" \
 	"{" \
 	"	gl_Position = u_mvp * vec4(pos, 1.0);" \
-	"	out_color = color;" \
 	"	out_texcoord = texcoord;" \
 	"}"
 
 #define ST3D_DEFAULT_FRAGMENT_SHADER \
 	"#version 330 core\n" \
-	"in vec4 out_color;" \
 	"in vec2 out_texcoord;" \
 	"" \
 	"out vec4 FragColor;" \
 	"" \
 	"uniform sampler2D u_texture;" \
 	"uniform bool u_has_texture;" \
-	"uniform vec4 u_ambient;" \
 	"uniform vec4 u_obj_color;" \
-	"uniform vec4 u_tint;" \
+	"uniform vec4 u_sun_color;" \
 	"" \
 	"void main()" \
 	"{" \
 	"	if (u_has_texture) {" \
-	"		FragColor = texture(u_texture, out_texcoord) * out_color * u_tint;" \
+	"		FragColor = texture(u_texture, out_texcoord) * u_obj_color * u_sun_color;" \
 	"	}" \
 	"	else {" \
-	"		FragColor = out_color * u_tint;" \
+	"		FragColor = u_obj_color * u_sun_color;" \
 	"	}" \
 	"}"
 
@@ -107,8 +102,6 @@ void st3d_set_camera(St3dCamera cam);
 typedef struct {
 	// This is actually just the clear color because I'm lazy.
 	TrColor sky_color;
-	// Even when it's dark there's still some light somewhere. That is not life advice.
-	TrColor ambient_color;
 	// As the sun hits, she'll be waiting, with her cool things, and her heaven, hey hey lover, you still
 	// burn me, you're a song yeah, hey hey.
 	TrColor sun_color;
@@ -136,18 +129,18 @@ typedef struct {
 } St3dMesh;
 
 // Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
-// leave it false. The format for vertices is XYZRGBAUV, for the position, color, and texcoords,
-// where each letter is a float. Remember this is OpenGL so colors are 0-1, not 0-255.
+// leave it false. The format for vertices is XYZUV, for the position and texcoords, where each
+// letter is a float.
 St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly);
 
 // It frees the mesh.
 void st3d_mesh_free(St3dMesh mesh);
 
 // Draws a mesh with a transform thingy.
-void st3d_mesh_draw_transform(St3dMesh mesh, float* transform, TrColor tint);
+void st3d_mesh_draw_transform(St3dMesh mesh, float* transform);
 
 // Draws a mesh in the 3D world using whatever camera you set. Rotation is in euler degrees.
-void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot, TrColor tint);
+void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot);
 
 // Shade deez nuts.
 typedef struct {
