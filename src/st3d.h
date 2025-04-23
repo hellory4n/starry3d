@@ -215,6 +215,15 @@ void st3d_user_dir(TrString* out);
 // Writes the actual path to out, which should be at least 260 characters because Windows.
 void st3d_path(const char* s, TrString* out);
 
+// make sure there's always ST3D_WINDOWS or ST3D_LINUX defined
+#if !defined(ST3D_WINDOWS) && !defined(ST3D_LINUX)
+	#ifdef _WIN32
+		#define ST3D_WINDOWS
+	#else
+		#define ST3D_LINUX
+	#endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -14,6 +14,7 @@ static void camera_controller(void);
 static void model_controller(void);
 static void main_ui(void);
 static void draw_gizmo_things(void);
+static void selection_thing(void);
 
 static St3dMesh el_cubo;
 static TrSlice_Color cubes;
@@ -115,6 +116,7 @@ int main(void)
 		camera_controller();
 		model_controller();
 		draw_gizmo_things();
+		selection_thing();
 
 		// nuklear calls go inside here
 		st3d_ui_begin();
@@ -132,18 +134,19 @@ int main(void)
 	st3d_free();
 }
 
-const double speed_ish = 45.0 / 2;
-static TrVec3f cam_rot = {-speed_ish, speed_ish, 0};
+static const double speed = 40;
+static TrVec3f cam_rot = {-30, -20, 0};
 static double view = 50;
+static bool wireframe;
 
 static void camera_controller(void)
 {
-	// double dt = st3d_delta_time();
+	double dt = st3d_delta_time();
 
-	if (st3d_is_key_just_pressed(ST3D_KEY_LEFT))  cam_rot.y += speed_ish;
-	if (st3d_is_key_just_pressed(ST3D_KEY_RIGHT)) cam_rot.y -= speed_ish;
-	if (st3d_is_key_just_pressed(ST3D_KEY_UP))    cam_rot.x += speed_ish;
-	if (st3d_is_key_just_pressed(ST3D_KEY_DOWN))  cam_rot.x -= speed_ish;
+	if (st3d_is_key_held(ST3D_KEY_LEFT))  cam_rot.y -= speed * dt;
+	if (st3d_is_key_held(ST3D_KEY_RIGHT)) cam_rot.y += speed * dt;
+	if (st3d_is_key_held(ST3D_KEY_UP))    cam_rot.x += speed * dt;
+	if (st3d_is_key_held(ST3D_KEY_DOWN))  cam_rot.x -= speed * dt;
 
 	// zoom,
 	TrVec2f scroll = st3d_mouse_scroll();
@@ -156,7 +159,7 @@ static void camera_controller(void)
 
 	st3d_set_camera((St3dCamera){
 		// position is in the middle
-		.position = (TrVec3f){0, 8, 8},
+		.position = (TrVec3f){-6, 8, 8},
 		.rotation = cam_rot,
 		.view = view,
 		// ??
@@ -164,6 +167,11 @@ static void camera_controller(void)
 		.far = 10000,
 		.perspective = false,
 	});
+
+	if (st3d_is_key_just_pressed(ST3D_KEY_F1)) {
+		wireframe = !wireframe;
+		st3d_set_wireframe(wireframe);
+	}
 }
 
 TrVec3f selection_pos;
@@ -224,6 +232,12 @@ static void main_ui(void)
 		nk_label(ctx, "- remember you're limited", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "to 16x16x16", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- press tab to hide the UI", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- press f1 for wireframe", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- press M to start selection", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- press insert to fill selection", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- press delete to annihilate", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "selection", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- press C to cancel selection", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- i know the transparency is", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "fucked", NK_TEXT_ALIGN_LEFT);
 
@@ -266,5 +280,75 @@ static void draw_gizmo_things(void)
 		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, 15, i}, (TrVec3f){0, 0, 0});
 		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){15, i, 15}, (TrVec3f){0, 0, 0});
 		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){i, 15, 15}, (TrVec3f){0, 0, 0});
+	}
+}
+
+static TrVec3f sel_start;
+static TrVec3f sel_end;
+static bool selecting;
+
+static void selection_thing(void)
+{
+	if (st3d_is_key_just_pressed(ST3D_KEY_M)) {
+		selecting = true;
+		sel_start = selection_pos;
+	}
+
+	if (st3d_is_key_just_pressed(ST3D_KEY_C)) {
+		selecting = false;
+		sel_start = (TrVec3f){0, 0, 0};
+		sel_end = (TrVec3f){0, 0, 0};
+	}
+
+	if (selecting) {
+		sel_end = selection_pos;
+	}
+
+	// fucking hell
+	size_t x_start = sel_start.x < sel_end.x ? sel_start.x : sel_end.x;
+	size_t x_end   = sel_start.x > sel_end.x ? sel_start.x : sel_end.x;
+	size_t y_start = sel_start.y < sel_end.y ? sel_start.y : sel_end.y;
+	size_t y_end   = sel_start.y > sel_end.y ? sel_start.y : sel_end.y;
+	size_t z_start = sel_start.z < sel_end.z ? sel_start.z : sel_end.z;
+	size_t z_end   = sel_start.z > sel_end.z ? sel_start.z : sel_end.z;
+
+	// preview selection
+	for (size_t x = x_start; x <= x_end; x++) {
+		for (size_t y = y_start; y <= y_end; y++) {
+			for (size_t z = z_start; z <= z_end; z++) {
+				el_cubo.material.color = ST3D_SELECTION_COLOR;
+				st3d_mesh_draw_3d(el_cubo, (TrVec3f){x, y, z}, (TrVec3f){0, 0, 0});
+			}
+		}
+	}
+
+	// fill :)
+	if (st3d_is_key_just_pressed(ST3D_KEY_INSERT)) {
+		for (size_t x = x_start; x <= x_end; x++) {
+			for (size_t y = y_start; y <= y_end; y++) {
+				for (size_t z = z_start; z <= z_end; z++) {
+					*ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z) = TR_WHITE;
+				}
+			}
+		}
+
+		selecting = false;
+		sel_start = (TrVec3f){0, 0, 0};
+		sel_end = (TrVec3f){0, 0, 0};
+	}
+
+	// delete :)
+	if (st3d_is_key_just_pressed(ST3D_KEY_DELETE)) {
+		for (size_t x = x_start; x <= x_end; x++) {
+			for (size_t y = y_start; y <= y_end; y++) {
+				for (size_t z = z_start; z <= z_end; z++) {
+					*ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z) = TR_TRANSPARENT;
+				}
+			}
+		}
+
+		selecting = false;
+		sel_start = (TrVec3f){0, 0, 0};
+		sel_end = (TrVec3f){0, 0, 0};
 	}
 }

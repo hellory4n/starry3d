@@ -55,7 +55,7 @@ The difference between Starryvox and Starrypal is in what's stored in those 4 by
 
 ```c
 struct StarryvoxChunk {
-    // aligned to the bottom left
+    // aligned to the top left
     uint8_t x;
     uint8_t y;
     uint8_t z;
@@ -80,3 +80,9 @@ palettes could use completely different indexes. So for example on one palette 5
 one it's red. Quite the pickle.
 
 I'm eventually gonna do a list of colors later lmao.
+
+| Index | Color name  | Hex code    |
+| ----- | ----------- | ----------- |
+| 0     | Transparent | #00000000   |
+| 1     | Black       | #000000     |
+| 2     | White       | #FFFFFF     |

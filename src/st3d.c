@@ -31,11 +31,12 @@ static double st3d_delta_tim;
 // type is St3dInputState
 static TrSlice_int32 st3d_key_state;
 // type is bool
-static TrSlice_uint8 st3d_key_prev_down;
+static TrSlice_bool st3d_key_prev_down;
+static TrSlice_bool st3d_key_state;
 // type is St3dInputState
 static TrSlice_int32 st3d_mouse_state;
 // type is bool
-static TrSlice_uint8 st3d_mouse_prev_down;
+static TrSlice_bool st3d_mouse_prev_down;
 static TrVec2f st3d_cur_mouse_scroll;
 
 static TrString st3d_app;
@@ -81,9 +82,9 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 	strncpy(st3d_assets.buffer, assets, ST3D_PATH_SIZE);
 
 	st3d_key_state = tr_slice_new(&st3d_arena, ST3D_KEY_LAST + 1, sizeof(int32_t));
-	st3d_key_prev_down = tr_slice_new(&st3d_arena, ST3D_KEY_LAST + 1, sizeof(uint8_t));
+	st3d_key_prev_down = tr_slice_new(&st3d_arena, ST3D_KEY_LAST + 1, sizeof(bool));
 	st3d_mouse_state = tr_slice_new(&st3d_arena, ST3D_MOUSE_BUTTON_LAST + 1, sizeof(int32_t));
-	st3d_mouse_prev_down = tr_slice_new(&st3d_arena, ST3D_MOUSE_BUTTON_LAST + 1, sizeof(uint8_t));
+	st3d_mouse_prev_down = tr_slice_new(&st3d_arena, ST3D_MOUSE_BUTTON_LAST + 1, sizeof(bool));
 
 	// initialize window
 	if (!glfwInit()) {
@@ -157,7 +158,7 @@ void st3d_poll_events(void)
 		bool is_down = glfwGetKey(st3d_window, key) == GLFW_PRESS;
 
 		// help
-		uint8_t* was_down = TR_AT(st3d_key_prev_down, uint8_t, key);
+		bool* was_down = TR_AT(st3d_key_prev_down, bool, key);
 		if (!(*was_down) && is_down) {
 			*TR_AT(st3d_key_state, int32_t, key) = ST3D_INPUT_STATE_JUST_PRESSED;
 		}
@@ -178,7 +179,7 @@ void st3d_poll_events(void)
 	for (int32_t btn = ST3D_MOUSE_BUTTON_1; btn <= ST3D_MOUSE_BUTTON_LAST; btn++) {
 		bool is_down = glfwGetMouseButton(st3d_window, btn) == GLFW_PRESS;
 
-		uint8_t* was_down = TR_AT(st3d_mouse_prev_down, uint8_t, btn);
+		bool* was_down = TR_AT(st3d_mouse_prev_down, bool, btn);
 		if (!(*was_down) && is_down) {
 			*TR_AT(st3d_mouse_state, int32_t, btn) = ST3D_INPUT_STATE_JUST_PRESSED;
 		}
