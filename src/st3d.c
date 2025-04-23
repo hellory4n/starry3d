@@ -63,7 +63,9 @@ static void on_error(int error_code, const char* description)
 	#endif
 }
 
-static void on_scroll(GLFWwindow* window, double x, double y)
+// not static because nuklear wants this callback too so if nuklear is setup, we override this callback
+// and then give the scroll state back to nuklear lmao
+void __st3d_on_scroll(GLFWwindow* window, double x, double y)
 {
 	(void)window;
 	st3d_cur_mouse_scroll = (TrVec2f){x, y};
@@ -107,7 +109,7 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 	// callbacks
 	glfwSetFramebufferSizeCallback(st3d_window, on_framebuffer_resize);
 	glfwSetErrorCallback(on_error);
-	glfwSetScrollCallback(st3d_window, on_scroll);
+	glfwSetScrollCallback(st3d_window, __st3d_on_scroll);
 
 	tr_liblog("created window");
 

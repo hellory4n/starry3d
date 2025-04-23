@@ -4,6 +4,7 @@
 #include <st3d.h>
 #include <st3d_render.h>
 #include <st3d_ui.h>
+#include <st3d_voxel.h>
 
 #define ST3D_SELECTION_COLOR tr_hex_rgba(0xffffff77)
 
@@ -15,6 +16,7 @@ static void model_controller(void);
 static void main_ui(void);
 static void draw_gizmo_things(void);
 static void selection_thing(void);
+static void saver_5000(void);
 
 static St3dMesh el_cubo;
 static TrSlice_Color cubes;
@@ -120,6 +122,7 @@ int main(void)
 
 		// nuklear calls go inside here
 		st3d_ui_begin();
+			saver_5000();
 			main_ui();
 		st3d_ui_end();
 
@@ -232,12 +235,13 @@ static void main_ui(void)
 		nk_label(ctx, "- remember you're limited", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "to 16x16x16", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- press tab to hide the UI", NK_TEXT_ALIGN_LEFT);
-		nk_label(ctx, "- press f1 for wireframe", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- press F1 for wireframe", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- press M to start selection", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- press insert to fill selection", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- press delete to annihilate", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "selection", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- press C to cancel selection", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- press F12 to save", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- i know the transparency is", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "fucked", NK_TEXT_ALIGN_LEFT);
 
@@ -289,6 +293,8 @@ static bool selecting;
 
 static void selection_thing(void)
 {
+	if (!ui_visible) return;
+
 	if (st3d_is_key_just_pressed(ST3D_KEY_M)) {
 		selecting = true;
 		sel_start = selection_pos;
@@ -350,5 +356,100 @@ static void selection_thing(void)
 		selecting = false;
 		sel_start = (TrVec3f){0, 0, 0};
 		sel_end = (TrVec3f){0, 0, 0};
+	}
+}
+
+static bool saving;
+static char save_path[256];
+
+static void saver_5000(void)
+{
+	bool savingfrfrfr = false;
+
+	if (st3d_is_key_just_pressed(ST3D_KEY_F12)) {
+		saving = !saving;
+		// hide the ui while saving bcuz why not
+		ui_visible = !ui_visible;
+	}
+	if (!saving) return;
+
+	struct nk_context* ctx = st3d_nkctx();
+	if (nk_begin(ctx, "Jankler Save", nk_rect(100, 100, 400, 200),
+	NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
+		nk_layout_row_dynamic(ctx, 20, 1);
+		nk_label(ctx, "Save as:", NK_TEXT_ALIGN_LEFT);
+
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, save_path, sizeof(save_path) - 1, nk_filter_default);
+
+		if (nk_button_label(ctx, "Save")) {
+			// don't want to put that logic under 3 levels of indentation
+			savingfrfrfr = true;
+		}
+
+		if (nk_button_label(ctx, "Cancel")) {
+			saving = false;
+			ui_visible = true;
+		}
+	}
+	nk_end(ctx);
+
+	if (!savingfrfrfr) return;
+
+	// actual saving
+	St3dVoxModel model = {
+		.dimensions = {16, 16, 16, 16},
+	};
+
+	// first get how many voxels are there
+	// so we don't waste space with transparent voxels
+	size_t len = 0;
+	for (size_t i = 0; i < cubes.length; i++) {
+		TrColor lecolour = *TR_AT(cubes, TrColor, i);
+		if (lecolour.a != 0) len++;
+	}
+
+	// now actually get the shit & the fuck
+	TrArena tmp = tr_arena_new(len * sizeof(St3dPackedVoxel));
+	TrSlice voxelsma = tr_slice_new(&tmp, len, sizeof(St3dPackedVoxel));
+	size_t i = 0;
+	for (size_t x = 0; x < 16; x++) {
+		for (size_t y = 0; y < 16; y++) {
+			for (size_t z = 0; z < 16; z++) {
+				TrColor lecolour = *ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z);
+				if (lecolour.a != 0) {
+					*TR_AT(voxelsma, St3dPackedVoxel, i) = (St3dPackedVoxel){
+						.x = x,
+						.y = y,
+						.z = z,
+						// TODO palette
+						.color = 2,
+					};
+					i++;
+				}
+			}
+		}
+	}
+
+	// save deez
+	model.voxels = voxelsma;
+	bool success = st3d_stvox_save(model, save_path);
+	if (!success) {
+		if (nk_begin(ctx, "Jankler has encountered an inconvenience", nk_rect(100, 100, 400, 200),
+		NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
+			nk_layout_row_dynamic(ctx, 20, 1);
+			nk_label(ctx, "Couldn't save file.", NK_TEXT_ALIGN_LEFT);
+
+			if (nk_button_label(ctx, "oh ok")) {
+				saving = false;
+				ui_visible = true;
+			}
+		}
+		nk_end(ctx);
+	}
+	else {
+		// we're still saving
+		// but we're done now so stop
+		saving = false;
+		ui_visible = true;
 	}
 }

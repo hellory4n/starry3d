@@ -13,6 +13,11 @@
 static struct nk_glfw st3d_glfw = {0};
 static struct nk_context* st3d_nk;
 
+// not static because nuklear wants this callback too so if nuklear is setup, we override this callback
+// and then give the scroll state back to nuklear lmao
+// this is from st3d.c
+void __st3d_on_scroll(GLFWwindow* window, double x, double y);
+
 struct nk_context* st3d_nkctx(void)
 {
 	return st3d_nk;
@@ -25,7 +30,10 @@ void st3d_ui_new(const char* font_path, int64_t font_size)
 	TrString sitrnmvhz = tr_slice_new(&tmp, ST3D_PATH_SIZE, sizeof(char));
 	st3d_path(font_path, &sitrnmvhz);
 
-	st3d_nk = nk_glfw3_init(&st3d_glfw, st3d_get_window_handle(), NK_GLFW3_DEFAULT);
+	st3d_nk = nk_glfw3_init(&st3d_glfw, st3d_get_window_handle(), NK_GLFW3_INSTALL_CALLBACKS);
+	// nuklear wants this callback too so if nuklear is setup, we override this callback
+	// and then give the scroll state back to nuklear lmao
+	glfwSetScrollCallback(st3d_get_window_handle(), __st3d_on_scroll);
 
 	// font.
 	struct nk_font_atlas* atlas;

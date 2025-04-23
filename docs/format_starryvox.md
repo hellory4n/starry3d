@@ -5,6 +5,8 @@ Starrypal stores color palettes. They're in the same file because they're very s
 
 Starryvox should have the extension `.stvox` while Starrypal should have the extension `.stpal`.
 
+Both formats are always little endian, as that's the default on both x86 and ARM
+
 ## Header
 
 The header, as the name implies, is at the start of the file. This is the Starryvox header:
@@ -15,6 +17,9 @@ struct StarryvoxHeader {
     uint8_t magic[8];
     // should be 10 (for v0.1.0) as that's the only version
     uint32_t version;
+
+    // length of the data section, in amount of items, not bytes
+    uint32_t data_len;
 
     struct {
         uint8_t x;
@@ -28,7 +33,7 @@ struct StarryvoxHeader {
 
     // padding, reserved for future versions
     // the size of this struct should always be 64 bytes
-    uint8_t padding[48];
+    uint8_t padding[44];
 }
 ```
 
@@ -41,9 +46,12 @@ struct StarrypalHeader {
     // should be 10 (for v0.1.0) as that's the only version
     uint32_t version;
 
+    // length of the data section, in amount of items, not bytes
+    uint32_t data_len;
+
     // padding, reserved for future versions
     // the size of this struct should always be 64 bytes
-    uint8_t padding[52];
+    uint8_t padding[48];
 }
 ```
 
@@ -83,6 +91,6 @@ I'm eventually gonna do a list of colors later lmao.
 
 | Index | Color name  | Hex code    |
 | ----- | ----------- | ----------- |
-| 0     | Transparent | #00000000   |
-| 1     | Black       | #000000     |
-| 2     | White       | #FFFFFF     |
+| 0     | Transparent | `#00000000` |
+| 1     | Black       | `#000000`   |
+| 2     | White       | `#FFFFFF`   |

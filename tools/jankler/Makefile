@@ -24,6 +24,7 @@ SRCS = \
     $(STARRY3D)/src/st3d.c \
     $(STARRY3D)/src/st3d_render.c \
     $(STARRY3D)/src/st3d_ui.c \
+    $(STARRY3D)/src/st3d_voxel.c \
     \
 	src/main.c
 
