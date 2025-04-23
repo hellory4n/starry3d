@@ -7,17 +7,22 @@
 
 #define ST3D_SELECTION_COLOR tr_hex_rgba(0xffffff77)
 
+// why the fuck would you need a 3d array
+#define ST3D_AT3D(slice, type, sizey, sizez, x, y, z) TR_AT(slice, type, x * (sizey * sizez) + y * sizez + z)
+
 static void camera_controller(void);
 static void model_controller(void);
 static void main_ui(void);
 
 static St3dMesh el_cubo;
+static TrSlice_Color cubes;
 
 int main(void)
 {
 	st3d_init("jankler", "assets", 800, 600);
 	st3d_ui_new("app:figtree/Figtree-Medium.ttf", 16);
 	TrArena arena = tr_arena_new(TR_MB(1));
+	cubes = tr_slice_new(&arena, 16 * 16 * 16, sizeof(TrColor));
 
 	// ttriangel
 	TrSlice_float vertices;
@@ -52,45 +57,19 @@ int main(void)
 	// TODO for individual faces, just reuse the vert slice and only add more slices for indices
 	TrSlice_uint32 indices;
 	TR_SET_SLICE(&arena, &indices, uint32_t,
-		0,
-		1,
-		2,
-		3,
-		4,
-		5,
-		6,
-		7,
-		8,
-		9,
-		10,
-		11,
-		12,
-		13,
-		14,
-		15,
-		16,
-		17,
-		0,
-		18,
-		1,
-		3,
-		19,
-		4,
-		6,
-		20,
-		7,
-		9,
-		21,
-		10,
-		12,
-		22,
-		13,
-		15,
-		23,
-		16,
-		15,
-		23,
-		16
+		0, 1, 2,
+		3, 4, 5,
+		6, 7, 8,
+		9, 10, 11,
+		12, 13, 14,
+		15, 16, 17,
+		0, 18, 1,
+		3, 19, 4,
+		6, 20, 7,
+		9, 21, 10,
+		12, 22, 13,
+		15, 23, 16,
+		15, 23, 16
 	);
 
 	el_cubo = st3d_mesh_new(&vertices, &indices, true);
@@ -102,7 +81,6 @@ int main(void)
 		.sky_color = tr_hex_rgb(0x03A9F4),
 		.ambient_color = tr_hex_rgb(0x212121),
 		.sun = {
-			// you can probably make a daylight cycle with this
 			.direction = {0.5, 1.0, -0.75},
 			.color = TR_WHITE,
 		},
@@ -111,9 +89,16 @@ int main(void)
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing();
 
+		// i'm sorry... i'm sorry... i'm sorry...
 		for (size_t x = 0; x < 16; x++) {
 			for (size_t y = 0; y < 16; y++) {
 				for (size_t z = 0; z < 16; z++) {
+					TrColor lecolour = *ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z);
+					if (lecolour.a == 0) {
+						continue;
+					}
+
+					el_cubo.material.color = lecolour;
 					st3d_mesh_draw_3d(el_cubo, (TrVec3f){x, y, z}, (TrVec3f){0, 0, 0});
 				}
 			}
@@ -141,7 +126,7 @@ int main(void)
 
 const double speed_ish = 45.0 / 2;
 static TrVec3f cam_rot = {-speed_ish, speed_ish, 0};
-static double view = 10;
+static double view = 50;
 
 static void camera_controller(void)
 {
@@ -190,6 +175,21 @@ static void model_controller(void)
 	selection_pos.z = tr_clamp(selection_pos.z, 0, 15);
 
 	// help.
+	// ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z);
+	el_cubo.material.color = ST3D_SELECTION_COLOR;
+	glDisable(GL_DEPTH_TEST);
+	st3d_mesh_draw_3d(el_cubo, selection_pos, (TrVec3f){0, 0, 0});
+	glEnable(GL_DEPTH_TEST);
+
+	// stigma
+	if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_LEFT)) {
+		*ST3D_AT3D(cubes, TrColor, 16, 16, selection_pos.x, selection_pos.y, selection_pos.z) = TR_WHITE;
+	}
+
+	if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_RIGHT)) {
+		*ST3D_AT3D(cubes, TrColor, 16, 16, selection_pos.x, selection_pos.y, selection_pos.z) = TR_TRANSPARENT;
+	}
+
 	// st3d_set_wireframe(true);
 	// el_cubo.material.color = ST3D_SELECTION_COLOR;
 	// st3d_mesh_draw_3d(el_cubo, selection_pos, (TrVec3f){0, 0, 0});
@@ -201,7 +201,7 @@ static void main_ui(void)
 {
 	struct nk_context* ctx = st3d_nkctx();
 
-	if (nk_begin(ctx, "JanklerTM Pro v0.1.0", nk_rect(25, 325, 300, 250),
+	if (nk_begin(ctx, "JanklerTM Pro v0.1.0", nk_rect(0, 0, 300, 250),
 	NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE | NK_WINDOW_SCALABLE)) {
 		nk_layout_row_dynamic(ctx, 20, 1);
 		nk_label(ctx, "Advanced Voxel Modelling Software", NK_TEXT_ALIGN_CENTERED);
@@ -211,6 +211,9 @@ static void main_ui(void)
 		nk_label(ctx, "scroll to zoom", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "arrow keys to rotate", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "wasd and shift or space to select", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "left click to place", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "right click to remove", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "remember you're limited to 16x16x16", NK_TEXT_ALIGN_LEFT);
 
 		nk_label_colored(ctx, "Help Me", NK_TEXT_ALIGN_CENTERED, istg);
 
