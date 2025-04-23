@@ -13,9 +13,12 @@
 static void camera_controller(void);
 static void model_controller(void);
 static void main_ui(void);
+static void draw_gizmo_things(void);
 
 static St3dMesh el_cubo;
 static TrSlice_Color cubes;
+
+bool ui_visible = true;
 
 int main(void)
 {
@@ -89,6 +92,10 @@ int main(void)
 	while (!st3d_is_closing()) {
 		st3d_begin_drawing();
 
+		if (st3d_is_key_just_pressed(ST3D_KEY_TAB)) {
+			ui_visible = !ui_visible;
+		}
+
 		// i'm sorry... i'm sorry... i'm sorry...
 		for (size_t x = 0; x < 16; x++) {
 			for (size_t y = 0; y < 16; y++) {
@@ -107,6 +114,7 @@ int main(void)
 
 		camera_controller();
 		model_controller();
+		draw_gizmo_things();
 
 		// nuklear calls go inside here
 		st3d_ui_begin();
@@ -148,7 +156,7 @@ static void camera_controller(void)
 
 	st3d_set_camera((St3dCamera){
 		// position is in the middle
-		.position = (TrVec3f){8, 8, 8},
+		.position = (TrVec3f){0, 8, 8},
 		.rotation = cam_rot,
 		.view = view,
 		// ??
@@ -174,13 +182,6 @@ static void model_controller(void)
 	selection_pos.y = tr_clamp(selection_pos.y, 0, 15);
 	selection_pos.z = tr_clamp(selection_pos.z, 0, 15);
 
-	// help.
-	// ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z);
-	el_cubo.material.color = ST3D_SELECTION_COLOR;
-	glDisable(GL_DEPTH_TEST);
-	st3d_mesh_draw_3d(el_cubo, selection_pos, (TrVec3f){0, 0, 0});
-	glEnable(GL_DEPTH_TEST);
-
 	// stigma
 	if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_LEFT)) {
 		*ST3D_AT3D(cubes, TrColor, 16, 16, selection_pos.x, selection_pos.y, selection_pos.z) = TR_WHITE;
@@ -190,30 +191,41 @@ static void model_controller(void)
 		*ST3D_AT3D(cubes, TrColor, 16, 16, selection_pos.x, selection_pos.y, selection_pos.z) = TR_TRANSPARENT;
 	}
 
-	// st3d_set_wireframe(true);
-	// el_cubo.material.color = ST3D_SELECTION_COLOR;
-	// st3d_mesh_draw_3d(el_cubo, selection_pos, (TrVec3f){0, 0, 0});
-	// el_cubo.material.color = TR_WHITE;
-	// st3d_set_wireframe(false);
+	// help.
+	if (ui_visible) {
+		el_cubo.material.color = TR_WHITE;
+		// i love hacking my own renderer
+		glDisable(GL_DEPTH_TEST);
+		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO);
+		st3d_mesh_draw_3d(el_cubo, selection_pos, (TrVec3f){0, 0, 0});
+		glEnable(GL_DEPTH_TEST);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
 }
 
 static void main_ui(void)
 {
+	if (!ui_visible) return;
 	struct nk_context* ctx = st3d_nkctx();
 
-	if (nk_begin(ctx, "JanklerTM Pro v0.1.0", nk_rect(0, 0, 300, 250),
-	NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE | NK_WINDOW_SCALABLE)) {
+	if (nk_begin(ctx, "JanklerTM Pro v0.1.0", nk_rect(0, 0, 200, 600),
+	NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_SCALABLE)) {
 		nk_layout_row_dynamic(ctx, 20, 1);
 		nk_label(ctx, "Advanced Voxel Modelling Software", NK_TEXT_ALIGN_CENTERED);
 
 		struct nk_color istg = {255, 255, 255, 255};
 		nk_label_colored(ctx, "How To Use This Disaster", NK_TEXT_ALIGN_CENTERED, istg);
-		nk_label(ctx, "scroll to zoom", NK_TEXT_ALIGN_LEFT);
-		nk_label(ctx, "arrow keys to rotate", NK_TEXT_ALIGN_LEFT);
-		nk_label(ctx, "wasd and shift or space to select", NK_TEXT_ALIGN_LEFT);
-		nk_label(ctx, "left click to place", NK_TEXT_ALIGN_LEFT);
-		nk_label(ctx, "right click to remove", NK_TEXT_ALIGN_LEFT);
-		nk_label(ctx, "remember you're limited to 16x16x16", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- scroll to zoom", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- arrow keys to rotate", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- wasd and shift or space to", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "fly", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- left click to place", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- right click to remove", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- remember you're limited", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "to 16x16x16", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- press tab to hide the UI", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- i know the transparency is", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "fucked", NK_TEXT_ALIGN_LEFT);
 
 		nk_label_colored(ctx, "Help Me", NK_TEXT_ALIGN_CENTERED, istg);
 
@@ -232,4 +244,27 @@ static void main_ui(void)
 		nk_label(ctx, fucky4, NK_TEXT_ALIGN_LEFT);
 	}
 	nk_end(ctx);
+}
+
+static void draw_gizmo_things(void)
+{
+	if (!ui_visible) return;
+
+	// sir
+	for (size_t i = 0; i < 16; i++) {
+		el_cubo.material.color = ST3D_SELECTION_COLOR;
+		st3d_mesh_draw_3d(el_cubo, (TrVec3f){i, 0, 0}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(el_cubo, (TrVec3f){i, 15, 0}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(el_cubo, (TrVec3f){i, 0, 15}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, i, 0}, (TrVec3f){0, 0, 0});
+		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, i, 15}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(el_cubo, (TrVec3f){15, i, 0}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, 0, i}, (TrVec3f){0, 0, 0});
+		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, 0, i}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(el_cubo, (TrVec3f){15, 0, i}, (TrVec3f){0, 0, 0});
+		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){15, 15, i}, (TrVec3f){0, 0, 0});
+		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, 15, i}, (TrVec3f){0, 0, 0});
+		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){15, i, 15}, (TrVec3f){0, 0, 0});
+		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){i, 15, 15}, (TrVec3f){0, 0, 0});
+	}
 }
