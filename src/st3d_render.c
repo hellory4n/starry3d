@@ -54,7 +54,7 @@ void st3d_begin_drawing(void)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	glCullFace(GL_FRONT);
 }
 
 void st3d_end_drawing(void)
@@ -117,12 +117,12 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* model, float* view, float* p
 	st3d_shader_set_mat4f(st3d_default_shader, "u_view", view);
 	st3d_shader_set_mat4f(st3d_default_shader, "u_proj", proj);
 	st3d_shader_set_bool(st3d_default_shader, "u_has_texture", mesh.texture.id != 0);
-	st3d_shader_set_vec4f(st3d_default_shader, "u_sun_color",
-		(TrVec4f){st3d_env.sun.color.r / 255.0f, st3d_env.sun.color.g / 255.0f,
-		st3d_env.sun.color.b / 255.0f, st3d_env.sun.color.a / 255.0f});
-	st3d_shader_set_vec4f(st3d_default_shader, "u_ambient_color",
-		(TrVec4f){st3d_env.ambient_color.r / 255.0f, st3d_env.ambient_color.g / 255.0f,
-		st3d_env.ambient_color.b / 255.0f, st3d_env.ambient_color.a / 255.0f});
+	st3d_shader_set_vec3f(st3d_default_shader, "u_sun_color",
+		(TrVec3f){st3d_env.sun.color.r / 255.0f, st3d_env.sun.color.g / 255.0f,
+		st3d_env.sun.color.b / 255.0f});
+	st3d_shader_set_vec3f(st3d_default_shader, "u_ambient",
+		(TrVec3f){st3d_env.ambient_color.r / 255.0f, st3d_env.ambient_color.g / 255.0f,
+		st3d_env.ambient_color.b / 255.0f});
 	st3d_shader_set_vec4f(st3d_default_shader, "u_obj_color",
 		(TrVec4f){mesh.material.color.r / 255.0f, mesh.material.color.g / 255.0f,
 		mesh.material.color.b / 255.0f, mesh.material.color.a / 255.0f});

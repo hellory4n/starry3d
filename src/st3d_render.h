@@ -39,27 +39,23 @@ extern "C" {
 	"" \
 	"uniform sampler2D u_texture;" \
 	"uniform bool u_has_texture;" \
-	"uniform vec4 u_ambient;" \
+	"uniform vec3 u_ambient;" \
 	"uniform vec4 u_obj_color;" \
-	"uniform vec4 u_sun_color;" \
+	"uniform vec3 u_sun_color;" \
 	"uniform vec3 u_sun_dir;" \
 	"" \
 	"void main()" \
 	"{" \
-	"	vec4 obj_color;" \
-	"	if (u_has_texture) {" \
-	"		obj_color = texture(u_texture, out_texcoord) * u_obj_color;" \
-	"	}" \
-	"	else {" \
-	"		obj_color = u_obj_color;" \
-	"	}" \
+	"	vec4 obj_color = u_has_texture" \
+	"		? texture(u_texture, out_texcoord) * u_obj_color" \
+	"		: u_obj_color;" \
 	"" \
 	"	// make sure it's normalized\n" \
 	"	vec3 normal = normalize(out_normal);" \
-	"	vec3 sundir = normalize(u_sun_dir);" \
+	"	vec3 sundir = normalize(-u_sun_dir);" \
 	"" \
 	"	float diff = max(dot(normal, sundir), 0.0);" \
-	"	FragColor = obj_color * (u_ambient + diff * (1.0 - u_ambient));" \
+	"	FragColor = vec4(obj_color.rgb * (u_ambient + diff * (1.0 - u_ambient)), obj_color.a);" \
 	"}"
 
 #define ST3D_2D_LEFT 0
