@@ -30,7 +30,7 @@ bool jk_ui_visible = true;
 
 int main(void)
 {
-	st3d_init("jankler", "assets", 800, 600);
+	st3d_init("jankler", "assets", 1280, 720);
 	st3d_ui_new("app:figtree/Figtree-Medium.ttf", 16);
 	st3d_set_palette("app:default.stpal");
 	TrArena arena = tr_arena_new(TR_MB(1));
@@ -89,7 +89,7 @@ int main(void)
 
 	st3d_set_environment((St3dEnvironment){
 		.sky_color = tr_hex_rgb(0x03A9F4),
-		.ambient_color = tr_hex_rgb(0x212121),
+		.ambient_color = tr_hex_rgb(0xaaaaaa),
 		.sun = {
 			.direction = {0.5, 1.0, -0.75},
 			.color = TR_WHITE,
@@ -169,7 +169,7 @@ static void camera_controller(void)
 
 	st3d_set_camera((St3dCamera){
 		// position is in the middle
-		.position = (TrVec3f){-6, 8, 8},
+		.position = (TrVec3f){-6, 2, 4},
 		.rotation = jk_cam_rot,
 		.view = jk_view,
 		// ??
@@ -227,8 +227,9 @@ static void main_ui(void)
 {
 	if (!jk_ui_visible) return;
 	struct nk_context* ctx = st3d_nkctx();
+	TrVec2i winsize = st3d_window_size();
 
-	if (nk_begin(ctx, "JanklerTM Pro v0.1.0", nk_rect(0, 0, 200, 600),
+	if (nk_begin(ctx, "JanklerTM Pro v0.1.0", nk_rect(0, 0, 200, winsize.y),
 	NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_SCALABLE)) {
 		nk_layout_row_dynamic(ctx, 20, 1);
 		nk_label(ctx, "Advanced Voxel Modelling Software", NK_TEXT_ALIGN_CENTERED);
@@ -251,6 +252,7 @@ static void main_ui(void)
 		nk_label(ctx, "selection", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- press C to cancel selection", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- press F12 to save", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "- press F11 to load", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "- i know the transparency is", NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, "fucked", NK_TEXT_ALIGN_LEFT);
 
@@ -557,4 +559,21 @@ static void loader_5000(void)
 	tr_arena_free(&tmp);
 }
 
-static void color_picker(void) {}
+static void color_picker(void)
+{
+	if (!jk_ui_visible) return;
+
+	struct nk_context* ctx = st3d_nkctx();
+	if (nk_begin(ctx, "Color dee.", nk_rect(200, 0, 400, 350),
+	NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE)) {
+		nk_layout_row_dynamic(ctx, 20, 5);
+
+		for (size_t i = 1; i <= 60; i++) {
+			TrColor lecolour = st3d_get_color(i);
+			if (nk_button_color(ctx, nk_rgb(lecolour.r, lecolour.g, lecolour.b))) {
+				jk_current_color = i;
+			}
+		}
+	}
+	nk_end(ctx);
+}
