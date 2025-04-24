@@ -18,20 +18,23 @@ static void draw_gizmo_things(void);
 static void selection_thing(void);
 static void saver_5000(void);
 static void loader_5000(void);
+static void color_picker(void);
 
-static St3dMesh el_cubo;
-static TrSlice_Color cubes;
-static bool loading;
-static bool saving;
+static St3dMesh jk_el_cubo;
+static TrSlice_uint8 jk_cubes;
+static uint8_t jk_current_color = ST3D_COLOR_WHITE_1;
+static bool jk_loading;
+static bool jk_saving;
 
-bool ui_visible = true;
+bool jk_ui_visible = true;
 
 int main(void)
 {
 	st3d_init("jankler", "assets", 800, 600);
 	st3d_ui_new("app:figtree/Figtree-Medium.ttf", 16);
+	st3d_set_palette("app:default.stpal");
 	TrArena arena = tr_arena_new(TR_MB(1));
-	cubes = tr_slice_new(&arena, 16 * 16 * 16, sizeof(TrColor));
+	jk_cubes = tr_slice_new(&arena, 16 * 16 * 16, sizeof(uint8_t));
 
 	// ttriangel
 	TrSlice_float vertices;
@@ -79,8 +82,8 @@ int main(void)
 		20, 22, 21, 20, 23, 22,
 	);
 
-	el_cubo = st3d_mesh_new(&vertices, &indices, true);
-	el_cubo.material.color = tr_hex_rgb(0xffff00);
+	jk_el_cubo = st3d_mesh_new(&vertices, &indices, true);
+	jk_el_cubo.material.color = tr_hex_rgb(0xffff00);
 	// el_cubo.texture = st3d_texture_new("app:enough_fckery.jpg");
 	// st3d_set_wireframe(true);
 
@@ -97,20 +100,21 @@ int main(void)
 		st3d_begin_drawing();
 
 		if (st3d_is_key_just_pressed(ST3D_KEY_TAB)) {
-			ui_visible = !ui_visible;
+			jk_ui_visible = !jk_ui_visible;
 		}
 
 		// i'm sorry... i'm sorry... i'm sorry...
 		for (size_t x = 0; x < 16; x++) {
 			for (size_t y = 0; y < 16; y++) {
 				for (size_t z = 0; z < 16; z++) {
-					TrColor lecolour = *ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z);
+					uint8_t lecolourindexè = *ST3D_AT3D(jk_cubes, uint8_t, 16, 16, x, y, z);
+					TrColor lecolour = st3d_get_color(lecolourindexè);
 					if (lecolour.a == 0) {
 						continue;
 					}
 
-					el_cubo.material.color = lecolour;
-					st3d_mesh_draw_3d(el_cubo, (TrVec3f){x, y, z}, (TrVec3f){0, 0, 0});
+					jk_el_cubo.material.color = lecolour;
+					st3d_mesh_draw_3d(jk_el_cubo, (TrVec3f){x, y, z}, (TrVec3f){0, 0, 0});
 				}
 			}
 		}
@@ -126,6 +130,7 @@ int main(void)
 			saver_5000();
 			loader_5000();
 			main_ui();
+			color_picker();
 		st3d_ui_end();
 
 		st3d_end_drawing();
@@ -134,39 +139,39 @@ int main(void)
 
 	st3d_ui_free();
 
-	st3d_texture_free(el_cubo.texture);
-	st3d_mesh_free(el_cubo);
+	st3d_texture_free(jk_el_cubo.texture);
+	st3d_mesh_free(jk_el_cubo);
 	st3d_free();
 }
 
-static const double speed = 40;
-static TrVec3f cam_rot = {-30, -20, 0};
-static double view = 50;
-static bool wireframe;
+static const double jk_speed = 40;
+static TrVec3f jk_cam_rot = {-30, -20, 0};
+static double jk_view = 50;
+static bool jk_wireframe;
 
 static void camera_controller(void)
 {
 	double dt = st3d_delta_time();
 
-	if (st3d_is_key_held(ST3D_KEY_LEFT))  cam_rot.y -= speed * dt;
-	if (st3d_is_key_held(ST3D_KEY_RIGHT)) cam_rot.y += speed * dt;
-	if (st3d_is_key_held(ST3D_KEY_UP))    cam_rot.x += speed * dt;
-	if (st3d_is_key_held(ST3D_KEY_DOWN))  cam_rot.x -= speed * dt;
+	if (st3d_is_key_held(ST3D_KEY_LEFT))  jk_cam_rot.y -= jk_speed * dt;
+	if (st3d_is_key_held(ST3D_KEY_RIGHT)) jk_cam_rot.y += jk_speed * dt;
+	if (st3d_is_key_held(ST3D_KEY_UP))    jk_cam_rot.x += jk_speed * dt;
+	if (st3d_is_key_held(ST3D_KEY_DOWN))  jk_cam_rot.x -= jk_speed * dt;
 
 	// zoom,
 	TrVec2f scroll = st3d_mouse_scroll();
 	if (scroll.y > 0) {
-		view /= 1.25;
+		jk_view /= 1.25;
 	}
 	else if (scroll.y < 0) {
-		view *= 1.25;
+		jk_view *= 1.25;
 	}
 
 	st3d_set_camera((St3dCamera){
 		// position is in the middle
 		.position = (TrVec3f){-6, 8, 8},
-		.rotation = cam_rot,
-		.view = view,
+		.rotation = jk_cam_rot,
+		.view = jk_view,
 		// ??
 		.near = -10000,
 		.far = 10000,
@@ -174,45 +179,45 @@ static void camera_controller(void)
 	});
 
 	if (st3d_is_key_just_pressed(ST3D_KEY_F1)) {
-		wireframe = !wireframe;
-		st3d_set_wireframe(wireframe);
+		jk_wireframe = !jk_wireframe;
+		st3d_set_wireframe(jk_wireframe);
 	}
 }
 
-TrVec3f selection_pos;
+TrVec3f jk_selection_pos;
 
 static void model_controller(void)
 {
-	if (saving || loading) return;
+	if (jk_saving || jk_loading) return;
 
-	if (st3d_is_key_just_pressed(ST3D_KEY_W))          selection_pos.z -= 1;
-	if (st3d_is_key_just_pressed(ST3D_KEY_A))          selection_pos.x -= 1;
-	if (st3d_is_key_just_pressed(ST3D_KEY_S))          selection_pos.z += 1;
-	if (st3d_is_key_just_pressed(ST3D_KEY_D))          selection_pos.x += 1;
-	if (st3d_is_key_just_pressed(ST3D_KEY_LEFT_SHIFT)) selection_pos.y -= 1;
-	if (st3d_is_key_just_pressed(ST3D_KEY_SPACE))      selection_pos.y += 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_W))          jk_selection_pos.z -= 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_A))          jk_selection_pos.x -= 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_S))          jk_selection_pos.z += 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_D))          jk_selection_pos.x += 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_LEFT_SHIFT)) jk_selection_pos.y -= 1;
+	if (st3d_is_key_just_pressed(ST3D_KEY_SPACE))      jk_selection_pos.y += 1;
 
 	// TODO we should probably be able to change the dimensions
-	selection_pos.x = tr_clamp(selection_pos.x, 0, 15);
-	selection_pos.y = tr_clamp(selection_pos.y, 0, 15);
-	selection_pos.z = tr_clamp(selection_pos.z, 0, 15);
+	jk_selection_pos.x = tr_clamp(jk_selection_pos.x, 0, 15);
+	jk_selection_pos.y = tr_clamp(jk_selection_pos.y, 0, 15);
+	jk_selection_pos.z = tr_clamp(jk_selection_pos.z, 0, 15);
 
 	// stigma
 	if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_LEFT)) {
-		*ST3D_AT3D(cubes, TrColor, 16, 16, selection_pos.x, selection_pos.y, selection_pos.z) = TR_WHITE;
+		*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, jk_selection_pos.x, jk_selection_pos.y, jk_selection_pos.z) = jk_current_color;
 	}
 
 	if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_RIGHT)) {
-		*ST3D_AT3D(cubes, TrColor, 16, 16, selection_pos.x, selection_pos.y, selection_pos.z) = TR_TRANSPARENT;
+		*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, jk_selection_pos.x, jk_selection_pos.y, jk_selection_pos.z) = ST3D_COLOR_TRANSPARENT;
 	}
 
 	// help.
-	if (ui_visible) {
-		el_cubo.material.color = TR_WHITE;
+	if (jk_ui_visible) {
+		jk_el_cubo.material.color = TR_WHITE;
 		// i love hacking my own renderer
 		glDisable(GL_DEPTH_TEST);
 		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO);
-		st3d_mesh_draw_3d(el_cubo, selection_pos, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(jk_el_cubo, jk_selection_pos, (TrVec3f){0, 0, 0});
 		glEnable(GL_DEPTH_TEST);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
@@ -220,7 +225,7 @@ static void model_controller(void)
 
 static void main_ui(void)
 {
-	if (!ui_visible) return;
+	if (!jk_ui_visible) return;
 	struct nk_context* ctx = st3d_nkctx();
 
 	if (nk_begin(ctx, "JanklerTM Pro v0.1.0", nk_rect(0, 0, 200, 600),
@@ -256,9 +261,9 @@ static void main_ui(void)
 		char fucky2[64];
 		char fucky3[64];
 		char fucky4[64];
-		snprintf(fucky1, sizeof(fucky1), "view: %f", view);
-		snprintf(fucky2, sizeof(fucky2), "rotation: %.2f %.2f %.2f", cam_rot.x, cam_rot.y, cam_rot.z);
-		snprintf(fucky3, sizeof(fucky3), "selection: %.0f %.0f %.0f", selection_pos.x, selection_pos.y, selection_pos.z);
+		snprintf(fucky1, sizeof(fucky1), "view: %f", jk_view);
+		snprintf(fucky2, sizeof(fucky2), "rotation: %.2f %.2f %.2f", jk_cam_rot.x, jk_cam_rot.y, jk_cam_rot.z);
+		snprintf(fucky3, sizeof(fucky3), "selection: %.0f %.0f %.0f", jk_selection_pos.x, jk_selection_pos.y, jk_selection_pos.z);
 		snprintf(fucky4, sizeof(fucky4), "fps: %.0f", st3d_fps());
 		nk_label(ctx, fucky1, NK_TEXT_ALIGN_LEFT);
 		nk_label(ctx, fucky2, NK_TEXT_ALIGN_LEFT);
@@ -270,20 +275,20 @@ static void main_ui(void)
 
 static void draw_gizmo_things(void)
 {
-	if (!ui_visible) return;
+	if (!jk_ui_visible) return;
 
 	// sir
 	for (size_t i = 0; i < 16; i++) {
-		el_cubo.material.color = ST3D_SELECTION_COLOR;
-		st3d_mesh_draw_3d(el_cubo, (TrVec3f){i, 0, 0}, (TrVec3f){0, 0, 0});
-		st3d_mesh_draw_3d(el_cubo, (TrVec3f){i, 15, 0}, (TrVec3f){0, 0, 0});
-		st3d_mesh_draw_3d(el_cubo, (TrVec3f){i, 0, 15}, (TrVec3f){0, 0, 0});
-		st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, i, 0}, (TrVec3f){0, 0, 0});
+		jk_el_cubo.material.color = ST3D_SELECTION_COLOR;
+		st3d_mesh_draw_3d(jk_el_cubo, (TrVec3f){i, 0, 0}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(jk_el_cubo, (TrVec3f){i, 15, 0}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(jk_el_cubo, (TrVec3f){i, 0, 15}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(jk_el_cubo, (TrVec3f){0, i, 0}, (TrVec3f){0, 0, 0});
 		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, i, 15}, (TrVec3f){0, 0, 0});
-		st3d_mesh_draw_3d(el_cubo, (TrVec3f){15, i, 0}, (TrVec3f){0, 0, 0});
-		st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, 0, i}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(jk_el_cubo, (TrVec3f){15, i, 0}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(jk_el_cubo, (TrVec3f){0, 0, i}, (TrVec3f){0, 0, 0});
 		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, 0, i}, (TrVec3f){0, 0, 0});
-		st3d_mesh_draw_3d(el_cubo, (TrVec3f){15, 0, i}, (TrVec3f){0, 0, 0});
+		st3d_mesh_draw_3d(jk_el_cubo, (TrVec3f){15, 0, i}, (TrVec3f){0, 0, 0});
 		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){15, 15, i}, (TrVec3f){0, 0, 0});
 		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){0, 15, i}, (TrVec3f){0, 0, 0});
 		// st3d_mesh_draw_3d(el_cubo, (TrVec3f){15, i, 15}, (TrVec3f){0, 0, 0});
@@ -291,43 +296,43 @@ static void draw_gizmo_things(void)
 	}
 }
 
-static TrVec3f sel_start;
-static TrVec3f sel_end;
-static bool selecting;
+static TrVec3f jk_sel_start;
+static TrVec3f jk_sel_end;
+static bool jk_selecting;
 
 static void selection_thing(void)
 {
-	if (!ui_visible) return;
+	if (!jk_ui_visible) return;
 
 	if (st3d_is_key_just_pressed(ST3D_KEY_M)) {
-		selecting = true;
-		sel_start = selection_pos;
+		jk_selecting = true;
+		jk_sel_start = jk_selection_pos;
 	}
 
 	if (st3d_is_key_just_pressed(ST3D_KEY_C)) {
-		selecting = false;
-		sel_start = (TrVec3f){0, 0, 0};
-		sel_end = (TrVec3f){0, 0, 0};
+		jk_selecting = false;
+		jk_sel_start = (TrVec3f){0, 0, 0};
+		jk_sel_end = (TrVec3f){0, 0, 0};
 	}
 
-	if (selecting) {
-		sel_end = selection_pos;
+	if (jk_selecting) {
+		jk_sel_end = jk_selection_pos;
 	}
 
 	// fucking hell
-	size_t x_start = sel_start.x < sel_end.x ? sel_start.x : sel_end.x;
-	size_t x_end   = sel_start.x > sel_end.x ? sel_start.x : sel_end.x;
-	size_t y_start = sel_start.y < sel_end.y ? sel_start.y : sel_end.y;
-	size_t y_end   = sel_start.y > sel_end.y ? sel_start.y : sel_end.y;
-	size_t z_start = sel_start.z < sel_end.z ? sel_start.z : sel_end.z;
-	size_t z_end   = sel_start.z > sel_end.z ? sel_start.z : sel_end.z;
+	size_t x_start = jk_sel_start.x < jk_sel_end.x ? jk_sel_start.x : jk_sel_end.x;
+	size_t x_end   = jk_sel_start.x > jk_sel_end.x ? jk_sel_start.x : jk_sel_end.x;
+	size_t y_start = jk_sel_start.y < jk_sel_end.y ? jk_sel_start.y : jk_sel_end.y;
+	size_t y_end   = jk_sel_start.y > jk_sel_end.y ? jk_sel_start.y : jk_sel_end.y;
+	size_t z_start = jk_sel_start.z < jk_sel_end.z ? jk_sel_start.z : jk_sel_end.z;
+	size_t z_end   = jk_sel_start.z > jk_sel_end.z ? jk_sel_start.z : jk_sel_end.z;
 
 	// preview selection
 	for (size_t x = x_start; x <= x_end; x++) {
 		for (size_t y = y_start; y <= y_end; y++) {
 			for (size_t z = z_start; z <= z_end; z++) {
-				el_cubo.material.color = ST3D_SELECTION_COLOR;
-				st3d_mesh_draw_3d(el_cubo, (TrVec3f){x, y, z}, (TrVec3f){0, 0, 0});
+				jk_el_cubo.material.color = ST3D_SELECTION_COLOR;
+				st3d_mesh_draw_3d(jk_el_cubo, (TrVec3f){x, y, z}, (TrVec3f){0, 0, 0});
 			}
 		}
 	}
@@ -337,14 +342,14 @@ static void selection_thing(void)
 		for (size_t x = x_start; x <= x_end; x++) {
 			for (size_t y = y_start; y <= y_end; y++) {
 				for (size_t z = z_start; z <= z_end; z++) {
-					*ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z) = TR_WHITE;
+					*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, x, y, z) = jk_current_color;
 				}
 			}
 		}
 
-		selecting = false;
-		sel_start = (TrVec3f){0, 0, 0};
-		sel_end = (TrVec3f){0, 0, 0};
+		jk_selecting = false;
+		jk_sel_start = (TrVec3f){0, 0, 0};
+		jk_sel_end = (TrVec3f){0, 0, 0};
 	}
 
 	// delete :)
@@ -352,44 +357,44 @@ static void selection_thing(void)
 		for (size_t x = x_start; x <= x_end; x++) {
 			for (size_t y = y_start; y <= y_end; y++) {
 				for (size_t z = z_start; z <= z_end; z++) {
-					*ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z) = TR_TRANSPARENT;
+					*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, x, y, z) = ST3D_COLOR_TRANSPARENT;
 				}
 			}
 		}
 
-		selecting = false;
-		sel_start = (TrVec3f){0, 0, 0};
-		sel_end = (TrVec3f){0, 0, 0};
+		jk_selecting = false;
+		jk_sel_start = (TrVec3f){0, 0, 0};
+		jk_sel_end = (TrVec3f){0, 0, 0};
 	}
 }
 
-static char save_path[256];
-static bool saving_fucked;
+static char jk_save_path[256];
+static bool jk_saving_fucked;
 
 static void saver_5000(void)
 {
 	bool savingfrfrfr = false;
 
 	if (st3d_is_key_just_pressed(ST3D_KEY_F12)) {
-		saving = !saving;
+		jk_saving = !jk_saving;
 		// hide the ui while saving bcuz why not
-		ui_visible = !ui_visible;
+		jk_ui_visible = !jk_ui_visible;
 	}
-	if (!saving) return;
+	if (!jk_saving) return;
 
 	struct nk_context* ctx = st3d_nkctx();
 
 	// dear god
-	if (saving_fucked) {
+	if (jk_saving_fucked) {
 		if (nk_begin(ctx, "Jankler has encountered an inconvenience", nk_rect(100, 100, 400, 200),
 		NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
 			nk_layout_row_dynamic(ctx, 20, 1);
 			nk_label(ctx, "Couldn't save file.", NK_TEXT_ALIGN_LEFT);
 
 			if (nk_button_label(ctx, "oh ok")) {
-				saving = false;
-				ui_visible = true;
-				saving_fucked = false;
+				jk_saving = false;
+				jk_ui_visible = true;
+				jk_saving_fucked = false;
 			}
 		}
 		nk_end(ctx);
@@ -401,7 +406,7 @@ static void saver_5000(void)
 		nk_layout_row_dynamic(ctx, 28, 1);
 		nk_label(ctx, "Save as:", NK_TEXT_ALIGN_LEFT);
 
-		nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, save_path, sizeof(save_path) - 1, nk_filter_default);
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, jk_save_path, sizeof(jk_save_path) - 1, nk_filter_default);
 
 		if (nk_button_label(ctx, "Save")) {
 			// don't want to put that logic under 3 levels of indentation
@@ -409,8 +414,8 @@ static void saver_5000(void)
 		}
 
 		if (nk_button_label(ctx, "Cancel")) {
-			saving = false;
-			ui_visible = true;
+			jk_saving = false;
+			jk_ui_visible = true;
 		}
 	}
 	nk_end(ctx);
@@ -425,8 +430,8 @@ static void saver_5000(void)
 	// first get how many voxels are there
 	// so we don't waste space with transparent voxels
 	size_t len = 0;
-	for (size_t i = 0; i < cubes.length; i++) {
-		TrColor lecolour = *TR_AT(cubes, TrColor, i);
+	for (size_t i = 0; i < jk_cubes.length; i++) {
+		TrColor lecolour = st3d_get_color(*TR_AT(jk_cubes, uint8_t, i));
 		if (lecolour.a != 0) len++;
 	}
 
@@ -437,14 +442,13 @@ static void saver_5000(void)
 	for (size_t x = 0; x < 16; x++) {
 		for (size_t y = 0; y < 16; y++) {
 			for (size_t z = 0; z < 16; z++) {
-				TrColor lecolour = *ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z);
-				if (lecolour.a != 0) {
+				uint8_t lecolourindexèe = *ST3D_AT3D(jk_cubes, uint8_t, 16, 16, x, y, z);
+				if (lecolourindexèe != ST3D_COLOR_TRANSPARENT) {
 					*TR_AT(voxelsma, St3dPackedVoxel, i) = (St3dPackedVoxel){
 						.x = x,
 						.y = y,
 						.z = z,
-						// TODO palette
-						.color = 2,
+						.color = jk_current_color,
 					};
 					i++;
 				}
@@ -454,47 +458,47 @@ static void saver_5000(void)
 
 	// save deez
 	model.voxels = voxelsma;
-	bool success = st3d_stvox_save(model, save_path);
+	bool success = st3d_stvox_save(model, jk_save_path);
 	if (!success) {
-		saving_fucked = true;
+		jk_saving_fucked = true;
 	}
 	else {
 		// we're still saving
 		// but we're done now so stop
-		saving = false;
-		ui_visible = true;
+		jk_saving = false;
+		jk_ui_visible = true;
 	}
 
 	tr_arena_free(&tmp);
 }
 
-static char load_path[256];
-static bool loading_fucked;
+static char jk_load_path[256];
+static bool jk_loading_fucked;
 
 static void loader_5000(void)
 {
 	bool loadingfrfrfr = false;
 
 	if (st3d_is_key_just_pressed(ST3D_KEY_F11)) {
-		loading = !loading;
+		jk_loading = !jk_loading;
 		// hide the ui while saving bcuz why not
-		ui_visible = !ui_visible;
+		jk_ui_visible = !jk_ui_visible;
 	}
-	if (!loading) return;
+	if (!jk_loading) return;
 
 	struct nk_context* ctx = st3d_nkctx();
 
 	// dear god
-	if (loading_fucked) {
+	if (jk_loading_fucked) {
 		if (nk_begin(ctx, "Jankler has encountered an inconvenience", nk_rect(100, 100, 400, 200),
 		NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
 			nk_layout_row_dynamic(ctx, 20, 1);
 			nk_label(ctx, "Couldn't load file.", NK_TEXT_ALIGN_LEFT);
 
 			if (nk_button_label(ctx, "oh ok")) {
-				loading = false;
-				ui_visible = true;
-				loading_fucked = false;
+				jk_loading = false;
+				jk_ui_visible = true;
+				jk_loading_fucked = false;
 			}
 		}
 		nk_end(ctx);
@@ -506,7 +510,7 @@ static void loader_5000(void)
 		nk_layout_row_dynamic(ctx, 28, 1);
 		nk_label(ctx, "Load from:", NK_TEXT_ALIGN_LEFT);
 
-		nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, load_path, sizeof(load_path) - 1, nk_filter_default);
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, jk_load_path, sizeof(jk_load_path) - 1, nk_filter_default);
 
 		if (nk_button_label(ctx, "Open")) {
 			// don't want to put that logic under 3 levels of indentation
@@ -514,8 +518,8 @@ static void loader_5000(void)
 		}
 
 		if (nk_button_label(ctx, "Cancel")) {
-			loading = false;
-			ui_visible = true;
+			jk_loading = false;
+			jk_ui_visible = true;
 		}
 	}
 	nk_end(ctx);
@@ -525,17 +529,17 @@ static void loader_5000(void)
 	// actual loading
 	TrArena tmp = tr_arena_new(TR_MB(1));
 	St3dVoxModel model;
-	bool success = st3d_stvox_load(&tmp, load_path, &model);
+	bool success = st3d_stvox_load(&tmp, jk_load_path, &model);
 
 	if (!success) {
-		loading_fucked = true;
+		jk_loading_fucked = true;
 	}
 	else {
 		// the old model will be annihilated
 		for (size_t x = 0; x < 16; x++) {
 			for (size_t y = 0; y < 16; y++) {
 				for (size_t z = 0; z < 16; z++) {
-					*ST3D_AT3D(cubes, TrColor, 16, 16, x, y, z) = TR_TRANSPARENT;
+					*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, x, y, z) = ST3D_COLOR_TRANSPARENT;
 				}
 			}
 		}
@@ -543,13 +547,14 @@ static void loader_5000(void)
 		// put that into the fucking slice we have
 		for (size_t i = 0; i < model.voxels.length; i++) {
 			St3dPackedVoxel yea = *TR_AT(model.voxels, St3dPackedVoxel, i);
-			// TODO palette
-			*ST3D_AT3D(cubes, TrColor, 16, 16, yea.x, yea.y, yea.z) = TR_WHITE;
+			*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, yea.x, yea.y, yea.z) = yea.color;
 		}
 
-		loading = false;
-		ui_visible = true;
+		jk_loading = false;
+		jk_ui_visible = true;
 	}
 
 	tr_arena_free(&tmp);
 }
+
+static void color_picker(void) {}

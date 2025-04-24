@@ -140,6 +140,9 @@ typedef enum {
 	ST3D_COLOR_COCOA_1,
 } St3dColors;
 
+void st3di_vox_init(void);
+void st3di_vox_free(void);
+
 // Saves a Starryvox model into a file. This doesn't support the `app:` or `usr:` prefixes. Returns true
 // if it succeeded.
 bool st3d_stvox_save(St3dVoxModel model, const char* path);

@@ -11,6 +11,7 @@
 #include <libtrippin.h>
 #include "st3d.h"
 #include "st3d_render.h"
+#include "st3d_voxel.h"
 
 typedef enum {
 	ST3D_INPUT_STATE_NOT_PRESSED,
@@ -119,6 +120,7 @@ void st3d_init(const char* app, const char* assets, uint32_t width, uint32_t hei
 
 	// sbsubsytestesmysmys
 	st3di_init_render();
+	st3di_vox_init();
 
 	// apparently windows is shit so i have to do this immediately
 	on_framebuffer_resize(st3d_window, width, height);
@@ -133,6 +135,7 @@ void st3d_free(void)
 	tr_liblog("destroyed window");
 
 	// sbsubsytestesmysmys
+	st3di_vox_free();
 	st3di_free_render();
 
 	tr_liblog("deinitialized starry3d");
