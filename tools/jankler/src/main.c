@@ -17,9 +17,12 @@ static void main_ui(void);
 static void draw_gizmo_things(void);
 static void selection_thing(void);
 static void saver_5000(void);
+static void loader_5000(void);
 
 static St3dMesh el_cubo;
 static TrSlice_Color cubes;
+static bool loading;
+static bool saving;
 
 bool ui_visible = true;
 
@@ -123,6 +126,7 @@ int main(void)
 		// nuklear calls go inside here
 		st3d_ui_begin();
 			saver_5000();
+			loader_5000();
 			main_ui();
 		st3d_ui_end();
 
@@ -181,6 +185,8 @@ TrVec3f selection_pos;
 
 static void model_controller(void)
 {
+	if (saving || loading) return;
+
 	if (st3d_is_key_just_pressed(ST3D_KEY_W))          selection_pos.z -= 1;
 	if (st3d_is_key_just_pressed(ST3D_KEY_A))          selection_pos.x -= 1;
 	if (st3d_is_key_just_pressed(ST3D_KEY_S))          selection_pos.z += 1;
@@ -359,8 +365,8 @@ static void selection_thing(void)
 	}
 }
 
-static bool saving;
 static char save_path[256];
+static bool saving_fucked;
 
 static void saver_5000(void)
 {
@@ -374,9 +380,27 @@ static void saver_5000(void)
 	if (!saving) return;
 
 	struct nk_context* ctx = st3d_nkctx();
+
+	// dear god
+	if (saving_fucked) {
+		if (nk_begin(ctx, "Jankler has encountered an inconvenience", nk_rect(100, 100, 400, 200),
+		NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
+			nk_layout_row_dynamic(ctx, 20, 1);
+			nk_label(ctx, "Couldn't save file.", NK_TEXT_ALIGN_LEFT);
+
+			if (nk_button_label(ctx, "oh ok")) {
+				saving = false;
+				ui_visible = true;
+				saving_fucked = false;
+			}
+		}
+		nk_end(ctx);
+		return;
+	}
+
 	if (nk_begin(ctx, "Jankler Save", nk_rect(100, 100, 400, 200),
 	NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
-		nk_layout_row_dynamic(ctx, 20, 1);
+		nk_layout_row_dynamic(ctx, 28, 1);
 		nk_label(ctx, "Save as:", NK_TEXT_ALIGN_LEFT);
 
 		nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, save_path, sizeof(save_path) - 1, nk_filter_default);
@@ -434,17 +458,7 @@ static void saver_5000(void)
 	model.voxels = voxelsma;
 	bool success = st3d_stvox_save(model, save_path);
 	if (!success) {
-		if (nk_begin(ctx, "Jankler has encountered an inconvenience", nk_rect(100, 100, 400, 200),
-		NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
-			nk_layout_row_dynamic(ctx, 20, 1);
-			nk_label(ctx, "Couldn't save file.", NK_TEXT_ALIGN_LEFT);
-
-			if (nk_button_label(ctx, "oh ok")) {
-				saving = false;
-				ui_visible = true;
-			}
-		}
-		nk_end(ctx);
+		saving_fucked = true;
 	}
 	else {
 		// we're still saving
@@ -452,4 +466,83 @@ static void saver_5000(void)
 		saving = false;
 		ui_visible = true;
 	}
+
+	tr_arena_free(&tmp);
+}
+
+static char load_path[256];
+static bool loading_fucked;
+
+static void loader_5000(void)
+{
+	bool loadingfrfrfr = false;
+
+	if (st3d_is_key_just_pressed(ST3D_KEY_F11)) {
+		loading = !loading;
+		// hide the ui while saving bcuz why not
+		ui_visible = !ui_visible;
+	}
+	if (!loading) return;
+
+	struct nk_context* ctx = st3d_nkctx();
+
+	// dear god
+	if (loading_fucked) {
+		if (nk_begin(ctx, "Jankler has encountered an inconvenience", nk_rect(100, 100, 400, 200),
+		NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
+			nk_layout_row_dynamic(ctx, 20, 1);
+			nk_label(ctx, "Couldn't load file.", NK_TEXT_ALIGN_LEFT);
+
+			if (nk_button_label(ctx, "oh ok")) {
+				loading = false;
+				ui_visible = true;
+				loading_fucked = false;
+			}
+		}
+		nk_end(ctx);
+		return;
+	}
+
+	if (nk_begin(ctx, "Jankler Load", nk_rect(100, 100, 400, 200),
+	NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE)) {
+		nk_layout_row_dynamic(ctx, 28, 1);
+		nk_label(ctx, "Load from:", NK_TEXT_ALIGN_LEFT);
+
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, load_path, sizeof(load_path) - 1, nk_filter_default);
+
+		if (nk_button_label(ctx, "Open")) {
+			// don't want to put that logic under 3 levels of indentation
+			loadingfrfrfr = true;
+		}
+
+		if (nk_button_label(ctx, "Cancel")) {
+			loading = false;
+			ui_visible = true;
+		}
+	}
+	nk_end(ctx);
+
+	if (!loadingfrfrfr) return;
+
+	// actual loading
+	TrArena tmp = tr_arena_new(TR_MB(1));
+	St3dVoxModel model;
+	bool success = st3d_stvox_load(&tmp, load_path, &model);
+
+	if (!success) {
+		loading_fucked = true;
+	}
+	else {
+		// put that into the fucking slice we have
+		for (size_t i = 0; i < model.voxels.length; i++) {
+			St3dPackedVoxel yea = *TR_AT(model.voxels, St3dPackedVoxel, i);
+			// TODO palette
+			*ST3D_AT3D(cubes, TrColor, 16, 16, yea.x, yea.y, yea.z) = TR_WHITE;
+		}
+
+		loading = false;
+		ui_visible = true;
+	}
+
+	tr_arena_free(&tmp);
 }

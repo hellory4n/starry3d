@@ -74,6 +74,10 @@ typedef struct {
 // if it succeeded.
 bool st3d_stvox_save(St3dVoxModel model, const char* path);
 
+// Loads a Starryvox model from a file, and writes the result into `out`. Supports the `app:` or `usr:`
+// prefixes. Returns true if it succeeded.
+bool st3d_stvox_load(TrArena* arena, const char* path, St3dVoxModel* out);
+
 #ifdef __cplusplus
 }
 #endif

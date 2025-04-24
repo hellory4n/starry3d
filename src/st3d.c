@@ -348,6 +348,7 @@ void st3d_path(const char* s, TrString* out)
 	if (out->length < ST3D_PATH_SIZE) {
 		tr_warn("buffer may not be large enough to store path");
 	}
+
 	if (strncmp(s, "app:", 4) == 0) {
 		// remove the prefix
 		const char* trimmed = s + 4;

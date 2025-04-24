@@ -1,10 +1,12 @@
 #include <stdio.h>
+#include "st3d.h"
 #include "st3d_voxel.h"
 
 bool st3d_stvox_save(St3dVoxModel model, const char* path)
 {
 	FILE* file = fopen(path, "wb");
 	if (file == NULL) {
+		tr_warn("couldn't save stvox to %s", path);
 		return false;
 	}
 
@@ -27,5 +29,57 @@ bool st3d_stvox_save(St3dVoxModel model, const char* path)
 	fwrite(model.voxels.buffer, sizeof(St3dPackedVoxel), model.voxels.length, file);
 
 	fclose(file);
+	tr_liblog("saved stvox model to %s", path);
+	return true;
+}
+
+bool st3d_stvox_load(TrArena* arena, const char* path, St3dVoxModel* out)
+{
+	// TODO probably gonna segfault
+	TrString fullpath = tr_slice_new(arena, ST3D_PATH_SIZE, sizeof(char));
+	if (strncmp(path, "app:", 4) == 0 || strncmp(path, "usr:", 4) == 0) {
+		st3d_path(path, &fullpath);
+	}
+	else {
+		strncpy(fullpath.buffer, path, fullpath.length - 1);
+	}
+
+	// actually load
+	FILE* file = fopen(fullpath.buffer, "rb");
+	if (file == NULL) {
+		tr_warn("couldn't load stvox from %s", path);
+		return false;
+	}
+
+	St3dStarryvoxHeader headerihardlyknower;
+	fread(&headerihardlyknower, sizeof(St3dStarryvoxHeader), 1, file);
+
+	// check magic number
+	if (headerihardlyknower.magic[0] != 's' || headerihardlyknower.magic[1] != 't' ||
+	headerihardlyknower.magic[2] != 'a' || headerihardlyknower.magic[3] != 'r' ||
+	headerihardlyknower.magic[4] != 'v' || headerihardlyknower.magic[5] != 'o' ||
+	headerihardlyknower.magic[6] != 'x' || headerihardlyknower.magic[7] != '!') {
+		tr_warn("stvox file at %s is either corrupted or not a starryvox file", path);
+		fclose(file);
+		return false;
+	}
+
+	// check version
+	if (headerihardlyknower.version != 10) {
+		tr_warn("stvox file at %s has an unsupported stvox version", path);
+		fclose(file);
+		return false;
+	}
+
+	// like load the shitfuck
+	out->dimensions.x = headerihardlyknower.dimensions.x;
+	out->dimensions.y = headerihardlyknower.dimensions.y;
+	out->dimensions.z = headerihardlyknower.dimensions.z;
+	out->dimensions.baseline = headerihardlyknower.dimensions.baseline;
+	out->voxels = tr_slice_new(arena, headerihardlyknower.data_len, sizeof(St3dPackedVoxel));
+	fread(out->voxels.buffer, sizeof(St3dPackedVoxel), headerihardlyknower.data_len, file);
+
+	fclose(file);
+	tr_liblog("loaded stvox model from %s", path);
 	return true;
 }
