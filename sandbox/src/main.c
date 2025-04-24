@@ -2,6 +2,7 @@
 #include <st3d.h>
 #include <st3d_render.h>
 #include <st3d_ui.h>
+#include <st3d_voxel.h>
 
 // used for the sliders :D
 static float st_pos_x;
@@ -54,6 +55,84 @@ int main(void)
 {
 	st3d_init("sandbox", "assets", 800, 600);
 	TrArena arena = tr_arena_new(TR_MB(1));
+
+	St3dPalette sir;
+	TR_SET_SLICE(&arena, &sir, TrColor,
+		TR_TRANSPARENT,
+		tr_hex_rgb(0x0e141f),
+		tr_hex_rgb(0x273445),
+		tr_hex_rgb(0x485a6c),
+		tr_hex_rgb(0x667885),
+		tr_hex_rgb(0x95a3ab),
+
+		tr_hex_rgb(0x555761),
+		tr_hex_rgb(0x7e8087),
+		tr_hex_rgb(0xabacae),
+		tr_hex_rgb(0xd4d4d4),
+		tr_hex_rgb(0xfafafa),
+
+		tr_hex_rgb(0x7a0000),
+		tr_hex_rgb(0xa10705),
+		tr_hex_rgb(0xc6262e),
+		tr_hex_rgb(0xed5353),
+		tr_hex_rgb(0xff8c82),
+
+		tr_hex_rgb(0xa62100),
+		tr_hex_rgb(0xcc3b02),
+		tr_hex_rgb(0xf37329),
+		tr_hex_rgb(0xffa154),
+		tr_hex_rgb(0xffc27d),
+
+		tr_hex_rgb(0xad5f00),
+		tr_hex_rgb(0xd48e15),
+		tr_hex_rgb(0xf9c440),
+		tr_hex_rgb(0xffe16b),
+		tr_hex_rgb(0xfff394),
+
+		tr_hex_rgb(0x206b00),
+		tr_hex_rgb(0x3a9104),
+		tr_hex_rgb(0x68b723),
+		tr_hex_rgb(0x9bdb4d),
+		tr_hex_rgb(0xd1ff82),
+
+		tr_hex_rgb(0x007367),
+		tr_hex_rgb(0x0e9a83),
+		tr_hex_rgb(0x28bca3),
+		tr_hex_rgb(0x43d6b5),
+		tr_hex_rgb(0x89ffdd),
+
+		tr_hex_rgb(0x002e99),
+		tr_hex_rgb(0x0d52bf),
+		tr_hex_rgb(0x3689e6),
+		tr_hex_rgb(0x64baff),
+		tr_hex_rgb(0x8cd5ff),
+
+		tr_hex_rgb(0x452981),
+		tr_hex_rgb(0x7239b3),
+		tr_hex_rgb(0xa56de2),
+		tr_hex_rgb(0xcd9ef7),
+		tr_hex_rgb(0xe4c6fa),
+
+		tr_hex_rgb(0x910e38),
+		tr_hex_rgb(0xbc245d),
+		tr_hex_rgb(0xde3e80),
+		tr_hex_rgb(0xf4679d),
+		tr_hex_rgb(0xfe9ab8),
+
+		tr_hex_rgb(0x804b00),
+		tr_hex_rgb(0xb6802e),
+		tr_hex_rgb(0xcfa25e),
+		tr_hex_rgb(0xe7c591),
+		tr_hex_rgb(0xefdfc4),
+
+		tr_hex_rgb(0x3d211b),
+		tr_hex_rgb(0x57392d),
+		tr_hex_rgb(0x715344),
+		tr_hex_rgb(0x8a715e),
+		tr_hex_rgb(0xa3907c),
+	);
+	st3d_stpal_save(sir, "default.stpal");
+	return 0;
 
 	// ttriangel
 	TrSlice_float vertices;

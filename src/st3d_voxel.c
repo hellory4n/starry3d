@@ -83,3 +83,28 @@ bool st3d_stvox_load(TrArena* arena, const char* path, St3dVoxModel* out)
 	tr_liblog("loaded stvox model from %s", path);
 	return true;
 }
+
+bool st3d_stpal_save(St3dPalette palette, const char* path)
+{
+	FILE* file = fopen(path, "wb");
+	if (file == NULL) {
+		tr_warn("couldn't save stpal to %s", path);
+		return false;
+	}
+
+	// header
+	St3dStarrypalHeader header = {
+		.magic = {'s', 't', 'a', 'r', 'p', 'a', 'l', '!'},
+		.version = 10,
+		.data_len = palette.length,
+	};
+
+	fwrite(&header, sizeof(St3dStarrypalHeader), 1, file);
+
+	// data
+	fwrite(palette.buffer, sizeof(TrColor), palette.length, file);
+
+	fclose(file);
+	tr_liblog("saved stpal palette to %s", path);
+	return true;
+}

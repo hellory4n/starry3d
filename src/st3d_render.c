@@ -54,7 +54,8 @@ void st3d_begin_drawing(void)
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
 }
 
 void st3d_end_drawing(void)

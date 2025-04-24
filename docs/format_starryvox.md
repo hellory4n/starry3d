@@ -87,10 +87,4 @@ While being able to change palettes is what we in the community refer to as "coo
 palettes could use completely different indexes. So for example on one palette 57 is blue, and on the other
 one it's red. Quite the pickle.
 
-I'm eventually gonna do a list of colors later lmao.
-
-| Index | Color name  | Hex code    |
-| ----- | ----------- | ----------- |
-| 0     | Transparent | `#00000000` |
-| 1     | Black       | `#000000`   |
-| 2     | White       | `#FFFFFF`   |
+See [the default palette](./default_palette.md) for the full list of colors.
