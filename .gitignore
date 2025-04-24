@@ -18,3 +18,4 @@ log.txt
 # linux executables
 sandbox/sandbox
 tools/jankler/jankler
+tools/jankler2/jankler
