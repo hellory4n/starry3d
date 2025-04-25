@@ -53,9 +53,9 @@ void st3d_begin_drawing(void)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
+	// glEnable(GL_CULL_FACE);
+	// glFrontFace(GL_CCW);
+	// glCullFace(GL_BACK);
 }
 
 void st3d_end_drawing(void)
@@ -210,6 +210,68 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 	}
 
 	st3d_mesh_draw_transform(mesh, (float*)model, (float*)view, (float*)proj);
+}
+
+TrVec3f st3d_screen_to_world_pos(TrVec2f pos, double depth)
+{
+	mat4x4 view, proj;
+
+	// perspective
+	if (st3d_cam.perspective) {
+		mat4x4 view_pos, view_rot;
+		mat4x4_identity(view_pos);
+		mat4x4_identity(view_rot);
+		mat4x4_translate(view_pos, -st3d_cam.position.x, -st3d_cam.position.y, -st3d_cam.position.z);
+
+		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.x));
+		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.y));
+		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.z));
+
+		mat4x4_mul(view, view_rot, view_pos);
+
+		TrVec2i winsize = st3d_window_size();
+		mat4x4_perspective(proj, tr_deg2rad(st3d_cam.view), (double)winsize.x / winsize.y,
+			st3d_cam.near, st3d_cam.far);
+	}
+	// orthographic
+	else {
+		mat4x4 view_pos, view_rot;
+		mat4x4_identity(view_pos);
+		mat4x4_identity(view_rot);
+		mat4x4_translate(view_pos, -st3d_cam.position.x, st3d_cam.position.y, -st3d_cam.position.z);
+
+		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.x));
+		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.y));
+		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.z));
+
+		mat4x4_mul(view, view_pos, view_rot);
+
+		TrVec2i winsize = st3d_window_size();
+		double ortho_height = st3d_cam.view * ((double)winsize.y / winsize.x);
+
+		double left = -st3d_cam.view / 2.0;
+		double right = st3d_cam.view / 2.0;
+		double bottom = -ortho_height / 2.0;
+		double top = ortho_height / 2.0;
+
+		mat4x4_ortho(proj, left, right, top, bottom, st3d_cam.near, st3d_cam.far);
+	}
+
+	// ITS TIME
+	mat4x4 mvp, evil_mvp;
+	mat4x4_mul(mvp, proj, view);
+	mat4x4_invert(evil_mvp, mvp);
+
+	TrVec2i winsize = st3d_window_size();
+	float x_ndc = (2.0f * pos.x) / winsize.x  - 1.0f;
+	float y_ndc = 1.0f - (2.0f * pos.y) / winsize.y;
+	float z_ndc = 2.0f * depth - 1.0f;
+	vec4 scr = {x_ndc, y_ndc, z_ndc, 1.0f};
+
+	vec4 world4;
+	mat4x4_mul_vec4(world4, evil_mvp, scr);
+	if (world4[3] == 0.0f) return (TrVec3f){0, 0, 0};
+	return (TrVec3f){world4[0] / world4[3], world4[1] / world4[3], world4[2] / world4[3]};
 }
 
 static void check_shader(uint32_t obj)

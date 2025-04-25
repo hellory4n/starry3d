@@ -52,10 +52,10 @@ extern "C" {
 	"" \
 	"	// make sure it's normalized\n" \
 	"	vec3 normal = normalize(out_normal);" \
-	"	vec3 sundir = normalize(-u_sun_dir);" \
+	"	vec3 sundir = normalize(u_sun_dir);" \
 	"" \
 	"	float diff = max(dot(normal, sundir), 0.0);" \
-	"	FragColor = vec4(obj_color.rgb * (u_ambient + diff * (1.0 - u_ambient)), obj_color.a);" \
+	"	FragColor = vec4(obj_color.rgb * ((u_ambient * u_sun_color) + diff * (1.0 - u_ambient * u_sun_color)), obj_color.a);" \
 	"}"
 
 #define ST3D_2D_LEFT 0
@@ -165,6 +165,9 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* model, float* view, float* p
 
 // Draws a mesh in the 3D world using whatever camera you set. Rotation is in euler degrees.
 void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot);
+
+// As the name implies, it converts screen positions to world positions. Depth is from 0 to 1
+TrVec3f st3d_screen_to_world_pos(TrVec2f pos, double depth);
 
 // Shade deez nuts.
 typedef struct {
