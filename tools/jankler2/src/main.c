@@ -4,6 +4,7 @@
 #include <st3d_render.h>
 #include <st3d_ui.h>
 #include <st3d_voxel.h>
+#include "fast_voxel_raycast.h"
 
 // why the fuck would you need a 3d array
 #define ST3D_AT3D(slice, type, sizey, sizez, x, y, z) TR_AT(slice, type, x * (sizey * sizez) + y * sizez + z)
@@ -26,91 +27,6 @@ static JkDirection get_facing_direction(void);
 
 static St3dMesh jk_el_cubo;
 static TrSlice_uint8 jk_cubes;
-
-static inline TrVec3f raycast_pos(TrVec3f from, TrVec3f to)
-{
-	// clear the fucking
-	for (size_t x = 0; x < 16; x++) {
-		for (size_t y = 0; y < 16; y++) {
-			for (size_t z = 0; z < 16; z++) {
-				uint8_t lecolourindexè = *ST3D_AT3D(jk_cubes, uint8_t, 16, 16, x, y, z);
-				if (lecolourindexè == ST3D_COLOR_BANANA_3) {
-					*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, x, y, z) = ST3D_COLOR_TRANSPARENT;
-				}
-			}
-		}
-	}
-
-	// theft <3
-	int64_t dx = fabs(to.x - from.x);
-	int64_t dy = fabs(to.y - from.y);
-	int64_t dz = fabs(to.z - from.z);
-	int64_t sx = (to.x - from.x > 0) - (to.x - from.x < 0);
-	int64_t sy = (to.y - from.y > 0) - (to.y - from.y < 0);;
-	int64_t sz = (to.z - from.z > 0) - (to.z - from.z < 0);
-
-	if (dx >= dy && dx >= dz) {
-		int64_t yd = 2 * dy - dx;
-		int64_t zd = 2 * dz - dx;
-		for (int64_t i = 0; i <= dx; i++) {
-			from.x = tr_clamp(from.x, 0, 15);
-			from.y = tr_clamp(from.y, 0, 15);
-			from.z = tr_clamp(from.z, 0, 15);
-			*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) = ST3D_COLOR_BANANA_3;
-			if (*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) != ST3D_COLOR_TRANSPARENT) {
-				return (TrVec3f){from.x, from.y, from.z};
-			}
-
-			from.x += sx;
-			if (yd >= 0) from.y += sy; yd -= 2*dx;
-			if (zd >= 0) from.z += sz; zd -= 2*dx;
-			yd += 2 * dy;
-			zd += 2 * dz;
-		}
-	}
-	else if (dy >= dx && dy >= dz) {
-		int64_t xd = 2 * dx - dy;
-		int64_t zd = 2 * dz - dy;
-		for (int64_t i = 0; i <= dy; i++) {
-			from.x = tr_clamp(from.x, 0, 15);
-			from.y = tr_clamp(from.y, 0, 15);
-			from.z = tr_clamp(from.z, 0, 15);
-			*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) = ST3D_COLOR_BANANA_3;
-			if (*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) != ST3D_COLOR_TRANSPARENT) {
-				return (TrVec3f){from.x, from.y, from.z};
-			}
-
-			from.y += sy;
-			if (xd >= 0) from.x += sx; xd -= 2*dy;
-			if (zd >= 0) from.z += sz; zd -= 2*dy;
-			xd += 2 * dx;
-			zd += 2 * dz;
-		}
-	}
-	// dz is the largest
-	else {
-		int64_t xd = 2 * dx - dz;
-		int64_t yd = 2 * dy - dz;
-		for (int64_t i = 0; i <= dz; i++) {
-			from.x = tr_clamp(from.x, 0, 15);
-			from.y = tr_clamp(from.y, 0, 15);
-			from.z = tr_clamp(from.z, 0, 15);
-			*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) = ST3D_COLOR_BANANA_3;
-			if (*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) != ST3D_COLOR_TRANSPARENT) {
-				return (TrVec3f){from.x, from.y, from.z};
-			}
-
-			from.z += sz;
-			if (xd >= 0) from.x += sx; xd -= 2*dz;
-			if (yd >= 0) from.y += sy; yd -= 2*dz;
-			xd += 2 * dx;
-			yd += 2 * dy;
-		}
-	}
-
-	// idc
-	return (TrVec3f){0, 0, 0};
-}
 
 int main(void)
 {
@@ -284,50 +200,60 @@ static void camera_shitfuck(void)
 	// tr_log("yaw %f", jk_cam_rot_y);
 }
 
+static bool get_voxel(int64_t x, int64_t y, int64_t z)
+{
+	// the array isnt infinite
+	if (x < 0) return true;
+	if (x > 15) return true;
+	if (y < 0) return true;
+	if (y > 15) return true;
+	if (z < 0) return true;
+	if (z > 15) return true;
+
+	return *ST3D_AT3D(jk_cubes, uint8_t, 16, 16, x, y, z) != ST3D_COLOR_TRANSPARENT;
+}
+
 static void the_placer_5001(void)
 {
 	TrVec2f mousepos = st3d_mouse_position();
 	TrVec3f bldjhdjrt = st3d_screen_to_world_pos(mousepos);
-	TrVec3f bleend = st3d_screen_to_world_pos(mousepos);
-	tr_log("start %f %f %f", bldjhdjrt.x, bldjhdjrt.y, bldjhdjrt.z);
-	tr_log("end %f %f %f", bleend.x, bleend.y, bleend.z);
-	TrVec3f fucking_place = raycast_pos(bldjhdjrt, bleend);
+	TrVec3f dir;
+	switch (get_facing_direction()) {
+		case JK_DIRECTION_NORTH:      dir = (TrVec3f){ 0, 0, -1}; break;
+		case JK_DIRECTION_NORTH_EAST: dir = (TrVec3f){-1, 0, -1}; break;
+		case JK_DIRECTION_EAST:       dir = (TrVec3f){-1, 0,  0}; break;
+		case JK_DIRECTION_SOUTH_EAST: dir = (TrVec3f){-1, 0,  1}; break;
+		case JK_DIRECTION_SOUTH:      dir = (TrVec3f){ 0, 0,  1}; break;
+		case JK_DIRECTION_SOUTH_WEST: dir = (TrVec3f){ 1, 0,  1}; break;
+		case JK_DIRECTION_WEST:       dir = (TrVec3f){ 1, 0,  0}; break;
+		case JK_DIRECTION_NORTH_WEST: dir = (TrVec3f){ 1, 0, -1}; break;
+	}
+	if (jk_cam_rot_x > 45) dir.y += 1;
+	if (jk_cam_rot_x < -45) dir.y -= 1;
 
-	// if we just do that raycast then we can't place anywhere
-	// JkDirection facing_dir = get_facing_direction();
-	// switch (facing_dir) {
-	// case JK_DIRECTION_NORTH:
-	// 	fucking_place.z += 1;
-	// 	break;
-	// case JK_DIRECTION_SOUTH:
-	// 	fucking_place.z -= 1;
-	// 	break;
-	// case JK_DIRECTION_EAST:
-	// 	fucking_place.x -= 1;
-	// 	break;
-	// case JK_DIRECTION_WEST:
-	// 	fucking_place.x += 1;
-	// 	break;
+	TrVec3f hitpos;
+	TrVec3f hitnorm;
+	bool hit = jk_raycast(get_voxel, bldjhdjrt, dir, 8, &hitpos, &hitnorm);
+	if (hit) {
+		tr_log("hit!");
+		tr_log("pos: %f %f %f", hitpos.x, hitpos.y, hitpos.z);
+		tr_log("norm: %f %f %f", hitnorm.x, hitnorm.y, hitnorm.z);
+	}
 
-	// // clang is annoyed but we don't handle diagonal craps
-	// default:
-	// 	break;
-	// }
-
-        // preview mtae
+	// preview mtae
 	st3d_set_wireframe(true);
 	jk_el_cubo.material.color = TR_BLACK;
-	st3d_mesh_draw_3d(jk_el_cubo, fucking_place, (TrVec3f){0, 0, 0});
+	st3d_mesh_draw_3d(jk_el_cubo, hitpos, (TrVec3f){0, 0, 0});
 	// TODO go back to selected color
 	jk_el_cubo.material.color = TR_WHITE;
 	st3d_set_wireframe(false);
 
 	if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_RIGHT)) {
-		*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, fucking_place.x, fucking_place.y, fucking_place.z) = ST3D_COLOR_WHITE_1;
+		*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, hitpos.x, hitpos.y, hitpos.z) = ST3D_COLOR_WHITE_1;
 	}
 
 	if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_LEFT)) {
-		*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, fucking_place.x, fucking_place.y, fucking_place.z) = ST3D_COLOR_TRANSPARENT;
+		*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, hitpos.x, hitpos.y, hitpos.z) = ST3D_COLOR_TRANSPARENT;
 	}
 }
 

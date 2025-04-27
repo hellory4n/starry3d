@@ -26,7 +26,8 @@ SRCS = \
     $(STARRY3D)/src/st3d_ui.c \
     $(STARRY3D)/src/st3d_voxel.c \
     \
-	src/main.c
+	src/main.c \
+    src/fast_voxel_raycast.c
 
 OBJS = $(SRCS:.c=.o)
 
