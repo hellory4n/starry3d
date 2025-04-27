@@ -212,7 +212,7 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 	st3d_mesh_draw_transform(mesh, (float*)model, (float*)view, (float*)proj);
 }
 
-TrVec3f st3d_screen_to_world_pos(TrVec2f pos, double depth)
+TrVec3f st3d_screen_to_world_pos(TrVec2f pos)
 {
 	mat4x4 view, proj;
 
@@ -262,6 +262,8 @@ TrVec3f st3d_screen_to_world_pos(TrVec2f pos, double depth)
 	mat4x4_mul(mvp, proj, view);
 	mat4x4_invert(evil_mvp, mvp);
 
+	float depth;
+	glReadPixels(pos.x, pos.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 	TrVec2i winsize = st3d_window_size();
 	float x_ndc = (2.0f * pos.x) / winsize.x  - 1.0f;
 	float y_ndc = 1.0f - (2.0f * pos.y) / winsize.y;

@@ -138,7 +138,7 @@ typedef enum {
 	ST3D_COLOR_COCOA_3,
 	ST3D_COLOR_COCOA_2,
 	ST3D_COLOR_COCOA_1,
-} St3dColors;
+} St3dColor;
 
 void st3di_vox_init(void);
 void st3di_vox_free(void);

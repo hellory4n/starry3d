@@ -166,8 +166,8 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* model, float* view, float* p
 // Draws a mesh in the 3D world using whatever camera you set. Rotation is in euler degrees.
 void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot);
 
-// As the name implies, it converts screen positions to world positions. Depth is from 0 to 1
-TrVec3f st3d_screen_to_world_pos(TrVec2f pos, double depth);
+// As the name implies, it converts screen positions to world positions.
+TrVec3f st3d_screen_to_world_pos(TrVec2f pos);
 
 // Shade deez nuts.
 typedef struct {

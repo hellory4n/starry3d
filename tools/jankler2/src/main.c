@@ -11,153 +11,104 @@
 static void camera_shitfuck(void);
 static void the_placer_5001(void);
 
+typedef enum {
+	JK_DIRECTION_NORTH,
+	JK_DIRECTION_NORTH_EAST,
+	JK_DIRECTION_EAST,
+	JK_DIRECTION_SOUTH_EAST,
+	JK_DIRECTION_SOUTH,
+	JK_DIRECTION_SOUTH_WEST,
+	JK_DIRECTION_WEST,
+	JK_DIRECTION_NORTH_WEST,
+} JkDirection;
+
+static JkDirection get_facing_direction(void);
+
 static St3dMesh jk_el_cubo;
 static TrSlice_uint8 jk_cubes;
 
-// TODO put in voxel engine
-static inline TrVec3f raycast_pos(TrVec3f from, TrVec3f dir)
+static inline TrVec3f raycast_pos(TrVec3f from, TrVec3f to)
 {
-	// please
-	int64_t vx = floor(from.x);
-	int64_t vy = floor(from.y);
-	int64_t vz = floor(from.z);
-
-	int64_t stepx = (dir.x > 0) ?  1 : -1;
-	int64_t stepy = (dir.y > 0) ?  1 : -1;
-	int64_t stepz = (dir.z > 0) ?  1 : -1;
-
-	double t_delta_x = fabs(1.0/dir.x);
-	double t_delta_y = fabs(1.0/dir.y);
-	double t_delta_z = fabs(1.0/dir.z);
-
-	double t_max_x = (stepx > 0)
-		? ( (vx + 1.0 - from.x) / dir.x )
-		: ( (from.x - vx      ) / -dir.x );
-	double t_max_y = (stepy > 0)
-		? ( (vy + 1.0 - from.y) / dir.y )
-		: ( (from.y - vy      ) / -dir.y );
-	double t_max_z = (stepz > 0)
-		? ( (vz + 1.0 - from.z) / dir.z )
-		: ( (from.z - vz      ) / -dir.z );
-
-	double t = 0.0;
-	const double t_end = 8.0;  // max ray distance
-
-	while (t <= t_end) {
-		vx = tr_clamp(vx, 0, 15);
-		vy = tr_clamp(vy, 0, 15);
-		vz = tr_clamp(vz, 0, 15);
-		if (*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, vx, vy, vz) != ST3D_COLOR_TRANSPARENT) {
-			// TODO raycast_distance would return t instead
-			return (TrVec3f){vx, vy, vz};
-			break;
-		}
-
-		if (t_max_x < t_max_y) {
-			if (t_max_x < t_max_z) {
-				vx += stepx;
-				t = t_max_x;
-				t_max_x += t_delta_x;
-			} else {
-				vz += stepz;
-				t = t_max_z;
-				t_max_z += t_delta_z;
-			}
-		} else {
-			if (t_max_y < t_max_z) {
-				vy += stepy;
-				t = t_max_y;
-				t_max_y += t_delta_y;
-			} else {
-				vz += stepz;
-				t = t_max_z;
-				t_max_z += t_delta_z;
+	// clear the fucking
+	for (size_t x = 0; x < 16; x++) {
+		for (size_t y = 0; y < 16; y++) {
+			for (size_t z = 0; z < 16; z++) {
+				uint8_t lecolourindexè = *ST3D_AT3D(jk_cubes, uint8_t, 16, 16, x, y, z);
+				if (lecolourindexè == ST3D_COLOR_BANANA_3) {
+					*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, x, y, z) = ST3D_COLOR_TRANSPARENT;
+				}
 			}
 		}
 	}
 
-	return (TrVec3f){0, 0, 0};
-}
+	// theft <3
+	int64_t dx = fabs(to.x - from.x);
+	int64_t dy = fabs(to.y - from.y);
+	int64_t dz = fabs(to.z - from.z);
+	int64_t sx = (to.x - from.x > 0) - (to.x - from.x < 0);
+	int64_t sy = (to.y - from.y > 0) - (to.y - from.y < 0);;
+	int64_t sz = (to.z - from.z > 0) - (to.z - from.z < 0);
 
-static inline TrVec3f raycast_neighbor(TrVec3f from, TrVec3f dir)
-{
-	// please
-	int64_t vx = floor(from.x);
-	int64_t vy = floor(from.y);
-	int64_t vz = floor(from.z);
-
-	int64_t stepx = (dir.x > 0) ?  1 : -1;
-	int64_t stepy = (dir.y > 0) ?  1 : -1;
-	int64_t stepz = (dir.z > 0) ?  1 : -1;
-
-	double t_delta_x = fabs(1.0/dir.x);
-	double t_delta_y = fabs(1.0/dir.y);
-	double t_delta_z = fabs(1.0/dir.z);
-
-	double t_max_x = (stepx > 0)
-		? ( (vx + 1.0 - from.x) / dir.x )
-		: ( (from.x - vx      ) / -dir.x );
-	double t_max_y = (stepy > 0)
-		? ( (vy + 1.0 - from.y) / dir.y )
-		: ( (from.y - vy      ) / -dir.y );
-	double t_max_z = (stepz > 0)
-		? ( (vz + 1.0 - from.z) / dir.z )
-		: ( (from.z - vz      ) / -dir.z );
-
-	double t = 0.0;
-	const double t_end = 8.0;  // max ray distance
-
-	// before the loop
-	int last_axis = -1;     // 0 = x, 1 = y, 2 = z
-	int last_step =  0;    // +1 or -1
-
-	while (t <= t_end) {
-		if (t_max_x < t_max_y) {
-			if (t_max_x < t_max_z) {
-				vx += stepx;
-				t  = t_max_x;
-				t_max_x += t_delta_x;
-				last_axis = 0;
-				last_step  = stepx;
-			} else {
-				vz += stepz;
-				t  = t_max_z;
-				t_max_z += t_delta_z;
-				last_axis = 2;
-				last_step  = stepz;
+	if (dx >= dy && dx >= dz) {
+		int64_t yd = 2 * dy - dx;
+		int64_t zd = 2 * dz - dx;
+		for (int64_t i = 0; i <= dx; i++) {
+			from.x = tr_clamp(from.x, 0, 15);
+			from.y = tr_clamp(from.y, 0, 15);
+			from.z = tr_clamp(from.z, 0, 15);
+			*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) = ST3D_COLOR_BANANA_3;
+			if (*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) != ST3D_COLOR_TRANSPARENT) {
+				return (TrVec3f){from.x, from.y, from.z};
 			}
-		} else {
-			if (t_max_y < t_max_z) {
-				vy += stepy;
-				t  = t_max_y;
-				t_max_y += t_delta_y;
-				last_axis = 1;
-				last_step  = stepy;
-			} else {
-				vz += stepz;
-				t  = t_max_z;
-				t_max_z += t_delta_z;
-				last_axis = 2;
-				last_step  = stepz;
-			}
+
+			from.x += sx;
+			if (yd >= 0) from.y += sy; yd -= 2*dx;
+			if (zd >= 0) from.z += sz; zd -= 2*dx;
+			yd += 2 * dy;
+			zd += 2 * dz;
 		}
+	}
+	else if (dy >= dx && dy >= dz) {
+		int64_t xd = 2 * dx - dy;
+		int64_t zd = 2 * dz - dy;
+		for (int64_t i = 0; i <= dy; i++) {
+			from.x = tr_clamp(from.x, 0, 15);
+			from.y = tr_clamp(from.y, 0, 15);
+			from.z = tr_clamp(from.z, 0, 15);
+			*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) = ST3D_COLOR_BANANA_3;
+			if (*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) != ST3D_COLOR_TRANSPARENT) {
+				return (TrVec3f){from.x, from.y, from.z};
+			}
 
-		vx = tr_clamp(vx, 0, 15);
-		vy = tr_clamp(vy, 0, 15);
-		vz = tr_clamp(vz, 0, 15);
-		if (*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, vx, vy, vz) != ST3D_COLOR_TRANSPARENT) {
-			int nx = (last_axis == 0) ? last_step : 0;
-			int ny = (last_axis == 1) ? last_step : 0;
-			int nz = (last_axis == 2) ? last_step : 0;
+			from.y += sy;
+			if (xd >= 0) from.x += sx; xd -= 2*dy;
+			if (zd >= 0) from.z += sz; zd -= 2*dy;
+			xd += 2 * dx;
+			zd += 2 * dz;
+		}
+	}
+	// dz is the largest
+	else {
+		int64_t xd = 2 * dx - dz;
+		int64_t yd = 2 * dy - dz;
+		for (int64_t i = 0; i <= dz; i++) {
+			from.x = tr_clamp(from.x, 0, 15);
+			from.y = tr_clamp(from.y, 0, 15);
+			from.z = tr_clamp(from.z, 0, 15);
+			*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) = ST3D_COLOR_BANANA_3;
+			if (*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, from.x, from.y, from.z) != ST3D_COLOR_TRANSPARENT) {
+				return (TrVec3f){from.x, from.y, from.z};
+			}
 
-			int place_x = vx + nx;
-			int place_y = vy + ny;
-			int place_z = vz + nz;
-
-			return (TrVec3f){tr_clamp(place_x, 0, 15), tr_clamp(place_y, 0, 15), tr_clamp(place_z, 0, 15)};
+			from.z += sz;
+			if (xd >= 0) from.x += sx; xd -= 2*dz;
+			if (yd >= 0) from.y += sy; yd -= 2*dz;
+			xd += 2 * dx;
+			yd += 2 * dy;
 		}
 	}
 
+	// idc
 	return (TrVec3f){0, 0, 0};
 }
 
@@ -214,7 +165,7 @@ int main(void)
 	);
 
 	jk_el_cubo = st3d_mesh_new(&vertices, &indices, true);
-	*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, 0, 0, 0) = ST3D_COLOR_WHITE_1;
+	*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, 8, 1, 8) = ST3D_COLOR_WHITE_1;
 
 	st3d_ui_new("app:figtree/Figtree-Medium.ttf", 16);
 	bool ui = false;
@@ -329,17 +280,41 @@ static void camera_shitfuck(void)
 		.far         = 1000,
 		.perspective = true,
 	});
+
+	// tr_log("yaw %f", jk_cam_rot_y);
 }
 
 static void the_placer_5001(void)
 {
 	TrVec2f mousepos = st3d_mouse_position();
-	TrVec3f bldjhdjrt = st3d_screen_to_world_pos(mousepos, 0);
-	TrVec3f bleend = st3d_screen_to_world_pos(mousepos, 1);
-	TrVec3f dir = TR_V3_SUB(bleend, bldjhdjrt);
-	TrVec3f fucking_place = raycast_neighbor(bldjhdjrt, dir);
+	TrVec3f bldjhdjrt = st3d_screen_to_world_pos(mousepos);
+	TrVec3f bleend = st3d_screen_to_world_pos(mousepos);
+	tr_log("start %f %f %f", bldjhdjrt.x, bldjhdjrt.y, bldjhdjrt.z);
+	tr_log("end %f %f %f", bleend.x, bleend.y, bleend.z);
+	TrVec3f fucking_place = raycast_pos(bldjhdjrt, bleend);
 
-	// preview mtae
+	// if we just do that raycast then we can't place anywhere
+	// JkDirection facing_dir = get_facing_direction();
+	// switch (facing_dir) {
+	// case JK_DIRECTION_NORTH:
+	// 	fucking_place.z += 1;
+	// 	break;
+	// case JK_DIRECTION_SOUTH:
+	// 	fucking_place.z -= 1;
+	// 	break;
+	// case JK_DIRECTION_EAST:
+	// 	fucking_place.x -= 1;
+	// 	break;
+	// case JK_DIRECTION_WEST:
+	// 	fucking_place.x += 1;
+	// 	break;
+
+	// // clang is annoyed but we don't handle diagonal craps
+	// default:
+	// 	break;
+	// }
+
+        // preview mtae
 	st3d_set_wireframe(true);
 	jk_el_cubo.material.color = TR_BLACK;
 	st3d_mesh_draw_3d(jk_el_cubo, fucking_place, (TrVec3f){0, 0, 0});
@@ -354,4 +329,21 @@ static void the_placer_5001(void)
 	if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_LEFT)) {
 		*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, fucking_place.x, fucking_place.y, fucking_place.z) = ST3D_COLOR_TRANSPARENT;
 	}
+}
+
+static JkDirection get_facing_direction(void)
+{
+	float yaw = jk_cam_rot_y;
+	if (yaw < 0) yaw += 360;
+    yaw = fmod(yaw, 360.0);
+
+	if (yaw >= 337.5 || yaw < 22.5)   return JK_DIRECTION_NORTH;
+    if (yaw >= 22.5  && yaw < 67.5)   return JK_DIRECTION_NORTH_EAST;
+    if (yaw >= 67.5  && yaw < 112.5)  return JK_DIRECTION_EAST;
+    if (yaw >= 112.5 && yaw < 157.5)  return JK_DIRECTION_SOUTH_EAST;
+    if (yaw >= 157.5 && yaw < 202.5)  return JK_DIRECTION_SOUTH;
+    if (yaw >= 202.5 && yaw < 247.5)  return JK_DIRECTION_SOUTH_WEST;
+    if (yaw >= 247.5 && yaw < 292.5)  return JK_DIRECTION_WEST;
+    if (yaw >= 292.5 && yaw < 337.5)  return JK_DIRECTION_NORTH_WEST;
+	return JK_DIRECTION_NORTH;
 }
