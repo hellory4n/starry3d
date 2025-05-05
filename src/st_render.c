@@ -8,6 +8,7 @@
 #include "st_window.h"
 #include "st_common.h"
 #include "st_render.h"
+#include "shader/light.glsl.h"
 
 static StShader st_default_shader;
 static bool st_wireframe;
@@ -22,8 +23,8 @@ void st_render_init(void)
 	tr_liblog("- GL version: %s", glGetString(GL_VERSION));
 	tr_liblog("- GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-	const char* verticesrc = ST_DEFAULT_VERTEX_SHADER;
-	const char* fragsrc = ST_DEFAULT_FRAGMENT_SHADER;
+	const char* verticesrc = ST_LIGHT_SHADER_VERTEX;
+	const char* fragsrc = ST_LIGHT_SHADER_FRAGMENT;
 	st_default_shader = st_shader_new(verticesrc, fragsrc);
 
 	// we're not australian
