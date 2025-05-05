@@ -217,43 +217,50 @@ static void the_placer_5001(void)
 {
 	TrVec2f mousepos = st3d_mouse_position();
 	TrVec3f bldjhdjrt = st3d_screen_to_world_pos(mousepos);
-	TrVec3f dir;
+	TrVec3i dir = {1, 0, 0};
 	switch (get_facing_direction()) {
-		case JK_DIRECTION_NORTH:      dir = (TrVec3f){ 0, 0, -1}; break;
-		case JK_DIRECTION_NORTH_EAST: dir = (TrVec3f){-1, 0, -1}; break;
-		case JK_DIRECTION_EAST:       dir = (TrVec3f){-1, 0,  0}; break;
-		case JK_DIRECTION_SOUTH_EAST: dir = (TrVec3f){-1, 0,  1}; break;
-		case JK_DIRECTION_SOUTH:      dir = (TrVec3f){ 0, 0,  1}; break;
-		case JK_DIRECTION_SOUTH_WEST: dir = (TrVec3f){ 1, 0,  1}; break;
-		case JK_DIRECTION_WEST:       dir = (TrVec3f){ 1, 0,  0}; break;
-		case JK_DIRECTION_NORTH_WEST: dir = (TrVec3f){ 1, 0, -1}; break;
+		case JK_DIRECTION_NORTH:      dir = (TrVec3i){ 0, 0, -1}; break;
+		case JK_DIRECTION_NORTH_EAST: dir = (TrVec3i){-1, 0, -1}; break;
+		case JK_DIRECTION_EAST:       dir = (TrVec3i){-1, 0,  0}; break;
+		case JK_DIRECTION_SOUTH_EAST: dir = (TrVec3i){-1, 0,  1}; break;
+		case JK_DIRECTION_SOUTH:      dir = (TrVec3i){ 0, 0,  1}; break;
+		case JK_DIRECTION_SOUTH_WEST: dir = (TrVec3i){ 1, 0,  1}; break;
+		case JK_DIRECTION_WEST:       dir = (TrVec3i){ 1, 0,  0}; break;
+		case JK_DIRECTION_NORTH_WEST: dir = (TrVec3i){ 1, 0, -1}; break;
 	}
 	if (jk_cam_rot_x > 45) dir.y += 1;
 	if (jk_cam_rot_x < -45) dir.y -= 1;
 
-	TrVec3f hitpos;
-	TrVec3f hitnorm;
-	bool hit = jk_raycast(get_voxel, bldjhdjrt, dir, 8, &hitpos, &hitnorm);
-	if (hit) {
-		tr_log("hit!");
-		tr_log("pos: %f %f %f", hitpos.x, hitpos.y, hitpos.z);
-		tr_log("norm: %f %f %f", hitnorm.x, hitnorm.y, hitnorm.z);
+	// dear god
+	TrVec3f hitpos = {0, 0, 0};
+	bool hit = false;
+	if (dir.x == 1 && dir.y == 0 && dir.z == 0) {
+		for (int64_t x = 0; x < 8; x++) {
+			uint8_t hell = *ST3D_AT3D(jk_cubes, uint8_t, 16, 16, jk_cam_pos.x + x, jk_cam_pos.y, jk_cam_pos.z);
+			if (hell != ST3D_COLOR_TRANSPARENT) {
+				hit = true;
+				hitpos = (TrVec3f){jk_cam_pos.x + x, jk_cam_pos.y, jk_cam_pos.z};
+				break;
+			}
+		}
 	}
 
 	// preview mtae
-	st3d_set_wireframe(true);
-	jk_el_cubo.material.color = TR_BLACK;
-	st3d_mesh_draw_3d(jk_el_cubo, hitpos, (TrVec3f){0, 0, 0});
-	// TODO go back to selected color
-	jk_el_cubo.material.color = TR_WHITE;
-	st3d_set_wireframe(false);
+	if (hit) {
+		// st3d_set_wireframe(true);
+		jk_el_cubo.material.color = st3d_get_color(ST3D_COLOR_BANANA_3);
+		st3d_mesh_draw_3d(jk_el_cubo, hitpos, (TrVec3f){0, 0, 0});
+		// TODO go back to selected color
+		jk_el_cubo.material.color = TR_WHITE;
+		// st3d_set_wireframe(false);
 
-	if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_RIGHT)) {
-		*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, hitpos.x, hitpos.y, hitpos.z) = ST3D_COLOR_WHITE_1;
-	}
+		if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_RIGHT)) {
+			*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, hitpos.x, hitpos.y, hitpos.z) = ST3D_COLOR_WHITE_1;
+		}
 
-	if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_LEFT)) {
-		*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, hitpos.x, hitpos.y, hitpos.z) = ST3D_COLOR_TRANSPARENT;
+		if (st3d_is_mouse_just_pressed(ST3D_MOUSE_BUTTON_LEFT)) {
+			*ST3D_AT3D(jk_cubes, uint8_t, 16, 16, hitpos.x, hitpos.y, hitpos.z) = ST3D_COLOR_TRANSPARENT;
+		}
 	}
 }
 

@@ -1,12 +1,12 @@
-#ifndef _ST3D_RENDER_H
-#define _ST3D_RENDER_H
+#ifndef _ST_RENDER_H
+#define _ST_RENDER_H
 #include <libtrippin.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define ST3D_DEFAULT_VERTEX_SHADER \
+#define ST_DEFAULT_VERTEX_SHADER \
 	"#version 330 core\n" \
 	"layout (location = 0) in vec3 pos;" \
 	"layout (location = 1) in vec3 normal;" \
@@ -29,7 +29,7 @@ extern "C" {
 	"	out_pos = pos;" \
 	"}"
 
-#define ST3D_DEFAULT_FRAGMENT_SHADER \
+#define ST_DEFAULT_FRAGMENT_SHADER \
 	"#version 330 core\n" \
 	"in vec3 out_normal;" \
 	"in vec2 out_texcoord;" \
@@ -58,38 +58,39 @@ extern "C" {
 	"	FragColor = vec4(obj_color.rgb * ((u_ambient * u_sun_color) + diff * (1.0 - u_ambient * u_sun_color)), obj_color.a);" \
 	"}"
 
-#define ST3D_2D_LEFT 0
-#define ST3D_2D_RIGHT 1280
-#define ST3D_2D_TOP 0
-#define ST3D_2D_BOTTOM 720
+#define ST_2D_LEFT 0
+#define ST_2D_RIGHT 1280
+#define ST_2D_TOP 0
+#define ST_2D_BOTTOM 720
 
-// INTERNAL
-void st3di_init_render(void);
-// INTERNAL
-void st3di_free_render(void);
+// Initializes the renderer duh.
+void st_render_init(void);
+
+// Frees the renderer duh.
+void st_render_free(void);
 
 // Begins drawing and clears the screen
-void st3d_begin_drawing(void);
+void st_begin_drawing(void);
 
 // Does some fuckery that ends drawing.
-void st3d_end_drawing(void);
+void st_end_drawing(void);
 
 // If true, everything is rendered in wireframe mode, which shows a bunch of lines instead of the
 // actual 3D objects.
-void st3d_set_wireframe(bool wireframe);
+void st_set_wireframe(bool wireframe);
 
 // Image on the GPU and stuff.
 typedef struct {
 	uint32_t id;
 	uint32_t width;
 	uint32_t height;
-} St3dTexture;
+} StTexture;
 
 // Loads a texture from a path
-St3dTexture st3d_texture_new(const char* path);
+StTexture st_texture_new(const char* path);
 
 // Frees the texture
-void st3d_texture_free(St3dTexture texture);
+void st_texture_free(StTexture texture);
 
 // Camera.
 typedef struct {
@@ -104,13 +105,13 @@ typedef struct {
 	float far;
 	// If true, the camera is perspective. Else, it's orthographic.
 	bool perspective;
-} St3dCamera;
+} StCamera;
 
 // Returns the current camera
-St3dCamera st3d_camera(void);
+StCamera st_camera(void);
 
 // Sets the current camera
-void st3d_set_camera(St3dCamera cam);
+void st_set_camera(StCamera cam);
 
 // Sets global lighting settings.
 typedef struct {
@@ -128,13 +129,13 @@ typedef struct {
 	// As the sun hits, she'll be waiting, with her cool things, and her heaven, hey hey lover,
 	// you still burn me, you're a song yeah, hey hey.
 	sun;
-} St3dEnvironment;
+} StEnvironment;
 
 // Returns the current environment
-St3dEnvironment st3d_environment(void);
+StEnvironment st_environment(void);
 
 // Sets the current environment
-void st3d_set_environment(St3dEnvironment env);
+void st_set_environment(StEnvironment env);
 
 // M<esh
 typedef struct {
@@ -144,86 +145,86 @@ typedef struct {
 	// How many indices the mesh has
 	int32_t index_count;
 	// The texture of the mesh, if any
-	St3dTexture texture;
+	StTexture texture;
 
 	struct {
 		TrColor color;
 	} material;
-} St3dMesh;
+} StMesh;
 
 // Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
 // leave it false. The format for vertices is XYZXYZUV, for the position (3 floats), normals
 // (3 floats), and texcoords (2 floats), where each letter is a float.
-St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly);
+StMesh st_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly);
 
 // It frees the mesh.
-void st3d_mesh_free(St3dMesh mesh);
+void st_mesh_free(StMesh mesh);
 
 // Draws a mesh with a transform thingy. There's 3 matrices because the final translation
 // faffery is handled in the shader.
-void st3d_mesh_draw_transform(St3dMesh mesh, float* model, float* view, float* proj);
+void st_mesh_draw_transform(StMesh mesh, float* model, float* view, float* proj);
 
 // Draws a mesh in the 3D world using whatever camera you set. Rotation is in euler degrees.
-void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot);
+void st_mesh_draw_3d(StMesh mesh, TrVec3f pos, TrVec3f rot);
 
 // As the name implies, it converts screen positions to world positions.
-TrVec3f st3d_screen_to_world_pos(TrVec2f pos);
+TrVec3f st_screen_to_world_pos(TrVec2f pos);
 
 // Shade deez nuts.
 typedef struct {
 	uint32_t program;
-} St3dShader;
+} StShader;
 
 // Compiles a shader. The arguments are for the source code of the shaders.
-St3dShader st3d_shader_new(const char* vert, const char* frag);
+StShader st_shader_new(const char* vert, const char* frag);
 
 // Frees the shader.
-void st3d_shader_free(St3dShader shader);
+void st_shader_free(StShader shader);
 
-// Starts using a shader. To go back to the default one, use `st3d_shader_stop_using`
-void st3d_shader_use(St3dShader shader);
+// Starts using a shader. To go back to the default one, use `st_shader_stop_using`
+void st_shader_use(StShader shader);
 
 // Goes back to the default shader.
-void st3d_shader_stop_using(void);
+void st_shader_stop_using(void);
 
 // Sets the uniform to a bool value
-void st3d_shader_set_bool(St3dShader shader, const char* name, bool val);
+void st_shader_set_bool(StShader shader, const char* name, bool val);
 
 // Sets the uniform to an int32 value
-void st3d_shader_set_int32(St3dShader shader, const char* name, int32_t val);
+void st_shader_set_int32(StShader shader, const char* name, int32_t val);
 
 // Sets the uniform to a float value
-void st3d_shader_set_float(St3dShader shader, const char* name, float val);
+void st_shader_set_float(StShader shader, const char* name, float val);
 
 // Sets the uniform to a vec2f value. Note that this converts doubles to floats because that's how
 // OpenGL works.
-void st3d_shader_set_vec2f(St3dShader shader, const char* name, TrVec2f val);
+void st_shader_set_vec2f(StShader shader, const char* name, TrVec2f val);
 
 // Sets the uniform to a vec2i value. Note that this converts int64s to int32 because that's how
 // OpenGL works.
-void st3d_shader_set_vec2i(St3dShader shader, const char* name, TrVec2i val);
+void st_shader_set_vec2i(StShader shader, const char* name, TrVec2i val);
 
 // Sets the uniform to a vec3f value. Note that this converts doubles to floats because that's how
 // OpenGL works.
-void st3d_shader_set_vec3f(St3dShader shader, const char* name, TrVec3f val);
+void st_shader_set_vec3f(StShader shader, const char* name, TrVec3f val);
 
 // Sets the uniform to a vec3i value. Note that this converts int64s to int32 because that's how
 // OpenGL works.
-void st3d_shader_set_vec3i(St3dShader shader, const char* name, TrVec3i val);
+void st_shader_set_vec3i(StShader shader, const char* name, TrVec3i val);
 
 // Sets the uniform to a vec4f value. Note that this converts doubles to floats because that's how
 // OpenGL works.
-void st3d_shader_set_vec4f(St3dShader shader, const char* name, TrVec4f val);
+void st_shader_set_vec4f(StShader shader, const char* name, TrVec4f val);
 
 // Sets the uniform to a vec4i value. Note that this converts int64s to int32 because that's how
 // OpenGL works.
-void st3d_shader_set_vec4i(St3dShader shader, const char* name, TrVec4i val);
+void st_shader_set_vec4i(StShader shader, const char* name, TrVec4i val);
 
 // Sets the uniform to a 4x4 matrix value. Takes in a float array because I don't know anymore.
-void st3d_shader_set_mat4f(St3dShader shader, const char* name, float* val);
+void st_shader_set_mat4f(StShader shader, const char* name, float* val);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // _ST3D_RENDER_H
+#endif // _ST_RENDER_H

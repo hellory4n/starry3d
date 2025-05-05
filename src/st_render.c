@@ -5,45 +5,44 @@
 #include <stb_image.h>
 #include <linmath.h>
 #include <libtrippin.h>
-#include "st3d.h"
-#include "st3d_render.h"
+#include "st_window.h"
+#include "st_common.h"
+#include "st_render.h"
 
-static St3dShader st3d_default_shader;
-static bool st3d_wireframe;
-static St3dCamera st3d_cam;
-static St3dEnvironment st3d_env;
+static StShader st_default_shader;
+static bool st_wireframe;
+static StCamera st_cam;
+static StEnvironment st_env;
 
-void st3di_init_render(void)
+void st_render_init(void)
 {
-	gladLoadGL(glfwGetProcAddress);
-
 	// opengl? i hardly know el
 	tr_liblog("- GL vendor: %s", glGetString(GL_VENDOR));
 	tr_liblog("- GL renderer: %s", glGetString(GL_RENDERER));
 	tr_liblog("- GL version: %s", glGetString(GL_VERSION));
 	tr_liblog("- GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-	const char* verticesrc = ST3D_DEFAULT_VERTEX_SHADER;
-	const char* fragsrc = ST3D_DEFAULT_FRAGMENT_SHADER;
-	st3d_default_shader = st3d_shader_new(verticesrc, fragsrc);
+	const char* verticesrc = ST_DEFAULT_VERTEX_SHADER;
+	const char* fragsrc = ST_DEFAULT_FRAGMENT_SHADER;
+	st_default_shader = st_shader_new(verticesrc, fragsrc);
 
 	// we're not australian
 	// get it get it get it get it
 	stbi_set_flip_vertically_on_load(true);
 }
 
-void st3di_free_render(void)
+void st_render_free(void)
 {
-	st3d_shader_free(st3d_default_shader);
+	st_shader_free(st_default_shader);
 }
 
-void st3d_begin_drawing(void)
+void st_begin_drawing(void)
 {
-	glClearColor(st3d_env.sky_color.r / 255.0f, st3d_env.sky_color.g / 255.0f,
-		st3d_env.sky_color.b / 255.0f, st3d_env.sky_color.a / 255.0f);
+	glClearColor(st_env.sky_color.r / 255.0f, st_env.sky_color.g / 255.0f,
+		st_env.sky_color.b / 255.0f, st_env.sky_color.a / 255.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	st3d_shader_use(st3d_default_shader);
+	st_shader_use(st_default_shader);
 
 	// we set these here because nuklear changes the state and then resets everything
 	glActiveTexture(GL_TEXTURE0);
@@ -58,14 +57,14 @@ void st3d_begin_drawing(void)
 	// glCullFace(GL_BACK);
 }
 
-void st3d_end_drawing(void)
+void st_end_drawing(void)
 {
-	glfwSwapBuffers(st3d_get_window_handle());
+	glfwSwapBuffers(st_get_window_handle());
 }
 
-St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly)
+StMesh st_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly)
 {
-	St3dMesh mesh = {0};
+	StMesh mesh = {0};
 	mesh.index_count = indices->length;
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
@@ -104,30 +103,30 @@ St3dMesh st3d_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool re
 	return mesh;
 }
 
-void st3d_mesh_free(St3dMesh mesh)
+void st_mesh_free(StMesh mesh)
 {
 	glDeleteVertexArrays(1, &mesh.vao);
 	glDeleteBuffers(1, &mesh.vbo);
 	tr_liblog("freed mesh (vao %u)", mesh.vao);
 }
 
-void st3d_mesh_draw_transform(St3dMesh mesh, float* model, float* view, float* proj)
+void st_mesh_draw_transform(StMesh mesh, float* model, float* view, float* proj)
 {
 	// help.
-	st3d_shader_set_mat4f(st3d_default_shader, "u_model", model);
-	st3d_shader_set_mat4f(st3d_default_shader, "u_view", view);
-	st3d_shader_set_mat4f(st3d_default_shader, "u_proj", proj);
-	st3d_shader_set_bool(st3d_default_shader, "u_has_texture", mesh.texture.id != 0);
-	st3d_shader_set_vec3f(st3d_default_shader, "u_sun_color",
-		(TrVec3f){st3d_env.sun.color.r / 255.0f, st3d_env.sun.color.g / 255.0f,
-		st3d_env.sun.color.b / 255.0f});
-	st3d_shader_set_vec3f(st3d_default_shader, "u_ambient",
-		(TrVec3f){st3d_env.ambient_color.r / 255.0f, st3d_env.ambient_color.g / 255.0f,
-		st3d_env.ambient_color.b / 255.0f});
-	st3d_shader_set_vec4f(st3d_default_shader, "u_obj_color",
+	st_shader_set_mat4f(st_default_shader, "u_model", model);
+	st_shader_set_mat4f(st_default_shader, "u_view", view);
+	st_shader_set_mat4f(st_default_shader, "u_proj", proj);
+	st_shader_set_bool(st_default_shader, "u_has_texture", mesh.texture.id != 0);
+	st_shader_set_vec3f(st_default_shader, "u_sun_color",
+		(TrVec3f){st_env.sun.color.r / 255.0f, st_env.sun.color.g / 255.0f,
+		st_env.sun.color.b / 255.0f});
+	st_shader_set_vec3f(st_default_shader, "u_ambient",
+		(TrVec3f){st_env.ambient_color.r / 255.0f, st_env.ambient_color.g / 255.0f,
+		st_env.ambient_color.b / 255.0f});
+	st_shader_set_vec4f(st_default_shader, "u_obj_color",
 		(TrVec4f){mesh.material.color.r / 255.0f, mesh.material.color.g / 255.0f,
 		mesh.material.color.b / 255.0f, mesh.material.color.a / 255.0f});
-	st3d_shader_set_vec3f(st3d_default_shader, "u_sun_dir", st3d_env.sun.direction);
+	st_shader_set_vec3f(st_default_shader, "u_sun_dir", st_env.sun.direction);
 
 	// 0 means no texture
 	// because i didn't want to use a pointer just to have null
@@ -139,7 +138,7 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* model, float* view, float* p
 	}
 
 	glBindVertexArray(mesh.vao);
-	if (st3d_wireframe) {
+	if (st_wireframe) {
 		glDrawElements(GL_LINE_LOOP, mesh.index_count, GL_UNSIGNED_INT, 0);
 	}
 	else {
@@ -149,12 +148,12 @@ void st3d_mesh_draw_transform(St3dMesh mesh, float* model, float* view, float* p
 	glBindVertexArray(0);
 }
 
-void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
+void st_mesh_draw_3d(StMesh mesh, TrVec3f pos, TrVec3f rot)
 {
 	mat4x4 model, view, proj;
 
 	// perspective
-	if (st3d_cam.perspective) {
+	if (st_cam.perspective) {
 		mat4x4_identity(model);
 		mat4x4_translate(model, pos.x, pos.y, pos.z);
 
@@ -165,17 +164,17 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 		mat4x4 view_pos, view_rot;
 		mat4x4_identity(view_pos);
 		mat4x4_identity(view_rot);
-		mat4x4_translate(view_pos, -st3d_cam.position.x, -st3d_cam.position.y, -st3d_cam.position.z);
+		mat4x4_translate(view_pos, -st_cam.position.x, -st_cam.position.y, -st_cam.position.z);
 
-		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.x));
-		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.y));
-		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.z));
+		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st_cam.rotation.x));
+		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st_cam.rotation.y));
+		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st_cam.rotation.z));
 
 		mat4x4_mul(view, view_rot, view_pos);
 
-		TrVec2i winsize = st3d_window_size();
-		mat4x4_perspective(proj, tr_deg2rad(st3d_cam.view), (double)winsize.x / winsize.y,
-			st3d_cam.near, st3d_cam.far);
+		TrVec2i winsize = st_window_size();
+		mat4x4_perspective(proj, tr_deg2rad(st_cam.view), (double)winsize.x / winsize.y,
+			st_cam.near, st_cam.far);
 	}
 	// orthographic
 	else {
@@ -190,71 +189,71 @@ void st3d_mesh_draw_3d(St3dMesh mesh, TrVec3f pos, TrVec3f rot)
 		mat4x4 view_pos, view_rot;
 		mat4x4_identity(view_pos);
 		mat4x4_identity(view_rot);
-		mat4x4_translate(view_pos, -st3d_cam.position.x, st3d_cam.position.y, -st3d_cam.position.z);
+		mat4x4_translate(view_pos, -st_cam.position.x, st_cam.position.y, -st_cam.position.z);
 
-		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.x));
-		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.y));
-		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.z));
+		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st_cam.rotation.x));
+		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st_cam.rotation.y));
+		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st_cam.rotation.z));
 
 		mat4x4_mul(view, view_pos, view_rot);
 
-		TrVec2i winsize = st3d_window_size();
-		double ortho_height = st3d_cam.view * ((double)winsize.y / winsize.x);
+		TrVec2i winsize = st_window_size();
+		double ortho_height = st_cam.view * ((double)winsize.y / winsize.x);
 
-		double left = -st3d_cam.view / 2.0;
-		double right = st3d_cam.view / 2.0;
+		double left = -st_cam.view / 2.0;
+		double right = st_cam.view / 2.0;
 		double bottom = -ortho_height / 2.0;
 		double top = ortho_height / 2.0;
 
-		mat4x4_ortho(proj, left, right, top, bottom, st3d_cam.near, st3d_cam.far);
+		mat4x4_ortho(proj, left, right, top, bottom, st_cam.near, st_cam.far);
 	}
 
-	st3d_mesh_draw_transform(mesh, (float*)model, (float*)view, (float*)proj);
+	st_mesh_draw_transform(mesh, (float*)model, (float*)view, (float*)proj);
 }
 
-TrVec3f st3d_screen_to_world_pos(TrVec2f pos)
+TrVec3f st_screen_to_world_pos(TrVec2f pos)
 {
 	mat4x4 view, proj;
 
 	// perspective
-	if (st3d_cam.perspective) {
+	if (st_cam.perspective) {
 		mat4x4 view_pos, view_rot;
 		mat4x4_identity(view_pos);
 		mat4x4_identity(view_rot);
-		mat4x4_translate(view_pos, -st3d_cam.position.x, -st3d_cam.position.y, -st3d_cam.position.z);
+		mat4x4_translate(view_pos, -st_cam.position.x, -st_cam.position.y, -st_cam.position.z);
 
-		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.x));
-		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.y));
-		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.z));
+		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st_cam.rotation.x));
+		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st_cam.rotation.y));
+		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st_cam.rotation.z));
 
 		mat4x4_mul(view, view_rot, view_pos);
 
-		TrVec2i winsize = st3d_window_size();
-		mat4x4_perspective(proj, tr_deg2rad(st3d_cam.view), (double)winsize.x / winsize.y,
-			st3d_cam.near, st3d_cam.far);
+		TrVec2i winsize = st_window_size();
+		mat4x4_perspective(proj, tr_deg2rad(st_cam.view), (double)winsize.x / winsize.y,
+			st_cam.near, st_cam.far);
 	}
 	// orthographic
 	else {
 		mat4x4 view_pos, view_rot;
 		mat4x4_identity(view_pos);
 		mat4x4_identity(view_rot);
-		mat4x4_translate(view_pos, -st3d_cam.position.x, st3d_cam.position.y, -st3d_cam.position.z);
+		mat4x4_translate(view_pos, -st_cam.position.x, st_cam.position.y, -st_cam.position.z);
 
-		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.x));
-		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.y));
-		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st3d_cam.rotation.z));
+		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(st_cam.rotation.x));
+		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(st_cam.rotation.y));
+		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(st_cam.rotation.z));
 
 		mat4x4_mul(view, view_pos, view_rot);
 
-		TrVec2i winsize = st3d_window_size();
-		double ortho_height = st3d_cam.view * ((double)winsize.y / winsize.x);
+		TrVec2i winsize = st_window_size();
+		double ortho_height = st_cam.view * ((double)winsize.y / winsize.x);
 
-		double left = -st3d_cam.view / 2.0;
-		double right = st3d_cam.view / 2.0;
+		double left = -st_cam.view / 2.0;
+		double right = st_cam.view / 2.0;
 		double bottom = -ortho_height / 2.0;
 		double top = ortho_height / 2.0;
 
-		mat4x4_ortho(proj, left, right, top, bottom, st3d_cam.near, st3d_cam.far);
+		mat4x4_ortho(proj, left, right, top, bottom, st_cam.near, st_cam.far);
 	}
 
 	// ITS TIME
@@ -264,7 +263,7 @@ TrVec3f st3d_screen_to_world_pos(TrVec2f pos)
 
 	float depth;
 	glReadPixels(pos.x, pos.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-	TrVec2i winsize = st3d_window_size();
+	TrVec2i winsize = st_window_size();
 	float x_ndc = (2.0f * pos.x) / winsize.x  - 1.0f;
 	float y_ndc = 1.0f - (2.0f * pos.y) / winsize.y;
 	float z_ndc = 2.0f * depth - 1.0f;
@@ -287,9 +286,9 @@ static void check_shader(uint32_t obj)
 	}
 }
 
-St3dShader st3d_shader_new(const char* vert, const char* frag)
+StShader st_shader_new(const char* vert, const char* frag)
 {
-	St3dShader shader = {0};
+	StShader shader = {0};
 
 	uint32_t vert_shader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vert_shader, 1, &vert, NULL);
@@ -324,80 +323,80 @@ St3dShader st3d_shader_new(const char* vert, const char* frag)
 	return shader;
 }
 
-void st3d_shader_free(St3dShader shader)
+void st_shader_free(StShader shader)
 {
 	glDeleteProgram(shader.program);
 	tr_liblog("deleted shader (id %u)", shader.program);
 }
 
-void st3d_shader_use(St3dShader shader)
+void st_shader_use(StShader shader)
 {
 	glUseProgram(shader.program);
 }
 
-void st3d_shader_set_bool(St3dShader shader, const char* name, bool val)
+void st_shader_set_bool(StShader shader, const char* name, bool val)
 {
 	glUniform1i(glGetUniformLocation(shader.program, name), (int32_t)val);
 }
 
-void st3d_shader_set_int32(St3dShader shader, const char* name, int32_t val)
+void st_shader_set_int32(StShader shader, const char* name, int32_t val)
 {
 	glUniform1i(glGetUniformLocation(shader.program, name), val);
 }
 
-void st3d_shader_set_float(St3dShader shader, const char* name, float val)
+void st_shader_set_float(StShader shader, const char* name, float val)
 {
 	glUniform1f(glGetUniformLocation(shader.program, name), val);
 }
 
-void st3d_shader_set_vec2f(St3dShader shader, const char* name, TrVec2f val)
+void st_shader_set_vec2f(StShader shader, const char* name, TrVec2f val)
 {
 	glUniform2f(glGetUniformLocation(shader.program, name), val.x, val.y);
 }
 
-void st3d_shader_set_vec2i(St3dShader shader, const char* name, TrVec2i val)
+void st_shader_set_vec2i(StShader shader, const char* name, TrVec2i val)
 {
 	glUniform2i(glGetUniformLocation(shader.program, name), val.x, val.y);
 }
 
-void st3d_shader_set_vec3f(St3dShader shader, const char* name, TrVec3f val)
+void st_shader_set_vec3f(StShader shader, const char* name, TrVec3f val)
 {
 	glUniform3f(glGetUniformLocation(shader.program, name), val.x, val.y, val.z);
 }
 
-void st3d_shader_set_vec3i(St3dShader shader, const char* name, TrVec3i val)
+void st_shader_set_vec3i(StShader shader, const char* name, TrVec3i val)
 {
 	glUniform3f(glGetUniformLocation(shader.program, name), val.x, val.y, val.z);
 }
 
-void st3d_shader_set_vec4f(St3dShader shader, const char* name, TrVec4f val)
+void st_shader_set_vec4f(StShader shader, const char* name, TrVec4f val)
 {
 	glUniform4f(glGetUniformLocation(shader.program, name), val.x, val.y, val.z, val.w);
 }
 
-void st3d_shader_set_vec4i(St3dShader shader, const char* name, TrVec4i val)
+void st_shader_set_vec4i(StShader shader, const char* name, TrVec4i val)
 {
 	glUniform4i(glGetUniformLocation(shader.program, name), val.x, val.y, val.z, val.w);
 }
 
-void st3d_shader_set_mat4f(St3dShader shader, const char* name, float* val)
+void st_shader_set_mat4f(StShader shader, const char* name, float* val)
 {
 	glUniformMatrix4fv(glGetUniformLocation(shader.program, name), 1, false, val);
 }
 
-void st3d_set_wireframe(bool wireframe)
+void st_set_wireframe(bool wireframe)
 {
 	// i would use glPolygonMode but it just doesn't work??
-	// it's actually used in st3d_mesh_draw
-	st3d_wireframe = wireframe;
+	// it's actually used in st_mesh_draw
+	st_wireframe = wireframe;
 }
 
-St3dTexture st3d_texture_new(const char* path)
+StTexture st_texture_new(const char* path)
 {
 	// path.
-	TrArena tmp = tr_arena_new(ST3D_PATH_SIZE);
-	TrString sitrnmvhz = tr_slice_new(&tmp, ST3D_PATH_SIZE, sizeof(char));
-	st3d_path(path, &sitrnmvhz);
+	TrArena tmp = tr_arena_new(ST_PATH_SIZE);
+	TrString sitrnmvhz = tr_slice_new(&tmp, ST_PATH_SIZE, sizeof(char));
+	st_path(path, &sitrnmvhz);
 
 	// TODO no need to load textures multiple times, put it in a cache
 	int32_t width, height, channels;
@@ -421,7 +420,7 @@ St3dTexture st3d_texture_new(const char* path)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	St3dTexture texture = {
+	StTexture texture = {
 		.width = width,
 		.height = height,
 	};
@@ -436,28 +435,28 @@ St3dTexture st3d_texture_new(const char* path)
 	return texture;
 }
 
-void st3d_texture_free(St3dTexture texture)
+void st_texture_free(StTexture texture)
 {
 	glDeleteTextures(1, &texture.id);
 	tr_liblog("freed texture (id %u)", texture.id);
 }
 
-St3dCamera st3d_camera(void)
+StCamera st_camera(void)
 {
-	return st3d_cam;
+	return st_cam;
 }
 
-void st3d_set_camera(St3dCamera cam)
+void st_set_camera(StCamera cam)
 {
-	st3d_cam = cam;
+	st_cam = cam;
 }
 
-St3dEnvironment st3d_environment(void)
+StEnvironment st_environment(void)
 {
-	return st3d_env;
+	return st_env;
 }
 
-void st3d_set_environment(St3dEnvironment env)
+void st_set_environment(StEnvironment env)
 {
-	st3d_env = env;
+	st_env = env;
 }

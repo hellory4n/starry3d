@@ -1,4 +1,4 @@
-# starry3d v0.1.0
+# starry3d v0.2.0
 
 ## WARNING: This is in active development. It may be janky, or worse, busted.
 

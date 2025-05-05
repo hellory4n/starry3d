@@ -24,10 +24,11 @@ INCLUDE = \
 # i put starry3d things first
 SRCS = \
     $(STARRY3D)/vendor/libtrippin/libtrippin.c \
-    $(STARRY3D)/src/st3d.c \
-    $(STARRY3D)/src/st3d_render.c \
-    $(STARRY3D)/src/st3d_ui.c \
-    $(STARRY3D)/src/st3d_voxel.c \
+    $(STARRY3D)/src/st_common.c \
+    $(STARRY3D)/src/st_window.c \
+    $(STARRY3D)/src/st_render.c \
+    $(STARRY3D)/src/st_ui.c \
+    $(STARRY3D)/src/st_voxel.c \
     \
 	src/main.c
 
