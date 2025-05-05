@@ -20,9 +20,9 @@
 
 - 2D support is nearly non-existent
 - Currently only Windows and Linux supported
-	- macOS support is possible but I don't have a Mac
-	- WebGL support is also possible but I don't really care about that, so I didn't implement that
-	- Only tested on Clang and GCC, I don't know if MSVC works
+    - macOS support is possible but I don't have a Mac
+    - WebGL support is also possible but I don't really care about that, so I didn't implement that
+    - Only tested on Clang and GCC, I don't know if MSVC works
 - You do have to install the usual GLFW/OpenGL dependencies on Linux (see the usage section)
 - I haven't implemented those fancy optimizations yet
 
@@ -67,19 +67,19 @@ Now put this in `src/main.c` and run `make run` to check if it worked:
 int main(void)
 {
     tr_init("log.txt");
-	st_init((StSettings){
-		.app_name = "test",
-		.asset_dir = "assets",
-		.resizable = true,
-		.window_width = 800,
-		.window_height = 600,
-	});
+    st_init((StSettings){
+        .app_name = "test",
+        .asset_dir = "assets",
+        .resizable = true,
+        .window_width = 800,
+        .window_height = 600,
+    });
     // you need a font for nuklear to work
     st_ui_new("app:default_font.ttf", 16);
 
     st_set_environment((StEnvironment){
-		.sky_color = TR_WHITE,
-	});
+        .sky_color = TR_WHITE,
+    });
 
     tr_log("initialize your program here");
 
@@ -107,17 +107,17 @@ int main(void)
 The [makefile](./sandbox/Makefile) has a couple options:
 
 - `make` (no arguments)
-	- Compiles the project in release mode (`RELEASE` defined, optimizations enabled)
+    - Compiles the project in release mode (`RELEASE` defined, optimizations enabled)
 - `make clean`
-	- Removes all executables and stuff.
+    - Removes all executables and stuff.
 - `make run`
-	- Similar to just `make`, but it also runs the project. This can be used with other options too, that's
-	  how Make works
+    - Similar to just `make`, but it also runs the project. This can be used with other options too, that's
+      how Make works
 - `make build=debug`
-	- Compiles the project in debug mode (debug symbols enabled, `DEBUG` enabled, optimizations disabled)
+    - Compiles the project in debug mode (debug symbols enabled, `DEBUG` enabled, optimizations disabled)
 - `make crosscomp=windows`
-	- Cross compiles from Linux to Windows. Requires MinGW GCC as well as Wine for `make run`. Make sure you
-	  installed the 64-bit MinGW.
+    - Cross compiles from Linux to Windows. Requires MinGW GCC as well as Wine for `make run`. Make sure you
+      installed the 64-bit MinGW.
 
 Note that to add more files to the project, you need to add it to `SRCS`
 
@@ -139,16 +139,16 @@ I like C.
 
 - [x] the bloody renderer
 - [ ] load .vox files
-	- [ ] load data
-	- [ ] actually draw it (by having 1 square and then applying different transforms to it)
+    - [ ] load data
+    - [ ] actually draw it (by having 1 square and then applying different transforms to it)
 - [ ] lighting
 - [ ] windowing (just a wrapper around glfw)
-	- [ ] fancy input crap
-	- [ ] remember to include delta time/fps
+    - [ ] fancy input crap
+    - [ ] remember to include delta time/fps
 - [ ] [fancy audio](https://www.youtube.com/watch?v=u6EuAUjq92k)
 - [ ] more documentation probably
 - [ ] fancy optimization bcuz why not
-	- [ ] don't draw a square if you can't even see it
-	- [ ] turn it into one draw command because Fast
-	- [ ] greedy meshing
-	- [ ] level of detail
+    - [ ] don't draw a square if you can't even see it
+    - [ ] turn it into one draw command because Fast
+    - [ ] greedy meshing
+    - [ ] level of detail
