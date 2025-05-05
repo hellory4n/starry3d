@@ -66,30 +66,41 @@ Now put this in `src/main.c` and run `make run` to check if it worked:
 
 int main(void)
 {
-    // "assets" is your assets folder
-    st3d_init("program", "assets", 800, 600);
+    tr_init("log.txt");
+	st_init((StSettings){
+		.app_name = "test",
+		.asset_dir = "assets",
+		.resizable = true,
+		.window_width = 800,
+		.window_height = 600,
+	});
     // you need a font for nuklear to work
-    st3d_ui_new("app:default-font.ttf", 16);
+    st_ui_new("app:default_font.ttf", 16);
+
+    st_set_environment((StEnvironment){
+		.sky_color = TR_WHITE,
+	});
 
     tr_log("initialize your program here");
 
     while (!st3d_is_closing()) {
-        st3d_begin_drawing(TR_WHITE);
+        st_begin_drawing(TR_WHITE);
 
         tr_log("main loop goes here");
 
-        st3d_ui_begin();
+        st_ui_begin();
             tr_log("nuklear calls go here");
-        st3d_ui_end();
+        st_ui_end();
 
-        st3d_end_drawing();
-        st3d_poll_events();
+        st_end_drawing();
+        st_poll_events();
     }
 
     tr_log("deinitialize your program here");
 
-    st3d_ui_free();
-    st3d_free();
+    st_ui_free();
+    st_free();
+    tr_free();
 }
 ```
 
