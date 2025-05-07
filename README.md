@@ -14,7 +14,6 @@
 - UI through [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear), you don't have to do anything, it's
   already there
 - Built on [libtrippin](https://github.com/hellory4n/libtrippin) the biggest most massive library of all time
-- Licensed under 0BSD so you can do like anything ever with it
 
 ## Limitations
 
@@ -23,6 +22,7 @@
     - macOS support is possible but I don't have a Mac
     - WebGL support is also possible but I don't really care about that, so I didn't implement that
     - Only tested on Clang and GCC, I don't know if MSVC works
+    - I don't want to torture myself with Android just yet
 - You do have to install the usual GLFW/OpenGL dependencies on Linux (see the usage section)
 - I haven't implemented those fancy optimizations yet
 
@@ -69,6 +69,7 @@ int main(void)
     tr_init("log.txt");
     st_init((StSettings){
         .app_name = "test",
+        // where you put your assets, relative to the executable
         .asset_dir = "assets",
         .resizable = true,
         .window_width = 800,
@@ -134,21 +135,3 @@ Why not.
 ### Why C? Can't you be a normal human being and use C++ C# Rust Go Zig Odin Nim Sip Cliff Swig Beef (this one is real) Swag S'mores?
 
 I like C.
-
-## Todo
-
-- [x] the bloody renderer
-- [ ] load .vox files
-    - [ ] load data
-    - [ ] actually draw it (by having 1 square and then applying different transforms to it)
-- [ ] lighting
-- [ ] windowing (just a wrapper around glfw)
-    - [ ] fancy input crap
-    - [ ] remember to include delta time/fps
-- [ ] [fancy audio](https://www.youtube.com/watch?v=u6EuAUjq92k)
-- [ ] more documentation probably
-- [ ] fancy optimization bcuz why not
-    - [ ] don't draw a square if you can't even see it
-    - [ ] turn it into one draw command because Fast
-    - [ ] greedy meshing
-    - [ ] level of detail
