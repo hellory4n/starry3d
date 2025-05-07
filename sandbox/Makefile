@@ -102,7 +102,10 @@ else ifeq ($(OS),linux)
     CFLAGS += -DST3D_LINUX
 endif
 
-all: $(COPYCMDS) $(TARGET)
+all: prebuild $(TARGET)
+
+prebuild:
+	$(COPYCMDS)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
