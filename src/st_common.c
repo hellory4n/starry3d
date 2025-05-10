@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 #include "st_common.h"
 #include "st_window.h"
 #include "st_render.h"

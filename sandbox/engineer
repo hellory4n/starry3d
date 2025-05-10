@@ -1,1 +1,4 @@
-../engineer
+#!/usr/bin/sh
+# this script is just a basic wrapper bcuz im lazy
+# you can see why the ?deargod? in engineer.lua
+lua engineer.lua $@

@@ -54,17 +54,18 @@ function starry3d.lib(debug, starrydir, platform)
 
 		-- cross compile to windows
 		if platform == "windows" then
-			cmakecmd = cmakecmd.." -D CMAKE_TOOLCHAIN_FILE="..
-				starrydir.."/vendor/glfw/CMake/x86_64-w64-mingw32.cmake"
+			-- cmake is insane and can't find a file that exists :D
+			os.execute("cp "..starrydir.."/vendor/glfw/CMake/x86_64-w64-mingw32.cmake win32.cmake")
+			cmakecmd = cmakecmd.." -DCMAKE_TOOLCHAIN_FILE=$(pwd)/win32.cmake"
 		end
 		os.execute(cmakecmd)
 		os.execute("cd build/glfw && make")
 
 		-- engineer expects static libraries there
-		if platform == "linux" then
-			os.execute("cp build/glfw/src/libglfw3.a build/static/libglfw3.a")
-		else
-			os.execute("cp build/glfw/src/glfw3.lib build/static/glfw3.lib")
+		os.execute("cp build/glfw/src/libglfw3.a build/static/libglfw3.a")
+
+		if platform == "windows" then
+			os.remove("win32.cmake")
 		end
 	end
 
@@ -100,7 +101,7 @@ function starry3d.lib(debug, starrydir, platform)
 	-- mate
 	if platform == "windows" then
 		result.starry3d:target("starry3d.lib")
-		result.starry3d:link({"glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "lole32", "pthread"})
+		result.starry3d:link({"glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "ole32", "pthread"})
 		result.starry3d:define({"ST_WINDOWS"})
 	else
 		result.starry3d:target("libstarry3d.a")
@@ -111,7 +112,7 @@ function starry3d.lib(debug, starrydir, platform)
 
 	if platform == "windows" then
 		result.getlinks = function()
-			return {"starry3d", "trippin", "glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "lole32", "pthread"}
+			return {"starry3d", "trippin", "glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "ole32", "pthread"}
 		end
 	else
 		result.getlinks = function()
@@ -136,7 +137,13 @@ function starry3d.lib(debug, starrydir, platform)
 	return result
 end
 
-if ... == nil then
+-- lua modules are tricky and i cant find any info on how to get it to not fucking run this when
+-- being imported
+-- the engineer script sets that argument
+-- its supposed to be ignored by eng.run()
+-- im hacking my own build system
+-- send help.
+if arg[1] == "?deargod?" then
 	local debug = true
 	local platform = "linux"
 
@@ -151,16 +158,22 @@ if ... == nil then
 		platform = val
 	end)
 
-	eng.recipe("build", "Builds the library lmao.", function()
+	eng.recipe("build-lib", "Builds the library lmao.", function()
 		local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
 		thegreatstarryhandsomestacktechnologything.libtrippin:build()
 		thegreatstarryhandsomestacktechnologything.glfw()
 		thegreatstarryhandsomestacktechnologything.starry3d:build()
 	end)
 
+	eng.recipe("build", "Builds everything ever.", function()
+		eng.run_recipe("build-lib")
+		os.execute("cd sandbox && ./engineer build")
+	end)
+
 	eng.recipe("clean", "Cleans the project lmao.", function()
 		local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
 		thegreatstarryhandsomestacktechnologything.starry3d:clean()
+		os.execute("cd sandbox && ./engineer clean")
 	end)
 
 	eng.run()

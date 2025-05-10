@@ -1,3 +1,9 @@
 #!/usr/bin/sh
 # this script is just a basic wrapper bcuz im lazy
-lua engineer.lua $@
+# you can see why the ?deargod? in engineer.lua
+# i love lua
+if [ "$#" -eq 0 ]; then
+    lua engineer.lua ?deargod? help
+else
+    lua engineer.lua ?deargod? $@
+fi
