@@ -4,7 +4,7 @@ eng.init()
 
 -- i tried importing libtrippin's engineer.lua but then it cant find libengineer???
 trippin = {
-	lib = function(debug)
+	lib = function(debug, trippinsrc)
 		-- just trippin so it doesn't become "liblibtrippin.a"
 		local project = eng.newproj("trippin", "staticlib", "c99")
 		project:pedantic()
@@ -15,7 +15,7 @@ trippin = {
 			project:optimization(2)
 		end
 
-		project:add_sources({"vendor/libtrippin/libtrippin.c"})
+		project:add_sources({trippinsrc})
 		project:target("libtrippin.a")
 		return project
 	end
@@ -23,11 +23,13 @@ trippin = {
 
 -- Returns a table with the starry3d project and its dependencies (libtrippin, glfw). `debug` is a bool.
 -- The libtrippin field is an engineer project but the glfw field is a function that builds it as a static
--- library. `starrydir` is where you put starry3d. Platform should either be "windows" or "linux".
+-- library. `starrydir` is where you put starry3d. Platform should either be "windows" or "linux". The
+-- table also has a `getlinks` function so you know what to link with, and a `getincludes` function to
+-- get the bloody includes mate.
 function starry3d.lib(debug, starrydir, platform)
 	assert(platform == "windows" or platform == "linux")
 	local result = {}
-	result.libtrippin = trippin.lib(debug)
+	result.libtrippin = trippin.lib(debug, starrydir.."/vendor/libtrippin/libtrippin.c")
 	if platform == "windows" then
 		result.libtrippin:target("trippin.lib")
 	else
@@ -46,10 +48,9 @@ function starry3d.lib(debug, starrydir, platform)
 			return
 		end
 
-		os.execute("mkdir "..starrydir.."/build/glfw")
+		os.execute("mkdir build/glfw")
 		-- GLFW_BUILD_EXAMPLES=OFF and GLFW_BUILD_TESTS=OFF because we don't need them
-		local cmakecmd = "cmake -S "..starrydir.."/vendor/glfw -B "..starrydir..
-			"/build/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF"
+		local cmakecmd = "cmake -S "..starrydir.."/vendor/glfw -B build/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF"
 
 		-- cross compile to windows
 		if platform == "windows" then
@@ -57,13 +58,13 @@ function starry3d.lib(debug, starrydir, platform)
 				starrydir.."/vendor/glfw/CMake/x86_64-w64-mingw32.cmake"
 		end
 		os.execute(cmakecmd)
-		os.execute("cd "..starrydir.."/build/glfw && make")
+		os.execute("cd build/glfw && make")
 
 		-- engineer expects static libraries there
 		if platform == "linux" then
-			os.execute("cp "..starrydir.."/build/glfw/src/libglfw3.a "..starrydir.."/build/static/libglfw3.a")
+			os.execute("cp build/glfw/src/libglfw3.a build/static/libglfw3.a")
 		else
-			os.execute("cp "..starrydir.."/build/glfw/src/glfw3.lib "..starrydir.."/build/static/glfw3.lib")
+			os.execute("cp build/glfw/src/glfw3.lib build/static/glfw3.lib")
 		end
 	end
 
@@ -108,34 +109,61 @@ function starry3d.lib(debug, starrydir, platform)
 	end
 	result.starry3d:gen_compile_commands()
 
+	if platform == "windows" then
+		result.getlinks = function()
+			return {"starry3d", "trippin", "glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "lole32", "pthread"}
+		end
+	else
+		result.getlinks = function()
+			return {"starry3d", "trippin", "glfw3", "X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt"}
+		end
+	end
+
+	result.getincludes = function()
+		return {
+			starrydir.."/src",
+			starrydir.."/vendor",
+			starrydir.."/vendor/glfw/include",
+			starrydir.."/vendor/libtrippin",
+			starrydir.."/vendor/linmath",
+			starrydir.."/vendor/nuklear",
+			starrydir.."/vendor/nuklear/demo/glfw_opengl3", -- just for glfw/opengl3 integration lmao
+			starrydir.."/vendor/stb",
+			starrydir.."/vendor/whereami/src",
+		}
+	end
+
 	return result
 end
 
-local debug = true
-local platform = "linux"
+if ... == nil then
+	local debug = true
+	local platform = "linux"
 
-eng.option("mode", "Either debug or release", function(val)
-	assert(val == "debug" or val == "release")
-	if val == "debug" then debug = true
-	elseif val == "release" then debug = false end
-end)
+	eng.option("mode", "Either debug or release", function(val)
+		assert(val == "debug" or val == "release")
+		if val == "debug" then debug = true
+		elseif val == "release" then debug = false end
+	end)
 
-eng.option("platform", "Either linux or windows. Windows requires mingw64-gcc", function(val)
-	assert(val == "linux" or val == "windows")
-	platform = val
-end)
+	eng.option("platform", "Either linux or windows. Windows requires mingw64-gcc", function(val)
+		assert(val == "linux" or val == "windows")
+		platform = val
+	end)
 
-eng.recipe("build", "Builds the library lmao.", function()
-	local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
-	thegreatstarryhandsomestacktechnologything.libtrippin:build()
-	thegreatstarryhandsomestacktechnologything.glfw()
-	thegreatstarryhandsomestacktechnologything.starry3d:build()
-end)
+	eng.recipe("build", "Builds the library lmao.", function()
+		local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
+		thegreatstarryhandsomestacktechnologything.libtrippin:build()
+		thegreatstarryhandsomestacktechnologything.glfw()
+		thegreatstarryhandsomestacktechnologything.starry3d:build()
+	end)
 
-eng.recipe("clean", "Cleans the project lmao", function()
-	local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
-	thegreatstarryhandsomestacktechnologything.starry3d:clean()
-end)
+	eng.recipe("clean", "Cleans the project lmao.", function()
+		local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
+		thegreatstarryhandsomestacktechnologything.starry3d:clean()
+	end)
 
-eng.run()
+	eng.run()
+end
+
 return starry3d
