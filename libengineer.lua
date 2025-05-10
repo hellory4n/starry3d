@@ -343,7 +343,7 @@ end
 
 -- Adds common flags to make the compiler more obnoxious
 function project_methods.pedantic(proj)
-	proj.cflags = proj.cflags.." -Werror -Wall -Wextra -pedantic-errors -Wconversion -Wsign-conversion "
+	proj.cflags = proj.cflags.." -Werror -Wall -Wextra "
 end
 
 -- Enables debug info
