@@ -9,7 +9,6 @@
 - Pure C99 and OpenGL 3.3
 - Cross platform ish. (windows and linux)
 - Probably runs on anything ever
-- No external dependencies
 - Optimized for voxel graphics
 - UI through [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear), you don't have to do anything, it's
   already there
@@ -41,6 +40,7 @@ Now you need to include Starry3D into your project. It's recommended to do so th
 ```sh
 # change "vendor/starry3d" to wherever you want it to be in
 git submodule add https://github.com/hellory4n/starry3d vendor/starry3d
+# starry3d has its own submodules
 git submodule update --init --recursive
 ```
 
@@ -49,7 +49,7 @@ its own submodules)
 
 `sandbox/` is the example project setup, using the engineer™™™ build system.
 
-Make sure to get `engineer`, `engineer.lua`, and `libengineer`.
+Make sure to get `engineer`, `engineer.lua`, and `libengineer.lua` from there.
 
 Then you should only have to change these lines:
 
