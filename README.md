@@ -1,4 +1,4 @@
-# starry3d v0.2.0
+# starry3d v0.3.0
 
 ## WARNING: This is in active development. It may be janky, or worse, busted.
 
@@ -28,35 +28,45 @@
 
 ## Usage
 
-Make sure you have gcc/clang (clang is recommended but gcc works too) and make.
-
-It's possible to compile from Windows through MinGW too.
-
-Then you need to install some dependencies:
-
-```sh
-# Debian/Ubuntu/Derivatives:
-sudo apt install libwayland-dev libxkbcommon-dev xorg-dev
-
-# Fedora
-sudo dnf install wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel
-```
-
-Linux requires both X11 and Wayland libraries because it chooses either of them at runtime.
+You need these installed:
+- gcc or clang
+- lua
+- cmake
+- make
+- X11 and wayland packages (it depends on your distro)
+- mingw64-gcc (optional)
 
 Now you need to include Starry3D into your project. It's recommended to do so through Git submodules:
 
 ```sh
 # change "vendor/starry3d" to wherever you want it to be in
 git submodule add https://github.com/hellory4n/starry3d vendor/starry3d
+git submodule update --init --recursive
 ```
 
-`sandbox/` is the example project setup, that's why there's no build script here, it's actually there
+If you're just trying to compile starry3d on its own, make sure you cloned with `--recursive` (as starry3d has
+its own submodules)
 
-You can just steal the makefile from there, but make sure to edit `PROGRAM` to be the name of your project,
-and `STARRY3D` to be where you put starry3d.
+`sandbox/` is the example project setup, using the engineer™™™ build system.
 
-Now put this in `src/main.c` and run `make run` to check if it worked:
+Make sure to get `engineer`, `engineer.lua`, and `libengineer`.
+
+Then you should only have to change these lines:
+
+```lua
+-- where are your assets
+local assets = "assets"
+-- where is starry3d
+local starrydir = ".."
+local projma = eng.newproj("sandbox", "executable", "c99")
+projma:add_includes({"src"})
+-- add your .c files here
+projma:add_sources({
+	"src/main.c"
+})
+```
+
+Now put this in `src/main.c` and run `./engineer run` to check if it worked:
 
 ```c
 #include <libtrippin.h>
@@ -105,22 +115,7 @@ int main(void)
 }
 ```
 
-The [makefile](./sandbox/Makefile) has a couple options:
-
-- `make` (no arguments)
-    - Compiles the project in release mode (`RELEASE` defined, optimizations enabled)
-- `make clean`
-    - Removes all executables and stuff.
-- `make run`
-    - Similar to just `make`, but it also runs the project. This can be used with other options too, that's
-      how Make works
-- `make build=debug`
-    - Compiles the project in debug mode (debug symbols enabled, `DEBUG` enabled, optimizations disabled)
-- `make crosscomp=windows`
-    - Cross compiles from Linux to Windows. Requires MinGW GCC as well as Wine for `make run`. Make sure you
-      installed the 64-bit MinGW.
-
-Note that to add more files to the project, you need to add it to `SRCS`
+You can run `./engineer help` for more information
 
 ## FAQ
 
