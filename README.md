@@ -1,6 +1,6 @@
 # starry3d v0.3.0
 
-> ![WARNING]
+> [!WARNING]
 > This is in active development. It may be janky, or worse, busted.
 
 3D renderer for voxel graphics and other fancy crapfrick.
