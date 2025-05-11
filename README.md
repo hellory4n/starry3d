@@ -41,12 +41,7 @@ Now you need to include Starry3D into your project. It's recommended to do so th
 ```sh
 # change "vendor/starry3d" to wherever you want it to be in
 git submodule add https://github.com/hellory4n/starry3d vendor/starry3d
-# starry3d has its own submodules
-git submodule update --init --recursive
 ```
-
-If you're just trying to compile starry3d on its own, make sure you cloned with `--recursive` (as starry3d has
-its own submodules)
 
 `sandbox/` is the example project setup, using the engineer™™™ build system.
 

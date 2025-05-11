@@ -15,8 +15,3 @@ log.txt
 # man
 .vscode
 build
-
-# linux executables
-sandbox/sandbox
-tools/jankler/jankler
-tools/jankler2/jankler

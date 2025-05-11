@@ -1,0 +1,8 @@
+[*.c, *.h, *.lua]
+indent_style = tab
+tab_size = 4
+
+# github uses 8 spaces for tabs
+[*.md]
+indent_style = space
+tab_size = 4
