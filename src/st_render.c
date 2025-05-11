@@ -85,9 +85,58 @@ void st_end_drawing(void)
 	glfwSwapBuffers(st_get_window_handle());
 }
 
-StMesh st_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly)
+StMesh st_mesh_new(TrSlice_Vec3f* vertices, TrSlice_Vec3f* normals, TrSlice_Vec2f* uvs,
+	TrSlice_Vec3i* indices, bool readonly)
 {
-	StMesh mesh = {0};
+	// mate
+	tr_assert(vertices != NULL, "where vertices :(");
+	tr_assert(indices != NULL, "where indices :(");
+	if (normals != NULL) {
+		tr_assert(vertices->length == normals->length, "vertices->length == normals->length");
+	}
+	if (uvs != NULL) {
+		tr_assert(vertices->length == uvs->length, "vertices->length == uvs->length");
+	}
+
+	// convert the slices to a massive slice that opengl can use
+	const size_t vertices_size = ((vertices->length * 3) + (normals->length * 3) + (uvs->length * 2)) * sizeof(float);
+	const size_t indices_size = (indices->length * 3) * sizeof(int32_t);
+	TrArena arena = tr_arena_new(vertices_size + indices_size);
+
+	// first vertices
+	TrSlice_float verts = tr_slice_new(&arena, vertices_size / sizeof(float), sizeof(float));
+	size_t realidxfrfr = 0;
+	for (size_t i = 0; i < vertices->length; i++) {
+		*TR_AT(verts, float, realidxfrfr) = TR_AT(*vertices, TrVec3f, i)->x;
+		*TR_AT(verts, float, realidxfrfr + 1) = TR_AT(*vertices, TrVec3f, i)->y;
+		*TR_AT(verts, float, realidxfrfr + 2) = TR_AT(*vertices, TrVec3f, i)->z;
+
+		if (normals != NULL) {
+			*TR_AT(verts, float, realidxfrfr + 3) = TR_AT(*normals, TrVec3f, i)->x;
+			*TR_AT(verts, float, realidxfrfr + 4) = TR_AT(*normals, TrVec3f, i)->y;
+			*TR_AT(verts, float, realidxfrfr + 5) = TR_AT(*normals, TrVec3f, i)->z;
+		}
+
+		if (uvs != NULL) {
+			*TR_AT(verts, float, realidxfrfr + 6) = TR_AT(*normals, TrVec2f, i)->x;
+			*TR_AT(verts, float, realidxfrfr + 7) = TR_AT(*normals, TrVec2f, i)->y;
+		}
+
+		realidxfrfr += 3 + 3 + 2; // XYZ, XYZ, UV
+	}
+
+	// bloody hell
+	TrSlice_uint32 indicesfrfr = tr_slice_new(&arena, indices->length * 3, sizeof(uint32_t));
+	realidxfrfr = 0;
+	for (size_t i = 0; i < indices->length; i++) {
+		*TR_AT(indicesfrfr, uint32_t, realidxfrfr) = TR_AT(*indices, TrVec3i, i)->x;
+		*TR_AT(indicesfrfr, uint32_t, realidxfrfr + 1) = TR_AT(*indices, TrVec3i, i)->y;
+		*TR_AT(indicesfrfr, uint32_t, realidxfrfr + 2) = TR_AT(*indices, TrVec3i, i)->z;
+		realidxfrfr += 3;
+	}
+
+	StMesh mesh;
+	mesh.material.color = TR_WHITE;
 	mesh.index_count = indices->length;
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
@@ -96,8 +145,8 @@ StMesh st_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readon
 	glGenBuffers(1, &mesh.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 
-	glBufferData(GL_ARRAY_BUFFER, vertices->length * sizeof(float),
-		vertices->buffer, readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, verts.length * sizeof(float),
+		verts.buffer, readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
 
 	// position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
@@ -112,16 +161,13 @@ StMesh st_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readon
 	// ebo
 	glGenBuffers(1, &mesh.ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-	if (readonly) {
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->length * sizeof(uint32_t), indices->buffer, GL_STATIC_DRAW);
-	}
-	else {
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->length * sizeof(uint32_t), indices->buffer, GL_DYNAMIC_DRAW);
-	}
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesfrfr.length * sizeof(uint32_t),
+		indicesfrfr.buffer, readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
 
 	// unbind vao
 	glBindVertexArray(0);
 
+	tr_arena_free(&arena);
 	tr_liblog("uploaded mesh (vao %u, vbo %u, ebo %u)", mesh.vao, mesh.vbo, mesh.ebo);
 	return mesh;
 }

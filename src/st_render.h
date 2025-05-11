@@ -123,9 +123,9 @@ typedef struct {
 } StMesh;
 
 // Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
-// leave it false. The format for vertices is XYZXYZUV, for the position (3 floats), normals
-// (3 floats), and texcoords (2 floats), where each letter is a float.
-StMesh st_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly);
+// leave it false. Normals and UVs are optional.
+StMesh st_mesh_new(TrSlice_Vec3f* vertices, TrSlice_Vec3f* normals, TrSlice_Vec2f* uvs,
+	TrSlice_Vec3i* indices, bool readonly);
 
 // It frees the mesh.
 void st_mesh_free(StMesh mesh);
