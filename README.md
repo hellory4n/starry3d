@@ -28,6 +28,7 @@
 ## Usage
 
 You need these installed:
+- git
 - gcc or clang
 - lua
 - cmake
