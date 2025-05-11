@@ -66,9 +66,7 @@ Now put this in `src/main.c` and run `./engineer run` to check if it worked:
 
 ```c
 #include <libtrippin.h>
-#include <st3d.h>
-#include <st3d_render.h>
-#include <st3d_ui.h>
+#include <starry3d.h>
 
 int main(void)
 {
@@ -88,22 +86,22 @@ int main(void)
         .sky_color = TR_WHITE,
     });
 
-    tr_log("initialize your program here");
+    // initialize your program here
 
-    while (!st3d_is_closing()) {
+    while (!st_is_closing()) {
         st_begin_drawing(TR_WHITE);
 
-        tr_log("main loop goes here");
+        // main loop goes here
 
         st_ui_begin();
-            tr_log("nuklear calls go here");
+            // nuklear calls go here
         st_ui_end();
 
         st_end_drawing();
         st_poll_events();
     }
 
-    tr_log("deinitialize your program here");
+    // deinitialize your program here
 
     st_ui_free();
     st_free();
