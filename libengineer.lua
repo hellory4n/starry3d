@@ -1,5 +1,5 @@
 --[[
-	Engineer v1.0.1
+	Engineer v1.0.2
 
 	Bestest build system ever
 	More information at https://github.com/hellory4n/libtrippin/blob/engineer/README.md
@@ -289,8 +289,10 @@ function eng.newproj(name, type, std)
 	t.type = type
 	t.builddir = "build"
 	t.cflags = " -std="..std.." "
-	-- so static and shared libraries just work :)
-	t.ldflags = "-L. -L"..t.builddir.."/static -L"..t.builddir.."/bin -Wl,-rpath=. -Wl,-rpath=./build/bin "
+	-- so static and shared libraries work :)
+	-- help
+	-- TODO this will break
+	t.ldflags = "-L. -Lbuild/static -Lbuild/bin -L../build/static -L../build/bin -Wl,-rpath=. -Wl,-rpath=./build/bin "
 	t.sources = {}
 	t.targetma = name
 	return t
@@ -343,7 +345,7 @@ end
 
 -- Adds common flags to make the compiler more obnoxious
 function project_methods.pedantic(proj)
-	proj.cflags = proj.cflags.." -Wall -Wextra "
+	proj.cflags = proj.cflags.." -Werror -Wall -Wextra "
 end
 
 -- Enables debug info
