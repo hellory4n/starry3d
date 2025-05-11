@@ -4,7 +4,7 @@
 // used for the sliders :D
 static float st_pos_x;
 static float st_pos_y;
-static float st_pos_z = 3;
+static float st_pos_z = 5;
 
 static float st_rot_x;
 static float st_rot_y;
@@ -66,25 +66,54 @@ int main(void)
 	// ttriangel
 	TrSlice_float vertices;
 	TR_SET_SLICE(&arena, &vertices, float,
-		// vertices             // colors                  // texcoords
-		-1.0f, -1.0f,  1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    0.0f, 0.0f,
-		 1.0f, -1.0f,  1.0f,    1.0f, 1.0f, 1.0f, 1.0f,    1.0f, 0.0f,
-	     1.0f,  1.0f, -1.0f,    1.0f, 1.0f, 1.0f, 0.0f,    1.0f, 1.0f,
-		-1.0f,  1.0f, -1.0f,    1.0f, 1.0f, 1.0f, 0.0f,    0.0f, 1.0f,
+		-0.5f, -0.5f, +0.5f,   0, 0, 1,    0.0f, 0.0f,
+		+0.5f, -0.5f, +0.5f,   0, 0, 1,    1.0f, 0.0f,
+		+0.5f, +0.5f, +0.5f,   0, 0, 1,    1.0f, 1.0f,
+		-0.5f, +0.5f, +0.5f,   0, 0, 1,    0.0f, 1.0f,
+
+		+0.5f, -0.5f, -0.5f,   0, 0,-1,    0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,   0, 0,-1,    1.0f, 0.0f,
+		-0.5f, +0.5f, -0.5f,   0, 0,-1,    1.0f, 1.0f,
+		+0.5f, +0.5f, -0.5f,   0, 0,-1,    0.0f, 1.0f,
+
+		-0.5f, -0.5f, -0.5f,  -1, 0, 0,    0.0f, 0.0f,
+		-0.5f, -0.5f, +0.5f,  -1, 0, 0,    1.0f, 0.0f,
+		-0.5f, +0.5f, +0.5f,  -1, 0, 0,    1.0f, 1.0f,
+		-0.5f, +0.5f, -0.5f,  -1, 0, 0,    0.0f, 1.0f,
+
+		+0.5f, -0.5f, +0.5f,   1, 0, 0,    0.0f, 0.0f,
+		+0.5f, -0.5f, -0.5f,   1, 0, 0,    1.0f, 0.0f,
+		+0.5f, +0.5f, -0.5f,   1, 0, 0,    1.0f, 1.0f,
+		+0.5f, +0.5f, +0.5f,   1, 0, 0,    0.0f, 1.0f,
+
+		-0.5f, +0.5f, +0.5f,   0, 1, 0,    0.0f, 0.0f,
+		+0.5f, +0.5f, +0.5f,   0, 1, 0,    1.0f, 0.0f,
+		+0.5f, +0.5f, -0.5f,   0, 1, 0,    1.0f, 1.0f,
+		-0.5f, +0.5f, -0.5f,   0, 1, 0,    0.0f, 1.0f,
+
+		-0.5f, -0.5f, -0.5f,   0,-1, 0,    0.0f, 0.0f,
+		+0.5f, -0.5f, -0.5f,   0,-1, 0,    1.0f, 0.0f,
+		+0.5f, -0.5f, +0.5f,   0,-1, 0,    1.0f, 1.0f,
+		-0.5f, -0.5f, +0.5f,   0,-1, 0,    0.0f, 1.0f,
 	);
 
 	TrSlice_uint32 indices;
 	TR_SET_SLICE(&arena, &indices, uint32_t,
-		0, 1, 2,
-		0, 2, 3,
+		0, 2, 1, 0, 3, 2,
+		4, 6, 5, 4, 7, 6,
+		8, 10, 9, 8, 11, 10,
+		12, 14, 13, 12, 15, 14,
+		16, 18, 17, 16, 19, 18,
+		20, 22, 21, 20, 23, 22,
 	);
 
 	StMesh mtriranfgs = st_mesh_new(&vertices, &indices, true);
+	mtriranfgs.material.color = tr_hex_rgb(0xffff00);
 	// mtriranfgs.texture = st_texture_new("app:enough_fckery.jpg");
 	// st_set_wireframe(true);
 
 	st_set_environment((StEnvironment){
-		.sky_color = tr_hex_rgb(0x03A9F4),
+		.sky_color = tr_hex_rgb(0x03a9f4),
 		.ambient_color = tr_hex_rgb(0xaaaaaa),
 		.sun = {
 			.direction = {0.5, 1.0, -0.75},
@@ -96,14 +125,14 @@ int main(void)
 	while (!st_is_closing()) {
 		st_begin_drawing();
 
-		st_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){64, 65, 62});
+		st_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){64, 65, 0});
 
 		if (st_is_key_just_pressed(ST_KEY_ESCAPE)) {
 			ui = !ui;
 			st_set_mouse_enabled(ui);
 		}
-		TrVec2f pee = st_mouse_position();
-		tr_log("sjgs %f %f", pee.x, pee.y);
+		// TrVec2f pee = st_mouse_position();
+		// tr_log("sjgs %f %f", pee.x, pee.y);
 
 		// nuklear calls go inside here
 		if (ui) {
@@ -118,6 +147,7 @@ int main(void)
 			.view = 90,
 			.near = 0.01,
 			.far = 1000,
+			.perspective = true,
 		});
 
 		st_end_drawing();

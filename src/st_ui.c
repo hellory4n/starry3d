@@ -38,7 +38,7 @@ static struct nk_context* st_nk;
 
 // not static because nuklear wants this callback too so if nuklear is setup, we override this callback
 // and then give the scroll state back to nuklear lmao
-// this is from st.c
+// this is from st_window.c
 void __st_on_scroll(GLFWwindow* window, double x, double y);
 
 struct nk_context* st_nkctx(void)
