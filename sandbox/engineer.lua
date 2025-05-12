@@ -33,7 +33,7 @@ eng.option("platform", "Either linux or windows. Windows requires mingw64-gcc", 
 	end
 end)
 
-eng.recipe("build", "Builds the library lmao.", function()
+eng.recipe("build", "Builds the project lmao.", function()
 	-- copy assets folder
 	os.execute("mkdir -p build/bin/"..assets)
 	os.execute("cp -r "..assets.."/* build/bin/"..assets)
@@ -72,6 +72,12 @@ eng.recipe("run", "Builds and runs the project", function()
 	else
 		os.execute("./build/bin/sandbox")
 	end
+end)
+
+eng.recipe("run-gdb", "Runs the project with gdb", function()
+	eng.run_recipe("build")
+	print("") -- separation
+	os.execute("gdb build/bin/sandbox")
 end)
 
 eng.run()
