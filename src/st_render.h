@@ -193,6 +193,26 @@ void st_shader_set_vec4i(StShader shader, const char* name, TrVec4i val);
 // Sets the uniform to a 4x4 matrix value. Takes in a float array because I don't know anymore.
 void st_shader_set_mat4f(StShader shader, const char* name, float* val);
 
+typedef enum {
+	// No culling
+	ST_CULL_FACE_NONE,
+	ST_CULL_FACE_BACK,
+	ST_CULL_FACE_FRONT,
+	// Both front and back faces
+	ST_CULL_FACE_FRONT_BACK,
+} StCullFace;
+
+// Sets the culling face and enables/disables culling. (`ST_CULL_FACE_NONE` disables culling)
+void st_cull_face(StCullFace face);
+
+typedef enum {
+	ST_FRONT_FACE_CLOCKWISE,
+	ST_FRONT_FACE_COUNTER_CLOCKWISE,
+} StFrontFace;
+
+// Sets the front face for culling.
+void st_front_face(StFrontFace mode);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,24 +1,24 @@
 /*
- * Starry3D: C voxel game engine
- * More information at https://github.com/hellory4n/starry3d
- *
- * Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
- *
- * Permission to use, copy, modify, and/or distribute this
- * software for any purpose with or without fee is hereby
- * granted.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS
- * ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO
- * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
- * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
- * WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
- * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
- * USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- */
+* Starry3D: C voxel game engine
+* More information at https://github.com/hellory4n/starry3d
+*
+* Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
+*
+* Permission to use, copy, modify, and/or distribute this
+* software for any purpose with or without fee is hereby
+* granted.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS
+* ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO
+* EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+* INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+* WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+* WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+* TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE
+* USE OR PERFORMANCE OF THIS SOFTWARE.
+*
+*/
 
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
@@ -36,6 +36,7 @@ static StShader st_default_shader;
 static bool st_wireframe;
 static StCamera st_cam;
 static StEnvironment st_env;
+static StCullFace st_cur_cull_face;
 
 void st_render_init(void)
 {
@@ -71,13 +72,18 @@ void st_begin_drawing(void)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	// TODO st_blend_mode()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	// glEnable(GL_CULL_FACE);
-	// glFrontFace(GL_CCW);
-	// glCullFace(GL_BACK);
+
+	switch (st_cur_cull_face) {
+		case ST_CULL_FACE_NONE:       glDisable(GL_CULL_FACE); break;
+		case ST_CULL_FACE_BACK:       glEnable(GL_CULL_FACE); glCullFace(GL_BACK); break;
+		case ST_CULL_FACE_FRONT:      glEnable(GL_CULL_FACE); glCullFace(GL_FRONT); break;
+		case ST_CULL_FACE_FRONT_BACK: glEnable(GL_CULL_FACE); glCullFace(GL_FRONT_AND_BACK); break;
+	}
 }
 
 void st_end_drawing(void)
@@ -478,4 +484,18 @@ StEnvironment st_environment(void)
 void st_set_environment(StEnvironment env)
 {
 	st_env = env;
+}
+
+void st_cull_face(StCullFace face)
+{
+	// it becomes the real opengl crap in st_begin_drawing()
+	st_cur_cull_face = face;
+}
+
+void st_front_face(StFrontFace mode)
+{
+	switch (mode) {
+		case ST_FRONT_FACE_CLOCKWISE:         glFrontFace(GL_CW); break;
+		case ST_FRONT_FACE_COUNTER_CLOCKWISE: glFrontFace(GL_CCW); break;
+	}
 }
