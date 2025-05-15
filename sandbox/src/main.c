@@ -19,7 +19,7 @@ int main(void)
 		.window_width = 800,
 		.window_height = 600,
 	});
-	st_cull_face(ST_CULL_FACE_FRONT);
+	st_cull_face(ST_CULL_FACE_NONE);
 	st_ui_new("app:figtree/Figtree-Medium.ttf", 16);
 
 	st_set_environment((StEnvironment){
@@ -37,6 +37,7 @@ int main(void)
 		st_begin_drawing();
 
 		sb_game_update();
+		st_vox_draw();
 
 		// nuklear calls go inside here
 		st_ui_begin();
@@ -107,6 +108,12 @@ static void sb_game_new(void)
 	mtriranfgs = st_mesh_new(&vertices, &indices, true);
 	mtriranfgs.material.color = tr_hex_rgb(0xffff00);
 	// mtriranfgs.texture = st_texture_new("app:enough_fckery.jpg");
+
+	st_set_palette("app:default.stpal");
+
+	st_register_block(1, 0, "app:fuck.stvox");
+
+	st_place_block(1, 2, (TrVec3i){5, 0, 0});
 }
 
 static bool sb_ui = false;

@@ -30,7 +30,12 @@ extern "C" {
 
 // Used for coordinates
 #ifndef ST_VOXEL_SIZE
-	#define ST_VOXEL_SIZE 16
+	#define ST_VOXEL_SIZE 16.0
+#endif
+
+// I do love not exploding my PC.
+#ifndef ST_CHUNK_SIZE
+	#define ST_CHUNK_SIZE 16.0
 #endif
 
 // Highly optimized highly handsome single voxel.
@@ -186,6 +191,25 @@ bool st_set_palette(const char* path);
 
 // Gets a color from the current palette.
 TrColor st_get_color(uint8_t i);
+
+// Adds a new block type from a path (.stvox model, supports `app:` / `usr:` prefixes)
+void st_register_block(uint16_t group, uint16_t block, const char* path);
+
+// Gets the type from a block at the specified position, and writes it into `out_group` and `out_block`.
+// Returns true if there's a block there.
+bool st_get_block_type(TrVec3i pos, uint16_t* out_group, uint16_t* out_block);
+
+// If true, there's a block at the specified position.
+bool st_has_block(TrVec3i pos);
+
+// Places a block at the specified position.
+void st_place_block(uint16_t group, uint16_t block, TrVec3i pos);
+
+// Removes a block at the specified position, and returns true if that block actually exists.
+bool st_break_block(TrVec3i pos);
+
+// Renders every block ever.
+void st_vox_draw(void);
 
 #ifdef __cplusplus
 }

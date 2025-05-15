@@ -32,6 +32,10 @@
 #include "st_render.h"
 #include "st_voxel.h"
 
+// mate
+#define STB_DS_IMPLEMENTATION
+#include "stb_ds.h"
+
 static TrArena st_arena;
 
 static TrString st_app;

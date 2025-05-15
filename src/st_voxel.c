@@ -20,16 +20,33 @@
  *
  */
 
+#include <math.h>
 #include <stdio.h>
+#include <stb_ds.h>
 #include "st_common.h"
+#include "st_render.h"
 #include "st_voxel.h"
+
+typedef struct {
+	// Slice of StMesh
+	TrSlice meshes;
+} StVoxMeshes;
+
+typedef struct {
+	uint16_t group;
+	uint16_t block;
+} StBlockId;
 
 static TrArena st_arena;
 static TrSlice_Color st_palette;
+static struct {StBlockId key; StVoxMeshes value;}* st_block_types;
+static struct {TrVec3i key; StBlockId value;}* st_blocks;
 
 void st_vox_init(void)
 {
-	st_arena = tr_arena_new(TR_KB(128));
+	st_arena = tr_arena_new(TR_MB(8));
+	StBlockId defaul = {0, 0};
+	hmdefault(st_blocks, defaul);
 	tr_liblog("initialized voxel engine");
 }
 
@@ -196,4 +213,145 @@ bool st_set_palette(const char* path)
 TrColor st_get_color(uint8_t i)
 {
 	return *TR_AT(st_palette, TrColor, i);
+}
+
+void st_register_block(uint16_t group, uint16_t block, const char* path)
+{
+	StVoxModel model;
+	if (!st_vox_load(&st_arena, path, &model)) {
+		tr_panic("you energumen %s was not found", path);
+	}
+
+	// basic awful mesh generation
+	StVoxMeshes meshes = {
+		.meshes = tr_slice_new(&st_arena, model.voxels.length, sizeof(StMesh)),
+	};
+
+	TrArena temp = tr_arena_new(TR_MB(1));
+	for (size_t i = 0; i < model.voxels.length; i++) {
+		StPackedVoxel vox = *TR_AT(model.voxels, StPackedVoxel, i);
+
+		TrSlice_float vertices;
+		//c hrist
+		// i wont even try to format this
+		TR_SET_SLICE(&temp, &vertices, float,
+			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE / ST_VOXEL_SIZE,   0, 0, 1,    0.0f, 0.0f,
+			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    1.0f, 0.0f,
+			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    1.0f, 1.0f,
+			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    0.0f, 1.0f,
+
+			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,       0, 0,-1,    0.0f, 0.0f,
+			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,       0, 0,-1,    1.0f, 0.0f,
+			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 0,-1,    1.0f, 1.0f,
+			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 0,-1,    0.0f, 1.0f,
+
+			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,      -1, 0, 0,    0.0f, 0.0f,
+			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0,    1.0f, 0.0f,
+			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0,    1.0f, 1.0f,
+			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,      -1, 0, 0,    0.0f, 1.0f,
+
+			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   1, 0, 0,    0.0f, 0.0f,
+			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,       1, 0, 0,    1.0f, 0.0f,
+			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       1, 0, 0,    1.0f, 1.0f,
+			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   1, 0, 0,    0.0f, 1.0f,
+
+			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 1, 0,    0.0f, 0.0f,
+			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 1, 0,    1.0f, 0.0f,
+			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 1, 0,    1.0f, 1.0f,
+			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 1, 0,    0.0f, 1.0f,
+
+			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,       0,-1, 0,    0.0f, 0.0f,
+			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,       0,-1, 0,    1.0f, 0.0f,
+			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   0,-1, 0,    1.0f, 1.0f,
+			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   0,-1, 0,    0.0f, 1.0f,
+		);
+
+		TrSlice_uint32 indices;
+		TR_SET_SLICE(&temp, &indices, uint32_t,
+			0, 2, 1, 0, 3, 2,
+			4, 6, 5, 4, 7, 6,
+			8, 10, 9, 8, 11, 10,
+			12, 14, 13, 12, 15, 14,
+			16, 18, 17, 16, 19, 18,
+			20, 22, 21, 20, 23, 22,
+		);
+
+		StMesh mesh = st_mesh_new(&vertices, &indices, false);
+		mesh.material.color = st_get_color(vox.color);
+		*TR_AT(meshes.meshes, StMesh, i) = mesh;
+	}
+	tr_arena_free(&temp);
+
+	// mate
+	StBlockId sir = {group, block};
+	hmput(st_block_types, sir, meshes);
+	tr_liblog("registered block type %i:%i (from %s)", group, block, path);
+}
+
+bool st_get_block_type(TrVec3i pos, uint16_t* out_group, uint16_t* out_block)
+{
+	StBlockId id = hmget(st_blocks, pos);
+	// that's the default value, hmget doesn't return null because it's not a pointer
+	if (id.block == 0 && id.group == 0) {
+		return false;
+	}
+
+	tr_assert(out_group != NULL, "out_group != NULL");
+	tr_assert(out_block != NULL, "out_block != NULL");
+	*out_group = id.group;
+	*out_block = id.block;
+	return true;
+}
+
+bool st_has_block(TrVec3i pos)
+{
+	uint16_t tmp1, tmp2;
+	return st_get_block_type(pos, &tmp1, &tmp2);
+}
+
+void st_place_block(uint16_t group, uint16_t block, TrVec3i pos)
+{
+	StBlockId sir = {group, block};
+	hmput(st_blocks, pos, sir);
+}
+
+bool st_break_block(TrVec3i pos)
+{
+	if (!st_has_block(pos)) {
+		return false;
+	}
+	hmdel(st_blocks, pos);
+	return true;
+}
+
+static void st_draw_block(TrVec3i pos)
+{
+	StBlockId blockid = hmget(st_blocks, pos);
+	StVoxMeshes meshes = hmget(st_block_types, blockid);
+
+	for (size_t i = 0; i < meshes.meshes.length; i++) {
+		StMesh mesh = *TR_AT(meshes.meshes, StMesh, i);
+		st_mesh_draw_3d(mesh, (TrVec3f){pos.x, pos.y, pos.z}, (TrVec3f){0, 0, 0});
+	}
+}
+
+void st_vox_draw(void)
+{
+	StCamera cam = st_camera();
+	cam.position.x = round(cam.position.x);
+	cam.position.y = round(cam.position.y);
+	cam.position.z = round(cam.position.z);
+
+	// we don't render everything at once to not explode your pc :)
+	TrVec3i tmp = {ST_CHUNK_SIZE, ST_CHUNK_SIZE, ST_CHUNK_SIZE};
+	TrVec3i render_start = TR_V3_SUB(cam.position, tmp);
+	TrVec3i render_end = TR_V3_ADD(cam.position, tmp);
+
+	for (int64_t x = render_start.x; x < render_end.x; x++) {
+		for (int64_t y = render_start.y; y < render_end.y; y++) {
+			for (int64_t z = render_start.z; z < render_end.z; z++) {
+				st_draw_block((TrVec3i){x, y, z});
+			}
+		}
+	}
 }
