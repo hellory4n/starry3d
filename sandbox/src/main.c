@@ -1,9 +1,12 @@
+#include <stdio.h>
 #include <libtrippin.h>
 #include <starry3d.h>
+#include <st_ui.h>
 #include "camera.h"
 
 static void sb_game_new(void);
 static void sb_game_update(void);
+static void sb_game_ui(void);
 static void sb_game_free(void);
 
 int main(void)
@@ -37,6 +40,7 @@ int main(void)
 
 		// nuklear calls go inside here
 		st_ui_begin();
+			sb_game_ui();
 		st_ui_end();
 
 		st_end_drawing();
@@ -123,4 +127,17 @@ static void sb_game_free(void)
 {
 	st_mesh_free(mtriranfgs);
 	tr_arena_free(&arena);
+}
+
+static void sb_game_ui(void)
+{
+	struct nk_context* ctx = st_nkctx();
+	if (nk_begin(ctx, "mate", nk_rect(0, 0, 300, 100), NK_WINDOW_BORDER)) {
+		nk_layout_row_dynamic(ctx, 20, 1);
+
+		char ihateyou[64];
+		snprintf(ihateyou, sizeof(ihateyou), "fps: %.0f", st_fps());
+		nk_label(ctx, ihateyou, NK_TEXT_ALIGN_LEFT);
+	}
+	nk_end(ctx);
 }

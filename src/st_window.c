@@ -101,7 +101,8 @@ void st_open_window(TrArena* arena, const char* title, uint32_t width, uint32_t 
 	st_window = glfwCreateWindow(width, height, title, NULL, NULL);
 	tr_assert(st_window != NULL, "couldn't create window");
 	glfwMakeContextCurrent(st_window);
-	glfwSwapInterval(1);
+	// glfwSwapInterval(1);
+	glfwSwapInterval(0);
 
 	// callbacks
 	glfwSetFramebufferSizeCallback(st_window, on_framebuffer_resize);

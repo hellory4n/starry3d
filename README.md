@@ -68,6 +68,7 @@ Now put this in `src/main.c` and run `./engineer run` to check if it worked:
 ```c
 #include <libtrippin.h>
 #include <starry3d.h>
+#include <st_ui.h> // includes nuklear.h
 
 int main(void)
 {
