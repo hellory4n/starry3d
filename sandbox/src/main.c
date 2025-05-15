@@ -113,7 +113,16 @@ static void sb_game_new(void)
 
 	st_register_block(1, 0, "app:fuck.stvox");
 
-	st_place_block(1, 0, (TrVec3i){16, 1, 0});
+	// the laggificator 3000
+	// also known as the reasonably sized cube of horrors beyond human comprehension
+	for (int64_t x = 0; x < 16; x++) {
+		for (int64_t y = 0; y < 16; y++) {
+			for (int64_t z = 0; z < 16; z++) {
+				st_place_block(1, 0, (TrVec3i){x, y, z});
+			}
+		}
+	}
+	// st_place_block(1, 0, (TrVec3i){1, 0, 0});
 }
 
 static bool sb_ui = false;

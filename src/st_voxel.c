@@ -89,6 +89,9 @@ bool st_vox_save(StVoxModel model, const char* path)
 
 bool st_vox_load(TrArena* arena, const char* path, StVoxModel* out)
 {
+	tr_assert(arena != NULL, "arena != NULL");
+	tr_assert(out != NULL, "out != NULL");
+
 	// TODO probably gonna segfault
 	TrString fullpath = tr_slice_new(arena, ST_PATH_SIZE, sizeof(char));
 	if (strncmp(path, "app:", 4) == 0 || strncmp(path, "usr:", 4) == 0) {
@@ -217,6 +220,7 @@ TrColor st_get_color(uint8_t i)
 
 void st_register_block(uint16_t group, uint16_t block, const char* path)
 {
+	tr_assert(group != 0, "group 0 is used to mean there's no block, use something else");
 	StVoxModel model;
 	if (!st_vox_load(&st_arena, path, &model)) {
 		tr_panic("you energumen %s was not found", path);
@@ -312,6 +316,11 @@ bool st_has_block(TrVec3i pos)
 
 void st_place_block(uint16_t group, uint16_t block, TrVec3i pos)
 {
+	// does the block type exist?
+	StBlockId id = {group, block};
+	StVoxMeshes meshes = hmget(st_block_types, id);
+	tr_assert(meshes.meshes.length != 0, "block type %i:%i doesn't exist", group, block);
+
 	StBlockId sir = {group, block};
 	hmput(st_blocks, pos, sir);
 }

@@ -74,6 +74,8 @@ void st_free(void)
 
 void st_app_dir(TrString* out)
 {
+	tr_assert(out != NULL, "out != NULL");
+
 	// no need to get it twice
 	if (st_exe_dir_fetched) {
 		memcpy(out->buffer, st_full_exe_dir.buffer, (size_t)fmin(out->length, st_full_exe_dir.length));
@@ -93,6 +95,8 @@ void st_app_dir(TrString* out)
 
 void st_user_dir(TrString* out)
 {
+	tr_assert(out != NULL, "out != NULL");
+
 	// no need to get it twice
 	if (st_user_dir_fetched) {
 		memcpy(out->buffer, st_full_user_dir.buffer, (size_t)fmin(out->length, st_full_user_dir.length));

@@ -137,6 +137,10 @@ void st_mesh_free(StMesh mesh)
 
 void st_mesh_draw_transform(StMesh mesh, float* model, float* view, float* proj)
 {
+	tr_assert(mesh.vao != 0, "invalid mesh, did you initialize it?");
+	tr_assert(mesh.vbo != 0, "invalid mesh, did you initialize it?");
+	tr_assert(mesh.ebo != 0, "invalid mesh, did you initialize it?");
+
 	// help.
 	st_shader_set_mat4f(st_default_shader, "u_model", model);
 	st_shader_set_mat4f(st_default_shader, "u_view", view);
