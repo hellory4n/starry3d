@@ -113,7 +113,7 @@ typedef struct {
 	uint32_t vbo;
 	uint32_t ebo;
 	// How many indices the mesh has
-	int32_t index_count;
+	uint32_t index_count;
 	// The texture of the mesh, if any
 	StTexture texture;
 

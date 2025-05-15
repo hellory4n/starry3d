@@ -113,7 +113,7 @@ static void sb_game_new(void)
 
 	st_register_block(1, 0, "app:fuck.stvox");
 
-	st_place_block(1, 2, (TrVec3i){5, 0, 0});
+	st_place_block(1, 0, (TrVec3i){16, 1, 0});
 }
 
 static bool sb_ui = false;

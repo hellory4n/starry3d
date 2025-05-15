@@ -235,7 +235,7 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 		//c hrist
 		// i wont even try to format this
 		TR_SET_SLICE(&temp, &vertices, float,
-			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE / ST_VOXEL_SIZE,   0, 0, 1,    0.0f, 0.0f,
+			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    0.0f, 0.0f,
 			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    1.0f, 0.0f,
 			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    1.0f, 1.0f,
 			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    0.0f, 1.0f,
@@ -276,6 +276,7 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 			20, 22, 21, 20, 23, 22,
 		);
 
+		// tr_panic("die die you zombie bastards");
 		StMesh mesh = st_mesh_new(&vertices, &indices, false);
 		mesh.material.color = st_get_color(vox.color);
 		*TR_AT(meshes.meshes, StMesh, i) = mesh;
@@ -326,8 +327,12 @@ bool st_break_block(TrVec3i pos)
 
 static void st_draw_block(TrVec3i pos)
 {
-	StBlockId blockid = hmget(st_blocks, pos);
-	StVoxMeshes meshes = hmget(st_block_types, blockid);
+	StBlockId id = hmget(st_blocks, pos);
+	// that's the default value, hmget doesn't return null because it's not a pointer
+	if (id.group == 0 && id.block == 0) {
+		return;
+	}
+	StVoxMeshes meshes = hmget(st_block_types, id);
 
 	for (size_t i = 0; i < meshes.meshes.length; i++) {
 		StMesh mesh = *TR_AT(meshes.meshes, StMesh, i);
