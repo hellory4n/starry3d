@@ -129,8 +129,15 @@ static void sb_game_free(void)
 	tr_arena_free(&arena);
 }
 
+static bool sb_wireframe = false;
+
 static void sb_game_ui(void)
 {
+	if (st_is_key_just_pressed(ST_KEY_F1)) {
+		sb_wireframe = !sb_wireframe;
+		st_set_wireframe(sb_wireframe);
+	}
+
 	struct nk_context* ctx = st_nkctx();
 	if (nk_begin(ctx, "mate", nk_rect(0, 0, 300, 100), NK_WINDOW_BORDER)) {
 		nk_layout_row_dynamic(ctx, 20, 1);

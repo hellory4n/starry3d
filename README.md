@@ -55,10 +55,10 @@ Then you should only have to change these lines:
 local assets = "assets"
 -- where is starry3d
 local starrydir = ".."
-local projma = eng.newproj("sandbox", "executable", "c99")
-projma:add_includes({"src"})
+local project = eng.newproj("VeryHandsomeGame", "executable", "c99")
+project:add_includes({"src"})
 -- add your .c files here
-projma:add_sources({
+project:add_sources({
 	"src/main.c"
 })
 ```
