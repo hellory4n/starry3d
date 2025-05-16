@@ -34,7 +34,7 @@ struct StarryvoxHeader {
     // padding, reserved for future versions
     // the size of this struct should always be 64 bytes
     uint8_t padding[44];
-}
+};
 ```
 
 Starrypal has a similar header but without the dimensions:
@@ -52,7 +52,7 @@ struct StarrypalHeader {
     // padding, reserved for future versions
     // the size of this struct should always be 64 bytes
     uint8_t padding[48];
-}
+};
 ```
 
 ## Data
@@ -71,14 +71,14 @@ struct StarryvoxChunk {
     // index in whatever the current palette is
     // starts at 0
     uint8_t color;
-}
+};
 
 struct StarrypalChunk {
     uint8_t r; // red
     uint8_t g; // green
     uint8_t b; // blue
     uint8_t a; // alpha (transparency)
-}
+};
 ```
 
 ## Palette indexes
