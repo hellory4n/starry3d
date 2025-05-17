@@ -51,7 +51,7 @@
 	"\t\t? texture(u_texture, out_texcoord) * u_obj_color\n" \
 	"\t\t: u_obj_color;\n" \
 	"\n" \
-	"\t// make sure it's normalized\n\n" \
+	"\t// make sure it's normalized\n" \
 	"\tvec3 normal = normalize(out_normal);\n" \
 	"\tvec3 sundir = normalize(u_sun_dir);\n" \
 	"\n" \

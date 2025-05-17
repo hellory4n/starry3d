@@ -226,66 +226,99 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 		tr_panic("you energumen %s was not found", path);
 	}
 
+	// put voxels in a hashmap
+	struct {TrVec3i key; uint8_t value;}* voxels;
+	for (size_t i = 0; i < model.voxels.length; i++) {
+		StPackedVoxel vox = *TR_AT(model.voxels, StPackedVoxel, i);
+		TrVec3i pos = {vox.x, vox.y, vox.z};
+		hmput(voxels, pos, vox.color);
+	}
+
 	// basic awful mesh generation
 	StVoxMeshes meshes = {
 		.meshes = tr_slice_new(&st_arena, model.voxels.length, sizeof(StMesh)),
 	};
 
 	TrArena temp = tr_arena_new(TR_MB(1));
-	for (size_t i = 0; i < model.voxels.length; i++) {
+	for (size_t i = 0, meshidx = 0; i < model.voxels.length; i++) {
 		StPackedVoxel vox = *TR_AT(model.voxels, StPackedVoxel, i);
 
-		TrSlice_float vertices;
-		//c hrist
-		// i wont even try to format this
-		TR_SET_SLICE(&temp, &vertices, float,
-			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    0.0f, 0.0f,
-			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    1.0f, 0.0f,
-			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    1.0f, 1.0f,
-			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 0, 1,    0.0f, 1.0f,
+		// culling
+		// we only render faces if there's air around them
+		float* vertices = NULL;
+		uint32_t* indices = NULL;
 
-			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,       0, 0,-1,    0.0f, 0.0f,
-			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,       0, 0,-1,    1.0f, 0.0f,
-			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 0,-1,    1.0f, 1.0f,
-			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 0,-1,    0.0f, 1.0f,
+		// what am i doing lmao
+		#define ST_APPEND_VERT(vx, vy, vz, nx, ny, nz, u, v) \
+			arrput(vertices, vx); \
+			arrput(vertices, vy); \
+			arrput(vertices, vz); \
+			arrput(vertices, nx); \
+			arrput(vertices, ny); \
+			arrput(vertices, nz); \
+			arrput(vertices, u); \
+			arrput(vertices, v);
 
-			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,      -1, 0, 0,    0.0f, 0.0f,
-			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0,    1.0f, 0.0f,
-			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0,    1.0f, 1.0f,
-			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,      -1, 0, 0,    0.0f, 1.0f,
+		// mate
+		TrVec3i top = {vox.x, vox.y + 1, vox.z};
+		if (hmget(voxels, top) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
 
-			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   1, 0, 0,    0.0f, 0.0f,
-			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,       1, 0, 0,    1.0f, 0.0f,
-			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       1, 0, 0,    1.0f, 1.0f,
-			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   1, 0, 0,    0.0f, 1.0f,
+			// yesterday i went outside with my mamas mason jar caught a lovely butterfly
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 1, 0,    0.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 1, 0,    1.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 1, 0,    1.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 1, 0,    0.0f, 1.0f);
 
-			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 1, 0,    0.0f, 0.0f,
-			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 1, 0,    1.0f, 0.0f,
-			(vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 1, 0,    1.0f, 1.0f,
-			vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 1, 0,    0.0f, 1.0f,
+			uint32_t base = arrlen(vertices) / 8;
+			arrput(indices, base + 0);
+			arrput(indices, base + 2);
+			arrput(indices, base + 1);
+			arrput(indices, base + 0);
+			arrput(indices, base + 3);
+			arrput(indices, base + 2);
+		}
 
-			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,       0,-1, 0,    0.0f, 0.0f,
-			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,       0,-1, 0,    1.0f, 0.0f,
-			(vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   0,-1, 0,    1.0f, 1.0f,
-			vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,   0,-1, 0,    0.0f, 1.0f,
-		);
+		TrVec3i left = {vox.x - 1, vox.y, vox.z};
+		if (hmget(voxels, left) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
 
-		TrSlice_uint32 indices;
-		TR_SET_SLICE(&temp, &indices, uint32_t,
-			0, 2, 1, 0, 3, 2,
-			4, 6, 5, 4, 7, 6,
-			8, 10, 9, 8, 11, 10,
-			12, 14, 13, 12, 15, 14,
-			16, 18, 17, 16, 19, 18,
-			20, 22, 21, 20, 23, 22,
-		);
+			// when i woke up today looked in on my fairy pet she had withered all away no more sighing in her breast
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,      -1, 0, 0,    0.0f, 0.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0,    1.0f, 0.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0,    1.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,      -1, 0, 0,    0.0f, 1.0f);
 
-		// tr_panic("die die you zombie bastards");
-		StMesh mesh = st_mesh_new(&vertices, &indices, false);
-		mesh.material.color = st_get_color(vox.color);
-		*TR_AT(meshes.meshes, StMesh, i) = mesh;
+			uint32_t base = arrlen(vertices) / 8;
+			arrput(indices, base + 0);
+			arrput(indices, base + 2);
+			arrput(indices, base + 1);
+			arrput(indices, base + 0);
+			arrput(indices, base + 3);
+			arrput(indices, base + 2);
+		}
+
+		if (vertices != NULL) {
+			// convert the stb arrays to slices
+			TrSlice_float final_vertices = tr_slice_new(&temp, arrlen(vertices), sizeof(float));
+			TrSlice_uint32 final_indices = tr_slice_new(&temp, arrlen(indices), sizeof(uint32_t));
+			final_vertices.buffer = vertices;
+			final_indices.buffer = indices;
+
+			StMesh mesh = st_mesh_new(&final_vertices, &final_indices, false);
+			mesh.material.color = st_get_color(vox.color);
+			*TR_AT(meshes.meshes, StMesh, meshidx) = mesh;
+
+			meshidx++;
+		}
+
+		arrfree(vertices);
+		arrfree(indices);
 	}
 	tr_arena_free(&temp);
+	hmfree(voxels);
 
 	// mate
 	StBlockId sir = {group, block};
@@ -345,6 +378,13 @@ static void st_draw_block(TrVec3i pos)
 
 	for (size_t i = 0; i < meshes.meshes.length; i++) {
 		StMesh mesh = *TR_AT(meshes.meshes, StMesh, i);
+
+		// currently there's some blank space in the slice because i have a good heart albeit insane
+		// condemn him to the infirmary
+		if (mesh.vao == 0) {
+			continue;
+		}
+
 		st_mesh_draw_3d(mesh, (TrVec3f){pos.x, pos.y, pos.z}, (TrVec3f){0, 0, 0});
 	}
 }

@@ -44,7 +44,7 @@ void main()
 		? texture(u_texture, out_texcoord) * u_obj_color
 		: u_obj_color;
 
-	// make sure it's normalized\n
+	// make sure it's normalized
 	vec3 normal = normalize(out_normal);
 	vec3 sundir = normalize(u_sun_dir);
 
