@@ -247,6 +247,7 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 		// we only render faces if there's air around them
 		float* vertices = NULL;
 		uint32_t* indices = NULL;
+		uint32_t idxidx = 0; // TODO a good name
 
 		// what am i doing lmao
 		#define ST_APPEND_VERT(vx, vy, vz, nx, ny, nz, u, v) \
@@ -266,18 +267,18 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
 
 			// yesterday i went outside with my mamas mason jar caught a lovely butterfly
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 1, 0,    0.0f, 0.0f);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,   0, 1, 0,    1.0f, 0.0f);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 1, 0,    1.0f, 1.0f);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,       0, 1, 0,    0.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 1, 0, 0.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 1, 0, 1.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 1, 0, 1.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 1, 0, 0.0f, 1.0f);
 
-			uint32_t base = arrlen(vertices) / 8;
-			arrput(indices, base + 0);
-			arrput(indices, base + 2);
-			arrput(indices, base + 1);
-			arrput(indices, base + 0);
-			arrput(indices, base + 3);
-			arrput(indices, base + 2);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
 		}
 
 		TrVec3i left = {vox.x - 1, vox.y, vox.z};
@@ -286,18 +287,98 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
 
 			// when i woke up today looked in on my fairy pet she had withered all away no more sighing in her breast
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     vox.z / ST_VOXEL_SIZE,      -1, 0, 0,    0.0f, 0.0f);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     vox.y / ST_VOXEL_SIZE,     (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0,    1.0f, 0.0f);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0,    1.0f, 1.0f);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE,     (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,      -1, 0, 0,    0.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,  -1, 0, 0, 0.0f, 0.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0, 1.0f, 0.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0, 1.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,  -1, 0, 0, 0.0f, 1.0f);
 
-			uint32_t base = arrlen(vertices) / 8;
-			arrput(indices, base + 0);
-			arrput(indices, base + 2);
-			arrput(indices, base + 1);
-			arrput(indices, base + 0);
-			arrput(indices, base + 3);
-			arrput(indices, base + 2);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
+		}
+
+		TrVec3i right = {vox.x + 1, vox.y, vox.z};
+		if (hmget(voxels, right) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
+
+			// im sorry for what i did i did what my body told me to i didnt mean to do you any harm
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 1, 0, 0, 0.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 1, 0, 0, 1.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 1, 0, 0, 1.0f, 1.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 1, 0, 0, 0.0f, 1.0f);
+
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
+		}
+
+		TrVec3i bottom = {vox.x, vox.y - 1, vox.z};
+		if (hmget(voxels, bottom) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
+
+			// everytime i pin down what i think i want it slips away the ghost slips away
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0,-1, 0, 0.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0,-1, 0, 1.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0,-1, 0, 1.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0,-1, 0, 0.0f, 1.0f);
+
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
+		}
+
+		TrVec3i front = {vox.x, vox.y, vox.z + 1};
+		if (hmget(voxels, front) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
+
+			// smell you on my hand for days i cant wash away your scent if im dog then youre a bitch
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 0, 1, 0.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 0, 1, 1.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 0, 1, 1.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 0, 1, 0.0f, 1.0f);
+
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
+		}
+
+		TrVec3i back = {vox.x, vox.y, vox.z - 1};
+		if (hmget(voxels, back) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
+
+			// i guess youre as real as me maybe i can live with that maybe i need fantasy life of chasing butterfly
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 0,-1, 0.0f, 0.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 0,-1, 1.0f, 0.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 0,-1, 1.0f, 1.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 0,-1, 0.0f, 1.0f);
+
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
 		}
 
 		if (vertices != NULL) {
