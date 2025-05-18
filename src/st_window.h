@@ -217,6 +217,9 @@ double st_delta_time(void);
 // Gets the frames per second (FPS) that the program is running on
 double st_fps(void);
 
+// If true, enables VSync. Otherwise, disables it.
+void st_set_vsync(bool enabled);
+
 // make sure there's always ST_WINDOWS or ST_LINUX defined
 #if !defined(ST_WINDOWS) && !defined(ST_LINUX)
 	#ifdef _WIN32

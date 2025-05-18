@@ -19,6 +19,7 @@ int main(void)
 		.window_width = 800,
 		.window_height = 600,
 	});
+	st_set_vsync(false);
 	st_cull_face(ST_CULL_FACE_NONE);
 	st_ui_new("app:figtree/Figtree-Medium.ttf", 16);
 
@@ -113,16 +114,7 @@ static void sb_game_new(void)
 
 	st_register_block(1, 0, "app:fuck.stvox");
 
-	// the laggificator 3000
-	// also known as the reasonably sized cube of horrors beyond human comprehension
-	for (int64_t x = 0; x < 16; x++) {
-		for (int64_t y = 0; y < 16; y++) {
-			for (int64_t z = 0; z < 16; z++) {
-				st_place_block(1, 0, (TrVec3i){x, y, z});
-			}
-		}
-	}
-	// st_place_block(1, 0, (TrVec3i){1, 0, 0});
+	st_place_block(1, 0, (TrVec3i){1, 0, 0});
 }
 
 static bool sb_ui = false;
@@ -134,6 +126,17 @@ static void sb_game_update(void)
 		sb_ui = !sb_ui;
 	}
 	st_set_mouse_enabled(sb_ui);
+
+	// the cube of horror is optional
+	if (st_is_key_just_pressed(ST_KEY_F2)) {
+		for (int64_t x = 0; x < 16; x++) {
+			for (int64_t y = 0; y < 16; y++) {
+				for (int64_t z = 0; z < 16; z++) {
+					st_place_block(1, 0, (TrVec3i){x, y, z});
+				}
+			}
+		}
+	}
 
 	st_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){0, 0, 0});
 	sb_camera_update();
