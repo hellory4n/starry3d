@@ -122,10 +122,27 @@ typedef struct {
 	} material;
 } StMesh;
 
+// It's a vertex lmao.
+typedef struct {
+	struct {
+		float x;
+		float y;
+		float z;
+	} pos;
+	struct {
+		float x;
+		float y;
+		float z;
+	} norm;
+	struct {
+		float u;
+		float v;
+	} texcoord;
+} StVertex;
+
 // Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
-// leave it false. The format for vertices is XYZXYZUV, for the position (3 floats), normals
-// (3 floats), and texcoords (2 floats), where each letter is a float.
-StMesh st_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly);
+// leave it false. The vertices are a slice of `StVertex`
+StMesh st_mesh_new(TrSlice* vertices, TrSlice_uint32* indices, bool readonly);
 
 // It frees the mesh.
 void st_mesh_free(StMesh mesh);

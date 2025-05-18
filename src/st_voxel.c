@@ -245,20 +245,18 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 
 		// culling
 		// we only render faces if there's air around them
-		float* vertices = NULL;
+		StVertex* vertices = NULL;
 		uint32_t* indices = NULL;
 		uint32_t idxidx = 0; // TODO a good name
 
 		// what am i doing lmao
-		#define ST_APPEND_VERT(vx, vy, vz, nx, ny, nz, u, v) \
-			arrput(vertices, vx); \
-			arrput(vertices, vy); \
-			arrput(vertices, vz); \
-			arrput(vertices, nx); \
-			arrput(vertices, ny); \
-			arrput(vertices, nz); \
-			arrput(vertices, u); \
-			arrput(vertices, v);
+		// this was before i turned st_mesh_new to use StVertex instead of a bunch of floats but now
+		// macros are being annoying so i'm keeping it because its easier than changing 60 billion trillion
+		// calls
+		#define ST_APPEND_VERT(vx, vy, vz, nx, ny, nz, u, v) do { \
+			StVertex tmpdeez = {{vx, vy, vz}, {nx, ny, nz}, {u, v}}; \
+			arrput(vertices, tmpdeez); \
+		} while (false);
 
 		// mate
 		TrVec3i top = {vox.x, vox.y + 1, vox.z};
@@ -383,7 +381,7 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 
 		if (vertices != NULL) {
 			// convert the stb arrays to slices
-			TrSlice_float final_vertices = tr_slice_new(&temp, arrlen(vertices), sizeof(float));
+			TrSlice final_vertices = tr_slice_new(&temp, arrlen(vertices), sizeof(StVertex));
 			TrSlice_uint32 final_indices = tr_slice_new(&temp, arrlen(indices), sizeof(uint32_t));
 			final_vertices.buffer = vertices;
 			final_indices.buffer = indices;

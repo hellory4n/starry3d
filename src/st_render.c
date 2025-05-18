@@ -91,7 +91,7 @@ void st_end_drawing(void)
 	glfwSwapBuffers(st_get_window_handle());
 }
 
-StMesh st_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readonly)
+StMesh st_mesh_new(TrSlice* vertices, TrSlice_uint32* indices, bool readonly)
 {
 	StMesh mesh = {0};
 	mesh.index_count = indices->length;
@@ -102,17 +102,17 @@ StMesh st_mesh_new(TrSlice_float* vertices, TrSlice_uint32* indices, bool readon
 	glGenBuffers(1, &mesh.vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
 
-	glBufferData(GL_ARRAY_BUFFER, vertices->length * sizeof(float),
+	glBufferData(GL_ARRAY_BUFFER, vertices->length * sizeof(StVertex),
 		vertices->buffer, readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
 
 	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(StVertex), (void*)offsetof(StVertex, pos));
 	glEnableVertexAttribArray(0);
 	// normals attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(StVertex), (void*)offsetof(StVertex, norm));
 	glEnableVertexAttribArray(1);
 	// texcoords attribute
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(StVertex), (void*)offsetof(StVertex, texcoord));
 	glEnableVertexAttribArray(2);
 
 	// ebo
