@@ -140,9 +140,18 @@ typedef struct {
 	} texcoord;
 } StVertex;
 
+typedef struct {
+	uint32_t v1;
+	uint32_t v2;
+	uint32_t v3;
+} StTriangle;
+
+typedef TrSlice TrSlice_StVertex;
+typedef TrSlice TrSlice_StTriangle;
+
 // Uploads a mesh to the GPU. `readonly` is intended for meshes that change. You should usually
-// leave it false. The vertices are a slice of `StVertex`
-StMesh st_mesh_new(TrSlice* vertices, TrSlice_uint32* indices, bool readonly);
+// leave it false.
+StMesh st_mesh_new(TrSlice_StVertex* vertices, TrSlice_StTriangle* indices, bool readonly);
 
 // It frees the mesh.
 void st_mesh_free(StMesh mesh);

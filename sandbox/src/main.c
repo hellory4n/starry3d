@@ -63,7 +63,7 @@ static void sb_game_new(void)
 	arena = tr_arena_new(TR_MB(1));
 
 	// ttriangel
-	TrSlice vertices;
+	TrSlice_StVertex vertices;
 	TR_SET_SLICE(&arena, &vertices, StVertex,
 		{{-0.5f, -0.5f, +0.5f}, {0, 0, 1}, {0.0f, 0.0f}},
 		{{+0.5f, -0.5f, +0.5f}, {0, 0, 1}, {1.0f, 0.0f}},
@@ -96,14 +96,14 @@ static void sb_game_new(void)
 		{{-0.5f, -0.5f, +0.5f}, {0,-1, 0}, {0.0f, 1.0f}},
 	);
 
-	TrSlice_uint32 indices;
-	TR_SET_SLICE(&arena, &indices, uint32_t,
-		0, 2, 1, 0, 3, 2,
-		4, 6, 5, 4, 7, 6,
-		8, 10, 9, 8, 11, 10,
-		12, 14, 13, 12, 15, 14,
-		16, 18, 17, 16, 19, 18,
-		20, 22, 21, 20, 23, 22,
+	TrSlice_StTriangle indices;
+	TR_SET_SLICE(&arena, &indices, StTriangle,
+		{0, 2, 1}, {0, 3, 2},
+		{4, 6, 5}, {4, 7, 6},
+		{8, 10, 9}, {8, 11, 10},
+		{12, 14, 13}, {12, 15, 14},
+		{16, 18, 17}, {16, 19, 18},
+		{20, 22, 21}, {20, 23, 22},
 	);
 
 	mtriranfgs = st_mesh_new(&vertices, &indices, true);

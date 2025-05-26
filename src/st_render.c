@@ -73,6 +73,8 @@ void st_begin_drawing(void)
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// TODO st_blend_mode()
+	// i want to use the blend modes you can find in figma and blender and other graphics app idfk
+	// but idk the opengl equivalent of those
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
@@ -91,10 +93,11 @@ void st_end_drawing(void)
 	glfwSwapBuffers(st_get_window_handle());
 }
 
-StMesh st_mesh_new(TrSlice* vertices, TrSlice_uint32* indices, bool readonly)
+StMesh st_mesh_new(TrSlice_StVertex* vertices, TrSlice_StTriangle* indices, bool readonly)
 {
-	StMesh mesh = {0};
-	mesh.index_count = indices->length;
+	StMesh mesh = {
+		.index_count = indices->length * 3,
+	};
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
 
@@ -118,7 +121,7 @@ StMesh st_mesh_new(TrSlice* vertices, TrSlice_uint32* indices, bool readonly)
 	// ebo
 	glGenBuffers(1, &mesh.ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->length * sizeof(uint32_t), indices->buffer,
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->length * sizeof(StTriangle), indices->buffer,
 		readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
 
 	// unbind vao

@@ -23,6 +23,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stb_ds.h>
+#include <glad/gl.h>
 #include "st_common.h"
 #include "st_render.h"
 #include "st_voxel.h"
@@ -37,16 +38,57 @@ typedef struct {
 	uint16_t block;
 } StBlockId;
 
+typedef enum {
+	ST_VOX_FACE_WEST,
+	ST_VOX_FACE_EAST,
+	ST_VOX_FACE_NORTH,
+	ST_VOX_FACE_SOUTH,
+	ST_VOX_FACE_UP,
+	ST_VOX_FACE_DOWN,
+} StVoxFace;
+
+typedef struct {
+	struct {
+		float x;
+		float y;
+		float z;
+	} pos;
+	float facing;
+	// Color index
+	float color;
+} StVoxVertex;
+
+typedef struct {
+	uint32_t vao;
+	uint32_t vbo;
+	uint32_t ebo;
+	uint32_t indices_len;
+} StVoxMesh;
+
+typedef TrSlice TrSlice_StVoxVertex;
+
 static TrArena st_arena;
 static TrSlice_Color st_palette;
+
 static struct {StBlockId key; StVoxMeshes value;}* st_block_types;
 static struct {TrVec3i key; StBlockId value;}* st_blocks;
+
+static struct {TrVec3i key; TrArena value;}* st_chunk_arenas;
+static struct {TrVec3i key; TrSlice_StVoxVertex value;}* st_chunk_vertices;
+static struct {TrVec3i key; TrSlice_StTriangle value;}* st_chunk_indices;
+static struct {TrVec3i key; StVoxMesh value;}* st_chunk_meshes;
+
+static StShader st_vox_shader;
 
 void st_vox_init(void)
 {
 	st_arena = tr_arena_new(TR_MB(8));
 	StBlockId defaul = {0, 0};
 	hmdefault(st_blocks, defaul);
+
+	// shadema
+	st_vox_shader = st_shader_new();
+
 	tr_liblog("initialized voxel engine");
 }
 
@@ -468,8 +510,74 @@ static void st_draw_block(TrVec3i pos)
 	}
 }
 
+static void st_init_chunk(TrVec3i pos)
+{
+	// 4 for a face, 6 faces for a cube, 16x16x16 for 3D, 16 for a chunk
+	const size_t vertlen = 4 * 6 * 16 * 16 * 16 * 16;
+	// 2 triangles for a quad, 6 faces for a cube, 16*16*16*16 again
+	const size_t idxlen = 2 * 6 * 16 * 16 * 16 * 16;
+	const size_t bufsize = (vertlen * sizeof(StVoxVertex)) + (idxlen * sizeof(StTriangle));
+
+	TrArena arenama = tr_arena_new(bufsize);
+	TrSlice_StVoxVertex vertices = tr_slice_new(&arenama, vertlen, sizeof(StVoxVertex));
+	TrSlice_StTriangle indices = tr_slice_new(&arenama, idxlen, sizeof(StTriangle));
+
+	hmput(st_chunk_arenas, pos, arenama);
+	hmput(st_chunk_vertices, pos, vertices);
+	hmput(st_chunk_indices, pos, indices);
+
+	// setup meshes
+	StVoxMesh mesh = {
+		.indices_len = indices.length * 3,
+	};
+	glGenVertexArrays(1, &mesh.vao);
+	glBindVertexArray(mesh.vao);
+
+	// vbo
+	glGenBuffers(1, &mesh.vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+
+	// null makes it so it just allocates vram for future use
+	glBufferData(GL_ARRAY_BUFFER, vertlen * sizeof(StVertex), NULL, GL_DYNAMIC_DRAW);
+
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, pos));
+	glEnableVertexAttribArray(0);
+	// facing attribute
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, facing));
+	glEnableVertexAttribArray(1);
+	// color attribute
+	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, color));
+	glEnableVertexAttribArray(2);
+
+	// ebo
+	glGenBuffers(1, &mesh.ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.length * sizeof(StTriangle), NULL, GL_DYNAMIC_DRAW);
+
+	// unbind vao
+	glBindVertexArray(0);
+
+	hmput(st_chunk_meshes, pos, mesh);
+	tr_liblog("created buffers for chunk %li, %li, %li", pos.x, pos.y, pos.z);
+}
+
+// checks the camera position to see if it's on a new chunk
+static void st_auto_chunkomator(void)
+{
+	StCamera cam = st_camera();
+
+	// is it new?
+	TrVec3i chunk_pos = TR_V3_SDIV(cam.position, ST_CHUNK_SIZE);
+	if (hmget(st_chunk_arenas, chunk_pos).buffer == NULL) {
+		st_init_chunk(chunk_pos);
+	}
+}
+
 void st_vox_draw(void)
 {
+	st_auto_chunkomator();
+
 	StCamera cam = st_camera();
 	cam.position.x = round(cam.position.x);
 	cam.position.y = round(cam.position.y);
