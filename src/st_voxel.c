@@ -24,9 +24,12 @@
 #include <stdio.h>
 #include <stb_ds.h>
 #include <glad/gl.h>
+#include <linmath.h>
 #include "st_common.h"
 #include "st_render.h"
 #include "st_voxel.h"
+#include "shader/vox.glsl.h"
+#include "st_window.h"
 
 typedef struct {
 	// Slice of StMesh
@@ -70,7 +73,9 @@ typedef TrSlice TrSlice_StVoxVertex;
 static TrArena st_arena;
 static TrSlice_Color st_palette;
 
-static struct {StBlockId key; StVoxMeshes value;}* st_block_types;
+typedef struct {TrVec3i key; uint8_t value;} StShutUpCompilerThisIsTheSameType;
+
+static struct {StBlockId key; StShutUpCompilerThisIsTheSameType* value;}* st_block_types;
 static struct {TrVec3i key; StBlockId value;}* st_blocks;
 
 static struct {TrVec3i key; TrArena value;}* st_chunk_arenas;
@@ -82,18 +87,20 @@ static StShader st_vox_shader;
 
 void st_vox_init(void)
 {
-	st_arena = tr_arena_new(TR_MB(8));
+	st_arena = tr_arena_new(TR_MB(1));
 	StBlockId defaul = {0, 0};
 	hmdefault(st_blocks, defaul);
+	hmdefault(st_block_types, NULL);
 
 	// shadema
-	st_vox_shader = st_shader_new();
+	st_vox_shader = st_shader_new(ST_VOX_SHADER_VERTEX, ST_VOX_SHADER_FRAGMENT);
 
 	tr_liblog("initialized voxel engine");
 }
 
 void st_vox_free(void)
 {
+	st_shader_free(st_vox_shader);
 	tr_arena_free(&st_arena);
 	tr_liblog("freed voxel engine");
 }
@@ -269,15 +276,17 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 	}
 
 	// put voxels in a hashmap
-	struct {TrVec3i key; uint8_t value;}* voxels;
+	StShutUpCompilerThisIsTheSameType* voxels;
 	for (size_t i = 0; i < model.voxels.length; i++) {
 		StPackedVoxel vox = *TR_AT(model.voxels, StPackedVoxel, i);
 		TrVec3i pos = {vox.x, vox.y, vox.z};
 		hmput(voxels, pos, vox.color);
 	}
+	StBlockId id = {group, block};
+	hmput(st_block_types, id, voxels);
 
 	// basic awful mesh generation
-	StVoxMeshes meshes = {
+	/*StVoxMeshes meshes = {
 		.meshes = tr_slice_new(&st_arena, model.voxels.length, sizeof(StMesh)),
 	};
 
@@ -443,7 +452,7 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 
 	// mate
 	StBlockId sir = {group, block};
-	hmput(st_block_types, sir, meshes);
+	hmput(st_block_types, sir, meshes);*/
 	tr_liblog("registered block type %i:%i (from %s)", group, block, path);
 }
 
@@ -472,8 +481,8 @@ void st_place_block(uint16_t group, uint16_t block, TrVec3i pos)
 {
 	// does the block type exist?
 	StBlockId id = {group, block};
-	StVoxMeshes meshes = hmget(st_block_types, id);
-	tr_assert(meshes.meshes.length != 0, "block type %i:%i doesn't exist", group, block);
+	StShutUpCompilerThisIsTheSameType* man = hmget(st_block_types, id);
+	tr_assert(man != NULL, "block type %i:%i doesn't exist", group, block);
 
 	StBlockId sir = {group, block};
 	hmput(st_blocks, pos, sir);
@@ -486,28 +495,6 @@ bool st_break_block(TrVec3i pos)
 	}
 	hmdel(st_blocks, pos);
 	return true;
-}
-
-static void st_draw_block(TrVec3i pos)
-{
-	StBlockId id = hmget(st_blocks, pos);
-	// that's the default value, hmget doesn't return null because it's not a pointer
-	if (id.group == 0 && id.block == 0) {
-		return;
-	}
-	StVoxMeshes meshes = hmget(st_block_types, id);
-
-	for (size_t i = 0; i < meshes.meshes.length; i++) {
-		StMesh mesh = *TR_AT(meshes.meshes, StMesh, i);
-
-		// currently there's some blank space in the slice because i have a good heart albeit insane
-		// condemn him to the infirmary
-		if (mesh.vao == 0) {
-			continue;
-		}
-
-		st_mesh_draw_3d(mesh, (TrVec3f){pos.x, pos.y, pos.z}, (TrVec3f){0, 0, 0});
-	}
 }
 
 static void st_init_chunk(TrVec3i pos)
@@ -574,6 +561,214 @@ static void st_auto_chunkomator(void)
 	}
 }
 
+// sets all the shader uniforms
+static void st_update_shader(void)
+{
+	// TODO st_render.c really should be rewritten at some point to be more flexible
+	mat4x4 view, proj;
+	StCamera cam = st_camera();
+
+	// perspective
+	if (cam.perspective) {
+		mat4x4 view_pos, view_rot;
+		mat4x4_identity(view_pos);
+		mat4x4_identity(view_rot);
+		mat4x4_translate(view_pos, -cam.position.x, -cam.position.y, -cam.position.z);
+
+		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(cam.rotation.x));
+		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(cam.rotation.y));
+		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(cam.rotation.z));
+
+		mat4x4_mul(view, view_rot, view_pos);
+
+		TrVec2i winsize = st_window_size();
+		mat4x4_perspective(proj, tr_deg2rad(cam.view), (double)winsize.x / winsize.y,
+			cam.near, cam.far);
+	}
+	// orthographic
+	else {
+		mat4x4 view_pos, view_rot;
+		mat4x4_identity(view_pos);
+		mat4x4_identity(view_rot);
+		mat4x4_translate(view_pos, -cam.position.x, cam.position.y, -cam.position.z);
+
+		mat4x4_rotate_X(view_rot, view_rot, tr_deg2rad(cam.rotation.x));
+		mat4x4_rotate_Y(view_rot, view_rot, tr_deg2rad(cam.rotation.y));
+		mat4x4_rotate_Z(view_rot, view_rot, tr_deg2rad(cam.rotation.z));
+
+		mat4x4_mul(view, view_pos, view_rot);
+
+		TrVec2i winsize = st_window_size();
+		double ortho_height = cam.view * ((double)winsize.y / winsize.x);
+
+		double left = -cam.view / 2.0;
+		double right = cam.view / 2.0;
+		double bottom = -ortho_height / 2.0;
+		double top = ortho_height / 2.0;
+
+		mat4x4_ortho(proj, left, right, top, bottom, cam.near, cam.far);
+	}
+
+	StEnvironment env = st_environment();
+	st_shader_set_mat4f(st_vox_shader, "u_view", (float*)view);
+	st_shader_set_mat4f(st_vox_shader, "u_proj", (float*)proj);
+	st_shader_set_vec3f(st_vox_shader, "u_sun_color",
+		(TrVec3f){env.sun.color.r / 255.0f, env.sun.color.g / 255.0f,
+		env.sun.color.b / 255.0f});
+	st_shader_set_vec3f(st_vox_shader, "u_ambient",
+		(TrVec3f){env.ambient_color.r / 255.0f, env.ambient_color.g / 255.0f,
+		env.ambient_color.b / 255.0f});
+	st_shader_set_vec3f(st_vox_shader, "u_sun_dir", env.sun.direction);
+}
+
+static void st_render_chunk(TrVec3i pos)
+{
+	// help
+	TrSlice_StVoxVertex vertices = hmget(st_chunk_vertices, pos);
+	TrSlice_StTriangle indices = hmget(st_chunk_indices, pos);
+	size_t vertidx;
+	size_t idxidx; // TODO a better name
+
+	// get all the blocks in the chunk
+	StCamera cam = st_camera();
+	TrVec3i tmp = {ST_CHUNK_SIZE, ST_CHUNK_SIZE, ST_CHUNK_SIZE};
+	TrVec3i render_start = TR_V3_SUB(cam.position, tmp);
+	TrVec3i render_end = TR_V3_ADD(cam.position, tmp);
+
+	// i know this is cursed but hear me out
+	for (int64_t x = render_start.x; x < render_end.x; x++) {
+	for (int64_t y = render_start.y; y < render_end.y; y++) {
+	for (int64_t z = render_start.z; z < render_end.z; z++) {
+		TrVec3i vox = {x, y, z};
+		StBlockId id = hmget(st_blocks, pos);
+		StShutUpCompilerThisIsTheSameType* voxels = hmget(st_block_types, id);
+
+		// would be too obnoxious to change all the calls to this
+		#define ST_APPEND_VERT(vx, vy, vz, f, c) \
+			*TR_AT(vertices, StVoxVertex, vertidx++) = {{vx, vy, vz}, f, c};
+
+		// mate
+		TrVec3i top = {vox.x, vox.y + 1, vox.z};
+		if (hmget(voxels, top) == ST_COLOR_TRANSPARENT) {
+			// yesterday i went outside with my mamas mason jar caught a lovely butterfly
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_UP, hmget(voxels, vox));
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 1, 0, 1.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 1, 0, 1.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 1, 0, 0.0f, 1.0f);
+
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
+		}
+
+		TrVec3i left = {vox.x - 1, vox.y, vox.z};
+		if (hmget(voxels, left) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
+
+			// when i woke up today looked in on my fairy pet she had withered all away no more sighing in her breast
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,  -1, 0, 0, 0.0f, 0.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0, 1.0f, 0.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE,  -1, 0, 0, 1.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE,  -1, 0, 0, 0.0f, 1.0f);
+
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
+		}
+
+		TrVec3i right = {vox.x + 1, vox.y, vox.z};
+		if (hmget(voxels, right) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
+
+			// im sorry for what i did i did what my body told me to i didnt mean to do you any harm
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 1, 0, 0, 0.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 1, 0, 0, 1.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 1, 0, 0, 1.0f, 1.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 1, 0, 0, 0.0f, 1.0f);
+
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
+		}
+
+		TrVec3i bottom = {vox.x, vox.y - 1, vox.z};
+		if (hmget(voxels, bottom) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
+
+			// everytime i pin down what i think i want it slips away the ghost slips away
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0,-1, 0, 0.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0,-1, 0, 1.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0,-1, 0, 1.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0,-1, 0, 0.0f, 1.0f);
+
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
+		}
+
+		TrVec3i front = {vox.x, vox.y, vox.z + 1};
+		if (hmget(voxels, front) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
+
+			// smell you on my hand for days i cant wash away your scent if im dog then youre a bitch
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 0, 1, 0.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 0, 1, 1.0f, 0.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 0, 1, 1.0f, 1.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, 0, 0, 1, 0.0f, 1.0f);
+
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
+		}
+
+		TrVec3i back = {vox.x, vox.y, vox.z - 1};
+		if (hmget(voxels, back) == ST_COLOR_TRANSPARENT) {
+			// don't realloc() 1 billion trillion times
+			arrsetcap(vertices, arrlen(vertices) + ((3 + 3 + 2) * 4));
+
+			// i guess youre as real as me maybe i can live with that maybe i need fantasy life of chasing butterfly
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 0,-1, 0.0f, 0.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 0,-1, 1.0f, 0.0f);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 0,-1, 1.0f, 1.0f);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, 0, 0,-1, 0.0f, 1.0f);
+
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 2);
+			arrput(indices, idxidx + 1);
+			arrput(indices, idxidx + 0);
+			arrput(indices, idxidx + 3);
+			arrput(indices, idxidx + 2);
+			idxidx += 4;
+		};
+	}
+	}
+	}
+}
+
 void st_vox_draw(void)
 {
 	st_auto_chunkomator();
@@ -583,16 +778,13 @@ void st_vox_draw(void)
 	cam.position.y = round(cam.position.y);
 	cam.position.z = round(cam.position.z);
 
-	// we don't render everything at once to not explode your pc :)
-	TrVec3i tmp = {ST_CHUNK_SIZE, ST_CHUNK_SIZE, ST_CHUNK_SIZE};
-	TrVec3i render_start = TR_V3_SUB(cam.position, tmp);
-	TrVec3i render_end = TR_V3_ADD(cam.position, tmp);
+	st_update_shader();
 
-	for (int64_t x = render_start.x; x < render_end.x; x++) {
-		for (int64_t y = render_start.y; y < render_end.y; y++) {
-			for (int64_t z = render_start.z; z < render_end.z; z++) {
-				st_draw_block((TrVec3i){x, y, z});
-			}
-		}
-	}
+	// just making sure
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// actually render
+	// TODO this is where the render distance goes
+	TrVec3i chunk_pos = TR_V3_SDIV(cam.position, ST_CHUNK_SIZE);
+	st_render_chunk(chunk_pos);
 }
