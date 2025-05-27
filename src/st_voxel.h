@@ -167,6 +167,11 @@ typedef enum {
 	ST_COLOR_COCOA_1,
 } StColor;
 
+typedef struct {
+	uint16_t group;
+	uint16_t block;
+} StBlockId;
+
 // Initializes the voxel engine
 void st_vox_init(void);
 
@@ -207,9 +212,6 @@ void st_place_block(uint16_t group, uint16_t block, TrVec3i pos);
 
 // Removes a block at the specified position, and returns true if that block actually exists.
 bool st_break_block(TrVec3i pos);
-
-// Renders every block ever.
-void st_vox_draw(void);
 
 #ifdef __cplusplus
 }

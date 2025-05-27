@@ -20,13 +20,55 @@
  *
  */
 
-#ifndef _ST_STARRY3D_H
-#define _ST_STARRY3D_H
+#ifndef _ST_VOXEL_RENDER_H
+#define _ST_VOXEL_RENDER_H
+#include <libtrippin.h>
 
-#include "st_common.h"
-#include "st_render.h"
-#include "st_voxel.h"
-#include "st_voxel_render.h"
-#include "st_window.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef enum {
+	ST_VOX_FACE_WEST,
+	ST_VOX_FACE_EAST,
+	ST_VOX_FACE_NORTH,
+	ST_VOX_FACE_SOUTH,
+	ST_VOX_FACE_UP,
+	ST_VOX_FACE_DOWN,
+} StVoxFace;
+
+typedef struct {
+	struct {
+		float x;
+		float y;
+		float z;
+	} pos;
+	float facing;
+	// Color index
+	float color;
+} StVoxVertex;
+
+typedef struct {
+	uint32_t vao;
+	uint32_t vbo;
+	uint32_t ebo;
+	uint32_t indices_len;
+} StVoxMesh;
+
+typedef TrSlice TrSlice_StVoxVertex;
+
+// internal
+void st_vox_render_init(void);
+// internal
+void st_vox_render_free(void);
+// internal
+void st_vox_render_on_palette_update(TrSlice_Color palette);
+
+// Renders every block ever.
+void st_vox_draw(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
