@@ -91,14 +91,15 @@ void st_vox_render_on_palette_update(TrSlice_Color palette)
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
 
 	tr_arena_free(&tmp);
+	tr_liblog("sent palette to the gpu");
 }
 
 static void st_init_chunk(TrVec3i pos)
 {
 	// 4 for a face, 6 faces for a cube, 16x16x16 for 3D, 16 for a chunk
-	const size_t vertlen = 4 * 6 * 16 * 16 * 16 * 16;
+	const size_t vertlen = 4 * 6 * 16 * 16 * 16 * 16 * 16;
 	// 2 triangles for a quad, 6 faces for a cube, 16*16*16*16 again
-	const size_t idxlen = 2 * 6 * 16 * 16 * 16 * 16;
+	const size_t idxlen = 2 * 6 * 16 * 16 * 16 * 16 * 16;
 	const size_t bufsize = (vertlen * sizeof(StVoxVertex)) + (idxlen * sizeof(StTriangle));
 
 	TrArena arenama = tr_arena_new(bufsize);
@@ -234,8 +235,8 @@ static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_
 		// my sincerest apologies
 		#define ST_APPEND_VERT(X, Y, Z, Face) \
 			*TR_AT(*vertices, StVoxVertex, (*vertidx)++) = \
-				(StVoxVertex){{X + (pos.x / ST_CHUNK_SIZE), Y + (pos.y / ST_CHUNK_SIZE), \
-				Z + (pos.z / ST_CHUNK_SIZE)}, Face, vox.color};
+				(StVoxVertex){{X + pos.x + (pos.x / ST_CHUNK_SIZE), Y + pos.y + (pos.y / ST_CHUNK_SIZE), \
+				Z + pos.z + (pos.z / ST_CHUNK_SIZE)}, Face, vox.color};
 
 		#define ST_APPEND_QUAD() do { \
 			*TR_AT(*indices, StTriangle, *idxbutforthesliceandnotopengl + 1) = (StTriangle){*idxidx, *idxidx + 2, *idxidx + 1}; \
@@ -251,6 +252,51 @@ static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_
 			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_UP);
 			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_UP);
 			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOXEL_SIZE);
+			ST_APPEND_QUAD();
+		}
+
+		TrVec3i left = {vox.x - 1, vox.y, vox.z};
+		if (hmget(voxels, left) == ST_COLOR_TRANSPARENT) {
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_WEST);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_WEST);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_WEST);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_WEST);
+			ST_APPEND_QUAD();
+		}
+
+		TrVec3i right = {vox.x + 1, vox.y, vox.z};
+		if (hmget(voxels, right) == ST_COLOR_TRANSPARENT) {
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_EAST);
+			ST_APPEND_QUAD();
+		}
+
+		TrVec3i bottom = {vox.x, vox.y - 1, vox.z};
+		if (hmget(voxels, bottom) == ST_COLOR_TRANSPARENT) {
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_DOWN);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_DOWN);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_DOWN);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_DOWN);
+			ST_APPEND_QUAD();
+		}
+
+		TrVec3i front = {vox.x, vox.y, vox.z + 1};
+		if (hmget(voxels, front) == ST_COLOR_TRANSPARENT) {
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_NORTH);
+			ST_APPEND_QUAD();
+		}
+
+		TrVec3i back = {vox.x, vox.y, vox.z - 1};
+		if (hmget(voxels, back) == ST_COLOR_TRANSPARENT) {
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_SOUTH);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_SOUTH);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_SOUTH);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_SOUTH);
 			ST_APPEND_QUAD();
 		}
 	}

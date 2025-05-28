@@ -39,6 +39,8 @@ void main()
 	FragColor = vec4(1, 0, 0, 1);
 	return;
 	vec4 obj_color = u_palette[out_color];
+	FragColor = obj_color;
+	return;
 
 	vec3 normal;
 	switch (out_facing) {

@@ -46,6 +46,8 @@
 	"\tFragColor = vec4(1, 0, 0, 1);\n" \
 	"\treturn;\n" \
 	"\tvec4 obj_color = u_palette[out_color];\n" \
+	"\tFragColor = obj_color;\n" \
+	"\treturn;\n" \
 	"\n" \
 	"\tvec3 normal;\n" \
 	"\tswitch (out_facing) {\n" \
