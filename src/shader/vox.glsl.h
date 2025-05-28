@@ -43,6 +43,8 @@
 	"\n" \
 	"void main()\n" \
 	"{\n" \
+	"\tFragColor = vec4(1, 0, 0, 1);\n" \
+	"\treturn;\n" \
 	"\tvec4 obj_color = u_palette[out_color];\n" \
 	"\n" \
 	"\tvec3 normal;\n" \

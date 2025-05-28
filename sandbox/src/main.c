@@ -138,7 +138,7 @@ static void sb_game_update(void)
 		}
 	}
 
-	st_mesh_draw_3d(mtriranfgs, (TrVec3f){0, 0, 0}, (TrVec3f){0, 0, 0});
+	st_mesh_draw_3d(mtriranfgs, (TrVec3f){-2, 0, -2}, (TrVec3f){0, 0, 0});
 	sb_camera_update();
 }
 

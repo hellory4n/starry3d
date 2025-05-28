@@ -368,51 +368,61 @@ void st_shader_use(StShader shader)
 
 void st_shader_set_bool(StShader shader, const char* name, bool val)
 {
+	st_shader_use(shader);
 	glUniform1i(glGetUniformLocation(shader.program, name), (int32_t)val);
 }
 
 void st_shader_set_int32(StShader shader, const char* name, int32_t val)
 {
+	st_shader_use(shader);
 	glUniform1i(glGetUniformLocation(shader.program, name), val);
 }
 
 void st_shader_set_float(StShader shader, const char* name, float val)
 {
+	st_shader_use(shader);
 	glUniform1f(glGetUniformLocation(shader.program, name), val);
 }
 
 void st_shader_set_vec2f(StShader shader, const char* name, TrVec2f val)
 {
+	st_shader_use(shader);
 	glUniform2f(glGetUniformLocation(shader.program, name), val.x, val.y);
 }
 
 void st_shader_set_vec2i(StShader shader, const char* name, TrVec2i val)
 {
+	st_shader_use(shader);
 	glUniform2i(glGetUniformLocation(shader.program, name), val.x, val.y);
 }
 
 void st_shader_set_vec3f(StShader shader, const char* name, TrVec3f val)
 {
+	st_shader_use(shader);
 	glUniform3f(glGetUniformLocation(shader.program, name), val.x, val.y, val.z);
 }
 
 void st_shader_set_vec3i(StShader shader, const char* name, TrVec3i val)
 {
+	st_shader_use(shader);
 	glUniform3f(glGetUniformLocation(shader.program, name), val.x, val.y, val.z);
 }
 
 void st_shader_set_vec4f(StShader shader, const char* name, TrVec4f val)
 {
+	st_shader_use(shader);
 	glUniform4f(glGetUniformLocation(shader.program, name), val.x, val.y, val.z, val.w);
 }
 
 void st_shader_set_vec4i(StShader shader, const char* name, TrVec4i val)
 {
+	st_shader_use(shader);
 	glUniform4i(glGetUniformLocation(shader.program, name), val.x, val.y, val.z, val.w);
 }
 
 void st_shader_set_mat4f(StShader shader, const char* name, float* val)
 {
+	st_shader_use(shader);
 	glUniformMatrix4fv(glGetUniformLocation(shader.program, name), 1, false, val);
 }
 

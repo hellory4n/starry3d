@@ -36,6 +36,8 @@ layout(std140) uniform palette_block {
 
 void main()
 {
+	FragColor = vec4(1, 0, 0, 1);
+	return;
 	vec4 obj_color = u_palette[out_color];
 
 	vec3 normal;

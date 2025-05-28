@@ -97,6 +97,10 @@ void st_open_window(TrArena* arena, const char* title, uint32_t width, uint32_t 
 	#ifdef DEBUG
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 	#endif
+	// so it works with renderdoc
+	#if defined(DEBUG) && defined(ST_LINUX)
+	glfwWindowHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+	#endif
 
 	st_window = glfwCreateWindow(width, height, title, NULL, NULL);
 	tr_assert(st_window != NULL, "couldn't create window");
