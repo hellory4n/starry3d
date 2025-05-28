@@ -96,9 +96,10 @@ void st_vox_render_on_palette_update(TrSlice_Color palette)
 
 static void st_init_chunk(TrVec3i pos)
 {
-	// 4 for a face, 6 faces for a cube, 16x16x16 for 3D, 16 for a chunk
+	// 4 for a face, 6 faces for a cube, 16x16x16 for 3D, 16 for a chunk, 16 again bcuz it was crashing
+	// for some reason
 	const size_t vertlen = 4 * 6 * 16 * 16 * 16 * 16 * 16;
-	// 2 triangles for a quad, 6 faces for a cube, 16*16*16*16 again
+	// 2 triangles for a quad, 6 faces for a cube, 16*16*16*16*16 again
 	const size_t idxlen = 2 * 6 * 16 * 16 * 16 * 16 * 16;
 	const size_t bufsize = (vertlen * sizeof(StVoxVertex)) + (idxlen * sizeof(StTriangle));
 
@@ -239,8 +240,8 @@ static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_
 				Z + pos.z + (pos.z / ST_CHUNK_SIZE)}, Face, vox.color};
 
 		#define ST_APPEND_QUAD() do { \
-			*TR_AT(*indices, StTriangle, *idxbutforthesliceandnotopengl + 1) = (StTriangle){*idxidx, *idxidx + 2, *idxidx + 1}; \
-			*TR_AT(*indices, StTriangle, *idxbutforthesliceandnotopengl + 2) = (StTriangle){*idxidx, *idxidx + 3, *idxidx + 2}; \
+			*TR_AT(*indices, StTriangle, *idxbutforthesliceandnotopengl + 1) = (StTriangle){*idxidx, *idxidx + 1, *idxidx + 3}; \
+			*TR_AT(*indices, StTriangle, *idxbutforthesliceandnotopengl + 2) = (StTriangle){*idxidx + 1, *idxidx + 2, *idxidx + 3}; \
 			*idxidx += 4; \
 			*idxbutforthesliceandnotopengl += 2; \
 		} while (false)
@@ -307,6 +308,14 @@ static void st_render_chunk(TrVec3i pos)
 	// help
 	TrSlice_StVoxVertex vertices = hmget(st_chunk_vertices, pos);
 	TrSlice_StTriangle indices = hmget(st_chunk_indices, pos);
+
+	// stop fucking crashing
+	if (vertices.length == 0) {
+		st_init_chunk(pos);
+		vertices = hmget(st_chunk_vertices, pos);
+		indices = hmget(st_chunk_indices, pos);
+	}
+
 	size_t vertidx = 0;
 	// TODO a better name
 	size_t idxidx = 0;
@@ -342,10 +351,10 @@ static void st_render_chunk(TrVec3i pos)
 
 	// actually like draw shit
 	if (st_wireframe) {
-		glDrawElements(GL_LINE_LOOP, mesh.indices_len, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_LINE_LOOP, idxidx, GL_UNSIGNED_INT, 0);
 	}
 	else {
-		glDrawElements(GL_TRIANGLES, mesh.indices_len, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, idxidx, GL_UNSIGNED_INT, 0);
 	}
 }
 
