@@ -129,10 +129,10 @@ static void st_init_chunk(TrVec3i pos)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, pos));
 	glEnableVertexAttribArray(0);
 	// facing attribute
-	glVertexAttribPointer(1, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, facing));
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, facing));
 	glEnableVertexAttribArray(1);
 	// color attribute
-	glVertexAttribPointer(2, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, color));
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, color));
 	glEnableVertexAttribArray(2);
 
 	// ebo

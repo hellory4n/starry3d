@@ -36,21 +36,17 @@ layout(std140) uniform palette_block {
 
 void main()
 {
-	FragColor = vec4(1, 0, 0, 1);
-	return;
 	vec4 obj_color = u_palette[out_color];
-	FragColor = obj_color;
-	return;
 
 	vec3 normal;
 	switch (out_facing) {
-		case uint(0):  normal = vec3(-1,  0,  0); break; // west
-		case uint(1):  normal = vec3( 1,  0,  0); break; // east
-		case uint(2):  normal = vec3( 0,  0, -1); break; // north
-		case uint(3):  normal = vec3( 0,  0,  1); break; // south
-		case uint(4):  normal = vec3( 0,  1,  0); break; // up
-		case uint(5):  normal = vec3( 0, -1,  0); break; // down
-		default: normal = vec3( 0,  0,  0); break; // shut up compiler
+		case uint(0): normal = vec3(-1,  0,  0); break; // west
+		case uint(1): normal = vec3( 1,  0,  0); break; // east
+		case uint(2): normal = vec3( 0,  0, -1); break; // north
+		case uint(3): normal = vec3( 0,  0,  1); break; // south
+		case uint(4): normal = vec3( 0,  1,  0); break; // up
+		case uint(5): normal = vec3( 0, -1,  0); break; // down
+		default:      normal = vec3( 0,  0,  0); break; // shut up compiler
 	}
 	vec3 sundir = normalize(u_sun_dir);
 

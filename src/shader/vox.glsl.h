@@ -43,21 +43,17 @@
 	"\n" \
 	"void main()\n" \
 	"{\n" \
-	"\tFragColor = vec4(1, 0, 0, 1);\n" \
-	"\treturn;\n" \
 	"\tvec4 obj_color = u_palette[out_color];\n" \
-	"\tFragColor = obj_color;\n" \
-	"\treturn;\n" \
 	"\n" \
 	"\tvec3 normal;\n" \
 	"\tswitch (out_facing) {\n" \
-	"\t\tcase uint(0):  normal = vec3(-1,  0,  0); break; // west\n" \
-	"\t\tcase uint(1):  normal = vec3( 1,  0,  0); break; // east\n" \
-	"\t\tcase uint(2):  normal = vec3( 0,  0, -1); break; // north\n" \
-	"\t\tcase uint(3):  normal = vec3( 0,  0,  1); break; // south\n" \
-	"\t\tcase uint(4):  normal = vec3( 0,  1,  0); break; // up\n" \
-	"\t\tcase uint(5):  normal = vec3( 0, -1,  0); break; // down\n" \
-	"\t\tdefault: normal = vec3( 0,  0,  0); break; // shut up compiler\n" \
+	"\t\tcase uint(0): normal = vec3(-1,  0,  0); break; // west\n" \
+	"\t\tcase uint(1): normal = vec3( 1,  0,  0); break; // east\n" \
+	"\t\tcase uint(2): normal = vec3( 0,  0, -1); break; // north\n" \
+	"\t\tcase uint(3): normal = vec3( 0,  0,  1); break; // south\n" \
+	"\t\tcase uint(4): normal = vec3( 0,  1,  0); break; // up\n" \
+	"\t\tcase uint(5): normal = vec3( 0, -1,  0); break; // down\n" \
+	"\t\tdefault:      normal = vec3( 0,  0,  0); break; // shut up compiler\n" \
 	"\t}\n" \
 	"\tvec3 sundir = normalize(u_sun_dir);\n" \
 	"\n" \
