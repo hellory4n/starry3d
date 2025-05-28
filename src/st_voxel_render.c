@@ -73,21 +73,23 @@ void st_vox_render_on_palette_update(TrSlice_Color palette)
 		float z;
 		float w;
 	} GlVec4;
-	GlVec4* colors; // TODO we don't need stb_ds for this im just lazy
+
+	TrArena tmp = tr_arena_new(palette.length * sizeof(GlVec4));
+	TrSlice colors = tr_slice_new(&tmp, palette.length, sizeof(GlVec4));
 
 	for (size_t i = 0; i < palette.length; i++) {
 		TrColor intcolor = *TR_AT(palette, TrColor, i);
 		GlVec4 vec4color = {intcolor.r / 255.0f, intcolor.g / 255.0f, intcolor.b / 255.0f, intcolor.a / 255.0f};
-		arrput(colors, vec4color);
+		*TR_AT(colors, GlVec4, i) = vec4color;
 	}
 
 	// send palette to the shader
 	glBindBuffer(GL_UNIFORM_BUFFER, st_palette_ubo);
 	void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
-	memcpy(ptr, colors, arrlen(colors) * sizeof(GlVec4));
+	memcpy(ptr, colors.buffer, colors.length * sizeof(GlVec4));
 	glUnmapBuffer(GL_UNIFORM_BUFFER);
 
-	arrfree(colors);
+	tr_arena_free(&tmp);
 }
 
 static void st_init_chunk(TrVec3i pos)
@@ -124,10 +126,10 @@ static void st_init_chunk(TrVec3i pos)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, pos));
 	glEnableVertexAttribArray(0);
 	// facing attribute
-	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, facing));
+	glVertexAttribPointer(1, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, facing));
 	glEnableVertexAttribArray(1);
 	// color attribute
-	glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, color));
+	glVertexAttribPointer(2, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, color));
 	glEnableVertexAttribArray(2);
 
 	// ebo
@@ -233,9 +235,10 @@ static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_
 			*TR_AT(*vertices, StVoxVertex, (*vertidx)++) = (StVoxVertex){{x, y, z}, face, vox.color};
 
 		#define ST_APPEND_QUAD() do { \
-			*TR_AT(*indices, StTriangle, (*idxbutforthesliceandnotopengl)++) = (StTriangle){*idxidx, *idxidx + 2, *idxidx + 1}; \
-			*TR_AT(*indices, StTriangle, (*idxbutforthesliceandnotopengl)++) = (StTriangle){*idxidx, *idxidx + 3, *idxidx + 2}; \
+			*TR_AT(*indices, StTriangle, *idxbutforthesliceandnotopengl + 1) = (StTriangle){*idxidx, *idxidx + 2, *idxidx + 1}; \
+			*TR_AT(*indices, StTriangle, *idxbutforthesliceandnotopengl + 2) = (StTriangle){*idxidx, *idxidx + 3, *idxidx + 2}; \
 			*idxidx += 4; \
+			*idxbutforthesliceandnotopengl += 2; \
 		} while (false)
 
 		// man

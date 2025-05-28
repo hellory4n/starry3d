@@ -307,14 +307,14 @@ TrVec3f st_screen_to_world_pos(TrVec2f pos)
 	return (TrVec3f){world4[0] / world4[3], world4[1] / world4[3], world4[2] / world4[3]};
 }
 
-static void check_shader(uint32_t obj)
+static void check_shader(uint32_t obj, bool fragment)
 {
 	int32_t success;
 	glGetShaderiv(obj, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		char infolog[512];
 		glGetShaderInfoLog(obj, 512, NULL, infolog);
-		tr_panic("shader compilation error: %s", infolog);
+		tr_panic(fragment ? "failed compiling fragment shader: %s" : "failed compiling vertex shader: %s", infolog);
 	}
 }
 
@@ -325,12 +325,12 @@ StShader st_shader_new(const char* vert, const char* frag)
 	uint32_t vert_shader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vert_shader, 1, &vert, NULL);
 	glCompileShader(vert_shader);
-	check_shader(vert_shader);
+	check_shader(vert_shader, false);
 
 	uint32_t frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(frag_shader, 1, &frag, NULL);
 	glCompileShader(frag_shader);
-	check_shader(frag_shader);
+	check_shader(frag_shader, true);
 
 	shader.program = glCreateProgram();
 	glAttachShader(shader.program, vert_shader);

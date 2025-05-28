@@ -43,9 +43,9 @@ typedef struct {
 		float y;
 		float z;
 	} pos;
-	float facing;
+	uint32_t facing;
 	// Color index
-	float color;
+	uint32_t color;
 } StVoxVertex;
 
 typedef struct {
