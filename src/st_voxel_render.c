@@ -220,7 +220,7 @@ static void st_update_shader(void)
 }
 
 static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_StTriangle* indices,
-	size_t* vertidx, size_t* idxidx, size_t* idxbutforthesliceandnotopengl)
+	size_t* vertidx, size_t* tris, size_t* idxidx, size_t* idxlen)
 {
 	StBlockId id = hmget(st_blocks, pos);
 	StVoxModelMap* voxels = hmget(st_block_types, id);
@@ -240,10 +240,11 @@ static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_
 				Z + pos.z + (pos.z / ST_CHUNK_SIZE)}, Face, vox.color};
 
 		#define ST_APPEND_QUAD() do { \
-			*TR_AT(*indices, StTriangle, *idxbutforthesliceandnotopengl + 1) = (StTriangle){*idxidx, *idxidx + 1, *idxidx + 3}; \
-			*TR_AT(*indices, StTriangle, *idxbutforthesliceandnotopengl + 2) = (StTriangle){*idxidx + 1, *idxidx + 2, *idxidx + 3}; \
-			*idxidx += 4; \
-			*idxbutforthesliceandnotopengl += 2; \
+			*TR_AT(*indices, StTriangle, *idxidx) = (StTriangle){*tris, *tris + 2, *tris + 1}; \
+			*TR_AT(*indices, StTriangle, *idxidx + 1) = (StTriangle){*tris, *tris + 3, *tris + 2}; \
+			*tris += 4; \
+			*idxidx += 2; \
+			*idxlen += 6; \
 		} while (false)
 
 		// man
@@ -318,8 +319,9 @@ static void st_render_chunk(TrVec3i pos)
 
 	size_t vertidx = 0;
 	// TODO a better name
+	size_t tris = 0;
 	size_t idxidx = 0;
-	size_t idxbutforthesliceandnotopengl = 0;
+	size_t idxlen = 0;
 
 	// get all the blocks in the chunk
 	StCamera cam = st_camera();
@@ -330,7 +332,7 @@ static void st_render_chunk(TrVec3i pos)
 	for (int64_t x = render_start.x; x < render_end.x; x++) {
 		for (int64_t y = render_start.y; y < render_end.y; y++) {
 			for (int64_t z = render_start.z; z < render_end.z; z++) {
-				st_render_block((TrVec3i){x, y, z}, &vertices, &indices, &vertidx, &idxidx, &idxbutforthesliceandnotopengl);
+				st_render_block((TrVec3i){x, y, z}, &vertices, &indices, &vertidx, &tris, &idxidx, &idxlen);
 			}
 		}
 	}
@@ -351,10 +353,10 @@ static void st_render_chunk(TrVec3i pos)
 
 	// actually like draw shit
 	if (st_wireframe) {
-		glDrawElements(GL_LINE_LOOP, idxidx, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_LINE_LOOP, idxlen, GL_UNSIGNED_INT, 0);
 	}
 	else {
-		glDrawElements(GL_TRIANGLES, idxidx, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, idxlen, GL_UNSIGNED_INT, 0);
 	}
 }
 
