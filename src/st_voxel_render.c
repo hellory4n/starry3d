@@ -33,6 +33,7 @@
 typedef struct {TrVec3i key; uint8_t value;} StVoxModelMap;
 extern struct {StBlockId key; StVoxModelMap* value;}* st_block_types;
 extern struct {TrVec3i key; StBlockId value;}* st_blocks;
+extern bool st_wireframe;
 
 static struct {TrVec3i key; TrArena value;}* st_chunk_arenas;
 static struct {TrVec3i key; TrSlice_StVoxVertex value;}* st_chunk_vertices;
@@ -231,8 +232,10 @@ static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_
 		};
 
 		// my sincerest apologies
-		#define ST_APPEND_VERT(x, y, z, face) \
-			*TR_AT(*vertices, StVoxVertex, (*vertidx)++) = (StVoxVertex){{x, y, z}, face, vox.color};
+		#define ST_APPEND_VERT(X, Y, Z, Face) \
+			*TR_AT(*vertices, StVoxVertex, (*vertidx)++) = \
+				(StVoxVertex){{X + (pos.x / ST_CHUNK_SIZE), Y + (pos.y / ST_CHUNK_SIZE), \
+				Z + (pos.z / ST_CHUNK_SIZE)}, Face, vox.color};
 
 		#define ST_APPEND_QUAD() do { \
 			*TR_AT(*indices, StTriangle, *idxbutforthesliceandnotopengl + 1) = (StTriangle){*idxidx, *idxidx + 2, *idxidx + 1}; \
@@ -258,10 +261,10 @@ static void st_render_chunk(TrVec3i pos)
 	// help
 	TrSlice_StVoxVertex vertices = hmget(st_chunk_vertices, pos);
 	TrSlice_StTriangle indices = hmget(st_chunk_indices, pos);
-	size_t vertidx;
+	size_t vertidx = 0;
 	// TODO a better name
-	size_t idxidx;
-	size_t idxbutforthesliceandnotopengl;
+	size_t idxidx = 0;
+	size_t idxbutforthesliceandnotopengl = 0;
 
 	// get all the blocks in the chunk
 	StCamera cam = st_camera();
@@ -275,6 +278,28 @@ static void st_render_chunk(TrVec3i pos)
 				st_render_block((TrVec3i){x, y, z}, &vertices, &indices, &vertidx, &idxidx, &idxbutforthesliceandnotopengl);
 			}
 		}
+	}
+
+	StVoxMesh mesh = hmget(st_chunk_meshes, pos);
+	glBindVertexArray(mesh.vao);
+
+	// send new data
+	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+	void* ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+	memcpy(ptr, vertices.buffer, vertices.length * vertices.elem_size);
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+	ptr = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	memcpy(ptr, indices.buffer, indices.length * indices.elem_size);
+	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+
+	// actually like draw shit
+	if (st_wireframe) {
+		glDrawElements(GL_LINE_LOOP, mesh.indices_len, GL_UNSIGNED_INT, 0);
+	}
+	else {
+		glDrawElements(GL_TRIANGLES, mesh.indices_len, GL_UNSIGNED_INT, 0);
 	}
 }
 
@@ -296,4 +321,7 @@ void st_vox_draw(void)
 	// TODO this is where the render distance goes
 	TrVec3i chunk_pos = TR_V3_SDIV(cam.position, ST_CHUNK_SIZE);
 	st_render_chunk(chunk_pos);
+
+	// unbind vao
+	glBindVertexArray(0);
 }

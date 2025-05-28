@@ -32,11 +32,11 @@
 #include "st_render.h"
 #include "shader/light.glsl.h"
 
-static StShader st_default_shader;
-static bool st_wireframe;
-static StCamera st_cam;
-static StEnvironment st_env;
-static StCullFace st_cur_cull_face;
+StShader st_default_shader;
+bool st_wireframe;
+StCamera st_cam;
+StEnvironment st_env;
+StCullFace st_cur_cull_face;
 
 void st_render_init(void)
 {
