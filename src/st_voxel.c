@@ -37,7 +37,7 @@ static TrArena st_arena;
 
 // shared with st_voxel_render.c
 typedef struct {TrVec3i key; uint8_t value;} StVoxModelMap;
-TrSlice_Color st_palette;
+static TrSlice_Color st_palette;
 struct {StBlockId key; StVoxModelMap* value;}* st_block_types;
 struct {TrVec3i key; StBlockId value;}* st_blocks;
 

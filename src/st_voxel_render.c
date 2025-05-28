@@ -31,7 +31,6 @@
 
 // man
 typedef struct {TrVec3i key; uint8_t value;} StVoxModelMap;
-extern TrSlice_Color st_palette;
 extern struct {StBlockId key; StVoxModelMap* value;}* st_block_types;
 extern struct {TrVec3i key; StBlockId value;}* st_blocks;
 
@@ -41,11 +40,22 @@ static struct {TrVec3i key; TrSlice_StTriangle value;}* st_chunk_indices;
 static struct {TrVec3i key; StVoxMesh value;}* st_chunk_meshes;
 
 static StShader st_vox_shader;
+static uint32_t st_palette_ubo;
 
 void st_vox_render_init(void)
 {
 	// shadema
 	st_vox_shader = st_shader_new(ST_VOX_SHADER_VERTEX, ST_VOX_SHADER_FRAGMENT);
+
+	// setup ubo for the palette
+	uint32_t ubo;
+	glGenBuffers(1, &ubo);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
+	glBufferData(GL_UNIFORM_BUFFER, 256 * sizeof(float) * 4, NULL, GL_DYNAMIC_DRAW);
+
+	uint32_t loc = glGetUniformBlockIndex(st_vox_shader.program, "palette_block");
+	glUniformBlockBinding(st_vox_shader.program, loc, 0);
+	st_palette_ubo = ubo;
 }
 
 void st_vox_render_free(void)
@@ -55,7 +65,29 @@ void st_vox_render_free(void)
 
 void st_vox_render_on_palette_update(TrSlice_Color palette)
 {
+	// convert the 4 byte colors to vec4s
+	// TrVec4f uses doubles so it doesn't work :)
+	typedef struct {
+		float x;
+		float y;
+		float z;
+		float w;
+	} GlVec4;
+	GlVec4* colors; // TODO we don't need stb_ds for this im just lazy
+
+	for (size_t i = 0; i < palette.length; i++) {
+		TrColor intcolor = *TR_AT(palette, TrColor, i);
+		GlVec4 vec4color = {intcolor.r / 255.0f, intcolor.g / 255.0f, intcolor.b / 255.0f, intcolor.a / 255.0f};
+		arrput(colors, vec4color);
+	}
+
 	// send palette to the shader
+	glBindBuffer(GL_UNIFORM_BUFFER, st_palette_ubo);
+	void* ptr = glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	memcpy(ptr, colors, arrlen(colors) * sizeof(GlVec4));
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
+
+	arrfree(colors);
 }
 
 static void st_init_chunk(TrVec3i pos)
@@ -182,8 +214,41 @@ static void st_update_shader(void)
 	st_shader_set_vec3f(st_vox_shader, "u_sun_dir", env.sun.direction);
 }
 
-static void st_render_block(TrVec3i pos)
-{}
+static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_StTriangle* indices,
+	size_t* vertidx, size_t* idxidx, size_t* idxbutforthesliceandnotopengl)
+{
+	StBlockId id = hmget(st_blocks, pos);
+	StVoxModelMap* voxels = hmget(st_block_types, id);
+
+	for (int64_t i = 0; i < hmlen(voxels); i++) {
+		StPackedVoxel vox = {
+			.x = voxels[i].key.x,
+			.y = voxels[i].key.y,
+			.z = voxels[i].key.z,
+			.color = voxels[i].value
+		};
+
+		// my sincerest apologies
+		#define ST_APPEND_VERT(x, y, z, face) \
+			*TR_AT(*vertices, StVoxVertex, (*vertidx)++) = (StVoxVertex){{x, y, z}, face, vox.color};
+
+		#define ST_APPEND_QUAD() do { \
+			*TR_AT(*indices, StTriangle, (*idxbutforthesliceandnotopengl)++) = (StTriangle){*idxidx, *idxidx + 2, *idxidx + 1}; \
+			*TR_AT(*indices, StTriangle, (*idxbutforthesliceandnotopengl)++) = (StTriangle){*idxidx, *idxidx + 3, *idxidx + 2}; \
+			*idxidx += 4; \
+		} while (false)
+
+		// man
+		TrVec3i top = {vox.x, vox.y + 1, vox.z};
+		if (hmget(voxels, top) == ST_COLOR_TRANSPARENT) {
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_UP);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_UP);
+			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_UP);
+			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOXEL_SIZE);
+			ST_APPEND_QUAD();
+		}
+	}
+}
 
 static void st_render_chunk(TrVec3i pos)
 {
@@ -191,13 +256,23 @@ static void st_render_chunk(TrVec3i pos)
 	TrSlice_StVoxVertex vertices = hmget(st_chunk_vertices, pos);
 	TrSlice_StTriangle indices = hmget(st_chunk_indices, pos);
 	size_t vertidx;
-	size_t idxidx; // TODO a better name
+	// TODO a better name
+	size_t idxidx;
+	size_t idxbutforthesliceandnotopengl;
 
 	// get all the blocks in the chunk
 	StCamera cam = st_camera();
 	TrVec3i tmp = {ST_CHUNK_SIZE, ST_CHUNK_SIZE, ST_CHUNK_SIZE};
 	TrVec3i render_start = TR_V3_SUB(cam.position, tmp);
 	TrVec3i render_end = TR_V3_ADD(cam.position, tmp);
+
+	for (int64_t x = render_start.x; x < render_end.x; x++) {
+		for (int64_t y = render_start.y; y < render_end.y; y++) {
+			for (int64_t z = render_start.z; z < render_end.z; z++) {
+				st_render_block((TrVec3i){x, y, z}, &vertices, &indices, &vertidx, &idxidx, &idxbutforthesliceandnotopengl);
+			}
+		}
+	}
 }
 
 void st_vox_draw(void)

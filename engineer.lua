@@ -95,6 +95,7 @@ function starry3d.lib(debug, starrydir, platform)
 		starrydir.."/src/st_render.c",
 		starrydir.."/src/st_ui.c",
 		starrydir.."/src/st_voxel.c",
+		starrydir.."/src/st_voxel_render.c",
 		starrydir.."/src/st_window.c",
 	})
 
