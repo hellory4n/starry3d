@@ -39,13 +39,18 @@ typedef enum {
 
 typedef struct {
 	struct {
-		float x;
-		float y;
-		float z;
-	} pos;
-	uint32_t facing;
+		uint8_t x;
+		uint8_t y;
+		uint8_t z;
+	} model;
+	struct {
+		uint8_t x;
+		uint8_t y;
+		uint8_t z;
+	} block;
+	uint8_t facing;
 	// Color index
-	uint32_t color;
+	uint8_t color;
 } StVoxVertex;
 
 typedef struct {

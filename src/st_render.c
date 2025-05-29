@@ -366,6 +366,11 @@ void st_shader_use(StShader shader)
 	glUseProgram(shader.program);
 }
 
+void st_shader_stop_using(void)
+{
+	st_shader_use(st_default_shader);
+}
+
 void st_shader_set_bool(StShader shader, const char* name, bool val)
 {
 	st_shader_use(shader);

@@ -7,19 +7,41 @@
 #define ST_VOX_SHADER_VERTEX \
 	"#version 330 core\n" \
 	"\n" \
-	"layout (location = 0) in vec3 pos;\n" \
-	"layout (location = 1) in uint facing;\n" \
-	"layout (location = 2) in uint color;\n" \
+	"// glsl doesnt have a byte type\n" \
+	"layout (location = 0) in uint low;\n" \
+	"layout (location = 1) in uint high;\n" \
 	"\n" \
 	"uniform mat4 u_view;\n" \
 	"uniform mat4 u_proj;\n" \
+	"uniform ivec3 u_chunk_pos;\n" \
+	"uniform vec2 u_limits; // x is voxel size, y is chunk size\n" \
 	"\n" \
 	"flat out uint out_facing;\n" \
 	"flat out uint out_color;\n" \
 	"\n" \
 	"void main()\n" \
 	"{\n" \
+	"\tfloat voxel_size = u_limits.x;\n" \
+	"\tfloat chunk_size = u_limits.y;\n" \
+	"\n" \
+	"\t// glsl doesn't have a byte type\n" \
+	"\t// so we have to do evil bit fuckery to get our crap back\n" \
+	"\tivec3 model = ivec3(\n" \
+	"\t\t(low >>  0u) & 0xFFu,\n" \
+	"\t\t(low >>  8u) & 0xFFu,\n" \
+	"\t\t(low >> 16u) & 0xFFu\n" \
+	"\t);\n" \
+	"\tivec3 block = ivec3(\n" \
+	"\t\t(low  >> 24u) & 0xFFu,\n" \
+	"\t\t(high >>  0u) & 0xFFu,\n" \
+	"\t\t(high >>  8u) & 0xFFu\n" \
+	"\t);\n" \
+	"\tuint facing = (high >> 16u) & 0xFFu;\n" \
+	"\tuint color  = (high >> 24u) & 0xFFu;\n" \
+	"\n" \
+	"\tvec3 pos = (vec3(model) / voxel_size) + vec3(block) + (vec3(block) / chunk_size);\n" \
 	"\tgl_Position = u_proj * u_view * vec4(pos, 1.0);\n" \
+	"\n" \
 	"\tout_facing = facing;\n" \
 	"\tout_color = color;\n" \
 	"}\n" \
@@ -45,20 +67,22 @@
 	"{\n" \
 	"\tvec4 obj_color = u_palette[out_color];\n" \
 	"\n" \
-	"\tvec3 normal;\n" \
-	"\tswitch (out_facing) {\n" \
-	"\t\tcase uint(0): normal = vec3(-1,  0,  0); break; // west\n" \
-	"\t\tcase uint(1): normal = vec3( 1,  0,  0); break; // east\n" \
-	"\t\tcase uint(2): normal = vec3( 0,  0, -1); break; // north\n" \
-	"\t\tcase uint(3): normal = vec3( 0,  0,  1); break; // south\n" \
-	"\t\tcase uint(4): normal = vec3( 0,  1,  0); break; // up\n" \
-	"\t\tcase uint(5): normal = vec3( 0, -1,  0); break; // down\n" \
-	"\t\tdefault:      normal = vec3( 0,  0,  0); break; // shut up compiler\n" \
-	"\t}\n" \
+	"\tvec3 normals[6] = vec3[6](\n" \
+	"\t\tvec3(-1,  0,  0),\n" \
+	"\t\tvec3( 1,  0,  0),\n" \
+	"\t\tvec3( 0,  0, -1),\n" \
+	"\t\tvec3( 0,  0,  1),\n" \
+	"\t\tvec3( 0,  1,  0),\n" \
+	"\t\tvec3( 0, -1,  0)\n" \
+	"\t);\n" \
+	"\tvec3 normal = normals[out_facing];\n" \
 	"\tvec3 sundir = normalize(u_sun_dir);\n" \
 	"\n" \
 	"\tfloat diff = max(dot(normal, sundir), 0.0);\n" \
-	"\tFragColor = vec4(obj_color.rgb * ((u_ambient * u_sun_color) + diff * (1.0 - u_ambient * u_sun_color)), obj_color.a);\n" \
+	"\tFragColor = vec4(\n" \
+	"\t\tobj_color.rgb * ((u_ambient * u_sun_color) + diff * (1.0 - u_ambient * u_sun_color)),\n" \
+	"\t\tobj_color.a\n" \
+	"\t);\n" \
 	"}\n" \
 
 #endif

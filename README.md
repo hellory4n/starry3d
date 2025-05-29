@@ -20,11 +20,45 @@
 - 2D support is nearly non-existent
 - Currently only Windows and Linux supported
     - macOS support is possible but I don't have a Mac
-    - WebGL support is also possible but I don't really care about that, so I didn't implement that
-    - Only tested on Clang and GCC, I don't know if MSVC works
+    - WebGL support is also possible but I don't care about that enough to support it
+    - Only tested on Clang and GCC, getting it to compile with MSVC/Visual Studio would take some work
     - I don't want to torture myself with Android just yet
-- You do have to install the usual GLFW/OpenGL dependencies on Linux (see the usage section)
-- I haven't implemented those fancy optimizations yet
+
+## Features coming soon™ (never)
+
+- Physics
+- Particles
+- Networking
+- More platforms
+- Decent 2D
+- Better rendering API
+- Consider not using OpenGL (coming in 2054)
+
+## Building
+
+### Windows
+
+I have no idea just install WSL lmao
+
+### Linux
+
+You need these installed:
+- git
+- gcc or clang
+- lua
+- cmake
+- make
+- X11 and wayland packages (it depends on your distro)
+- mingw64-gcc (optional)
+
+After cloning the repo you should be able to just run:
+
+```sh
+# see what options you can use
+./engineer help
+# actually build
+./engineer build
+```
 
 ## Usage
 

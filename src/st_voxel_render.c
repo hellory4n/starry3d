@@ -57,6 +57,9 @@ void st_vox_render_init(void)
 	uint32_t loc = glGetUniformBlockIndex(st_vox_shader.program, "palette_block");
 	glUniformBlockBinding(st_vox_shader.program, loc, 0);
 	st_palette_ubo = ubo;
+
+	// macros will never change at runtime so this doesn't need to run every frame
+	st_shader_set_vec2f(st_vox_shader, "u_limits", (TrVec2f){ST_VOXEL_SIZE, ST_CHUNK_SIZE});
 }
 
 void st_vox_render_free(void)
@@ -101,7 +104,7 @@ static void st_init_chunk(TrVec3i pos)
 	const size_t vertlen = 4 * 6 * 16 * 16 * 16 * 16 * 16;
 	// 2 triangles for a quad, 6 faces for a cube, 16*16*16*16*16 again
 	const size_t idxlen = 2 * 6 * 16 * 16 * 16 * 16 * 16;
-	const size_t bufsize = (vertlen * sizeof(int32_t)) + (idxlen * sizeof(StTriangle));
+	const size_t bufsize = (vertlen * sizeof(int64_t)) + (idxlen * sizeof(StTriangle));
 
 	TrArena arenama = tr_arena_new(bufsize);
 	TrSlice_StVoxVertex vertices = tr_slice_new(&arenama, vertlen, sizeof(StVoxVertex));
@@ -125,15 +128,13 @@ static void st_init_chunk(TrVec3i pos)
 	// null makes it so it just allocates vram for future use
 	glBufferData(GL_ARRAY_BUFFER, vertlen * sizeof(StVertex), NULL, GL_DYNAMIC_DRAW);
 
-	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, pos));
+	// glsl doesn't have a byte type
+	// evil bit fuckery is done in the shader
+	glVertexAttribIPointer(0, 3, GL_UNSIGNED_INT, sizeof(StVoxVertex), (void*)0);
 	glEnableVertexAttribArray(0);
-	// facing attribute
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, facing));
+
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(StVoxVertex), (void*)4);
 	glEnableVertexAttribArray(1);
-	// color attribute
-	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(StVoxVertex), (void*)offsetof(StVoxVertex, color));
-	glEnableVertexAttribArray(2);
 
 	// ebo
 	glGenBuffers(1, &mesh.ebo);
@@ -236,8 +237,7 @@ static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_
 		// my sincerest apologies
 		#define ST_APPEND_VERT(X, Y, Z, Face) \
 			*TR_AT(*vertices, StVoxVertex, (*vertidx)++) = \
-				(StVoxVertex){{X + pos.x + (pos.x / ST_CHUNK_SIZE), Y + pos.y + (pos.y / ST_CHUNK_SIZE), \
-				Z + pos.z + (pos.z / ST_CHUNK_SIZE)}, Face, vox.color};
+				(StVoxVertex){{X, Y, Z}, {pos.x, pos.y, pos.z}, Face, vox.color};
 
 		#define ST_APPEND_QUAD() do { \
 			*TR_AT(*indices, StTriangle, *idxidx) = (StTriangle){*tris, *tris + 2, *tris + 1}; \
@@ -250,55 +250,55 @@ static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_
 		// man
 		TrVec3i top = {vox.x, vox.y + 1, vox.z};
 		if (hmget(voxels, top) == ST_COLOR_TRANSPARENT) {
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_UP);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_UP);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_UP);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOXEL_SIZE);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z + 1, ST_VOX_FACE_UP);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z + 1, ST_VOX_FACE_UP);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z, ST_VOX_FACE_UP);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z, ST_VOX_FACE_UP);
 			ST_APPEND_QUAD();
 		}
 
 		TrVec3i left = {vox.x - 1, vox.y, vox.z};
 		if (hmget(voxels, left) == ST_COLOR_TRANSPARENT) {
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_WEST);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_WEST);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_WEST);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_WEST);
+			ST_APPEND_VERT(vox.x, vox.y, vox.z, ST_VOX_FACE_WEST);
+			ST_APPEND_VERT(vox.x, vox.y, vox.z + 1, ST_VOX_FACE_WEST);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z + 1, ST_VOX_FACE_WEST);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z, ST_VOX_FACE_WEST);
 			ST_APPEND_QUAD();
 		}
 
 		TrVec3i right = {vox.x + 1, vox.y, vox.z};
 		if (hmget(voxels, right) == ST_COLOR_TRANSPARENT) {
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_EAST);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_EAST);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_EAST);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z + 1, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z + 1, ST_VOX_FACE_EAST);
 			ST_APPEND_QUAD();
 		}
 
 		TrVec3i bottom = {vox.x, vox.y - 1, vox.z};
 		if (hmget(voxels, bottom) == ST_COLOR_TRANSPARENT) {
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_DOWN);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_DOWN);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_DOWN);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_DOWN);
+			ST_APPEND_VERT(vox.x, vox.y, vox.z, ST_VOX_FACE_DOWN);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z, ST_VOX_FACE_DOWN);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z + 1, ST_VOX_FACE_DOWN);
+			ST_APPEND_VERT(vox.x, vox.y, vox.z + 1, ST_VOX_FACE_DOWN);
 			ST_APPEND_QUAD();
 		}
 
 		TrVec3i front = {vox.x, vox.y, vox.z + 1};
 		if (hmget(voxels, front) == ST_COLOR_TRANSPARENT) {
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_NORTH);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_NORTH);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_NORTH);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, (vox.z + 1) / ST_VOXEL_SIZE, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT(vox.x, vox.y, vox.z + 1, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z + 1, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z + 1, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z + 1, ST_VOX_FACE_NORTH);
 			ST_APPEND_QUAD();
 		}
 
 		TrVec3i back = {vox.x, vox.y, vox.z - 1};
 		if (hmget(voxels, back) == ST_COLOR_TRANSPARENT) {
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_SOUTH);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, vox.y / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_SOUTH);
-			ST_APPEND_VERT(vox.x / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_SOUTH);
-			ST_APPEND_VERT((vox.x + 1) / ST_VOXEL_SIZE, (vox.y + 1) / ST_VOXEL_SIZE, vox.z / ST_VOXEL_SIZE, ST_VOX_FACE_SOUTH);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z, ST_VOX_FACE_SOUTH);
+			ST_APPEND_VERT(vox.x, vox.y, vox.z, ST_VOX_FACE_SOUTH);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z, ST_VOX_FACE_SOUTH);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z, ST_VOX_FACE_SOUTH);
 			ST_APPEND_QUAD();
 		}
 	}
@@ -306,6 +306,9 @@ static void st_render_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_
 
 static void st_render_chunk(TrVec3i pos)
 {
+	// TODO this is an int32, it'll annoy me at some point
+	st_shader_set_vec3i(st_vox_shader, "u_chunk_pos", pos);
+
 	// help
 	TrSlice_StVoxVertex vertices = hmget(st_chunk_vertices, pos);
 	TrSlice_StTriangle indices = hmget(st_chunk_indices, pos);
@@ -362,6 +365,7 @@ static void st_render_chunk(TrVec3i pos)
 
 void st_vox_draw(void)
 {
+	st_shader_use(st_vox_shader);
 	st_auto_chunkomator();
 
 	StCamera cam = st_camera();
@@ -381,4 +385,5 @@ void st_vox_draw(void)
 
 	// unbind vao
 	glBindVertexArray(0);
+	st_shader_stop_using();
 }
