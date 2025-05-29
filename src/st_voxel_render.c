@@ -101,7 +101,7 @@ static void st_init_chunk(TrVec3i pos)
 	const size_t vertlen = 4 * 6 * 16 * 16 * 16 * 16 * 16;
 	// 2 triangles for a quad, 6 faces for a cube, 16*16*16*16*16 again
 	const size_t idxlen = 2 * 6 * 16 * 16 * 16 * 16 * 16;
-	const size_t bufsize = (vertlen * sizeof(StVoxVertex)) + (idxlen * sizeof(StTriangle));
+	const size_t bufsize = (vertlen * sizeof(int32_t)) + (idxlen * sizeof(StTriangle));
 
 	TrArena arenama = tr_arena_new(bufsize);
 	TrSlice_StVoxVertex vertices = tr_slice_new(&arenama, vertlen, sizeof(StVoxVertex));
