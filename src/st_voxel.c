@@ -39,6 +39,7 @@ static TrArena st_arena;
 typedef struct {TrVec3i key; uint8_t value;} StVoxModelMap;
 static TrSlice_Color st_palette;
 struct {StBlockId key; StVoxModelMap* value;}* st_block_types;
+struct {StBlockId key; StVoxModel value;}* st_block_models;
 struct {TrVec3i key; StBlockId value;}* st_blocks;
 
 void st_vox_init(void)
@@ -241,6 +242,7 @@ void st_register_block(uint16_t group, uint16_t block, const char* path)
 
 	StBlockId id = {group, block};
 	hmput(st_block_types, id, voxels);
+	hmput(st_block_models, id, model);
 	tr_liblog("registered block type %i:%i (from %s)", group, block, path);
 }
 
