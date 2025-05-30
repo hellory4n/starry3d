@@ -57,7 +57,8 @@ typedef struct {
 	uint32_t vao;
 	uint32_t vbo;
 	uint32_t ebo;
-	uint32_t indices_len;
+	uint32_t idxlen;
+	bool new_this_frame;
 } StVoxMesh;
 
 typedef TrSlice TrSlice_StVoxVertex;
@@ -68,6 +69,8 @@ void st_vox_render_init(void);
 void st_vox_render_free(void);
 // internal
 void st_vox_render_on_palette_update(TrSlice_Color palette);
+// internal
+void st_vox_render_on_chunk_update(TrVec3i pos);
 
 // Renders every block ever.
 void st_vox_draw(void);

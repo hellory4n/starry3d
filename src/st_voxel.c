@@ -276,6 +276,8 @@ void st_place_block(uint16_t group, uint16_t block, TrVec3i pos)
 
 	StBlockId sir = {group, block};
 	hmput(st_blocks, pos, sir);
+
+	st_vox_render_on_chunk_update((TrVec3i)TR_V3_SDIV(pos, ST_CHUNK_SIZE));
 }
 
 bool st_break_block(TrVec3i pos)
@@ -283,6 +285,8 @@ bool st_break_block(TrVec3i pos)
 	if (!st_has_block(pos)) {
 		return false;
 	}
+
 	hmdel(st_blocks, pos);
+	st_vox_render_on_chunk_update((TrVec3i)TR_V3_SDIV(pos, ST_CHUNK_SIZE));
 	return true;
 }

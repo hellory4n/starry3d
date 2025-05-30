@@ -137,9 +137,18 @@ static void sb_game_update(void)
 
 	// the cube of horror is optional
 	if (st_is_key_just_pressed(ST_KEY_F2)) {
-		for (int64_t x = -32; x < 32; x++) {
-			for (int64_t y = -32; y < 32; y++) {
-				for (int64_t z = -32; z < 32; z++) {
+		for (int64_t x = 0; x < 16; x++) {
+			for (int64_t y = 0; y < 16; y++) {
+				for (int64_t z = 0; z < 16; z++) {
+					st_place_block(1, 0, (TrVec3i){x, y, z});
+				}
+			}
+		}
+	}
+	if (st_is_key_just_pressed(ST_KEY_SPACE)) {
+		for (int64_t x = 16; x < 32; x++) {
+			for (int64_t y = 0; y < 16; y++) {
+				for (int64_t z = 0; z < 16; z++) {
 					st_place_block(1, 0, (TrVec3i){x, y, z});
 				}
 			}

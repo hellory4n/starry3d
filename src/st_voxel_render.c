@@ -23,7 +23,6 @@
 #include <glad/gl.h>
 #include <stb_ds.h>
 #include <linmath.h>
-#include "st_common.h"
 #include "st_window.h"
 #include "st_render.h"
 #include "st_voxel.h"
@@ -104,9 +103,9 @@ static void st_init_chunk(TrVec3i pos)
 	// 4 for a face, 6 faces for a cube, 16x16x16 for 3D, 16 for a chunk, 2 bcuz it was going out of bounds
 	// for some reason
 	// TODO maybe 2 still isn't enough?
-	const size_t vertlen = 4 * 6 * 16 * 16 * 16 * 16 * 2;
+	const size_t vertlen = 4 * 6 * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * 2;
 	// 2 triangles for a quad, 6 faces for a cube, 16*16*16*16 again, 2 again
-	const size_t idxlen = 2 * 6 * 16 * 16 * 16 * 16 * 2;
+	const size_t idxlen = 2 * 6 * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * 2;
 	const size_t bufsize = (vertlen * sizeof(StVoxVertex)) + (idxlen * sizeof(StTriangle));
 
 	TrArena arenama = tr_arena_new(bufsize);
@@ -119,7 +118,7 @@ static void st_init_chunk(TrVec3i pos)
 
 	// setup meshes
 	StVoxMesh mesh = {
-		.indices_len = indices.length * 3,
+		.new_this_frame = false,
 	};
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
@@ -223,53 +222,11 @@ static void st_update_shader(void)
 	st_shader_set_vec3f(st_vox_shader, "u_sun_dir", env.sun.direction);
 }
 
-static void st_render_block(StFrustum frustum, TrVec3i pos, TrSlice_StVoxVertex* vertices,
-	TrSlice_StTriangle* indices, size_t* vertidx, size_t* tris, size_t* idxidx, size_t* idxlen)
+static void st_update_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_StTriangle* indices,
+	size_t* vertidx, size_t* tris, size_t* idxidx, size_t* idxlen)
 {
 	StBlockId id = hmget(st_blocks, pos);
 	StVoxModelMap* voxels = hmget(st_block_types, id);
-
-	// some frustum culling crap
-	TrVec3f chunk_pos = TR_V3_SDIV(pos, ST_CHUNK_SIZE);
-	StVoxModel model = hmget(st_block_models, id);
-	TrVec3f block_center = {model.dimensions.x / 2.0f, model.dimensions.y / 2.0f, model.dimensions.z / 2.0f};
-	TrVec3f world_center = TR_V3_ADD(chunk_pos, (TrVec3f)TR_V3_ADD(pos, block_center));
-	double radius = sqrt(
-		(model.dimensions.x * 0.5f) * (model.dimensions.x * 0.5f) +
-		(model.dimensions.y * 0.5f) * (model.dimensions.y * 0.5f) +
-		(model.dimensions.z * 0.5f) * (model.dimensions.z * 0.5f)
-	);
-
-	// help
-	double dot_left = frustum.left.normal.x * world_center.x + frustum.left.normal.y * world_center.y +
-		frustum.left.normal.z * world_center.z;
-	double distance_left = dot_left + frustum.left.distance;
-	if (distance_left < -radius) return;
-
-	double dot_right = frustum.right.normal.x * world_center.x + frustum.right.normal.y * world_center.y +
-		frustum.right.normal.z * world_center.z;
-	double distance_right = dot_right + frustum.right.distance;
-	if (distance_right < -radius) return;
-
-	double dot_top = frustum.top.normal.x * world_center.x + frustum.top.normal.y * world_center.y +
-		frustum.top.normal.z * world_center.z;
-	double distance_top = dot_top + frustum.top.distance;
-	if (distance_top < -radius) return;
-
-	double dot_bottom = frustum.bottom.normal.x * world_center.x + frustum.bottom.normal.y * world_center.y +
-		frustum.bottom.normal.z * world_center.z;
-	double distance_bottom = dot_bottom + frustum.bottom.distance;
-	if (distance_bottom < -radius) return;
-
-	double dot_near = frustum.near.normal.x * world_center.x + frustum.near.normal.y * world_center.y +
-		frustum.near.normal.z * world_center.z;
-	double distance_near = dot_near + frustum.near.distance;
-	if (distance_near < -radius) return;
-
-	double dot_far = frustum.far.normal.x * world_center.x + frustum.far.normal.y * world_center.y +
-		frustum.far.normal.z * world_center.z;
-	double distance_far = dot_far + frustum.far.distance;
-	if (distance_far < -radius) return;
 
 	// actually render
 	for (int64_t i = 0; i < hmlen(voxels); i++) {
@@ -350,20 +307,14 @@ static void st_render_block(StFrustum frustum, TrVec3i pos, TrSlice_StVoxVertex*
 	}
 }
 
-static void st_render_chunk(TrVec3i pos, StFrustum frustum)
+static void st_update_chunk(TrVec3i pos)
 {
-	// TODO this is an int32, it'll annoy me at some point
-	st_shader_set_vec3i(st_vox_shader, "u_chunk_pos", pos);
-
 	// help
 	TrSlice_StVoxVertex vertices = hmget(st_chunk_vertices, pos);
 	TrSlice_StTriangle indices = hmget(st_chunk_indices, pos);
 
 	// stop fucking crashing
 	if (vertices.buffer == NULL) {
-		st_init_chunk(pos);
-		vertices = hmget(st_chunk_vertices, pos);
-		indices = hmget(st_chunk_indices, pos);
 		return;
 	}
 
@@ -382,7 +333,7 @@ static void st_render_chunk(TrVec3i pos, StFrustum frustum)
 	for (int64_t x = render_start.x; x < render_end.x; x++) {
 		for (int64_t y = render_start.y; y < render_end.y; y++) {
 			for (int64_t z = render_start.z; z < render_end.z; z++) {
-				st_render_block(frustum, (TrVec3i){x, y, z}, &vertices, &indices,
+				st_update_block((TrVec3i){x, y, z}, &vertices, &indices,
 					&vertidx, &tris, &idxidx, &idxlen);
 			}
 		}
@@ -390,6 +341,9 @@ static void st_render_chunk(TrVec3i pos, StFrustum frustum)
 	// st_benchmark_end(bma);
 
 	StVoxMesh mesh = hmget(st_chunk_meshes, pos);
+	mesh.idxlen = idxlen;
+	mesh.new_this_frame = false;
+	hmput(st_chunk_meshes, pos, mesh);
 	glBindVertexArray(mesh.vao);
 
 	// send new data
@@ -402,13 +356,30 @@ static void st_render_chunk(TrVec3i pos, StFrustum frustum)
 	ptr = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	memcpy(ptr, indices.buffer, indices.length * indices.elem_size);
 	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+}
 
-	// actually like draw shit
+void st_vox_render_on_chunk_update(TrVec3i pos)
+{
+	StVoxMesh* mesh = &hmget(st_chunk_meshes, pos);
+	mesh->new_this_frame = true;
+}
+
+static void st_render_chunk(TrVec3i pos)
+{
+	// TODO this is an int32, it'll annoy me at some point
+	st_shader_set_vec3i(st_vox_shader, "u_chunk_pos", pos);
+
+	StVoxMesh mesh = hmget(st_chunk_meshes, pos);
+	if (mesh.new_this_frame) {
+		st_update_chunk(pos);
+	}
+	glBindVertexArray(mesh.vao);
+
 	if (st_wireframe) {
-		glDrawElements(GL_LINE_LOOP, idxlen, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_LINE_LOOP, mesh.idxlen, GL_UNSIGNED_INT, 0);
 	}
 	else {
-		glDrawElements(GL_TRIANGLES, idxlen, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, mesh.idxlen, GL_UNSIGNED_INT, 0);
 	}
 }
 
@@ -418,7 +389,6 @@ void st_vox_draw(void)
 	st_auto_chunkomator();
 
 	StCamera cam = st_camera();
-	StFrustum frustum = st_camera_frustum(cam);
 
 	st_update_shader();
 
@@ -426,15 +396,17 @@ void st_vox_draw(void)
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// actually render
-	// TODO this is where the render distance goes
 	TrVec3i chunk_pos = TR_V3_SDIV(cam.position, ST_CHUNK_SIZE);
-	st_render_chunk(chunk_pos, frustum);
-	st_render_chunk((TrVec3i){chunk_pos.x + 1, chunk_pos.y, chunk_pos.z}, frustum);
-	// st_render_chunk((TrVec3i){chunk_pos.x - 1, chunk_pos.y, chunk_pos.z}, frustum);
-	// st_render_chunk((TrVec3i){chunk_pos.x, chunk_pos.y + 1, chunk_pos.z}, frustum);
-	// st_render_chunk((TrVec3i){chunk_pos.x, chunk_pos.y - 1, chunk_pos.z}, frustum);
-	st_render_chunk((TrVec3i){chunk_pos.x, chunk_pos.y, chunk_pos.z + 1}, frustum);
-	// st_render_chunk((TrVec3i){chunk_pos.x, chunk_pos.y, chunk_pos.z - 1}, frustum);
+	// TODO this is where the render distance goes
+	const int64_t render_start = -2;
+	const int64_t render_end = 2;
+	for (int64_t x = render_start; x <= render_end; x++) {
+		for (int64_t y = render_start; y <= render_end; y++) {
+			for (int64_t z = render_start; z <= render_end; z++) {
+				st_render_chunk((TrVec3i){chunk_pos.x + x, chunk_pos.y + y, chunk_pos.z + z});
+			}
+		}
+	}
 
 	// unbind vao
 	glBindVertexArray(0);
