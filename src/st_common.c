@@ -144,3 +144,50 @@ void st_path(const char* s, TrString* out)
 	}
 }
 
+StTimer* st_timers;
+
+StTimer* st_timer_new(double duration, bool repeat, StTimerCallback callback)
+{
+	StTimer timer = {
+		.duration = duration,
+		.repeat = repeat,
+		.callback = callback,
+		.playing = false,
+		.time_left = duration,
+	};
+	arrput(st_timers, timer);
+	return &arrlast(st_timers);
+}
+
+void st_timer_start(StTimer* timer)
+{
+	timer->playing = true;
+	timer->time_left = timer->duration;
+}
+
+void st_timer_stop(StTimer* timer)
+{
+	timer->playing = false;
+	timer->time_left = timer->duration;
+}
+
+void st_update_all_timers(void)
+{
+	// why the fuck does arrlen return ptrdiff_t
+	for (size_t i = 0; i < (size_t)arrlen(st_timers); i++) {
+		StTimer* timer = &st_timers[i];
+		if (!timer->playing) {
+			continue;
+		}
+
+		timer->time_left -= st_delta_time();
+
+		if (timer->time_left < 0.01) {
+			timer->callback();
+
+			if (timer->repeat) {
+				timer->time_left = timer->duration;
+			}
+		}
+	}
+}

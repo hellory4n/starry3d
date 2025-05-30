@@ -22,6 +22,7 @@
 
 #ifndef _ST_COMMON_H
 #define _ST_COMMON_H
+#include <time.h>
 #include <libtrippin.h>
 
 #ifdef __cplusplus
@@ -62,6 +63,61 @@ void st_user_dir(TrString* out);
 // to get from the directory where you save things. For example, `app:images/bob.png`, and `usr:espionage.txt`.
 // Writes the actual path to out, which should be at least 260 characters because Windows.
 void st_path(const char* s, TrString* out);
+
+typedef void (*StTimerCallback)(void);
+
+// Timer, useful for when you want to waiting for something
+typedef struct {
+	// Called when the timer is done
+	StTimerCallback callback;
+	// How long the timer lasts, in seconds
+	double duration;
+	// How much time is left, in seconds
+	double time_left;
+	// If true, the timer repeats when it's over
+	bool repeat;
+	// If true, the timer is currently timing
+	bool playing;
+} StTimer;
+
+// Creates a new timer. Duration is in seconds.
+StTimer* st_timer_new(double duration, bool repeat, StTimerCallback callback);
+
+// Starts the timer so it actually starts timing.
+void st_timer_start(StTimer* timer);
+
+// Stops the timer from timing.
+void st_timer_stop(StTimer* timer);
+
+// internal
+void st_update_all_timers(void);
+
+// i'm not gonna bother making this work on windows
+#ifdef ST_LINUX
+#include <sys/time.h>
+
+// I love l'optimìsation
+typedef struct {
+	struct timeval start;
+	struct timeval end;
+} StBenchmark;
+
+// I love l'optimìsation
+static inline StBenchmark st_benchmark_start(void)
+{
+	StBenchmark benchmark;
+	gettimeofday(&benchmark.start, NULL);
+	return benchmark;
+}
+
+// Stops the benchmark and logs the result
+static inline void st_benchmark_end(StBenchmark benchmark)
+{
+	gettimeofday(&benchmark.end, NULL);
+	tr_log("benchmark completed, took %li µs", benchmark.end.tv_usec - benchmark.start.tv_usec);
+}
+
+#endif
 
 #ifdef __cplusplus
 }

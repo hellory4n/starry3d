@@ -58,6 +58,11 @@ int main(void)
 static TrArena arena;
 static StMesh mtriranfgs;
 
+static void sb_sigma_callback(void)
+{
+	tr_log("Ligma!");
+}
+
 static void sb_game_new(void)
 {
 	arena = tr_arena_new(TR_MB(1));
@@ -115,6 +120,9 @@ static void sb_game_new(void)
 	st_register_block(1, 0, "app:fuck.stvox");
 
 	st_place_block(1, 0, (TrVec3i){1, 0, 0});
+
+	StTimer* timer = st_timer_new(1, true, sb_sigma_callback);
+	st_timer_start(timer);
 }
 
 static bool sb_ui = false;
@@ -129,9 +137,9 @@ static void sb_game_update(void)
 
 	// the cube of horror is optional
 	if (st_is_key_just_pressed(ST_KEY_F2)) {
-		for (int64_t x = 0; x < 16; x++) {
-			for (int64_t y = 0; y < 16; y++) {
-				for (int64_t z = 0; z < 16; z++) {
+		for (int64_t x = -32; x < 32; x++) {
+			for (int64_t y = -32; y < 32; y++) {
+				for (int64_t z = -32; z < 32; z++) {
 					st_place_block(1, 0, (TrVec3i){x, y, z});
 				}
 			}

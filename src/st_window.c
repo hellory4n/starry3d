@@ -21,12 +21,11 @@
  */
 
 #include <stdio.h>
-#include <libgen.h>
-
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <libtrippin.h>
 #include "st_window.h"
+#include "st_common.h"
 
 typedef enum {
 	ST_INPUT_STATE_NOT_PRESSED,
@@ -196,6 +195,7 @@ void st_poll_events(void)
 	// ah
 	// IM THE RULER OF EVERYTHING
 	// in the end...
+	st_update_all_timers();
 	st_cur_time = st_time();
 	st_delta_tim = st_cur_time - st_prev_time;
 	st_prev_time = st_cur_time;

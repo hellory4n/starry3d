@@ -23,6 +23,7 @@
 #include <glad/gl.h>
 #include <stb_ds.h>
 #include <linmath.h>
+#include "st_common.h"
 #include "st_window.h"
 #include "st_render.h"
 #include "st_voxel.h"
@@ -359,10 +360,11 @@ static void st_render_chunk(TrVec3i pos, StFrustum frustum)
 	TrSlice_StTriangle indices = hmget(st_chunk_indices, pos);
 
 	// stop fucking crashing
-	if (vertices.length == 0) {
+	if (vertices.buffer == NULL) {
 		st_init_chunk(pos);
 		vertices = hmget(st_chunk_vertices, pos);
 		indices = hmget(st_chunk_indices, pos);
+		return;
 	}
 
 	size_t vertidx = 0;
@@ -371,12 +373,12 @@ static void st_render_chunk(TrVec3i pos, StFrustum frustum)
 	size_t idxidx = 0;
 	size_t idxlen = 0;
 
-	// get all the blocks in the chunk
 	StCamera cam = st_camera();
 	TrVec3i tmp = {ST_CHUNK_SIZE, ST_CHUNK_SIZE, ST_CHUNK_SIZE};
 	TrVec3i render_start = TR_V3_SUB(cam.position, tmp);
 	TrVec3i render_end = TR_V3_ADD(cam.position, tmp);
 
+	// StBenchmark bma = st_benchmark_start();
 	for (int64_t x = render_start.x; x < render_end.x; x++) {
 		for (int64_t y = render_start.y; y < render_end.y; y++) {
 			for (int64_t z = render_start.z; z < render_end.z; z++) {
@@ -385,6 +387,7 @@ static void st_render_chunk(TrVec3i pos, StFrustum frustum)
 			}
 		}
 	}
+	// st_benchmark_end(bma);
 
 	StVoxMesh mesh = hmget(st_chunk_meshes, pos);
 	glBindVertexArray(mesh.vao);
@@ -426,6 +429,12 @@ void st_vox_draw(void)
 	// TODO this is where the render distance goes
 	TrVec3i chunk_pos = TR_V3_SDIV(cam.position, ST_CHUNK_SIZE);
 	st_render_chunk(chunk_pos, frustum);
+	st_render_chunk((TrVec3i){chunk_pos.x + 1, chunk_pos.y, chunk_pos.z}, frustum);
+	// st_render_chunk((TrVec3i){chunk_pos.x - 1, chunk_pos.y, chunk_pos.z}, frustum);
+	// st_render_chunk((TrVec3i){chunk_pos.x, chunk_pos.y + 1, chunk_pos.z}, frustum);
+	// st_render_chunk((TrVec3i){chunk_pos.x, chunk_pos.y - 1, chunk_pos.z}, frustum);
+	st_render_chunk((TrVec3i){chunk_pos.x, chunk_pos.y, chunk_pos.z + 1}, frustum);
+	// st_render_chunk((TrVec3i){chunk_pos.x, chunk_pos.y, chunk_pos.z - 1}, frustum);
 
 	// unbind vao
 	glBindVertexArray(0);
