@@ -145,8 +145,17 @@ static void sb_game_update(void)
 			}
 		}
 	}
-	if (st_is_key_just_pressed(ST_KEY_SPACE)) {
+	if (st_is_key_just_pressed(ST_KEY_F3)) {
 		for (int64_t x = 16; x < 32; x++) {
+			for (int64_t y = 0; y < 16; y++) {
+				for (int64_t z = 0; z < 16; z++) {
+					st_place_block(1, 0, (TrVec3i){x, y, z});
+				}
+			}
+		}
+	}
+	if (st_is_key_just_pressed(ST_KEY_F4)) {
+		for (int64_t x = 32; x < 64; x++) {
 			for (int64_t y = 0; y < 16; y++) {
 				for (int64_t z = 0; z < 16; z++) {
 					st_place_block(1, 0, (TrVec3i){x, y, z});
@@ -175,12 +184,21 @@ static void sb_game_ui(void)
 	}
 
 	struct nk_context* ctx = st_nkctx();
-	if (nk_begin(ctx, "mate", nk_rect(0, 0, 100, 50), NK_WINDOW_BORDER)) {
+	if (nk_begin(ctx, "mate", nk_rect(0, 0, 200, 100), NK_WINDOW_BORDER)) {
 		nk_layout_row_dynamic(ctx, 20, 1);
 
 		char ihateyou[64];
 		snprintf(ihateyou, sizeof(ihateyou), "fps: %.0f", st_fps());
 		nk_label(ctx, ihateyou, NK_TEXT_ALIGN_LEFT);
+
+		StCamera cam = st_camera();
+		char ihateyoutoo[64];
+		snprintf(ihateyoutoo, sizeof(ihateyoutoo), "position: %.3f %.3f %.3f", cam.position.x, cam.position.y, cam.position.z);
+		nk_label(ctx, ihateyoutoo, NK_TEXT_ALIGN_LEFT);
+
+		char ihateyoutootoo[64];
+		snprintf(ihateyoutootoo, sizeof(ihateyoutoo), "chunk: %.0f %.0f %.0f", cam.position.x / 16, cam.position.y / 16, cam.position.z / 16);
+		nk_label(ctx, ihateyoutootoo, NK_TEXT_ALIGN_LEFT);
 	}
 	nk_end(ctx);
 }

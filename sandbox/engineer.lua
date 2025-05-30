@@ -70,7 +70,7 @@ eng.recipe("run", "Builds and runs the project", function()
 	if platform == "windows" then
 		os.execute("wine build/bin/sandbox.exe")
 	else
-		os.execute("./build/bin/sandbox")
+		os.execute("gdb -q -ex run -ex \"quit\" --args build/bin/sandbox")
 	end
 end)
 

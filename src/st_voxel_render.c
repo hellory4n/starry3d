@@ -103,9 +103,9 @@ static void st_init_chunk(TrVec3i pos)
 	// 4 for a face, 6 faces for a cube, 16x16x16 for 3D, 16 for a chunk, 2 bcuz it was going out of bounds
 	// for some reason
 	// TODO maybe 2 still isn't enough?
-	const size_t vertlen = 4 * 6 * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * 2;
+	const size_t vertlen = 4 * 6 * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * 4;
 	// 2 triangles for a quad, 6 faces for a cube, 16*16*16*16 again, 2 again
-	const size_t idxlen = 2 * 6 * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * 2;
+	const size_t idxlen = 2 * 6 * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * ST_CHUNK_SIZE * 4;
 	const size_t bufsize = (vertlen * sizeof(StVoxVertex)) + (idxlen * sizeof(StTriangle));
 
 	TrArena arenama = tr_arena_new(bufsize);
@@ -159,6 +159,8 @@ static void st_auto_chunkomator(void)
 	TrVec3i chunk_pos = TR_V3_SDIV(cam.position, ST_CHUNK_SIZE);
 	if (hmget(st_chunk_arenas, chunk_pos).buffer == NULL) {
 		st_init_chunk(chunk_pos);
+		StVoxMesh* mesh = &hmget(st_chunk_meshes, chunk_pos);
+		mesh->new_this_frame = true;
 	}
 }
 
