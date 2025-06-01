@@ -58,6 +58,7 @@ typedef struct {
 	uint32_t vbo;
 	uint32_t ebo;
 	uint32_t idxlen;
+	uint32_t lod;
 	bool new_this_frame;
 } StVoxMesh;
 

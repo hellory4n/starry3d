@@ -70,6 +70,8 @@ eng.recipe("run", "Builds and runs the project", function()
 	if platform == "windows" then
 		os.execute("wine build/bin/sandbox.exe")
 	else
+		-- it could be just ./build/bin/sandbox but then you would miss any panics that happen
+		-- run-gdb is separate bcuz to use breakpoints you have to set them before running
 		os.execute("gdb -q -ex run -ex \"quit\" --args build/bin/sandbox")
 	end
 end)
