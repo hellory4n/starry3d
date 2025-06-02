@@ -30,12 +30,12 @@ extern "C" {
 
 // Used for coordinates
 #ifndef ST_VOXEL_SIZE
-	#define ST_VOXEL_SIZE 16.0
+	#define ST_VOXEL_SIZE 8.0
 #endif
 
 // I do love not exploding my PC.
 #ifndef ST_CHUNK_SIZE
-	#define ST_CHUNK_SIZE 16.0
+	#define ST_CHUNK_SIZE 8.0
 #endif
 
 // Highly optimized highly handsome single voxel.

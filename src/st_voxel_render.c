@@ -23,7 +23,6 @@
 #include <glad/gl.h>
 #include <stb_ds.h>
 #include <linmath.h>
-#include "st_common.h"
 #include "st_window.h"
 #include "st_render.h"
 #include "st_voxel.h"
@@ -99,44 +98,6 @@ void st_vox_render_on_palette_update(TrSlice_Color palette)
 	tr_liblog("sent palette to the gpu");
 }
 
-static double st_distance(TrVec3f a, TrVec3f b)
-{
-	double sum = 0;
-
-	double diffx = a.x - b.x;
-	sum += diffx * diffx;
-
-	double diffy = a.y - b.y;
-	sum += diffy * diffy;
-
-	double diffz = a.z - b.z;
-	sum += diffz * diffz;
-
-	return sqrt(sum);
-}
-
-// callback for the timer made in st_init_chunk
-// ran every 10 seconds, to see if lod has updated
-static void st_auto_lodificator(void* payload)
-{
-	TrVec3i pos = *(TrVec3i*)payload;
-	StVoxMesh mesh = hmget(st_chunk_meshes, pos);
-
-	// get distance for the bloody lod mate
-	StCamera camera = st_camera();
-	TrVec3f real_pos = TR_V3_SMUL(pos, ST_CHUNK_SIZE);
-	double distance = st_distance(camera.position, real_pos) / ST_CHUNK_SIZE;
-
-	// does it have to be updated for the lod?
-	uint32_t lod = tr_clamp(fabs(floor(distance)), 1, 25);
-	if (mesh.lod != lod) {
-		tr_log("new lod (lod %u, distance %f)", lod, distance);
-		mesh.new_this_frame = true;
-		mesh.lod = lod;
-		hmput(st_chunk_meshes, pos, mesh);
-	}
-}
-
 static void st_init_chunk(TrVec3i pos)
 {
 	// 4 for a face, 6 faces for a cube, 16x16x16 for 3D, 16 for a chunk, 2 bcuz it was going out of bounds
@@ -158,7 +119,6 @@ static void st_init_chunk(TrVec3i pos)
 	// setup meshes
 	StVoxMesh mesh = {
 		.new_this_frame = false,
-		.lod = 1,
 	};
 	glGenVertexArrays(1, &mesh.vao);
 	glBindVertexArray(mesh.vao);
@@ -187,13 +147,6 @@ static void st_init_chunk(TrVec3i pos)
 	glBindVertexArray(0);
 
 	hmput(st_chunk_meshes, pos, mesh);
-
-	// TODO don't
-	TrVec3i* posptr = malloc(sizeof(TrVec3i));
-	*posptr = pos;
-	// TIMER I HARDLY KNOW ER
-	StTimer* timer = st_timer_new(10, true, st_auto_lodificator, posptr);
-	st_timer_start(timer);
 
 	tr_liblog("created buffers for chunk %li, %li, %li", pos.x, pos.y, pos.z);
 }
@@ -273,18 +226,23 @@ static void st_update_shader(void)
 }
 
 static void st_update_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_StTriangle* indices,
-	size_t* vertidx, size_t* tris, size_t* idxidx, size_t* idxlen, uint32_t lod)
+	size_t* vertidx, size_t* tris, size_t* idxidx, size_t* idxlen)
 {
 	StBlockId id = hmget(st_blocks, pos);
 	StVoxModelMap* voxels = hmget(st_block_types, id);
 
-	for (int64_t i = 0; i < hmlen(voxels); i += lod) {
+	for (int64_t i = 0; i < hmlen(voxels); i++) {
 		StPackedVoxel vox = {
 			.x = voxels[i].key.x,
 			.y = voxels[i].key.y,
 			.z = voxels[i].key.z,
 			.color = voxels[i].value
 		};
+
+		// TODO consider not
+		if (vox.x >= ST_VOXEL_SIZE) continue;
+		if (vox.y >= ST_VOXEL_SIZE) continue;
+		if (vox.z >= ST_VOXEL_SIZE) continue;
 
 		// my sincerest apologies
 		#define ST_APPEND_VERT(X, Y, Z, Face) do { \
@@ -306,55 +264,55 @@ static void st_update_block(TrVec3i pos, TrSlice_StVoxVertex* vertices, TrSlice_
 		// (this shit is for culling)
 		TrVec3i top = {vox.x, vox.y + 1, vox.z};
 		if (hmget(voxels, top) == ST_COLOR_TRANSPARENT) {
-			ST_APPEND_VERT(vox.x, vox.y + lod, vox.z + lod, ST_VOX_FACE_UP);
-			ST_APPEND_VERT(vox.x + lod, vox.y + lod, vox.z + lod, ST_VOX_FACE_UP);
-			ST_APPEND_VERT(vox.x + lod, vox.y + lod, vox.z, ST_VOX_FACE_UP);
-			ST_APPEND_VERT(vox.x, vox.y + lod, vox.z, ST_VOX_FACE_UP);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z + 1, ST_VOX_FACE_UP);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z + 1, ST_VOX_FACE_UP);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z, ST_VOX_FACE_UP);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z, ST_VOX_FACE_UP);
 			ST_APPEND_QUAD();
 		}
 
 		TrVec3i left = {vox.x - 1, vox.y, vox.z};
 		if (hmget(voxels, left) == ST_COLOR_TRANSPARENT) {
 			ST_APPEND_VERT(vox.x, vox.y, vox.z, ST_VOX_FACE_WEST);
-			ST_APPEND_VERT(vox.x, vox.y, vox.z + lod, ST_VOX_FACE_WEST);
-			ST_APPEND_VERT(vox.x, vox.y + lod, vox.z + lod, ST_VOX_FACE_WEST);
-			ST_APPEND_VERT(vox.x, vox.y + lod, vox.z, ST_VOX_FACE_WEST);
+			ST_APPEND_VERT(vox.x, vox.y, vox.z + 1, ST_VOX_FACE_WEST);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z + 1, ST_VOX_FACE_WEST);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z, ST_VOX_FACE_WEST);
 			ST_APPEND_QUAD();
 		}
 
 		TrVec3i right = {vox.x + 1, vox.y, vox.z};
 		if (hmget(voxels, right) == ST_COLOR_TRANSPARENT) {
-			ST_APPEND_VERT(vox.x + lod, vox.y, vox.z + lod, ST_VOX_FACE_EAST);
-			ST_APPEND_VERT(vox.x + lod, vox.y, vox.z, ST_VOX_FACE_EAST);
-			ST_APPEND_VERT(vox.x + lod, vox.y + lod, vox.z, ST_VOX_FACE_EAST);
-			ST_APPEND_VERT(vox.x + lod, vox.y + lod, vox.z + lod, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z + 1, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z, ST_VOX_FACE_EAST);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z + 1, ST_VOX_FACE_EAST);
 			ST_APPEND_QUAD();
 		}
 
 		TrVec3i bottom = {vox.x, vox.y - 1, vox.z};
 		if (hmget(voxels, bottom) == ST_COLOR_TRANSPARENT) {
 			ST_APPEND_VERT(vox.x, vox.y, vox.z, ST_VOX_FACE_DOWN);
-			ST_APPEND_VERT(vox.x + lod, vox.y, vox.z, ST_VOX_FACE_DOWN);
-			ST_APPEND_VERT(vox.x + lod, vox.y, vox.z + lod, ST_VOX_FACE_DOWN);
-			ST_APPEND_VERT(vox.x, vox.y, vox.z + lod, ST_VOX_FACE_DOWN);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z, ST_VOX_FACE_DOWN);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z + 1, ST_VOX_FACE_DOWN);
+			ST_APPEND_VERT(vox.x, vox.y, vox.z + 1, ST_VOX_FACE_DOWN);
 			ST_APPEND_QUAD();
 		}
 
 		TrVec3i front = {vox.x, vox.y, vox.z + 1};
 		if (hmget(voxels, front) == ST_COLOR_TRANSPARENT) {
-			ST_APPEND_VERT(vox.x, vox.y, vox.z + lod, ST_VOX_FACE_NORTH);
-			ST_APPEND_VERT(vox.x + lod, vox.y, vox.z + lod, ST_VOX_FACE_NORTH);
-			ST_APPEND_VERT(vox.x + lod, vox.y + lod, vox.z + lod, ST_VOX_FACE_NORTH);
-			ST_APPEND_VERT(vox.x, vox.y + lod, vox.z + lod, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT(vox.x, vox.y, vox.z + 1, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z + 1, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z + 1, ST_VOX_FACE_NORTH);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z + 1, ST_VOX_FACE_NORTH);
 			ST_APPEND_QUAD();
 		}
 
 		TrVec3i back = {vox.x, vox.y, vox.z - 1};
 		if (hmget(voxels, back) == ST_COLOR_TRANSPARENT) {
-			ST_APPEND_VERT(vox.x + lod, vox.y, vox.z, ST_VOX_FACE_SOUTH);
+			ST_APPEND_VERT(vox.x + 1, vox.y, vox.z, ST_VOX_FACE_SOUTH);
 			ST_APPEND_VERT(vox.x, vox.y, vox.z, ST_VOX_FACE_SOUTH);
-			ST_APPEND_VERT(vox.x, vox.y + lod, vox.z, ST_VOX_FACE_SOUTH);
-			ST_APPEND_VERT(vox.x + lod, vox.y + lod, vox.z, ST_VOX_FACE_SOUTH);
+			ST_APPEND_VERT(vox.x, vox.y + 1, vox.z, ST_VOX_FACE_SOUTH);
+			ST_APPEND_VERT(vox.x + 1, vox.y + 1, vox.z, ST_VOX_FACE_SOUTH);
 			ST_APPEND_QUAD();
 		}
 	}
@@ -390,7 +348,7 @@ static void st_update_chunk(TrVec3i pos)
 			for (int64_t z = render_start.z; z < render_end.z; z++) {
 				// TODO what the fuck is this man
 				st_update_block((TrVec3i){x, y, z}, &vertices, &indices,
-					&vertidx, &tris, &idxidx, &idxlen, mesh.lod);
+					&vertidx, &tris, &idxidx, &idxlen);
 			}
 		}
 	}
