@@ -157,6 +157,10 @@ if arg[1] == "?deargod?" then
 	eng.option("platform", "Either linux or windows. Windows requires mingw64-gcc", function(val)
 		assert(val == "linux" or val == "windows")
 		platform = val
+		if val == "windows" then
+			eng.cc = "x86_64-w64-mingw32-gcc"
+			eng.cxx = "x86_64-w64-mingw32-g++"
+		end
 	end)
 
 	eng.recipe("build-lib", "Builds the library lmao.", function()
@@ -168,7 +172,11 @@ if arg[1] == "?deargod?" then
 
 	eng.recipe("build", "Builds everything ever.", function()
 		eng.run_recipe("build-lib")
-		os.execute("cd sandbox && ./engineer build")
+		if platform == "windows" then
+			os.execute("cd sandbox && ./engineer build")
+		else
+			os.execute("cd sandbox && ./engineer build platform=windows")
+		end
 	end)
 
 	eng.recipe("clean", "Cleans the project lmao.", function()

@@ -119,10 +119,18 @@ static void sb_game_new(void)
 
 	st_register_block(1, 0, "app:fuck.stvox");
 
-	st_place_block(1, 0, (TrVec3i){1, 0, 0});
+	st_place_block(1, 0, (TrVec3i){0, 0, 0});
 
 	StTimer* timer = st_timer_new(1, true, sb_sigma_callback, NULL);
 	st_timer_start(timer);
+
+	for (int64_t x = 0; x < 64; x++) {
+		for (int64_t y = 0; y < 64; y++) {
+			for (int64_t z = 0; z < 64; z++) {
+				st_place_block(1, 0, (TrVec3i){x, y, z});
+			}
+		}
+	}
 }
 
 static bool sb_ui = false;
@@ -134,35 +142,6 @@ static void sb_game_update(void)
 		sb_ui = !sb_ui;
 	}
 	st_set_mouse_enabled(sb_ui);
-
-	// the cube of horror is optional
-	if (st_is_key_just_pressed(ST_KEY_F2)) {
-		for (int64_t x = 0; x < 16; x++) {
-			for (int64_t y = 0; y < 16; y++) {
-				for (int64_t z = 0; z < 16; z++) {
-					st_place_block(1, 0, (TrVec3i){x, y, z});
-				}
-			}
-		}
-	}
-	if (st_is_key_just_pressed(ST_KEY_F3)) {
-		for (int64_t x = 16; x < 32; x++) {
-			for (int64_t y = 0; y < 16; y++) {
-				for (int64_t z = 0; z < 16; z++) {
-					st_place_block(1, 0, (TrVec3i){x, y, z});
-				}
-			}
-		}
-	}
-	if (st_is_key_just_pressed(ST_KEY_F4)) {
-		for (int64_t x = 32; x < 64; x++) {
-			for (int64_t y = 0; y < 16; y++) {
-				for (int64_t z = 0; z < 16; z++) {
-					st_place_block(1, 0, (TrVec3i){x, y, z});
-				}
-			}
-		}
-	}
 
 	st_mesh_draw_3d(mtriranfgs, (TrVec3f){-2, 0, -2}, (TrVec3f){0, 0, 0});
 	sb_camera_update();
@@ -197,7 +176,7 @@ static void sb_game_ui(void)
 		nk_label(ctx, ihateyoutoo, NK_TEXT_ALIGN_LEFT);
 
 		char ihateyoutootoo[64];
-		snprintf(ihateyoutootoo, sizeof(ihateyoutoo), "chunk: %.0f %.0f %.0f", cam.position.x / 16, cam.position.y / 16, cam.position.z / 16);
+		snprintf(ihateyoutootoo, sizeof(ihateyoutoo), "chunk: %.0f %.0f %.0f", cam.position.x / 8, cam.position.y / 8, cam.position.z / 8);
 		nk_label(ctx, ihateyoutootoo, NK_TEXT_ALIGN_LEFT);
 	}
 	nk_end(ctx);

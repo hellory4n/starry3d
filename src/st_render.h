@@ -239,24 +239,6 @@ typedef enum {
 // Sets the front face for culling.
 void st_front_face(StFrontFace mode);
 
-typedef struct {
-	TrVec3f normal;
-	// Distance from origin to the nearest point in the plane
-	double distance;
-} StPlane;
-
-typedef struct {
-	StPlane top;
-	StPlane bottom;
-	StPlane right;
-	StPlane left;
-	StPlane far;
-	StPlane near;
-} StFrustum;
-
-// Gets the view frustum for the camera
-StFrustum st_camera_frustum(StCamera cam);
-
 #ifdef __cplusplus
 }
 #endif
