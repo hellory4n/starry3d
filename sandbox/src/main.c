@@ -58,7 +58,7 @@ int main(void)
 static TrArena arena;
 static StMesh mtriranfgs;
 
-static void sb_sigma_callback(void)
+static void sb_sigma_callback(void* _)
 {
 	tr_log("Ligma!");
 }
@@ -121,7 +121,7 @@ static void sb_game_new(void)
 
 	st_place_block(1, 0, (TrVec3i){1, 0, 0});
 
-	StTimer* timer = st_timer_new(1, true, sb_sigma_callback);
+	StTimer* timer = st_timer_new(1, true, sb_sigma_callback, NULL);
 	st_timer_start(timer);
 }
 

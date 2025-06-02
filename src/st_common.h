@@ -64,12 +64,14 @@ void st_user_dir(TrString* out);
 // Writes the actual path to out, which should be at least 260 characters because Windows.
 void st_path(const char* s, TrString* out);
 
-typedef void (*StTimerCallback)(void);
+typedef void (*StTimerCallback)(void* payload);
 
 // Timer, useful for when you want to waiting for something
 typedef struct {
 	// Called when the timer is done
 	StTimerCallback callback;
+	// man
+	void* payload;
 	// How long the timer lasts, in seconds
 	double duration;
 	// How much time is left, in seconds
@@ -80,8 +82,8 @@ typedef struct {
 	bool playing;
 } StTimer;
 
-// Creates a new timer. Duration is in seconds.
-StTimer* st_timer_new(double duration, bool repeat, StTimerCallback callback);
+// Creates a new timer. Duration is in seconds. `payload` gets sent to the function when it's called
+StTimer* st_timer_new(double duration, bool repeat, StTimerCallback callback, void* payload);
 
 // Starts the timer so it actually starts timing.
 void st_timer_start(StTimer* timer);

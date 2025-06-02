@@ -23,6 +23,7 @@
 #include <glad/gl.h>
 #include <stb_ds.h>
 #include <linmath.h>
+#include "st_common.h"
 #include "st_window.h"
 #include "st_render.h"
 #include "st_voxel.h"
@@ -98,6 +99,44 @@ void st_vox_render_on_palette_update(TrSlice_Color palette)
 	tr_liblog("sent palette to the gpu");
 }
 
+static double st_distance(TrVec3f a, TrVec3f b)
+{
+	double sum = 0;
+
+	double diffx = a.x - b.x;
+	sum += diffx * diffx;
+
+	double diffy = a.y - b.y;
+	sum += diffy * diffy;
+
+	double diffz = a.z - b.z;
+	sum += diffz * diffz;
+
+	return sqrt(sum);
+}
+
+// callback for the timer made in st_init_chunk
+// ran every 10 seconds, to see if lod has updated
+static void st_auto_lodificator(void* payload)
+{
+	TrVec3i pos = *(TrVec3i*)payload;
+	StVoxMesh mesh = hmget(st_chunk_meshes, pos);
+
+	// get distance for the bloody lod mate
+	StCamera camera = st_camera();
+	TrVec3f real_pos = TR_V3_SMUL(pos, ST_CHUNK_SIZE);
+	double distance = st_distance(camera.position, real_pos) / ST_CHUNK_SIZE;
+
+	// does it have to be updated for the lod?
+	uint32_t lod = tr_clamp(fabs(floor(distance)), 1, 25);
+	if (mesh.lod != lod) {
+		tr_log("new lod (lod %u, distance %f)", lod, distance);
+		mesh.new_this_frame = true;
+		mesh.lod = lod;
+		hmput(st_chunk_meshes, pos, mesh);
+	}
+}
+
 static void st_init_chunk(TrVec3i pos)
 {
 	// 4 for a face, 6 faces for a cube, 16x16x16 for 3D, 16 for a chunk, 2 bcuz it was going out of bounds
@@ -148,6 +187,14 @@ static void st_init_chunk(TrVec3i pos)
 	glBindVertexArray(0);
 
 	hmput(st_chunk_meshes, pos, mesh);
+
+	// TODO don't
+	TrVec3i* posptr = malloc(sizeof(TrVec3i));
+	*posptr = pos;
+	// TIMER I HARDLY KNOW ER
+	StTimer* timer = st_timer_new(10, true, st_auto_lodificator, posptr);
+	st_timer_start(timer);
+
 	tr_liblog("created buffers for chunk %li, %li, %li", pos.x, pos.y, pos.z);
 }
 
@@ -372,22 +419,6 @@ void st_vox_render_on_chunk_update(TrVec3i pos)
 	mesh->new_this_frame = true;
 }
 
-static double st_distance(TrVec3f a, TrVec3f b)
-{
-	double sum = 0;
-
-	double diffx = a.x - b.x;
-	sum += diffx * diffx;
-
-	double diffy = a.y - b.y;
-	sum += diffy * diffy;
-
-	double diffz = a.z - b.z;
-	sum += diffz * diffz;
-
-	return sqrt(sum);
-}
-
 static void st_render_chunk(TrVec3i pos)
 {
 	// why a render a chunk if there's no chunk
@@ -399,21 +430,6 @@ static void st_render_chunk(TrVec3i pos)
 	st_shader_set_vec3i(st_vox_shader, "u_chunk_pos", pos);
 
 	StVoxMesh mesh = hmget(st_chunk_meshes, pos);
-
-	// get distance for the bloody lod mate
-	StCamera camera = st_camera();
-	TrVec3f real_pos = TR_V3_SMUL(pos, ST_CHUNK_SIZE);
-	double distance = st_distance(camera.position, real_pos) / ST_CHUNK_SIZE;
-
-	// does it have to be updated for the lod?
-	uint32_t lod = tr_clamp(fabs(floor(distance)), 1, 25);
-	if (mesh.lod != lod) {
-		tr_log("new lod (lod %u, distance %f)", lod, distance);
-		mesh.new_this_frame = true;
-		mesh.lod = lod;
-		hmput(st_chunk_meshes, pos, mesh);
-	}
-
 	if (mesh.new_this_frame) {
 		st_update_chunk(pos);
 	}

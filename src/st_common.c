@@ -146,7 +146,7 @@ void st_path(const char* s, TrString* out)
 
 StTimer* st_timers;
 
-StTimer* st_timer_new(double duration, bool repeat, StTimerCallback callback)
+StTimer* st_timer_new(double duration, bool repeat, StTimerCallback callback, void* payload)
 {
 	StTimer timer = {
 		.duration = duration,
@@ -154,6 +154,7 @@ StTimer* st_timer_new(double duration, bool repeat, StTimerCallback callback)
 		.callback = callback,
 		.playing = false,
 		.time_left = duration,
+		.payload = payload,
 	};
 	arrput(st_timers, timer);
 	return &arrlast(st_timers);
@@ -183,7 +184,7 @@ void st_update_all_timers(void)
 		timer->time_left -= st_delta_time();
 
 		if (timer->time_left < 0.01) {
-			timer->callback();
+			timer->callback(timer->payload);
 
 			if (timer->repeat) {
 				timer->time_left = timer->duration;
