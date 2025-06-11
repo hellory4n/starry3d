@@ -54,6 +54,7 @@ eng.recipe("build", "Builds the project lmao.", function()
 	starry3dma.libtrippin:build()
 	starry3dma.glfw()
 	starry3dma.starry3d:build()
+	os.execute("cp "..starrydir.."/build/static/libglfw3.a ./build/static/libglfw3.a")
 	project:build()
 end)
 

@@ -6,7 +6,7 @@ eng.init()
 trippin = {
 	lib = function(debug, trippinsrc)
 		-- just trippin so it doesn't become "liblibtrippin.a"
-		local project = eng.newproj("trippin", "staticlib", "c99")
+		local project = eng.newproj("trippin", "staticlib", "c++14")
 		project:pedantic()
 		if debug then
 			project:debug()
