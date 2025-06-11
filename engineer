@@ -1,9 +1,8 @@
 #!/usr/bin/sh
 # this script is just a basic wrapper bcuz im lazy
-# you can see why the ?deargod? in engineer.lua
-# i love lua
+# lua modules are obnoxious and idk how to fix this properly
 if [ "$#" -eq 0 ]; then
-    lua engineer.lua ?deargod? help
+    lua engineer.lua ?shutup help
 else
-    lua engineer.lua ?deargod? $@
+    lua engineer.lua ?shutup $@
 fi

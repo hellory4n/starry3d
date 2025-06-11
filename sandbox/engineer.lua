@@ -5,10 +5,10 @@ eng.init()
 -- you just have to edit these
 local assets = "assets"
 local starrydir = ".."
-local project = eng.newproj("sandbox", "executable", "c99")
+local project = eng.newproj("sandbox", "executable", "c++14")
 project:add_includes({"src"})
 project:add_sources({
-	"src/main.c"
+	"src/main.cpp"
 })
 project:pedantic()
 

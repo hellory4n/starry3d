@@ -2,24 +2,24 @@ starry3d = {}
 eng = require("libengineer")
 eng.init()
 
--- i tried importing libtrippin's engineer.lua but then it cant find libengineer???
-trippin = {
-	lib = function(debug, trippinsrc)
-		-- just trippin so it doesn't become "liblibtrippin.a"
-		local project = eng.newproj("trippin", "staticlib", "c++14")
-		project:pedantic()
-		if debug then
-			project:debug()
-			project:optimization(0)
-		else
-			project:optimization(2)
-		end
-
-		project:add_sources({trippinsrc})
-		project:target("libtrippin.a")
-		return project
+-- lua modules are obnoxious :)
+trippin = {}
+function trippin.lib(debug, trippinsrc)
+	-- just trippin so it doesn't become "liblibtrippin.a"
+	local project = eng.newproj("trippin", "staticlib", "c++14")
+	project:pedantic()
+	if debug then
+		project:debug()
+		project:optimization(0)
+		project:define({"DEBUG"})
+	else
+		project:optimization(2)
 	end
-}
+
+	project:add_sources({trippinsrc})
+	project:target("libtrippin.a")
+	return project
+end
 
 -- Returns a table with the starry3d project and its dependencies (libtrippin, glfw). `debug` is a bool.
 -- The libtrippin field is an engineer project but the glfw field is a function that builds it as a static
@@ -29,7 +29,7 @@ trippin = {
 function starry3d.lib(debug, starrydir, platform)
 	assert(platform == "windows" or platform == "linux")
 	local result = {}
-	result.libtrippin = trippin.lib(debug, starrydir.."/vendor/libtrippin/libtrippin.c")
+	result.libtrippin = trippin.lib(debug, starrydir.."/thirdparty/libtrippin/libtrippin.cpp")
 	if platform == "windows" then
 		result.libtrippin:target("trippin.lib")
 	else
@@ -70,7 +70,7 @@ function starry3d.lib(debug, starrydir, platform)
 	end
 
 	-- the actual starry3d project
-	result.starry3d = eng.newproj("starry3d", "staticlib", "c99")
+	result.starry3d = eng.newproj("starry3d", "staticlib", "c++14")
 	result.starry3d:pedantic()
 	if debug then
 		result.starry3d:debug()
@@ -81,110 +81,92 @@ function starry3d.lib(debug, starrydir, platform)
 
 	result.starry3d:add_includes({
 		starrydir.."/src",
-		starrydir.."/vendor",
-		starrydir.."/vendor/glfw/include",
-		starrydir.."/vendor/libtrippin",
-		starrydir.."/vendor/linmath",
-		starrydir.."/vendor/nuklear",
-		starrydir.."/vendor/nuklear/demo/glfw_opengl3", -- just for glfw/opengl3 integration lmao
-		starrydir.."/vendor/stb",
-		starrydir.."/vendor/whereami/src",
+		starrydir.."/thirdparty",
+		starrydir.."/thirdparty/libtrippin",
+		starrydir.."/thirdparty/glfw/include",
+		starrydir.."/thirdparty/stb",
 	})
 	result.starry3d:add_sources({
-		starrydir.."/src/st_common.c",
-		starrydir.."/src/st_render.c",
-		starrydir.."/src/st_ui.c",
-		starrydir.."/src/st_voxel.c",
-		starrydir.."/src/st_voxel_render.c",
-		starrydir.."/src/st_window.c",
+		starrydir.."/src/st_common.cpp",
 	})
 
 	-- mate
 	if platform == "windows" then
 		result.starry3d:target("starry3d.lib")
-		result.starry3d:link({"glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "ole32", "pthread"})
+		result.starry3d:link({"glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "ole32", "pthread", "stdc++"})
 		result.starry3d:define({"ST_WINDOWS"})
 	else
 		result.starry3d:target("libstarry3d.a")
-		result.starry3d:link({"glfw3", "X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt"})
+		result.starry3d:link({"glfw3", "X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt", "stdc++"})
 		result.starry3d:define({"ST_LINUX"})
 	end
 	result.starry3d:gen_compile_commands()
 
 	if platform == "windows" then
 		result.getlinks = function()
-			return {"starry3d", "trippin", "glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "ole32", "pthread"}
+			return {"starry3d", "trippin", "glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "ole32", "pthread", "stdc++"}
 		end
 	else
 		result.getlinks = function()
-			return {"starry3d", "trippin", "glfw3", "X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt"}
+			return {"starry3d", "trippin", "glfw3", "X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt", "stdc++"}
 		end
 	end
 
 	result.getincludes = function()
 		return {
 			starrydir.."/src",
-			starrydir.."/vendor",
-			starrydir.."/vendor/glfw/include",
-			starrydir.."/vendor/libtrippin",
-			starrydir.."/vendor/linmath",
-			starrydir.."/vendor/nuklear",
-			starrydir.."/vendor/nuklear/demo/glfw_opengl3", -- just for glfw/opengl3 integration lmao
-			starrydir.."/vendor/stb",
-			starrydir.."/vendor/whereami/src",
+			starrydir.."/thirdparty",
+			starrydir.."/thirdparty/libtrippin",
+			starrydir.."/thirdparty/glfw/include",
+			starrydir.."/thirdparty/stb",
 		}
 	end
 
 	return result
 end
 
--- lua modules are tricky and i cant find any info on how to get it to not fucking run this when
--- being imported
--- the engineer script sets that argument
--- its supposed to be ignored by eng.run()
--- im hacking my own build system
--- send help.
-if arg[1] == "?deargod?" then
-	local debug = true
-	local platform = "linux"
+local debug = true
+local platform = "linux"
 
-	eng.option("mode", "Either debug or release", function(val)
-		assert(val == "debug" or val == "release")
-		if val == "debug" then debug = true
-		elseif val == "release" then debug = false end
-	end)
+eng.option("mode", "Either debug or release", function(val)
+	assert(val == "debug" or val == "release")
+	if val == "debug" then debug = true
+	elseif val == "release" then debug = false end
+end)
 
-	eng.option("platform", "Either linux or windows. Windows requires mingw64-gcc", function(val)
-		assert(val == "linux" or val == "windows")
-		platform = val
-		if val == "windows" then
-			eng.cc = "x86_64-w64-mingw32-gcc"
-			eng.cxx = "x86_64-w64-mingw32-g++"
-		end
-	end)
+eng.option("platform", "Either linux or windows. Windows requires mingw64-gcc", function(val)
+	assert(val == "linux" or val == "windows")
+	platform = val
+	if val == "windows" then
+		eng.cc = "x86_64-w64-mingw32-gcc"
+		eng.cxx = "x86_64-w64-mingw32-g++"
+	end
+end)
 
-	eng.recipe("build-lib", "Builds the library lmao.", function()
-		local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
-		thegreatstarryhandsomestacktechnologything.libtrippin:build()
-		thegreatstarryhandsomestacktechnologything.glfw()
-		thegreatstarryhandsomestacktechnologything.starry3d:build()
-	end)
+eng.recipe("build-lib", "Builds the library lmao.", function()
+	local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
+	thegreatstarryhandsomestacktechnologything.libtrippin:build()
+	thegreatstarryhandsomestacktechnologything.glfw()
+	thegreatstarryhandsomestacktechnologything.starry3d:build()
+end)
 
-	eng.recipe("build", "Builds everything ever.", function()
-		eng.run_recipe("build-lib")
-		if platform == "windows" then
-			os.execute("cd sandbox && ./engineer build")
-		else
-			os.execute("cd sandbox && ./engineer build platform=windows")
-		end
-	end)
+eng.recipe("build", "Builds everything ever.", function()
+	eng.run_recipe("build-lib")
+	if platform == "windows" then
+		os.execute("cd sandbox && ./engineer build")
+	else
+		os.execute("cd sandbox && ./engineer build platform=windows")
+	end
+end)
 
-	eng.recipe("clean", "Cleans the project lmao.", function()
-		local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
-		thegreatstarryhandsomestacktechnologything.starry3d:clean()
-		os.execute("cd sandbox && ./engineer clean")
-	end)
+eng.recipe("clean", "Cleans the project lmao.", function()
+	local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
+	thegreatstarryhandsomestacktechnologything.starry3d:clean()
+	os.execute("cd sandbox && ./engineer clean")
+end)
 
+-- lua modules are obnoxious and idk how to fix this properly
+if arg[1] == "?shutup" then
 	eng.run()
 end
 
