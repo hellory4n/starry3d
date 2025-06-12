@@ -88,6 +88,7 @@ function starry3d.lib(debug, starrydir, platform)
 	})
 	result.starry3d:add_sources({
 		starrydir.."/src/st_common.cpp",
+		starrydir.."/src/st_window.cpp",
 	})
 
 	-- mate

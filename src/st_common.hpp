@@ -25,10 +25,33 @@
 #ifndef _ST_COMMON_H
 #define _ST_COMMON_H
 
+#include <libtrippin.hpp>
+
+// make sure there's always ST_WINDOWS or ST_LINUX defined
+// TODO macOS
+#if !defined(ST_WINDOWS) && !defined(ST_LINUX)
+	#ifdef _WIN32
+		#define ST_WINDOWS
+	#else
+		#define ST_LINUX
+	#endif
+#endif
+
+// didn't want to include glfw here
+struct GLFWwindow;
+
 namespace st {
 
 // Vresionlsdn.
 constexpr const char* VERSION = "v0.4.0";
+
+struct Starry3D {
+	GLFWwindow* window;
+	tr::Vec2<int32> window_size;
+};
+
+// This is where the engine's internal state goes. You probably shouldn't use this directly.
+extern Starry3D engine;
 
 // Initializes the crap library.
 void init();
