@@ -41,6 +41,7 @@ eng.recipe("build", "Builds the project lmao.", function()
 	if debug then
 		project:debug()
 		project:optimization(0)
+		project:define({"DEBUG"})
 	else
 		project:optimization(2)
 	end

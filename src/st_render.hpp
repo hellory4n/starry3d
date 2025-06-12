@@ -22,31 +22,19 @@
  *
  */
 
-#include "st_common.hpp"
-
-#include "st_window.hpp"
+#ifndef _ST_RENDER_H
+#define _ST_RENDER_H
 
 #include <libtrippin.hpp>
 
 namespace st {
-	// it has to live somewhere
-	Starry3D engine;
+
+// It clears the screen lmao.
+void clear_screen(tr::Color color);
+
+// As the name implies, it ends drawing.
+void end_drawing();
+
 }
 
-void st::init()
-{
-	st::engine.arena = new tr::Arena(tr::mb_to_bytes(1));
-
-	st::engine.key_state = tr::Array<InputState>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
-	st::engine.key_prev_down = tr::Array<bool>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
-	st::engine.mouse_state = tr::Array<InputState>(st::engine.arena, static_cast<int>(st::MouseButton::LAST) + 1);
-	st::engine.mouse_prev_down = tr::Array<bool>(st::engine.arena, static_cast<int>(st::MouseButton::LAST) + 1);
-
-	tr::info("initialized starry3d %s", st::VERSION);
-}
-
-void st::free()
-{
-	delete st::engine.arena;
-	tr::info("deinitialized starry3d %s", st::VERSION);
-}
+#endif

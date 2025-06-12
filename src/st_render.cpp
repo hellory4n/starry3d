@@ -22,31 +22,21 @@
  *
  */
 
+#include "st_render.hpp"
+
 #include "st_common.hpp"
 
-#include "st_window.hpp"
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
 
-#include <libtrippin.hpp>
-
-namespace st {
-	// it has to live somewhere
-	Starry3D engine;
+void st::clear_screen(tr::Color color)
+{
+	tr::Vec4<float32> vec4_color = color.to_vec4();
+	glClearColor(vec4_color.x, vec4_color.y, vec4_color.z, vec4_color.w);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void st::init()
+void st::end_drawing()
 {
-	st::engine.arena = new tr::Arena(tr::mb_to_bytes(1));
-
-	st::engine.key_state = tr::Array<InputState>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
-	st::engine.key_prev_down = tr::Array<bool>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
-	st::engine.mouse_state = tr::Array<InputState>(st::engine.arena, static_cast<int>(st::MouseButton::LAST) + 1);
-	st::engine.mouse_prev_down = tr::Array<bool>(st::engine.arena, static_cast<int>(st::MouseButton::LAST) + 1);
-
-	tr::info("initialized starry3d %s", st::VERSION);
-}
-
-void st::free()
-{
-	delete st::engine.arena;
-	tr::info("deinitialized starry3d %s", st::VERSION);
+	glfwSwapBuffers(st::engine.window);
 }

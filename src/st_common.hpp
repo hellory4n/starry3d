@@ -45,9 +45,32 @@ namespace st {
 // Vresionlsdn.
 constexpr const char* VERSION = "v0.4.0";
 
+enum class InputState {
+	NOT_PRESSED,
+	JUST_PRESSED,
+	HELD,
+	JUST_RELEASED,
+};
+
 struct Starry3D {
+	tr::Ref<tr::Arena> arena;
+
+	// window
 	GLFWwindow* window;
 	tr::Vec2<int32> window_size;
+
+	// timing
+	float64 prev_time;
+	float64 current_time;
+	float64 delta_time;
+
+	// input
+	tr::Array<InputState> key_state;
+	tr::Array<bool> key_prev_down;
+	tr::Array<InputState> mouse_state;
+	tr::Array<bool> mouse_prev_down;
+
+	Starry3D() {};
 };
 
 // This is where the engine's internal state goes. You probably shouldn't use this directly.

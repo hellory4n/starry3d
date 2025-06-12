@@ -1,6 +1,7 @@
 #include <libtrippin.hpp>
 #include <st_common.hpp>
 #include <st_window.hpp>
+#include <st_render.hpp>
 
 int main(void)
 {
@@ -15,6 +16,13 @@ int main(void)
 	st::open_window(window);
 
 	while (!st::is_window_closing()) {
+		st::clear_screen(tr::Color::rgb(0x734a16));
+
+		if (st::is_key_just_released(st::Key::F8)) {
+			st::close_window();
+		}
+
+		st::end_drawing();
 		st::poll_events();
 	}
 

@@ -209,11 +209,11 @@ bool is_mouse_held(MouseButton btn);
 bool is_mouse_not_pressed(MouseButton btn);
 
 // Gets the mouse position, (0, 0) is the top left
-tr::Vec2<float32> mouse_position();
+tr::Vec2<float64> mouse_position();
 
 // Returns the current mouse scroll. (0, 0) is no scroll, positive values are towards the bottom/right,
 // and negative values are towards the top/left
-tr::Vec2<float32> mouse_scroll();
+// tr::Vec2<float32> mouse_scroll();
 
 // If false, the mouse gets disabled, which enables raw mouse input.
 void set_mouse_enabled(bool val);

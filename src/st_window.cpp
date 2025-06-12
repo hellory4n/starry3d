@@ -50,6 +50,8 @@ void st::open_window(st::WindowOptions options)
 	tr::assert(st::engine.window != nullptr, "couldn't create window");
 	glfwMakeContextCurrent(st::engine.window);
 
+	glfwSwapInterval(options.vsync ? 1 : 0);
+
 	// some callbacks
 	glfwSetFramebufferSizeCallback(st::engine.window, [](GLFWwindow* _, int w, int h) -> void {
 		glViewport(0, 0, w, h);
@@ -99,7 +101,110 @@ void st::free_window()
 	tr::info("destroyed window");
 }
 
-void st::close_window() { glfwSetWindowShouldClose(st::engine.window, true); }
-bool st::is_window_closing() { return glfwWindowShouldClose(st::engine.window); }
-void st::poll_events() { glfwPollEvents(); }
+void st::close_window()       { glfwSetWindowShouldClose(st::engine.window, true); }
+bool st::is_window_closing()  { return glfwWindowShouldClose(st::engine.window); }
 tr::Vec2<int32> window_size() { return st::engine.window_size; }
+
+void st::poll_events()
+{
+	glfwPollEvents();
+
+	// handle the extra fancy key/mouse states
+
+	// it gets mad if you try to check for anything before space
+	for (int32 key = static_cast<int32>(Key::SPACE); key <= static_cast<int32>(Key::LAST); key++) {
+		bool is_down = glfwGetKey(st::engine.window, key) == GLFW_PRESS;
+
+		// help
+		bool& was_down = st::engine.key_prev_down[key];
+		if (!was_down && is_down) {
+			st::engine.key_state[key] = InputState::JUST_PRESSED;
+		}
+		else if (was_down && is_down) {
+			st::engine.key_state[key] = InputState::HELD;
+		}
+		else if (was_down && !is_down) {
+			st::engine.key_state[key] = InputState::JUST_RELEASED;
+		}
+		else {
+			st::engine.key_state[key] = InputState::NOT_PRESSED;
+		}
+
+		was_down = is_down;
+	}
+
+	// christ
+	for (int32 btn = static_cast<int32>(MouseButton::BTN_1); btn <= static_cast<int32>(MouseButton::LAST); btn++) {
+		bool is_down = glfwGetMouseButton(st::engine.window, btn) == GLFW_PRESS;
+
+		// help
+		bool& was_down = st::engine.mouse_prev_down[btn];
+		if (!was_down && is_down) {
+			st::engine.mouse_state[btn] = InputState::JUST_PRESSED;
+		}
+		else if (was_down && is_down) {
+			st::engine.mouse_state[btn] = InputState::HELD;
+		}
+		else if (was_down && !is_down) {
+			st::engine.mouse_state[btn] = InputState::JUST_RELEASED;
+		}
+		else {
+			st::engine.mouse_state[btn] = InputState::NOT_PRESSED;
+		}
+
+		was_down = is_down;
+	}
+
+	// YOU UNDERSTAND MECHANICAL HANDS ARE THE RULER OF EVERYTHING
+	// ah
+	// RULER OF EVERYTHING
+	// ah
+	// IM THE RULER OF EVERYTHING
+	// in the end...
+	st::engine.current_time = st::time();
+	st::engine.delta_time = st::engine.current_time - st::engine.prev_time;
+	st::engine.prev_time = st::engine.current_time;
+}
+
+// help
+bool st::is_key_just_pressed(st::Key key) {
+	return st::engine.key_state[static_cast<usize>(key)] == InputState::JUST_PRESSED;
+}
+bool st::is_key_just_released(st::Key key) {
+	return st::engine.key_state[static_cast<usize>(key)] == InputState::JUST_RELEASED;
+}
+bool st::is_key_not_pressed(st::Key key) {
+	return st::engine.key_state[static_cast<usize>(key)] == InputState::NOT_PRESSED;
+}
+bool st::is_key_held(st::Key key) {
+	return st::engine.key_state[static_cast<usize>(key)] != InputState::NOT_PRESSED;
+}
+
+bool st::is_mouse_just_pressed(st::MouseButton key) {
+	return st::engine.mouse_state[static_cast<usize>(key)] == InputState::JUST_PRESSED;
+}
+bool st::is_mouse_just_released(st::MouseButton key) {
+	return st::engine.mouse_state[static_cast<usize>(key)] == InputState::JUST_RELEASED;
+}
+bool st::is_mouse_not_pressed(st::MouseButton key) {
+	return st::engine.mouse_state[static_cast<usize>(key)] == InputState::NOT_PRESSED;
+}
+bool st::is_mouse_held(st::MouseButton key) {
+	return st::engine.mouse_state[static_cast<usize>(key)] != InputState::NOT_PRESSED;
+}
+
+tr::Vec2<float64> st::mouse_position()
+{
+	float64 x, y;
+	glfwGetCursorPos(st::engine.window, &x, &y);
+	return {x, y};
+}
+
+void st::set_mouse_enabled(bool val)
+{
+	glfwSetInputMode(st::engine.window, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+}
+
+float64 st::time()       { return glfwGetTime(); }
+float64 st::delta_time() { return st::engine.delta_time; }
+float64 st::fps()        { return 1.0 / st::engine.delta_time; }

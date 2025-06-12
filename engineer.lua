@@ -50,12 +50,12 @@ function starry3d.lib(debug, starrydir, platform)
 
 		os.execute("mkdir build/glfw")
 		-- GLFW_BUILD_EXAMPLES=OFF and GLFW_BUILD_TESTS=OFF because we don't need them
-		local cmakecmd = "cmake -S "..starrydir.."/vendor/glfw -B build/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF"
+		local cmakecmd = "cmake -S "..starrydir.."/thirdparty/glfw -B build/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF"
 
 		-- cross compile to windows
 		if platform == "windows" then
 			-- cmake is insane and can't find a file that exists :D
-			os.execute("cp "..starrydir.."/vendor/glfw/CMake/x86_64-w64-mingw32.cmake win32.cmake")
+			os.execute("cp "..starrydir.."/thirdparty/glfw/CMake/x86_64-w64-mingw32.cmake win32.cmake")
 			cmakecmd = cmakecmd.." -DCMAKE_TOOLCHAIN_FILE=$(pwd)/win32.cmake"
 		end
 		os.execute(cmakecmd)
@@ -75,6 +75,7 @@ function starry3d.lib(debug, starrydir, platform)
 	if debug then
 		result.starry3d:debug()
 		result.starry3d:optimization(0)
+		result.starry3d:define("DEBUG")
 	else
 		result.starry3d:optimization(2)
 	end
@@ -89,6 +90,7 @@ function starry3d.lib(debug, starrydir, platform)
 	result.starry3d:add_sources({
 		starrydir.."/src/st_common.cpp",
 		starrydir.."/src/st_window.cpp",
+		starrydir.."/src/st_render.cpp",
 	})
 
 	-- mate
