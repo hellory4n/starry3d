@@ -1,8 +1,10 @@
 /*
- * starry3d v0.4.0
- *
- * C++ voxel engine
+ * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
+ *
+ * st_common.cpp
+ * Utilities, engine initialization/deinitialization, and the
+ * engine's global state
  *
  * Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
  *

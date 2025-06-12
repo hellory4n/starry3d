@@ -2,8 +2,8 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * st_render.hpp
- * Mostly wrappers around OpenGL
+ * st_imgui.hpp
+ * Integrates Starry3D with Dear ImGui
  *
  * Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
  *
@@ -23,18 +23,26 @@
  *
  */
 
-#ifndef _ST_RENDER_H
-#define _ST_RENDER_H
+#ifndef _ST_IMGUI_H
+#define _ST_IMGUI_H
 
-#include <libtrippin.hpp>
+#include <imgui.h>
 
 namespace st {
 
-// It clears the screen lmao.
-void clear_screen(tr::Color color);
+namespace imgui {
+	// Initializes ImGui
+	void init();
 
-// As the name implies, it ends drawing.
-void end_drawing();
+	// Deinitializes ImGui
+	void free();
+
+	// Put this at the start of your main loop
+	void begin();
+
+	// Put this at the end of your main loop
+	void end();
+}
 
 }
 

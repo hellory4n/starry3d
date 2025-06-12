@@ -1,8 +1,9 @@
 /*
- * starry3d v0.4.0
- *
- * C++ voxel engine
+ * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
+ *
+ * st_window.hpp
+ * Manages windowing, input, and initializing OpenGL
  *
  * Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
  *

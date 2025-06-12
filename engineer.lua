@@ -69,13 +69,39 @@ function starry3d.lib(debug, starrydir, platform)
 		end
 	end
 
+	-- imgui is simple enough that we can wrap it in engineer
+	result.imgui = eng.newproj("imgui", "staticlib", "c++14")
+	result.imgui:pedantic()
+	if debug then
+		result.imgui:debug()
+		result.imgui:optimization(0)
+		result.imgui:define({"DEBUG", "_DEBUG"})
+	else
+		result.imgui:optimization(2)
+	end
+
+	result.imgui:add_includes({
+		starrydir.."/thirdparty/imgui",
+		starrydir.."/thirdparty/imgui/backends",
+		starrydir.."/thirdparty/glfw/include"
+	})
+	result.imgui:add_sources({
+		starrydir.."/thirdparty/imgui/imgui.cpp",
+		starrydir.."/thirdparty/imgui/imgui_widgets.cpp",
+		starrydir.."/thirdparty/imgui/imgui_tables.cpp",
+		starrydir.."/thirdparty/imgui/imgui_draw.cpp",
+		starrydir.."/thirdparty/imgui/imgui_demo.cpp",
+		starrydir.."/thirdparty/imgui/backends/imgui_impl_glfw.cpp",
+		starrydir.."/thirdparty/imgui/backends/imgui_impl_opengl3.cpp",
+	})
+
 	-- the actual starry3d project
 	result.starry3d = eng.newproj("starry3d", "staticlib", "c++14")
 	result.starry3d:pedantic()
 	if debug then
 		result.starry3d:debug()
 		result.starry3d:optimization(0)
-		result.starry3d:define("DEBUG")
+		result.starry3d:define({"DEBUG"})
 	else
 		result.starry3d:optimization(2)
 	end
@@ -86,32 +112,35 @@ function starry3d.lib(debug, starrydir, platform)
 		starrydir.."/thirdparty/libtrippin",
 		starrydir.."/thirdparty/glfw/include",
 		starrydir.."/thirdparty/stb",
+		starrydir.."/thirdparty/imgui",
+		starrydir.."/thirdparty/imgui/backends",
 	})
 	result.starry3d:add_sources({
 		starrydir.."/src/st_common.cpp",
 		starrydir.."/src/st_window.cpp",
 		starrydir.."/src/st_render.cpp",
+		starrydir.."/src/st_imgui.cpp",
 	})
 
 	-- mate
 	if platform == "windows" then
 		result.starry3d:target("starry3d.lib")
-		result.starry3d:link({"glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "ole32", "pthread", "stdc++"})
+		result.imgui:target("imgui.lib")
 		result.starry3d:define({"ST_WINDOWS"})
 	else
 		result.starry3d:target("libstarry3d.a")
-		result.starry3d:link({"glfw3", "X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt", "stdc++"})
+		result.imgui:target("libimgui.a")
 		result.starry3d:define({"ST_LINUX"})
 	end
 	result.starry3d:gen_compile_commands()
 
 	if platform == "windows" then
 		result.getlinks = function()
-			return {"starry3d", "trippin", "glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "ole32", "pthread", "stdc++"}
+			return {"starry3d", "trippin", "imgui", "glfw3", "opengl32", "gdi32", "winmm", "comdlg32", "ole32", "pthread", "stdc++"}
 		end
 	else
 		result.getlinks = function()
-			return {"starry3d", "trippin", "glfw3", "X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt", "stdc++"}
+			return {"starry3d", "trippin", "imgui", "glfw3", "X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt", "stdc++"}
 		end
 	end
 
@@ -122,6 +151,8 @@ function starry3d.lib(debug, starrydir, platform)
 			starrydir.."/thirdparty/libtrippin",
 			starrydir.."/thirdparty/glfw/include",
 			starrydir.."/thirdparty/stb",
+			starrydir.."/thirdparty/imgui",
+			starrydir.."/thirdparty/imgui/backends"
 		}
 	end
 

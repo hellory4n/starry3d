@@ -2,8 +2,8 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * st_render.cpp
- * Mostly wrappers around OpenGL
+ * st_imgui.cpp
+ * Integrates Starry3D with Dear ImGui
  *
  * Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
  *
@@ -23,21 +23,42 @@
  *
  */
 
-#include "st_render.hpp"
-
 #include "st_common.hpp"
+#include "st_imgui.hpp"
 
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 
-void st::clear_screen(tr::Color color)
+void st::imgui::init()
 {
-	tr::Vec4<float32> vec4_color = color.to_vec4();
-	glClearColor(vec4_color.x, vec4_color.y, vec4_color.z, vec4_color.w);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+	ImGui_ImplGlfw_InitForOpenGL(st::engine.window, true);
+	ImGui_ImplOpenGL3_Init();
 }
 
-void st::end_drawing()
+void st::imgui::free()
 {
-	glfwSwapBuffers(st::engine.window);
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+}
+
+void st::imgui::begin()
+{
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+}
+
+void st::imgui::end()
+{
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

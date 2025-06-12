@@ -13,3 +13,5 @@ log.txt
 # man
 .vscode
 build
+# what is imgui doing
+imgui.ini
