@@ -114,6 +114,7 @@ function starry3d.lib(debug, starrydir, platform)
 		starrydir.."/thirdparty/stb",
 		starrydir.."/thirdparty/imgui",
 		starrydir.."/thirdparty/imgui/backends",
+		starrydir.."/thirdparty/whereami/src",
 	})
 	result.starry3d:add_sources({
 		starrydir.."/src/st_common.cpp",
@@ -152,7 +153,8 @@ function starry3d.lib(debug, starrydir, platform)
 			starrydir.."/thirdparty/glfw/include",
 			starrydir.."/thirdparty/stb",
 			starrydir.."/thirdparty/imgui",
-			starrydir.."/thirdparty/imgui/backends"
+			starrydir.."/thirdparty/imgui/backends",
+			starrydir.."/thirdparty/whereami/src"
 		}
 	end
 

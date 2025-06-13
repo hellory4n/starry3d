@@ -33,6 +33,20 @@ eng.option("platform", "Either linux or windows. Windows requires mingw64-gcc", 
 	end
 end)
 
+local asan = false
+eng.option("asan", "if true, enables AddressSanitizer", function(val)
+	if val == "true" then
+		project:add_cflags("-fsanitize=address")
+		project:add_ldflags("-fsanitize=address")
+		asan = true
+	end
+end)
+
+local breakpoint = ""
+eng.option("breakpoint", "sets a breakpoint in gdb, e.g. \"breakpoint=src/file.c:43\"", function(val)
+	breakpoint = val
+end)
+
 eng.recipe("build", "Builds the project lmao.", function()
 	-- copy assets folder
 	os.execute("mkdir -p build/bin/"..assets)
@@ -73,16 +87,13 @@ eng.recipe("run", "Builds and runs the project", function()
 	if platform == "windows" then
 		os.execute("wine build/bin/sandbox.exe")
 	else
-		-- it could be just ./build/bin/sandbox but then you would miss any panics that happen
-		-- run-gdb is separate bcuz to use breakpoints you have to set them before running
-		os.execute("gdb -q -ex run -ex \"quit\" --args build/bin/sandbox")
+		if asan then
+			-- asan doesn't work with gdb
+			os.execute("./build/bin/"..project.name)
+		else
+			os.execute("gdb -q -ex \"break "..breakpoint.."\" -ex run -ex \"quit\" --args build/bin/"..project.name)
+		end
 	end
-end)
-
-eng.recipe("run-gdb", "Runs the project with gdb", function()
-	eng.run_recipe("build")
-	print("") -- separation
-	os.execute("gdb build/bin/sandbox")
 end)
 
 eng.run()

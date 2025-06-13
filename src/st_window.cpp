@@ -45,13 +45,11 @@ void st::open_window(st::WindowOptions options)
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 	#endif
 
-	st::engine.window = glfwCreateWindow(options.size.x, options.size.y,
-		options.title.buffer(), nullptr, nullptr
-	);
+	st::engine.window = glfwCreateWindow(options.size.x, options.size.y, options.title, nullptr, nullptr);
 	tr::assert(st::engine.window != nullptr, "couldn't create window");
 	glfwMakeContextCurrent(st::engine.window);
 
-	glfwSwapInterval(options.vsync ? 1 : 0);
+	glfwSwapInterval(options.vsync ? 1 : 0); // TODO is that the only options?
 
 	// some callbacks
 	glfwSetFramebufferSizeCallback(st::engine.window, [](GLFWwindow* _, int w, int h) -> void {

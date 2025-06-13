@@ -72,17 +72,27 @@ struct Starry3D {
 	tr::Array<InputState> mouse_state;
 	tr::Array<bool> mouse_prev_down;
 
+	// path crap
+	tr::String app_name = "Starry3D";
+	tr::String app_dir = "";
+	tr::String user_dir = "";
+
 	Starry3D() {};
 };
 
 // This is where the engine's internal state goes. You probably shouldn't use this directly.
 extern Starry3D engine;
 
-// Initializes the crap library.
-void init();
+// Initializes the crap library. `app_name` is your game's name, which is used for `user://` prefixes.
+// `asset_dir` is just your assets directory, relative to the executable.
+void init(tr::String app_name, tr::String asset_dir);
 
 // Deinitializes the crap library.
 void free();
+
+// Turns Starry3D paths into real paths. `app://` refers to the game's assets folder, and `user://` refers
+// to the directory where the OS lets you store your own crap.
+tr::String path(tr::Ref<tr::Arena> arena, tr::String from);
 
 }
 
