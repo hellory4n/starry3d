@@ -4,6 +4,8 @@
 #include <st_render.hpp>
 #include <st_imgui.hpp>
 
+#include "debug_mode.hpp"
+
 int main(void)
 {
 	tr::use_log_file("log.txt");
@@ -26,7 +28,7 @@ int main(void)
 		}
 
 		st::imgui::begin();
-			ImGui::ShowDemoWindow();
+			sandbox::debug_mode();
 		st::imgui::end();
 
 		st::end_drawing();

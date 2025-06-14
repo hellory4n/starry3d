@@ -8,7 +8,8 @@ local starrydir = ".."
 local project = eng.newproj("sandbox", "executable", "c++14")
 project:add_includes({"src"})
 project:add_sources({
-	"src/main.cpp"
+	"src/main.cpp",
+	"src/debug_mode.cpp",
 })
 project:pedantic()
 

@@ -28,11 +28,10 @@
 // at the beginning bcuz it fucks wiht the standard headers on linux
 #include <whereami.c>
 
-#include "st_common.hpp"
+#include <libtrippin.hpp>
 
 #include "st_window.hpp"
-
-#include <libtrippin.hpp>
+#include "st_common.hpp"
 
 namespace st {
 	// it has to live somewhere
