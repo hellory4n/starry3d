@@ -33,13 +33,9 @@ eng.option("platform", "Either linux or windows. Windows requires mingw64-gcc", 
 	end
 end)
 
-local asan = false
-eng.option("asan", "if true, enables AddressSanitizer", function(val)
-	if val == "true" then
-		project:add_cflags("-fsanitize=address")
-		project:add_ldflags("-fsanitize=address")
-		asan = true
-	end
+eng.option("sanitize", "if true, enables a sanitizer, e.g. \"sanitize=address\" for asan", function(val)
+	project:add_cflags("-fsanitize="..val)
+	project:add_ldflags("-fsanitize="..val)
 end)
 
 local breakpoint = ""
@@ -87,12 +83,12 @@ eng.recipe("run", "Builds and runs the project", function()
 	if platform == "windows" then
 		os.execute("wine build/bin/sandbox.exe")
 	else
-		if asan then
-			-- asan doesn't work with gdb
-			os.execute("./build/bin/"..project.name)
-		else
+		-- if asan then
+		-- 	-- asan doesn't work with gdb
+		-- 	os.execute("./build/bin/"..project.name)
+		-- else
 			os.execute("gdb -q -ex \"break "..breakpoint.."\" -ex run -ex \"quit\" --args build/bin/"..project.name)
-		end
+		-- end
 	end
 end)
 

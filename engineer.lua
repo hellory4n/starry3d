@@ -183,6 +183,7 @@ eng.recipe("build-lib", "Builds the library lmao.", function()
 	local thegreatstarryhandsomestacktechnologything = starry3d.lib(debug, ".", platform)
 	thegreatstarryhandsomestacktechnologything.libtrippin:build()
 	thegreatstarryhandsomestacktechnologything.glfw()
+	thegreatstarryhandsomestacktechnologything.imgui:build()
 	thegreatstarryhandsomestacktechnologything.starry3d:build()
 end)
 

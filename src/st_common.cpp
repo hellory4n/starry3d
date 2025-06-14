@@ -49,6 +49,7 @@ void st::init(tr::String app_name, tr::String asset_dir)
 	st::engine.mouse_prev_down = tr::Array<bool>(st::engine.arena, static_cast<int>(st::MouseButton::LAST) + 1);
 
 	// man
+	st::engine.arena->retain();
 	st::engine.app_dir = tr::String(st::engine.arena, "", 1024);
 	int dirname_len;
 	wai_getExecutablePath(st::engine.app_dir, st::engine.app_dir.length(), &dirname_len);
