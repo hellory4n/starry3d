@@ -6,7 +6,7 @@
 
 namespace st {
 
-constexpr const char* BASIC_SHADER_VERTEX = 
+constexpr const char* BASIC_SHADER_VERTEX =
 	"#version 330 core\n"
 	"layout (location = 0) in vec3 position;\n"
 	"layout (location = 1) in vec4 color;\n"
@@ -15,12 +15,12 @@ constexpr const char* BASIC_SHADER_VERTEX =
 	"\n"
 	"void main()\n"
 	"{\n"
-	"    gl_Position = vec4(pos, 1.0);\n"
+	"    gl_Position = vec4(position, 1.0);\n"
 	"    out_color = color;\n"
 	"}\n"
 	"\n";
 
-constexpr const char* BASIC_SHADER_FRAGMENT = 
+constexpr const char* BASIC_SHADER_FRAGMENT =
 	"#version 330 core\n"
 	"in vec4 out_color;\n"
 	"\n"

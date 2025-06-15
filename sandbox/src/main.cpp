@@ -5,6 +5,7 @@
 #include <st_imgui.hpp>
 
 #include "debug_mode.hpp"
+#include "hello_triangle.hpp"
 
 int main(void)
 {
@@ -19,6 +20,8 @@ int main(void)
 	st::open_window(window);
 	st::imgui::init();
 
+	sandbox::init_triangle();
+
 	while (!st::is_window_closing()) {
 		st::poll_events();
 		st::clear_screen(tr::Color::rgb(0x734a16));
@@ -26,6 +29,8 @@ int main(void)
 		if (st::is_key_just_released(st::Key::F8)) {
 			st::close_window();
 		}
+
+		sandbox::render_triangle();
 
 		st::imgui::begin();
 			sandbox::debug_mode();

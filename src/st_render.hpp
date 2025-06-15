@@ -80,7 +80,10 @@ struct VertexAttribute
 	// Type.
 	VertexAttributeType type;
 	// Just use this with `offsetof`
-	const void* offset;
+	usize offset;
+
+	VertexAttribute(tr::String name, VertexAttributeType type, usize offset) : name(name), type(type),
+		offset(offset) {}
 };
 
 // It's a triangle lmao.
@@ -127,7 +130,7 @@ public:
 class ShaderProgram;
 
 // Shader. There's different shader classes just in case I decide to add compute shaders for some fucking reason.
-class Shader
+class Shader : public tr::RefCounted
 {
 protected:
 	uint32 shader;
@@ -139,7 +142,7 @@ public:
 };
 
 // A vertex shader is a shader that fucks with vertices.
-class VertexShader : public Shader, public tr::RefCounted
+class VertexShader : public Shader
 {
 public:
 	VertexShader(tr::String src);
@@ -147,7 +150,7 @@ public:
 };
 
 // A fragment shader is a shader that fucks with fragments.
-class FragmentShader : public Shader, public tr::RefCounted
+class FragmentShader : public Shader
 {
 public:
 	FragmentShader(tr::String src);
@@ -168,6 +171,8 @@ public:
 	void link();
 	// Uses the program for rendering crap.
 	void use();
+
+	// TODO set_uniform
 };
 
 }

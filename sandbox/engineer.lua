@@ -10,6 +10,7 @@ project:add_includes({"src"})
 project:add_sources({
 	"src/main.cpp",
 	"src/debug_mode.cpp",
+	"src/hello_triangle.cpp",
 })
 project:pedantic()
 

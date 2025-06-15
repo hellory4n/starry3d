@@ -24,7 +24,7 @@ void sandbox::debug_mode()
 	ImGui::Text("Freed:");
 		ImGui::BulletText("Arena memory: %zi MB", tr::bytes_to_mb(memory.freed_by_arenas));
 		ImGui::BulletText("Pages: %zi", memory.freed_pages);
-		ImGui::BulletText("Ref counted objects: %zi", memory.freed_pages);
+		ImGui::BulletText("Ref counted objects: %zi", memory.freed_ref_counted_objs);
 
 	ImGui::End();
 }

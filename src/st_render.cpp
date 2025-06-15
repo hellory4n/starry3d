@@ -162,10 +162,10 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 		}
 
 		if (ipointer) {
-			glVertexAttribIPointer(attrib.i, size, type, elem_size, attrib.val.offset);
+			glVertexAttribIPointer(attrib.i, size, type, elem_size, reinterpret_cast<const void*>(attrib.val.offset));
 		}
 		else {
-			glVertexAttribPointer(attrib.i, size, type, false, elem_size, attrib.val.offset);
+			glVertexAttribPointer(attrib.i, size, type, false, elem_size, reinterpret_cast<const void*>(attrib.val.offset));
 		}
 		glEnableVertexAttribArray(attrib.i);
 	}
@@ -184,9 +184,6 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 	tr::info("- triangles: %zu (%zu KB)", indices.length(), tr::bytes_to_kb(indices.length() *
 		sizeof(st::Triangle))
 	);
-	tr::info("- total:     %zu KB", tr::kb_to_bytes((length * elem_size) + (indices.length() *
-		sizeof(st::Triangle)))
-	);
 }
 
 st::Mesh::~Mesh()
@@ -196,6 +193,18 @@ st::Mesh::~Mesh()
 	glDeleteBuffers(1, &this->ebo);
 
 	tr::info("freed mesh (vao %u)", this->vao);
+}
+
+void st::Mesh::draw(tr::Matrix4x4 model, tr::Matrix4x4 view, tr::Matrix4x4 projection)
+{
+	// TODO use them
+	(void)model;
+	(void)view;
+	(void)projection;
+
+	glBindVertexArray(this->vao);
+	glDrawElements(GL_TRIANGLES, this->index_count, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
 }
 
 void st::Shader::check_compilation(const char* shader_type)
