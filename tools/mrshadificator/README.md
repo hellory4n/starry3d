@@ -1,13 +1,14 @@
 # MrShadificator
 
-Turns .glsl shaders into C header files.
+Turns .glsl shaders into C++ header files.
 
-This works by having a single .glsl file with `#vertex`/`#fragment`, that then become C strings.
+This works by having a single .glsl file with `#shader vertex`/`#shader fragment`, that then becomes strings
+you can use anywhere.
 
 For example:
 
 ```glsl
-#vertex
+#shader vertex
 #version 330 core
 
 layout(location = 0) in vec3 pos;
@@ -21,7 +22,7 @@ void main()
     vertexColor = aColor;
 }
 
-#fragment
+#shader fragment
 #version 330 core
 
 in vec3 out_color;
@@ -40,8 +41,8 @@ void main()
 
 ## Usage
 
-`lua mrshadificator.lua [shadersrc] [headerdst] [strname]`
+`lua mrshadificator.lua [shader] [header] [namespace] [string_name]`
 
-Example: `lua mrshadificator.lua shader.glsl shader.glsl.h ST_SOME_SHADER`
+Example: `lua mrshadificator.lua shader.glsl shader.glsl.hpp game SOME_SHADER`
 
-Now you can just include the header and use `ST_SOME_SHADER_VERTEX` and `ST_SOME_SHADER_FRAGMENT`
+Now you can just include the header and use `game::SOME_SHADER_VERTEX` and `game::SOME_SHADER_FRAGMENT`

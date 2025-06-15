@@ -197,3 +197,77 @@ st::Mesh::~Mesh()
 
 	tr::info("freed mesh (vao %u)", this->vao);
 }
+
+void st::Shader::check_compilation(const char* shader_type)
+{
+	int32 success;
+	glGetShaderiv(this->shader, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		char infolog[512];
+		glGetShaderInfoLog(this->shader, 512, nullptr, infolog);
+		tr::panic("couldn't compile %s shader: %s", shader_type, infolog);
+	}
+}
+
+st::VertexShader::VertexShader(tr::String src)
+{
+	this->shader = glCreateShader(GL_VERTEX_SHADER);
+	char* whythefuck = src.buffer();
+	glShaderSource(this->shader, 1, &whythefuck, nullptr);
+	glCompileShader(this->shader);
+
+	this->check_compilation("vertex");
+}
+
+st::VertexShader::~VertexShader()
+{
+	glDeleteShader(this->shader);
+}
+
+st::FragmentShader::FragmentShader(tr::String src)
+{
+	this->shader = glCreateShader(GL_FRAGMENT_SHADER);
+	char* whythefuck = src.buffer();
+	glShaderSource(this->shader, 1, &whythefuck, nullptr);
+	glCompileShader(this->shader);
+
+	this->check_compilation("fragment");
+}
+
+st::FragmentShader::~FragmentShader()
+{
+	glDeleteShader(this->shader);
+}
+
+st::ShaderProgram::ShaderProgram()
+{
+	this->program = glCreateProgram();
+}
+
+st::ShaderProgram::~ShaderProgram()
+{
+	glDeleteProgram(this->program);
+}
+
+void st::ShaderProgram::attach(tr::Ref<Shader> shader)
+{
+	glAttachShader(this->program, shader->shader);
+}
+
+void st::ShaderProgram::link()
+{
+	glLinkProgram(this->program);
+
+	int32_t success;
+	glGetProgramiv(this->program, GL_LINK_STATUS, &success);
+	if (!success) {
+		char infolog[512];
+		glGetProgramInfoLog(this->program, 512, nullptr, infolog);
+		tr::panic("gpu program linking error: %s", infolog);
+	}
+}
+
+void st::ShaderProgram::use()
+{
+	glUseProgram(this->program);
+}
