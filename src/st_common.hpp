@@ -29,6 +29,8 @@
 
 #include <libtrippin.hpp>
 
+#include "st_render.hpp"
+
 // make sure there's always ST_WINDOWS or ST_LINUX defined
 // TODO macOS
 #if !defined(ST_WINDOWS) && !defined(ST_LINUX)
@@ -59,7 +61,7 @@ struct Starry3D {
 
 	// window
 	GLFWwindow* window;
-	tr::Vec2<int32> window_size;
+	tr::Vec2<uint32> window_size;
 
 	// timing
 	float64 prev_time;
@@ -76,6 +78,9 @@ struct Starry3D {
 	tr::String app_name = "Starry3D";
 	tr::String app_dir = "";
 	tr::String user_dir = "";
+
+	// render crap
+	Camera camera;
 
 	Starry3D() {};
 };

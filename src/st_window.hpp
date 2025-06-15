@@ -173,7 +173,7 @@ enum class MouseButton {
 
 struct WindowOptions {
 	tr::String title = "Starry3D";
-	tr::Vec2<int32> size = {640, 480};
+	tr::Vec2<uint32> size = {640, 480};
 	bool resizable = false;
 	bool vsync = false;
 
@@ -197,7 +197,7 @@ bool is_window_closing();
 void poll_events();
 
 // As the name implies, it returns the window size.
-tr::Vec2<int32> window_size();
+tr::Vec2<uint32> window_size();
 
 bool is_key_just_pressed(Key key);
 bool is_key_just_released(Key key);

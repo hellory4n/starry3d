@@ -54,7 +54,7 @@ void st::open_window(st::WindowOptions options)
 	// some callbacks
 	glfwSetFramebufferSizeCallback(st::engine.window, [](GLFWwindow* _, int w, int h) -> void {
 		glViewport(0, 0, w, h);
-		st::engine.window_size = {w, h};
+		st::engine.window_size = {static_cast<uint32>(w), static_cast<uint32>(h)};
 	});
 
 	glfwSetErrorCallback([](int error_code, const char* description) -> void {
@@ -100,9 +100,9 @@ void st::free_window()
 	tr::info("destroyed window");
 }
 
-void st::close_window()       { glfwSetWindowShouldClose(st::engine.window, true); }
-bool st::is_window_closing()  { return glfwWindowShouldClose(st::engine.window); }
-tr::Vec2<int32> window_size() { return st::engine.window_size; }
+void st::close_window()            { glfwSetWindowShouldClose(st::engine.window, true); }
+bool st::is_window_closing()       { return glfwWindowShouldClose(st::engine.window); }
+tr::Vec2<uint32> st::window_size() { return st::engine.window_size; }
 
 void st::poll_events()
 {
@@ -204,6 +204,6 @@ void st::set_mouse_enabled(bool val)
 	glfwSetInputMode(st::engine.window, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
 
-float64 st::time()       { return glfwGetTime(); }
-float64 st::delta_time() { return st::engine.delta_time; }
-float64 st::fps()        { return 1.0 / st::engine.delta_time; }
+float64 st::time()                 { return glfwGetTime(); }
+float64 st::delta_time()           { return st::engine.delta_time; }
+float64 st::fps()                  { return 1.0 / st::engine.delta_time; }

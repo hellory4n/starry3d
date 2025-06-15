@@ -23,12 +23,12 @@
  *
  */
 
-#include "st_render.hpp"
-
-#include "st_common.hpp"
-
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+
+#include "st_common.hpp"
+#include "st_window.hpp"
+#include "st_render.hpp"
 
 void st::clear_screen(tr::Color color)
 {
@@ -40,4 +40,160 @@ void st::clear_screen(tr::Color color)
 void st::end_drawing()
 {
 	glfwSwapBuffers(st::engine.window);
+}
+
+tr::Matrix4x4 st::Camera::view_matrix()
+{
+	auto pos = tr::Matrix4x4::translate(-this->position.x, -this->position.y, -this->position.z);
+
+	auto rot = tr::Matrix4x4::identity();
+	rot = rot.rotate_x(tr::deg2rad(this->rotation.x));
+	rot = rot.rotate_y(tr::deg2rad(this->rotation.y));
+	rot = rot.rotate_z(tr::deg2rad(this->rotation.z));
+
+	return rot * pos;
+}
+
+tr::Matrix4x4 st::Camera::projection_matrix()
+{
+	tr::Vec2<uint32> winsize = st::window_size();
+
+	if (this->projection == CameraProjection::PERSPECTIVE) {
+		return tr::Matrix4x4::perspective(tr::deg2rad(this->fov), static_cast<float32>(winsize.x) /
+			winsize.y, this->near, this->far
+		);
+	}
+	else {
+		// TODO this may be fucked im not sure
+		float32 left = -this->zoom / 2.f;
+		float32 right = this->zoom / 2.f;
+
+		float32 height = this->zoom * (static_cast<float32>(winsize.y) / winsize.x);
+		float32 bottom = -height / 2.f;
+		float32 top = height / 2.f;
+
+		return tr::Matrix4x4::orthographic(left, right, bottom, top, this->near, this->far);
+	}
+}
+
+st::Camera* st::camera()
+{
+	return &st::engine.camera;
+}
+
+st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size, usize length,
+	tr::Array<st::Triangle> indices, bool readonly)
+{
+	this->index_count = indices.length() * 3;
+
+	// vao
+	glGenVertexArrays(1, &this->vao);
+	glBindVertexArray(this->vao);
+
+	// vbo
+	glGenBuffers(1, &this->vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+
+	glBufferData(GL_ARRAY_BUFFER, length * elem_size, buffer, readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
+
+	// figure out the format :DDDD
+	for (tr::ArrayItem<VertexAttribute> attrib : format) {
+		int32 size;
+		switch (attrib.val.type) {
+			case VertexAttributeType::INT32:
+			case VertexAttributeType::UINT32:
+			case VertexAttributeType::FLOAT32:
+			case VertexAttributeType::FLOAT64:
+				size = 1;
+				break;
+
+			case VertexAttributeType::VEC2_INT32:
+			case VertexAttributeType::VEC2_UINT32:
+			case VertexAttributeType::VEC2_FLOAT32:
+			case VertexAttributeType::VEC2_FLOAT64:
+				size = 2;
+				break;
+
+			case VertexAttributeType::VEC3_INT32:
+			case VertexAttributeType::VEC3_UINT32:
+			case VertexAttributeType::VEC3_FLOAT32:
+			case VertexAttributeType::VEC3_FLOAT64:
+				size = 3;
+				break;
+
+			case VertexAttributeType::VEC4_INT32:
+			case VertexAttributeType::VEC4_UINT32:
+			case VertexAttributeType::VEC4_FLOAT32:
+			case VertexAttributeType::VEC4_FLOAT64:
+				size = 4;
+				break;
+		}
+
+		bool ipointer = false;
+		GLenum type;
+		switch (attrib.val.type) {
+			case VertexAttributeType::INT32:
+			case VertexAttributeType::VEC2_INT32:
+			case VertexAttributeType::VEC3_INT32:
+			case VertexAttributeType::VEC4_INT32:
+				ipointer = true;
+				type = GL_INT;
+
+			case VertexAttributeType::UINT32:
+			case VertexAttributeType::VEC2_UINT32:
+			case VertexAttributeType::VEC3_UINT32:
+			case VertexAttributeType::VEC4_UINT32:
+				ipointer = true;
+				type = GL_UNSIGNED_INT;
+
+			case VertexAttributeType::FLOAT32:
+			case VertexAttributeType::VEC2_FLOAT32:
+			case VertexAttributeType::VEC3_FLOAT32:
+			case VertexAttributeType::VEC4_FLOAT32:
+				ipointer = false;
+				type = GL_FLOAT;
+
+			case VertexAttributeType::FLOAT64:
+			case VertexAttributeType::VEC2_FLOAT64:
+			case VertexAttributeType::VEC3_FLOAT64:
+			case VertexAttributeType::VEC4_FLOAT64:
+				ipointer = false;
+				type = GL_DOUBLE;
+		}
+
+		if (ipointer) {
+			glVertexAttribIPointer(attrib.i, size, type, elem_size, attrib.val.offset);
+		}
+		else {
+			glVertexAttribPointer(attrib.i, size, type, false, elem_size, attrib.val.offset);
+		}
+		glEnableVertexAttribArray(attrib.i);
+	}
+
+	// ebo
+	glGenBuffers(1, &this->ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.length() * sizeof(Triangle), indices.buffer(),
+		readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
+
+	// unbind vao
+	glBindVertexArray(0);
+
+	tr::info("uploaded mesh (vao %u, vbo %u, ebo %u)", this->vao, this->vbo, this->ebo);
+	tr::info("- vertices:  %zu (%zu KB)", length, tr::bytes_to_kb(length * elem_size));
+	tr::info("- triangles: %zu (%zu KB)", indices.length(), tr::bytes_to_kb(indices.length() *
+		sizeof(st::Triangle))
+	);
+	tr::info("- total:     %zu KB", tr::kb_to_bytes((length * elem_size) + (indices.length() *
+		sizeof(st::Triangle)))
+	);
+}
+
+st::Mesh::~Mesh()
+{
+	glDeleteVertexArrays(1, &this->vao);
+	glDeleteBuffers(1, &this->vbo);
+	glDeleteBuffers(1, &this->ebo);
+
+	tr::info("freed mesh (vao %u)", this->vao);
 }

@@ -36,6 +36,93 @@ void clear_screen(tr::Color color);
 // As the name implies, it ends drawing.
 void end_drawing();
 
+enum class CameraProjection { ORTHOGRAPHIC, PERSPECTIVE };
+
+// It's a camera lmao.
+struct Camera
+{
+	tr::Vec3<float64> position;
+	// In degrees
+	tr::Vec3<float64> rotation;
+	union {
+		// In degrees
+		float64 fov;
+		float64 zoom;
+	};
+	// How near can objects be before they get clipped
+	float64 near;
+	// How far can objects be before they get clipped
+	float64 far;
+	CameraProjection projection;
+
+	tr::Matrix4x4 view_matrix();
+	tr::Matrix4x4 projection_matrix();
+};
+
+// Returns the current camera :)
+Camera* camera();
+
+// It's vertex attribute types lmao. Note this is just the types GLSL supports (no 64 bit ints because GLSL
+// doesn't have them)
+enum class VertexAttributeType {
+	INT32, UINT32, FLOAT32, FLOAT64,
+	VEC2_INT32, VEC2_UINT32, VEC2_FLOAT32, VEC2_FLOAT64,
+	VEC3_INT32, VEC3_UINT32, VEC3_FLOAT32, VEC3_FLOAT64,
+	VEC4_INT32, VEC4_UINT32, VEC4_FLOAT32, VEC4_FLOAT64,
+};
+
+// Represents the vertex layout in memory.
+struct VertexAttribute
+{
+	// Name. This isn't actually used for anything, but it just makes things a bit clearer, and I may use it
+	// later too
+	tr::String name;
+	// Type.
+	VertexAttributeType type;
+	// Just use this with `offsetof`
+	const void* offset;
+};
+
+// It's a triangle lmao.
+struct Triangle {
+	uint32 v1;
+	uint32 v2;
+	uint32 v3;
+};
+
+// Represents a mesh in the GPU.
+class Mesh : public tr::RefCounted
+{
+	uint32 vao;
+	uint32 vbo;
+	uint32 ebo;
+	uint32 index_count;
+
+public:
+	// `elem_size` is the size of the type you're using for vertices. `readonly` allows you to update the
+	// mesh later.
+	Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size, usize length,
+		tr::Array<Triangle> indices, bool readonly);
+
+	// not really necessary idc
+	template<typename T> Mesh(tr::Array<VertexAttribute> format, tr::Array<T> vertices,
+		tr::Array<Triangle> indices, bool readonly)
+		: Mesh(format, vertices.buffer(), sizeof(T), vertices.length(), indices, readonly) {}
+
+	~Mesh();
+
+	// Draws the mesh anywhere you want with the MVP matrices.
+	void draw(tr::Matrix4x4 model, tr::Matrix4x4 view, tr::Matrix4x4 projection);
+
+	// Draws the mesh using a custom model matrix and the default view/projection matrices.
+	void draw(tr::Matrix4x4 matrix);
+
+	// Draws the mesh in the 3D world. Rotation is in degrees
+	void draw(tr::Vec3<float64> pos, tr::Vec3<float64> rot);
+
+	// TODO draw_instanced(), update_data()
+};
+
 }
 
 #endif
