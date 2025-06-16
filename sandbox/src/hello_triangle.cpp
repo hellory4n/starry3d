@@ -40,8 +40,6 @@ void sandbox::init_triangle()
 	tr::Array<st::Triangle> indices(indices_arr, sizeof(indices_arr) / sizeof(st::Triangle));
 
 	sandbox::mesh = new st::Mesh(format, vertices, indices, false);
-	mesh->retain();
-	shader->retain();
 }
 
 void sandbox::render_triangle()

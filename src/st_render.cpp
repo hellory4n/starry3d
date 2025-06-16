@@ -138,6 +138,7 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 			case VertexAttributeType::VEC4_INT32:
 				ipointer = true;
 				type = GL_INT;
+				break;
 
 			case VertexAttributeType::UINT32:
 			case VertexAttributeType::VEC2_UINT32:
@@ -145,6 +146,7 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 			case VertexAttributeType::VEC4_UINT32:
 				ipointer = true;
 				type = GL_UNSIGNED_INT;
+				break;
 
 			case VertexAttributeType::FLOAT32:
 			case VertexAttributeType::VEC2_FLOAT32:
@@ -152,6 +154,7 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 			case VertexAttributeType::VEC4_FLOAT32:
 				ipointer = false;
 				type = GL_FLOAT;
+				break;
 
 			case VertexAttributeType::FLOAT64:
 			case VertexAttributeType::VEC2_FLOAT64:
@@ -159,6 +162,7 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 			case VertexAttributeType::VEC4_FLOAT64:
 				ipointer = false;
 				type = GL_DOUBLE;
+				break;
 		}
 
 		if (ipointer) {

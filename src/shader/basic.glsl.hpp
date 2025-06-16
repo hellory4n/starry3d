@@ -28,7 +28,7 @@ constexpr const char* BASIC_SHADER_FRAGMENT =
 	"\n"
 	"void main()\n"
 	"{\n"
-	"\tFragColor = vec4(1, 1, 1, 1);\n"
+	"\tFragColor = out_color;\n"
 	"}\n";
 
 }

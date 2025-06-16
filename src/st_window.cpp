@@ -33,6 +33,11 @@
 
 void st::open_window(st::WindowOptions options)
 {
+	// renderdoc doesn't work on wayland
+	#if defined(ST_LINUX) && defined(DEBUG)
+	glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+	#endif
+
 	if (!glfwInit()) {
 		tr::panic("couldn't initialize glfw");
 	}
