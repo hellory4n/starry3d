@@ -226,11 +226,13 @@ st::VertexShader::VertexShader(tr::String src)
 	glCompileShader(this->shader);
 
 	this->check_compilation("vertex");
+	tr::info("created vertex shader (id %u)", this->shader);
 }
 
 st::VertexShader::~VertexShader()
 {
 	glDeleteShader(this->shader);
+	tr::info("deleted vertex shader (id %u)", this->shader);
 }
 
 st::FragmentShader::FragmentShader(tr::String src)
@@ -241,21 +243,25 @@ st::FragmentShader::FragmentShader(tr::String src)
 	glCompileShader(this->shader);
 
 	this->check_compilation("fragment");
+	tr::info("created fragment shader (id %u)", this->shader);
 }
 
 st::FragmentShader::~FragmentShader()
 {
 	glDeleteShader(this->shader);
+	tr::info("deleted fragment shader (id %u)", this->shader);
 }
 
 st::ShaderProgram::ShaderProgram()
 {
 	this->program = glCreateProgram();
+	tr::info("created shader program (id %u)", this->program);
 }
 
 st::ShaderProgram::~ShaderProgram()
 {
 	glDeleteProgram(this->program);
+	tr::info("deleted shader program (id %u)", this->program);
 }
 
 void st::ShaderProgram::attach(tr::Ref<Shader> shader)
@@ -274,6 +280,8 @@ void st::ShaderProgram::link()
 		glGetProgramInfoLog(this->program, 512, nullptr, infolog);
 		tr::panic("gpu program linking error: %s", infolog);
 	}
+
+	tr::info("linked shader program (id %u)", this->program);
 }
 
 void st::ShaderProgram::use()
