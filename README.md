@@ -77,17 +77,197 @@ Now you need to include Starry3D into your project. It's recommended to do so th
 git submodule add https://github.com/hellory4n/starry3d thirdparty/starry3d
 ```
 
-`sandbox/` is the example project setup, using the engineer™™™ build system.
+### Option A: Integrating into an existing project
+
+Make sure you're using C++14 or higher, it won't work in anything older.
+
+Note that compiling on Visual Studio isn't tested, and I don't know if it works or not.
+
+First you need GLFW, you could either link against a [precompiled version](https://github.com/glfw/glfw/releases/tag/3.4) or [compile it yourself](https://www.glfw.org/docs/latest/compile.html). Both static and shared
+libraries should work.
+
+Now add these folders to your includes: (relative to where you put starry3d)
+- `src/`
+- `thirdparty/`
+- `thirdparty/libtrippin`
+- `thirdparty/glfw/include`
+- `thirdparty/stb`
+- `thirdparty/whereami/src`
+If you're using ImGui:
+- `thirdparty/imgui`
+- `thirdparty/imgui/backends`
+
+Add these source files: (relative to where you put starry3d)
+- `src/st_common.cpp`
+- `src/st_render.cpp`
+- `src/st_window.cpp`
+- `thirdparty/libtrippin/libtrippin.cpp`
+If you're using ImGui:
+- `src/st_imgui.cpp`
+- `thirdparty/imgui/imgui.cpp`
+- `thirdparty/imgui/imgui_demo.cpp`
+- `thirdparty/imgui/imgui_draw.cpp`
+- `thirdparty/imgui/imgui_tables.cpp`
+- `thirdparty/imgui/imgui_widgets.cpp`
+- `thirdparty/imgui/backends/imgui_impl_glfw.cpp`
+- `thirdparty/imgui/backends/imgui_impl_opengl3.cpp`
+
+You also have to link with some libraries:
+- Windows (MinGW): `opengl32`, `gdi32`, `winmm`, `comdlg32`, `ole32`, `pthread`
+- Linux: `X11`, `Xrandr`, `GL`, `Xinerama`, `m`, `pthread`, `dl`, `rt`
+
+Now put this in your `main.cpp` and run to check if it worked:
+
+```c
+#include <libtrippin.hpp>
+#include <st_common.hpp>
+#include <st_window.hpp>
+#include <st_render.hpp>
+#include <st_imgui.hpp>
+
+// TODO implement them
+static void init_game() {}
+static void update_game() {}
+static void free_game() {}
+
+int main(void)
+{
+    tr::use_log_file("log.txt");
+    tr::init();
+
+    st::init("very_handsome_game", "assets");
+    st::WindowOptions window;
+    window.title = "Very Handsome Game™";
+    window.size = {1280, 720};
+    window.resizable = true;
+    st::open_window(window);
+    st::imgui::init();
+
+    init_game();
+
+    while (!st::is_window_closing()) {
+        st::poll_events();
+        st::clear_screen(tr::Color::rgb(0x734a16));
+
+        update_game();
+
+        st::imgui::begin();
+            // imgui goes here
+        st::imgui::end();
+
+        st::end_drawing();
+    }
+
+    free_game();
+
+    st::imgui::free();
+    st::free_window();
+    st::free();
+
+    tr::free();
+    return 0;
+}
+```
+
+### Option B: Using static libraries
+
+Make sure you're using C++14 or higher, it won't work in anything older.
+
+Run this from where you put starry3d:
+
+```sh
+./engineer build-lib
+```
+
+Now copy these into where you put your libraries:
+- `build/static/libtrippin.a`
+- `build/static/libstarry3d.a`
+- `build/static/libglfw3.a`
+- `build/static/libimgui.a` (optional)
+
+Add these to your includes: (relative to where you put starry3d)
+- `src/`
+- `thirdparty/`
+- `thirdparty/libtrippin`
+- `thirdparty/glfw/include`
+- `thirdparty/stb`
+- `thirdparty/whereami/src`
+If you're using ImGui:
+- `thirdparty/imgui`
+- `thirdparty/imgui/backends`
+
+And link with these libraries:
+- Windows (MinGW): `starry3d`, `trippin`, `glfw3`, `opengl32`, `gdi32`, `winmm`, `comdlg32`, `ole32`, `pthread`
+- Linux: `starry3d`, `trippin`, `glfw3`, `X11`, `Xrandr`, `GL`, `Xinerama`, `m`, `pthread`, `dl`, `rt`
+
+If you're using ImGui you'll also have to link with `imgui`
+
+Now put this in your `main.cpp` and run to check if it worked:
+
+```c
+#include <libtrippin.hpp>
+#include <st_common.hpp>
+#include <st_window.hpp>
+#include <st_render.hpp>
+#include <st_imgui.hpp>
+
+// TODO implement them
+static void init_game() {}
+static void update_game() {}
+static void free_game() {}
+
+int main(void)
+{
+    tr::use_log_file("log.txt");
+    tr::init();
+
+    st::init("very_handsome_game", "assets");
+    st::WindowOptions window;
+    window.title = "Very Handsome Game™";
+    window.size = {1280, 720};
+    window.resizable = true;
+    st::open_window(window);
+    st::imgui::init();
+
+    init_game();
+
+    while (!st::is_window_closing()) {
+        st::poll_events();
+        st::clear_screen(tr::Color::rgb(0x734a16));
+
+        update_game();
+
+        st::imgui::begin();
+            // imgui goes here
+        st::imgui::end();
+
+        st::end_drawing();
+    }
+
+    free_game();
+
+    st::imgui::free();
+    st::free_window();
+    st::free();
+
+    tr::free();
+    return 0;
+}
+```
+
+### Option C: Using [engineer](https://github.com/hellory4n/libtrippin/tree/main/engineerbuild)
+
+I have a build system for some reason. `sandbox/` includes an example of this setup.
 
 Make sure to get `engineer`, `engineer.lua`, and `libengineer.lua` from there.
 
-Then you should only have to change these lines:
+Then you should only have to change these lines at the start:
 
 ```lua
 -- where are your assets
 local assets = "assets"
 -- where is starry3d
-local starrydir = ".."
+local starrydir = "thirdparty/starry3d"
 local project = eng.newproj("very_handsome_game", "executable", "c++14")
 project:add_includes({"src"})
 -- add your .cpp files here
