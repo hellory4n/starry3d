@@ -1,4 +1,4 @@
-# starry3d v0.3.0
+# starry3d v0.4.0
 
 > [!WARNING]
 > This is in active development. It may be janky, or worse, busted.
@@ -7,11 +7,11 @@
 
 ## Features
 
-- Pure C99 and OpenGL 3.3
+- C++14 and OpenGL 3.3
 - Cross platform ish. (windows and linux)
 - Probably runs on anything ever
 - Optimized for voxel graphics
-- UI through [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear), you don't have to do anything, it's
+- UI through [ImGui](https://github.com/ocornut/imgui), you don't have to do anything, it's
   already there
 - Built on [libtrippin](https://github.com/hellory4n/libtrippin) the biggest most massive library of all time
 
@@ -31,7 +31,6 @@
 - Networking
 - More platforms
 - Decent 2D
-- Better rendering API
 - Consider not using OpenGL (coming in 2054)
 
 ## Building
@@ -74,8 +73,8 @@ You need these installed:
 Now you need to include Starry3D into your project. It's recommended to do so through Git submodules:
 
 ```sh
-# change "vendor/starry3d" to wherever you want it to be in
-git submodule add https://github.com/hellory4n/starry3d vendor/starry3d
+# change "thirdparty/starry3d" to wherever you want it to be in
+git submodule add https://github.com/hellory4n/starry3d thirdparty/starry3d
 ```
 
 `sandbox/` is the example project setup, using the engineer™™™ build system.
@@ -89,59 +88,64 @@ Then you should only have to change these lines:
 local assets = "assets"
 -- where is starry3d
 local starrydir = ".."
-local project = eng.newproj("VeryHandsomeGame", "executable", "c99")
+local project = eng.newproj("very_handsome_game", "executable", "c++14")
 project:add_includes({"src"})
--- add your .c files here
+-- add your .cpp files here
 project:add_sources({
-	"src/main.c"
+	"src/main.cpp"
 })
 ```
 
-Now put this in `src/main.c` and run `./engineer run` to check if it worked:
+Now put this in `src/main.cpp` and run `./engineer run` to check if it worked:
 
 ```c
-#include <libtrippin.h>
-#include <starry3d.h>
-#include <st_ui.h> // includes nuklear.h
+#include <libtrippin.hpp>
+#include <st_common.hpp>
+#include <st_window.hpp>
+#include <st_render.hpp>
+#include <st_imgui.hpp>
+
+// TODO implement them
+static void init_game() {}
+static void update_game() {}
+static void free_game() {}
 
 int main(void)
 {
-    tr_init("log.txt");
-    st_init((StSettings){
-        .app_name = "test",
-        // where you put your assets, relative to the executable
-        .asset_dir = "assets",
-        .resizable = true,
-        .window_width = 800,
-        .window_height = 600,
-    });
-    // you need a font for nuklear to work
-    st_ui_new("app:default_font.ttf", 16);
+	tr::use_log_file("log.txt");
+	tr::init();
 
-    st_set_environment((StEnvironment){
-        .sky_color = TR_WHITE,
-    });
+	st::init("very_handsome_game", "assets");
+	st::WindowOptions window;
+	window.title = "Very Handsome Game™";
+	window.size = {1280, 720};
+	window.resizable = true;
+	st::open_window(window);
+	st::imgui::init();
 
-    // initialize your program here
+    init_game();
 
-    while (!st_is_closing()) {
-        st_begin_drawing(TR_WHITE);
+	while (!st::is_window_closing()) {
+		st::poll_events();
+		st::clear_screen(tr::Color::rgb(0x734a16));
 
-        // main loop goes here
+        update_game();
 
-        st_ui_begin();
-            // nuklear calls go here
-        st_ui_end();
+		st::imgui::begin();
+			// imgui goes here
+		st::imgui::end();
 
-        st_end_drawing();
-        st_poll_events();
-    }
+		st::end_drawing();
+	}
 
-    // deinitialize your program here
+    free_game();
 
-    st_ui_free();
-    st_free();
-    tr_free();
+	st::imgui::free();
+	st::free_window();
+	st::free();
+
+	tr::free();
+	return 0;
 }
 ```
 
