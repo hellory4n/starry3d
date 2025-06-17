@@ -209,6 +209,6 @@ void st::set_mouse_enabled(bool val)
 	glfwSetInputMode(st::engine.window, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
 
-float64 st::time()                 { return glfwGetTime(); }
-float64 st::delta_time()           { return st::engine.delta_time; }
-float64 st::fps()                  { return 1.0 / st::engine.delta_time; }
+float64 st::time()       { return glfwGetTime(); }
+float64 st::delta_time() { return st::engine.delta_time; }
+float64 st::fps()        { return 1.0 / st::engine.delta_time; }
