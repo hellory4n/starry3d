@@ -23,12 +23,14 @@
  *
  */
 
-#include <glad/gl.h>
-#include <GLFW/glfw3.h>
-
 #include "st_common.hpp"
 #include "st_window.hpp"
 #include "st_render.hpp"
+
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 void st::clear_screen(tr::Color color)
 {
@@ -206,9 +208,19 @@ void st::Mesh::draw(tr::Matrix4x4 model, tr::Matrix4x4 view, tr::Matrix4x4 proje
 	(void)view;
 	(void)projection;
 
+	if (this->texture != nullptr) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, this->texture->id);
+	}
+
 	glBindVertexArray(this->vao);
 	glDrawElements(GL_TRIANGLES, this->index_count, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
+}
+
+void st::Mesh::set_texture(tr::Ref<st::Texture> texture)
+{
+	this->texture = tr::MaybeRef<Texture>(texture);
 }
 
 void st::Shader::check_compilation(const char* shader_type)
@@ -291,4 +303,51 @@ void st::ShaderProgram::link()
 void st::ShaderProgram::use()
 {
 	glUseProgram(this->program);
+}
+
+st::Texture::Texture(tr::String path)
+{
+	tr::Ref<tr::Arena> tmp = new tr::Arena(tr::kb_to_bytes(1));
+	tr::String real_path = st::path(tmp, path);
+
+	// TODO texture cache
+	int32 width, height, channels;
+	uint8* data = stbi_load(real_path, &width, &height, &channels, 0);
+	if (data == nullptr) {
+		tr::panic("couldn't load texture from %s", path.buffer());
+	}
+
+	// TODO there's no way this is correct but i can't be bothered to check
+	GLenum format;
+	switch (channels) {
+		case 1:  format = GL_R;    break;
+		case 2:  format = GL_RG;   break;
+		case 3:  format = GL_RGB;  break;
+		case 4:  format = GL_RGBA; break;
+		default: format = GL_RGB; break;
+	}
+
+	// help
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	this->size = {static_cast<uint32>(width), static_cast<uint32>(height)};
+
+	// actually make the texture
+	glGenTextures(1, &this->id);
+	glBindTexture(GL_TEXTURE_2D, this->id);
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+	// TODO there should be a setting for this probably
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	stbi_image_free(data);
+	tr::info("loaded texture from %s (id %u)", path.buffer(), this->id);
+}
+
+st::Texture::~Texture()
+{
+	glDeleteTextures(1, &this->id);
+	tr::info("deleted texture (id %u)", this->id);
 }

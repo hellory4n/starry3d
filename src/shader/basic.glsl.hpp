@@ -10,25 +10,31 @@ constexpr const char* BASIC_SHADER_VERTEX =
 	"#version 330 core\n"
 	"layout (location = 0) in vec3 position;\n"
 	"layout (location = 1) in vec4 color;\n"
+	"layout (location = 2) in vec2 uv;\n"
 	"\n"
 	"out vec4 out_color;\n"
+	"out vec2 out_uv;\n"
 	"\n"
 	"void main()\n"
 	"{\n"
 	"\tgl_Position = vec4(position, 1.0);\n"
 	"\tout_color = color;\n"
+	"\tout_uv = uv;\n"
 	"}\n"
 	"\n";
 
 constexpr const char* BASIC_SHADER_FRAGMENT = 
 	"#version 330 core\n"
 	"in vec4 out_color;\n"
+	"in vec2 out_uv;\n"
 	"\n"
 	"out vec4 FragColor;\n"
 	"\n"
+	"uniform sampler2D u_texture;\n"
+	"\n"
 	"void main()\n"
 	"{\n"
-	"\tFragColor = out_color;\n"
+	"\tFragColor = texture(u_texture, out_uv) * out_color;\n"
 	"}\n";
 
 }

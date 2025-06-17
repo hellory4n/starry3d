@@ -8,6 +8,7 @@ namespace sandbox {
 struct Vertex {
 	tr::Vec3<float32> position;
 	tr::Vec4<float32> color;
+	tr::Vec2<float32> uv;
 };
 
 void init_triangle();

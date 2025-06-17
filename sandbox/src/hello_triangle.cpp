@@ -6,6 +6,7 @@
 namespace sandbox {
 	tr::Ref<st::Mesh> mesh;
 	tr::Ref<st::ShaderProgram> shader;
+	tr::Ref<st::Texture> texture;
 }
 
 void sandbox::init_triangle()
@@ -24,13 +25,14 @@ void sandbox::init_triangle()
 	st::VertexAttribute format_arr[] = {
 		{"position", st::VertexAttributeType::VEC3_FLOAT32, offsetof(sandbox::Vertex, position)},
 		{"color",    st::VertexAttributeType::VEC4_FLOAT32, offsetof(sandbox::Vertex, color)},
+		{"uv",       st::VertexAttributeType::VEC2_FLOAT32, offsetof(sandbox::Vertex, uv)}
 	};
 	tr::Array<st::VertexAttribute> format(format_arr, sizeof(format_arr) / sizeof(st::VertexAttribute));
 
 	Vertex vertices_arr[] = {
-		{{-0.5, -0.5, 0.0}, tr::Color::rgb(0xff0000).to_vec4()},
-		{{ 0.5, -0.5, 0.0}, tr::Color::rgb(0x00ff00).to_vec4()},
-		{{ 0.0,  0.5, 0.0}, tr::Color::rgb(0x0000ff).to_vec4()},
+		{{-0.5, -0.5, 0.0}, tr::Color::rgb(0xff0000).to_vec4(), {-1, -1}},
+		{{ 0.5, -0.5, 0.0}, tr::Color::rgb(0x00ff00).to_vec4(), {1, -1}},
+		{{ 0.0,  0.5, 0.0}, tr::Color::rgb(0x0000ff).to_vec4(), {0.5, 1}},
 	};
 	tr::Array<Vertex> vertices(vertices_arr, sizeof(vertices_arr) / sizeof(Vertex));
 
@@ -40,6 +42,9 @@ void sandbox::init_triangle()
 	tr::Array<st::Triangle> indices(indices_arr, sizeof(indices_arr) / sizeof(st::Triangle));
 
 	sandbox::mesh = new st::Mesh(format, vertices, indices, false);
+
+	sandbox::texture = new st::Texture("app://enough_fckery.jpg");
+	sandbox::mesh->set_texture(sandbox::texture);
 }
 
 void sandbox::render_triangle()

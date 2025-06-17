@@ -77,7 +77,7 @@ void st::free()
 	tr::info("deinitialized starry3d");
 }
 
-tr::String path(tr::Ref<tr::Arena> arena, tr::String from)
+tr::String st::path(tr::Ref<tr::Arena> arena, tr::String from)
 {
 	if (from.starts_with("app://")) {
 		tr::String pathfrfr = from.substr(arena, 6, from.length() + 1);

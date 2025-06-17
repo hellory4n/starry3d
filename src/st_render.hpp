@@ -93,6 +93,9 @@ struct Triangle {
 	uint32 v3;
 };
 
+// It's an image on the GPU :)
+class Texture;
+
 // Represents a mesh in the GPU.
 class Mesh : public tr::RefCounted
 {
@@ -100,6 +103,7 @@ class Mesh : public tr::RefCounted
 	uint32 vbo;
 	uint32 ebo;
 	uint32 index_count;
+	tr::MaybeRef<Texture> texture;
 
 public:
 	// `elem_size` is the size of the type you're using for vertices. `readonly` allows you to update the
@@ -124,6 +128,9 @@ public:
 	void draw(tr::Vec3<float64> pos, tr::Vec3<float64> rot);
 
 	// TODO draw_instanced(), update_data()
+
+	// Makes the mesh use a specific texture :)
+	void set_texture(tr::Ref<Texture> texture);
 };
 
 // A program on the GPU©®¢™¢™¢™©®©®©®™™™©®©®™™™©®©®™™¢®¢™™
@@ -173,6 +180,19 @@ public:
 	void use();
 
 	// TODO set_uniform
+};
+
+// It's an image on the GPU :)
+class Texture : public tr::RefCounted
+{
+	uint32 id;
+	friend class Mesh;
+
+public:
+	tr::Vec2<uint32> size;
+
+	Texture(tr::String path);
+	~Texture();
 };
 
 }
