@@ -112,40 +112,40 @@ static void free_game() {}
 
 int main(void)
 {
-	tr::use_log_file("log.txt");
-	tr::init();
+    tr::use_log_file("log.txt");
+    tr::init();
 
-	st::init("very_handsome_game", "assets");
-	st::WindowOptions window;
-	window.title = "Very Handsome Game™";
-	window.size = {1280, 720};
-	window.resizable = true;
-	st::open_window(window);
-	st::imgui::init();
+    st::init("very_handsome_game", "assets");
+    st::WindowOptions window;
+    window.title = "Very Handsome Game™";
+    window.size = {1280, 720};
+    window.resizable = true;
+    st::open_window(window);
+    st::imgui::init();
 
     init_game();
 
-	while (!st::is_window_closing()) {
-		st::poll_events();
-		st::clear_screen(tr::Color::rgb(0x734a16));
+    while (!st::is_window_closing()) {
+        st::poll_events();
+        st::clear_screen(tr::Color::rgb(0x734a16));
 
         update_game();
 
-		st::imgui::begin();
-			// imgui goes here
-		st::imgui::end();
+        st::imgui::begin();
+            // imgui goes here
+        st::imgui::end();
 
-		st::end_drawing();
-	}
+        st::end_drawing();
+    }
 
     free_game();
 
-	st::imgui::free();
-	st::free_window();
-	st::free();
+    st::imgui::free();
+    st::free_window();
+    st::free();
 
-	tr::free();
-	return 0;
+    tr::free();
+    return 0;
 }
 ```
 
@@ -161,6 +161,6 @@ No fuck off.
 
 Why not.
 
-### Why C? Can't you be a normal human being and use C++ C# Rust Go Zig Odin Nim Sip Cliff Swig Beef (this one is real) Swag S'mores?
+### Can't you be a normal human being and use Rust Go Zig Odin Nim Sip Cliff Swig Beef (this one is real) Swag S'mores?
 
 I like C.
