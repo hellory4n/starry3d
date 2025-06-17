@@ -68,6 +68,17 @@ void st::init(tr::String app_name, tr::String asset_dir)
 	#endif
 	tr::info("user:// is pointing to %s", st::engine.user_dir.buffer());
 
+	// default camera
+	// because not having a camera would be annoying to debug
+	// TODO this is probably stupid
+	st::engine.camera = {};
+	st::engine.camera.position = {0, 0, -1};
+	st::engine.camera.rotation = {35, 35, 0};
+	st::engine.camera.projection = CameraProjection::PERSPECTIVE;
+	st::engine.camera.far = 1'000;
+	st::engine.camera.near = 0.001;
+	st::engine.camera.fov = 90;
+
 	tr::info("initialized starry3d %s", st::VERSION);
 }
 
@@ -80,11 +91,11 @@ void st::free()
 tr::String st::path(tr::Ref<tr::Arena> arena, tr::String from)
 {
 	if (from.starts_with("app://")) {
-		tr::String pathfrfr = from.substr(arena, 6, from.length() + 1);
+		tr::String pathfrfr = from.substr(arena, sizeof("app://") -1, from.length() + 1);
 		return tr::sprintf(arena, 1024, "%s/%s", st::engine.app_dir.buffer(), pathfrfr.buffer());
 	}
 	else if (from.starts_with("user://")) {
-		tr::String pathfrfr = from.substr(arena, 7, from.length() + 1);
+		tr::String pathfrfr = from.substr(arena, sizeof("user://") - 1, from.length() + 1);
 		return tr::sprintf(arena, 1024, "%s/%s", st::engine.user_dir.buffer(), pathfrfr.buffer());
 	}
 

@@ -81,6 +81,11 @@ struct Starry3D {
 
 	// render crap
 	Camera camera;
+	// TODO a function to change these
+	// st::ShaderSettings or smth idk man
+	tr::String model_uniform = "u_model";
+	tr::String view_uniform = "u_view";
+	tr::String proj_uniform = "u_projection";
 
 	Starry3D() {};
 };

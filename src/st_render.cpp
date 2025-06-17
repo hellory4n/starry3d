@@ -32,6 +32,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+namespace st {
+	tr::Ref<ShaderProgram> current_shader;
+}
+
 void st::clear_screen(tr::Color color)
 {
 	tr::Vec4<float32> vec4_color = color.to_vec4();
@@ -49,9 +53,9 @@ tr::Matrix4x4 st::Camera::view_matrix()
 	auto pos = tr::Matrix4x4::translate(-this->position.x, -this->position.y, -this->position.z);
 
 	auto rot = tr::Matrix4x4::identity();
-	rot = rot.rotate_x(tr::deg2rad(this->rotation.x));
-	rot = rot.rotate_y(tr::deg2rad(this->rotation.y));
-	rot = rot.rotate_z(tr::deg2rad(this->rotation.z));
+	rot = rot * rot.rotate_x(tr::deg2rad(this->rotation.x));
+	rot = rot * rot.rotate_y(tr::deg2rad(this->rotation.y));
+	rot = rot * rot.rotate_z(tr::deg2rad(this->rotation.z));
 
 	return rot * pos;
 }
@@ -203,10 +207,9 @@ st::Mesh::~Mesh()
 
 void st::Mesh::draw(tr::Matrix4x4 model, tr::Matrix4x4 view, tr::Matrix4x4 projection)
 {
-	// TODO use them
-	(void)model;
-	(void)view;
-	(void)projection;
+	st::current_shader->set_uniform(st::engine.model_uniform, model);
+	st::current_shader->set_uniform(st::engine.view_uniform, view);
+	st::current_shader->set_uniform(st::engine.proj_uniform, projection);
 
 	if (this->texture != nullptr) {
 		glActiveTexture(GL_TEXTURE0);
@@ -216,6 +219,23 @@ void st::Mesh::draw(tr::Matrix4x4 model, tr::Matrix4x4 view, tr::Matrix4x4 proje
 	glBindVertexArray(this->vao);
 	glDrawElements(GL_TRIANGLES, this->index_count, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
+}
+
+void st::Mesh::draw(tr::Matrix4x4 matrix)
+{
+	this->draw(matrix, st::engine.camera.view_matrix(), st::engine.camera.projection_matrix());
+}
+
+void st::Mesh::draw(tr::Vec3<float64> pos, tr::Vec3<float64> rot)
+{
+	auto pos_matrix = tr::Matrix4x4::translate(pos.x, pos.y, pos.z);
+
+	auto rot_x_matrix = tr::Matrix4x4::identity().rotate_x(tr::deg2rad(rot.x));
+	auto rot_y_matrix = tr::Matrix4x4::identity().rotate_y(tr::deg2rad(rot.y));
+	auto rot_z_matrix = tr::Matrix4x4::identity().rotate_z(tr::deg2rad(rot.z));
+	tr::Matrix4x4 rot_matrix = rot_x_matrix * rot_y_matrix * rot_z_matrix;
+
+	this->draw(rot_matrix * pos_matrix);
 }
 
 void st::Mesh::set_texture(tr::Ref<st::Texture> texture)
@@ -303,6 +323,7 @@ void st::ShaderProgram::link()
 void st::ShaderProgram::use()
 {
 	glUseProgram(this->program);
+	st::current_shader = this;
 }
 
 st::Texture::Texture(tr::String path)
@@ -350,4 +371,42 @@ st::Texture::~Texture()
 {
 	glDeleteTextures(1, &this->id);
 	tr::info("deleted texture (id %u)", this->id);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, bool value)
+{
+	glUniform1i(glGetUniformLocation(this->program, name), value);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, int32 value)
+{
+	glUniform1i(glGetUniformLocation(this->program, name), value);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, float32 value)
+{
+	glUniform1f(glGetUniformLocation(this->program, name), value);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec2<float32> value)
+{
+	glUniform2f(glGetUniformLocation(this->program, name), value.x, value.y);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec3<float32> value)
+{
+	glUniform3f(glGetUniformLocation(this->program, name), value.x, value.y, value.z);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec4<float32> value)
+{
+	glUniform4f(glGetUniformLocation(this->program, name), value.x, value.y, value.z, value.w);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, tr::Matrix4x4 value)
+{
+	// man
+	glUniformMatrix4fv(glGetUniformLocation(this->program, name), 1, false,
+		reinterpret_cast<float32*>(&value)
+	);
 }

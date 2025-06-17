@@ -179,7 +179,13 @@ public:
 	// Uses the program for rendering crap.
 	void use();
 
-	// TODO set_uniform
+	void set_uniform(tr::String name, bool value);
+	void set_uniform(tr::String name, int32 value);
+	void set_uniform(tr::String name, float32 value);
+	void set_uniform(tr::String name, tr::Vec2<float32> value);
+	void set_uniform(tr::String name, tr::Vec3<float32> value);
+	void set_uniform(tr::String name, tr::Vec4<float32> value);
+	void set_uniform(tr::String name, tr::Matrix4x4 value);
 };
 
 // It's an image on the GPU :)

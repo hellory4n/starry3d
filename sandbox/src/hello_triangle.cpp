@@ -1,4 +1,5 @@
 #include <st_render.hpp>
+#include <st_window.hpp>
 
 #include "hello_triangle.hpp"
 #include "shader/basic.glsl.hpp"
@@ -7,6 +8,9 @@ namespace sandbox {
 	tr::Ref<st::Mesh> mesh;
 	tr::Ref<st::ShaderProgram> shader;
 	tr::Ref<st::Texture> texture;
+
+	tr::Vec3<float64> position;
+	tr::Vec3<float64> rotation;
 }
 
 void sandbox::init_triangle()
@@ -49,6 +53,12 @@ void sandbox::init_triangle()
 
 void sandbox::render_triangle()
 {
-	sandbox::mesh->draw(tr::Matrix4x4::identity(), tr::Matrix4x4::identity(),
-		tr::Matrix4x4::identity());
+	float64 dt = st::delta_time();
+
+	if (st::is_key_held(st::Key::LEFT))  sandbox::position.x -= 1 * dt;
+	if (st::is_key_held(st::Key::RIGHT)) sandbox::position.x += 1 * dt;
+	if (st::is_key_held(st::Key::UP))    sandbox::position.z += 1 * dt;
+	if (st::is_key_held(st::Key::DOWN))  sandbox::position.z -= 1 * dt;
+
+	sandbox::mesh->draw(sandbox::position, sandbox::rotation);
 }
