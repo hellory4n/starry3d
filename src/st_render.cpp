@@ -240,6 +240,9 @@ void st::Mesh::draw(tr::Vec3<float64> pos, tr::Vec3<float64> rot)
 
 void st::Mesh::set_texture(tr::Ref<st::Texture> texture)
 {
+	// TODO reconsider your life choices
+	#undef assert
+	tr::assert(texture->id != 0, "texture id is 0, did you initialize it?");
 	this->texture = tr::MaybeRef<Texture>(texture);
 }
 
@@ -345,7 +348,7 @@ st::Texture::Texture(tr::String path)
 		case 2:  format = GL_RG;   break;
 		case 3:  format = GL_RGB;  break;
 		case 4:  format = GL_RGBA; break;
-		default: format = GL_RGB; break;
+		default: format = GL_RGB;  break;
 	}
 
 	// help

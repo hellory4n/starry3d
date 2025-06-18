@@ -75,6 +75,8 @@ Now you need to include Starry3D into your project. It's recommended to do so th
 ```sh
 # change "thirdparty/starry3d" to wherever you want it to be in
 git submodule add https://github.com/hellory4n/starry3d thirdparty/starry3d
+# starry3d has its own submodules
+git submodule update --init --recursive
 ```
 
 ### Option A: Integrating into an existing project
@@ -259,7 +261,7 @@ int main(void)
 
 I have a build system for some reason. `sandbox/` includes an example of this setup.
 
-Make sure to get `engineer`, `engineer.lua`, and `libengineer.lua` from there.
+Make sure to get `engineer`, `engineer.lua`, `libengineer.lua`, and `starry3d.lua` from there.
 
 Then you should only have to change these lines at the start:
 

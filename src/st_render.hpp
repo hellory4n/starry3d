@@ -198,6 +198,7 @@ public:
 	tr::Vec2<uint32> size;
 
 	Texture(tr::String path);
+	Texture() : id(0), size(0, 0) {}
 	~Texture();
 };
 

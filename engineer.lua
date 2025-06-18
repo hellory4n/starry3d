@@ -190,9 +190,9 @@ end)
 eng.recipe("build", "Builds everything ever.", function()
 	eng.run_recipe("build-lib")
 	if platform == "windows" then
-		os.execute("cd sandbox && ./engineer build")
-	else
 		os.execute("cd sandbox && ./engineer build platform=windows")
+	else
+		os.execute("cd sandbox && ./engineer build")
 	end
 end)
 

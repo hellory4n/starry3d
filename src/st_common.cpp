@@ -90,7 +90,7 @@ void st::free()
 tr::String st::path(tr::Ref<tr::Arena> arena, tr::String from)
 {
 	if (from.starts_with("app://")) {
-		tr::String pathfrfr = from.substr(arena, sizeof("app://") -1, from.length() + 1);
+		tr::String pathfrfr = from.substr(arena, sizeof("app://") - 1, from.length() + 1);
 		return tr::sprintf(arena, 1024, "%s/%s", st::engine.app_dir.buffer(), pathfrfr.buffer());
 	}
 	else if (from.starts_with("user://")) {
