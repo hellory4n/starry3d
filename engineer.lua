@@ -41,7 +41,7 @@ function starry3d.lib(debug, starrydir, platform)
 		print("Building GLFW (through CMake)")
 
 		-- is it already built?
-		local sir = io.open(starrydir.."/build/static/libglfw3.a", "rb")
+		local sir = io.open("build/static/libglfw3.a", "rb")
 		if sir ~= nil then
 			sir:close()
 			print("GLFW already up to date; nothing to do")
