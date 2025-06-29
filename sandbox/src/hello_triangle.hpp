@@ -1,7 +1,7 @@
 #ifndef _SANDBOX_HELLO_TRIANGLE
 #define _SANDBOX_HELLO_TRIANGLE
 
-#include <libtrippin.hpp>
+#include <trippin/math.hpp>
 
 namespace sandbox {
 

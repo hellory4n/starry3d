@@ -6,7 +6,7 @@ eng.init()
 trippin = {}
 function trippin.lib(debug, trippinsrc)
 	-- just trippin so it doesn't become "liblibtrippin.a"
-	local project = eng.newproj("trippin", "staticlib", "c++14")
+	local project = eng.newproj("trippin", "staticlib", "c++17")
 	project:pedantic()
 	if debug then
 		project:debug()
@@ -16,8 +16,17 @@ function trippin.lib(debug, trippinsrc)
 		project:optimization(2)
 	end
 
-	project:add_sources({trippinsrc})
+	project:add_sources({
+		trippinsrc.."/common.cpp",
+		trippinsrc.."/log.cpp",
+		trippinsrc.."/math.cpp",
+		trippinsrc.."/memory.cpp",
+		trippinsrc.."/string.cpp",
+		trippinsrc.."/collection.cpp",
+		trippinsrc.."/iofs.cpp",
+	})
 	project:target("libtrippin.a")
+	project:define({"BACKWARD_HAS_BFD=1"})
 	return project
 end
 
@@ -29,7 +38,7 @@ end
 function starry3d.lib(debug, starrydir, platform)
 	assert(platform == "windows" or platform == "linux")
 	local result = {}
-	result.libtrippin = trippin.lib(debug, starrydir.."/thirdparty/libtrippin/libtrippin.cpp")
+	result.libtrippin = trippin.lib(debug, starrydir.."/thirdparty/libtrippin/trippin")
 	if platform == "windows" then
 		result.libtrippin:target("trippin.lib")
 	else
@@ -70,7 +79,7 @@ function starry3d.lib(debug, starrydir, platform)
 	end
 
 	-- imgui is simple enough that we can wrap it in engineer
-	result.imgui = eng.newproj("imgui", "staticlib", "c++14")
+	result.imgui = eng.newproj("imgui", "staticlib", "c++17")
 	result.imgui:pedantic()
 	if debug then
 		result.imgui:debug()
@@ -96,10 +105,10 @@ function starry3d.lib(debug, starrydir, platform)
 	})
 
 	-- the actual starry3d project
-	result.starry3d = eng.newproj("starry3d", "staticlib", "c++14")
+	result.starry3d = eng.newproj("starry3d", "staticlib", "c++17")
 	result.starry3d:pedantic()
+	result.starry3d:debug()
 	if debug then
-		result.starry3d:debug()
 		result.starry3d:optimization(0)
 		result.starry3d:define({"DEBUG"})
 	else
@@ -141,7 +150,7 @@ function starry3d.lib(debug, starrydir, platform)
 		end
 	else
 		result.getlinks = function()
-			return {"starry3d", "trippin", "imgui", "glfw3", "X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt", "stdc++"}
+			return {"starry3d", "trippin", "imgui", "glfw3", "X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "bfd", "dl", "rt", "stdc++"}
 		end
 	end
 

@@ -7,7 +7,7 @@
 
 ## Features
 
-- C++14 and OpenGL 3.3
+- C++17 and OpenGL 3.3
 - Cross platform ish. (windows and linux)
 - Probably runs on anything ever
 - Optimized for voxel graphics
@@ -65,9 +65,10 @@ You need these installed:
 - git
 - gcc or clang
 - lua
-- cmake
 - make
+- cmake (on ubuntu you also need `pkg-config`)
 - X11 and wayland packages (it depends on your distro)
+- binutils dev packages (it depends too)
 - mingw64-gcc (optional)
 
 Now you need to include Starry3D into your project. It's recommended to do so through Git submodules:
@@ -81,7 +82,7 @@ git submodule update --init --recursive
 
 ### Option A: Integrating into an existing project
 
-Make sure you're using C++14 or higher, it won't work in anything older.
+Make sure you're using C++17 or higher, it won't work in anything older.
 
 Note that compiling on Visual Studio isn't tested, and I don't know if it works or not.
 
@@ -116,7 +117,7 @@ If you're using ImGui:
 
 You also have to link with some libraries:
 - Windows (MinGW): `opengl32`, `gdi32`, `winmm`, `comdlg32`, `ole32`, `pthread`
-- Linux: `X11`, `Xrandr`, `GL`, `Xinerama`, `m`, `pthread`, `dl`, `rt`
+- Linux: `X11`, `Xrandr`, `GL`, `Xinerama`, `m`, `pthread`, `bfd`, `dl`, `rt`
 
 Now put this in your `main.cpp` and run to check if it worked:
 
@@ -173,7 +174,7 @@ int main(void)
 
 ### Option B: Using static libraries
 
-Make sure you're using C++14 or higher, it won't work in anything older.
+Make sure you're using C++17 or higher, it won't work in anything older.
 
 Run this from where you put starry3d:
 
@@ -270,7 +271,7 @@ Then you should only have to change these lines at the start:
 local assets = "assets"
 -- where is starry3d
 local starrydir = "thirdparty/starry3d"
-local project = eng.newproj("very_handsome_game", "executable", "c++14")
+local project = eng.newproj("very_handsome_game", "executable", "c++17")
 project:add_includes({"src"})
 -- add your .cpp files here
 project:add_sources({

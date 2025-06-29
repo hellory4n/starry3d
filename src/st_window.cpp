@@ -23,13 +23,14 @@
  *
  */
 
-#include "st_window.hpp"
-
-#include "st_common.hpp"
-
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <trippin/log.hpp>
+
+#include "st_window.hpp"
+
+#include "st_common.hpp"
 
 void st::open_window(st::WindowOptions options)
 {
@@ -51,7 +52,7 @@ void st::open_window(st::WindowOptions options)
 	#endif
 
 	st::engine.window = glfwCreateWindow(options.size.x, options.size.y, options.title, nullptr, nullptr);
-	tr::assert(st::engine.window != nullptr, "couldn't create window");
+	TR_ASSERT_MSG(st::engine.window != nullptr, "couldn't create window");
 	glfwMakeContextCurrent(st::engine.window);
 
 	glfwSwapInterval(options.vsync ? 1 : 0); // TODO is that the only options?

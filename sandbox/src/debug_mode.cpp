@@ -1,3 +1,4 @@
+#include <trippin/memory.hpp>
 #include <st_window.hpp>
 #include <st_imgui.hpp>
 

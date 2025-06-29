@@ -27,7 +27,10 @@
 #ifndef _ST_COMMON_H
 #define _ST_COMMON_H
 
-#include <libtrippin.hpp>
+#include <trippin/common.hpp>
+#include <trippin/memory.hpp>
+#include <trippin/string.hpp>
+#include <trippin/math.hpp>
 
 #include "st_render.hpp"
 

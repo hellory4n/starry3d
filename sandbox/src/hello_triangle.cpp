@@ -34,9 +34,9 @@ void sandbox::init_triangle()
 	tr::Array<st::VertexAttribute> format(format_arr, sizeof(format_arr) / sizeof(st::VertexAttribute));
 
 	Vertex vertices_arr[] = {
-		{{-0.5, -0.5, 0.0}, tr::Color::rgb(0xff0000).to_vec4(), {-1, -1}},
-		{{ 0.5, -0.5, 0.0}, tr::Color::rgb(0x00ff00).to_vec4(), {1, -1}},
-		{{ 0.0,  0.5, 0.0}, tr::Color::rgb(0x0000ff).to_vec4(), {0.5, 1}},
+		{{-0.5, -0.5, 0.0}, tr::Color::rgb(0xff0000), {-1, -1}},
+		{{ 0.5, -0.5, 0.0}, tr::Color::rgb(0x00ff00), {1, -1}},
+		{{ 0.0,  0.5, 0.0}, tr::Color::rgb(0x0000ff), {0.5, 1}},
 	};
 	tr::Array<Vertex> vertices(vertices_arr, sizeof(vertices_arr) / sizeof(Vertex));
 

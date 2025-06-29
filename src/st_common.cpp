@@ -28,7 +28,8 @@
 // at the beginning bcuz it fucks wiht the standard headers on linux
 #include <whereami.c>
 
-#include <libtrippin.hpp>
+#include <trippin/common.hpp>
+#include <trippin/log.hpp>
 
 #include "st_window.hpp"
 #include "st_common.hpp"

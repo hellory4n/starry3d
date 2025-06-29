@@ -23,14 +23,15 @@
  *
  */
 
-#include "st_common.hpp"
-#include "st_window.hpp"
-#include "st_render.hpp"
-
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <trippin/log.hpp>
+
+#include "st_common.hpp"
+#include "st_window.hpp"
+#include "st_render.hpp"
 
 namespace st {
 	tr::Ref<ShaderProgram> current_shader;
@@ -38,7 +39,7 @@ namespace st {
 
 void st::clear_screen(tr::Color color)
 {
-	tr::Vec4<float32> vec4_color = color.to_vec4();
+	tr::Vec4<float32> vec4_color = color;
 	glClearColor(vec4_color.x, vec4_color.y, vec4_color.z, vec4_color.w);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
@@ -106,69 +107,69 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 	for (tr::ArrayItem<VertexAttribute> attrib : format) {
 		int32 size;
 		switch (attrib.val.type) {
-			case VertexAttributeType::INT32:
-			case VertexAttributeType::UINT32:
-			case VertexAttributeType::FLOAT32:
-			case VertexAttributeType::FLOAT64:
-				size = 1;
-				break;
+		case VertexAttributeType::INT32:
+		case VertexAttributeType::UINT32:
+		case VertexAttributeType::FLOAT32:
+		case VertexAttributeType::FLOAT64:
+			size = 1;
+			break;
 
-			case VertexAttributeType::VEC2_INT32:
-			case VertexAttributeType::VEC2_UINT32:
-			case VertexAttributeType::VEC2_FLOAT32:
-			case VertexAttributeType::VEC2_FLOAT64:
-				size = 2;
-				break;
+		case VertexAttributeType::VEC2_INT32:
+		case VertexAttributeType::VEC2_UINT32:
+		case VertexAttributeType::VEC2_FLOAT32:
+		case VertexAttributeType::VEC2_FLOAT64:
+			size = 2;
+			break;
 
-			case VertexAttributeType::VEC3_INT32:
-			case VertexAttributeType::VEC3_UINT32:
-			case VertexAttributeType::VEC3_FLOAT32:
-			case VertexAttributeType::VEC3_FLOAT64:
-				size = 3;
-				break;
+		case VertexAttributeType::VEC3_INT32:
+		case VertexAttributeType::VEC3_UINT32:
+		case VertexAttributeType::VEC3_FLOAT32:
+		case VertexAttributeType::VEC3_FLOAT64:
+			size = 3;
+			break;
 
-			case VertexAttributeType::VEC4_INT32:
-			case VertexAttributeType::VEC4_UINT32:
-			case VertexAttributeType::VEC4_FLOAT32:
-			case VertexAttributeType::VEC4_FLOAT64:
-				size = 4;
-				break;
+		case VertexAttributeType::VEC4_INT32:
+		case VertexAttributeType::VEC4_UINT32:
+		case VertexAttributeType::VEC4_FLOAT32:
+		case VertexAttributeType::VEC4_FLOAT64:
+			size = 4;
+			break;
 		}
 
 		bool ipointer = false;
 		GLenum type;
 		switch (attrib.val.type) {
-			case VertexAttributeType::INT32:
-			case VertexAttributeType::VEC2_INT32:
-			case VertexAttributeType::VEC3_INT32:
-			case VertexAttributeType::VEC4_INT32:
-				ipointer = true;
-				type = GL_INT;
-				break;
+		case VertexAttributeType::INT32:
+		case VertexAttributeType::VEC2_INT32:
+		case VertexAttributeType::VEC3_INT32:
+		case VertexAttributeType::VEC4_INT32:
+			ipointer = true;
+			type = GL_INT;
+			break;
 
-			case VertexAttributeType::UINT32:
-			case VertexAttributeType::VEC2_UINT32:
-			case VertexAttributeType::VEC3_UINT32:
-			case VertexAttributeType::VEC4_UINT32:
-				ipointer = true;
-				type = GL_UNSIGNED_INT;
-				break;
+		case VertexAttributeType::UINT32:
+		case VertexAttributeType::VEC2_UINT32:
+		case VertexAttributeType::VEC3_UINT32:
+		case VertexAttributeType::VEC4_UINT32:
+			ipointer = true;
+			type = GL_UNSIGNED_INT;
+			break;
 
-			case VertexAttributeType::FLOAT32:
-			case VertexAttributeType::VEC2_FLOAT32:
-			case VertexAttributeType::VEC3_FLOAT32:
-			case VertexAttributeType::VEC4_FLOAT32:
-				ipointer = false;
-				type = GL_FLOAT;
-				break;
+		case VertexAttributeType::FLOAT32:
+		case VertexAttributeType::VEC2_FLOAT32:
+		case VertexAttributeType::VEC3_FLOAT32:
+		case VertexAttributeType::VEC4_FLOAT32:
+			ipointer = false;
+			type = GL_FLOAT;
+			break;
 
-			case VertexAttributeType::FLOAT64:
-			case VertexAttributeType::VEC2_FLOAT64:
-			case VertexAttributeType::VEC3_FLOAT64:
-			case VertexAttributeType::VEC4_FLOAT64:
-				ipointer = false;
-				type = GL_DOUBLE;
-				break;
+		case VertexAttributeType::FLOAT64:
+		case VertexAttributeType::VEC2_FLOAT64:
+		case VertexAttributeType::VEC3_FLOAT64:
+		case VertexAttributeType::VEC4_FLOAT64:
+			ipointer = false;
+			type = GL_DOUBLE;
+			break;
 		}
 
 		if (ipointer) {
@@ -240,9 +241,7 @@ void st::Mesh::draw(tr::Vec3<float64> pos, tr::Vec3<float64> rot)
 
 void st::Mesh::set_texture(tr::Ref<st::Texture> texture)
 {
-	// TODO reconsider your life choices
-	#undef assert
-	tr::assert(texture->id != 0, "texture id is 0, did you initialize it?");
+	TR_ASSERT_MSG(texture->id != 0, "texture id is 0, did you initialize it?");
 	this->texture = tr::MaybeRef<Texture>(texture);
 }
 

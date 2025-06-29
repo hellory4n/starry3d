@@ -26,7 +26,9 @@
 #ifndef _ST_WINDOW_H
 #define _ST_WINDOW_H
 
-#include <libtrippin.hpp>
+#include <trippin/common.hpp>
+#include <trippin/string.hpp>
+#include <trippin/math.hpp>
 
 namespace st {
 

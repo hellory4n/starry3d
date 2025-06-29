@@ -26,7 +26,10 @@
 #ifndef _ST_RENDER_H
 #define _ST_RENDER_H
 
-#include <libtrippin.hpp>
+#include <trippin/common.hpp>
+#include <trippin/memory.hpp>
+#include <trippin/string.hpp>
+#include <trippin/math.hpp>
 
 namespace st {
 

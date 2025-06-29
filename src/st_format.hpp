@@ -26,9 +26,12 @@
 #ifndef _ST_FORMAT_H
 #define _ST_FORMAT_H
 
-#include "st_render.hpp"
+#include <trippin/common.hpp>
+#include <trippin/memory.hpp>
+#include <trippin/string.hpp>
+#include <trippin/math.hpp>
 
-#include <libtrippin.hpp>
+#include "st_render.hpp"
 
 namespace st {
 

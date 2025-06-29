@@ -1,4 +1,5 @@
-#include <libtrippin.hpp>
+#include <trippin/common.hpp>
+#include <trippin/log.hpp>
 #include <st_common.hpp>
 #include <st_window.hpp>
 #include <st_render.hpp>

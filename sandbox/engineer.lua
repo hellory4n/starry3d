@@ -5,7 +5,7 @@ eng.init()
 -- you just have to edit these
 local assets = "assets"
 local starrydir = ".."
-local project = eng.newproj("sandbox", "executable", "c++14")
+local project = eng.newproj("sandbox", "executable", "c++17")
 project:add_includes({"src"})
 project:add_sources({
 	"src/main.cpp",
@@ -68,7 +68,7 @@ eng.recipe("build", "Builds the project lmao.", function()
 	starry3dma.glfw()
 	starry3dma.imgui:build()
 	starry3dma.starry3d:build()
-	os.execute("cp "..starrydir.."/build/static/libglfw3.a ./build/static/libglfw3.a")
+	-- os.execute("cp "..starrydir.."/build/static/libglfw3.a ./build/static/libglfw3.a")
 	project:build()
 end)
 
