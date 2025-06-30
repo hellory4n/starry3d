@@ -4,7 +4,8 @@
 project = "sandbox"
 starrydir = "."
 builddir = "build"
-assetsdir = "assets"
+assetssrc = "sandbox/assets"
+assetsdst = "build/bin/assets"
 
 imgui_enabled = true
 bfd_enabled = true
@@ -162,12 +163,10 @@ f:write("  command = $cxx $cflags -c $in -o $out\n")
 f:write("  description = Compiling $in\n")
 
 f:write("\nrule link\n")
-f:write("  command = $cxx $in $ldflags -o $out\n")
+f:write("  command = $cxx $in $ldflags -o $out && "..
+	-- that's to copy assets :)
+	"mkdir "..assetsdst.." -p && cp -r "..assetssrc.."/* "..assetsdst.."\n")
 f:write("  description = Linking $out\n")
-
-f:write("\nrule copy_assets\n")
-f:write("  command = mkdir "..builddir.."/bin/"..assetsdir.." cp -r "..assetsdir.."/* "..builddir.."/bin/"..assetsdir.."\n")
-f:write("  description = Copying assets folder\n")
 
 -- man
 f:write("\nbuild "..builddir.."/glfw/libglfw3.a: glfw_build\n")
