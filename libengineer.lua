@@ -1,5 +1,5 @@
 --[[
-	Engineer v1.1.1
+	Engineer v1.2.0
 
 	Bestest build system ever
 	More information at https://github.com/hellory4n/libtrippin/tree/main/engineerbuild
@@ -48,6 +48,12 @@ eng = {
 
 	-- Used to relink projects if anything changed since there's no dependency system lmao
 	recompiling = false,
+	-- man.
+	workstation_name = "",
+	workstation_description = "",
+	workstation_author = "",
+	-- changed with the showcmd option
+	show_command = false,
 }
 
 -- Runs a command with no output
@@ -78,7 +84,8 @@ function eng.util.print_table(node)
 					output_str = output_str.."\n"
 				end
 
-				-- This is necessary for working with HUGE tables otherwise we run out of memory using concat on huge strings
+				-- This is necessary for working with HUGE tables otherwise we run out of memory using concat on
+				-- huge strings
 				table.insert(output,output_str)
 				output_str = ""
 
@@ -160,41 +167,26 @@ function eng.init()
 	eng.option_description = {}
 	eng.recompiling = false
 
-	-- get c compiler
-	local cc = os.getenv("CC")
-	if cc ~= nil and cc ~= "" then
-		eng.cc = cc
-	else
-		if eng.util.silentexec("command -v clang") then
-			eng.cc = "clang"
-		elseif eng.util.silentexec("command -v gcc") then
-			eng.cc = "gcc"
-		else
-			error(eng.CONSOLE_COLOR_ERROR ..
-				"no C compiler found. please install gcc or clang, and make sure it's in the PATH" ..
-				eng.CONSOLE_COLOR_RESET)
-		end
-	end
+	eng.option("showcmd", "If true, prints the compiler commands being used", function(val)
+		eng.show_command = true
+	end)
 
-	-- get c++ compiler
-	local cxx = os.getenv("CXX") or os.getenv("CPP")
-	if cxx ~= nil and cxx ~= "" then
-		eng.cxx = cxx
-	else
-		if eng.util.silentexec("command -v clang++") then
-			eng.cxx = "clang++"
-		elseif eng.util.silentexec("command -v g++") then
-			eng.cxx = "g++"
-		else
-			error(eng.CONSOLE_COLOR_ERROR ..
-				"no C++ compiler found. please install gcc or clang, and make sure it's in the PATH" ..
-				eng.CONSOLE_COLOR_RESET)
-		end
-	end
+	eng.option("cc", "Sets the C compiler. Default is clang", function(val)
+		eng.cc = val
+	end)
+
+	eng.option("cxx", "Sets the C++ compiler. Default is clang++", function(val)
+		eng.cxx = val
+	end)
 
 	-- default help recipe
 	eng.recipe("help", "Shows what you're seeing right now", function()
-		print("Engineer v1.1.1\n")
+		-- if theres no eng.workstation() just shut up
+		if eng.workstation_name ~= "" then
+			print(eng.workstation_name.." by "..eng.workstation_author)
+			print(eng.workstation_description.."\n")
+		end
+
 		print("Recipes:")
 
 		-- some sorting lamo
@@ -206,7 +198,7 @@ function eng.init()
 
 		-- actually list the shitfuck
 		for _, recipe in ipairs(rkeys) do
-			print(string.format("%-16s", "- "..recipe..": ")..eng.recipe_description[recipe])
+			print(string.format("%-20s", "- "..recipe..": ")..eng.recipe_description[recipe])
 		end
 
 		-- mate
@@ -218,9 +210,18 @@ function eng.init()
 		table.sort(okeys)
 
 		for _, option in ipairs(okeys) do
-			print(string.format("%-16s", "- "..option..": ")..eng.option_description[option])
+			print(string.format("%-20s", "- "..option..": ")..eng.option_description[option])
 		end
+
+		print("\nEngineer v1.2.0 - copyright (C) 2025 hellory4n")
 	end)
+end
+
+-- Sets additional information to be displayed in the help recipe
+function eng.workstation(name, author, description)
+	eng.workstation_name = name
+	eng.workstation_author = author
+	eng.workstation_description = description
 end
 
 -- Makes a recipe. The callback will be called when the recipe is used. The description will be used for
@@ -277,6 +278,44 @@ end
 -- Forces a recipe to run
 function eng.run_recipe(recipe)
 	eng.recipes[recipe]()
+end
+
+function eng.check_compiler()
+	if eng.cc == "" then
+		-- get c compiler
+		local cc = os.getenv("CC")
+		if cc ~= nil and cc ~= "" then
+			eng.cc = cc
+		else
+			if eng.util.silentexec("command -v clang") then
+				eng.cc = "clang"
+			elseif eng.util.silentexec("command -v gcc") then
+				eng.cc = "gcc"
+			else
+				error(eng.CONSOLE_COLOR_ERROR ..
+					"no C compiler found. please install gcc or clang, and make sure it's in the PATH" ..
+					eng.CONSOLE_COLOR_RESET)
+			end
+		end
+	end
+
+	if eng.cxx == "" then
+		-- get c++ compiler
+		local cxx = os.getenv("CXX") or os.getenv("CPP")
+		if cxx ~= nil and cxx ~= "" then
+			eng.cxx = cxx
+		else
+			if eng.util.silentexec("command -v clang++") then
+				eng.cxx = "clang++"
+			elseif eng.util.silentexec("command -v g++") then
+				eng.cxx = "g++"
+			else
+				error(eng.CONSOLE_COLOR_ERROR ..
+					"no C++ compiler found. please install gcc or clang, and make sure it's in the PATH" ..
+					eng.CONSOLE_COLOR_RESET)
+			end
+		end
+	end
 end
 
 -- project metatable
@@ -366,7 +405,9 @@ function project_methods.optimization(proj, level)
 	elseif level == 1 then proj.cflags = proj.cflags.." -O1 "
 	elseif level == 2 then proj.cflags = proj.cflags.." -O2 "
 	elseif level == 3 then proj.cflags = proj.cflags.." -O3 "
-	else error(eng.CONSOLE_COLOR_ERROR.."you bloody scoundrel that's not a valid level"..eng.CONSOLE_COLOR_RESET) end
+	else
+		error(eng.CONSOLE_COLOR_ERROR.."you bloody scoundrel that's not a valid level"..eng.CONSOLE_COLOR_RESET)
+	end
 end
 
 -- Adds multiple defines (it's a list) to the project
@@ -425,6 +466,7 @@ end
 
 -- Builds and links the entire project
 function project_methods.build(proj)
+	eng.check_compiler()
 	print("Compiling "..proj.name.." with "..eng.cc.."/"..eng.cxx)
 
 	-- folder? i hardly know 'er!
@@ -460,11 +502,16 @@ function project_methods.build(proj)
 		-- pretty output
 		print(eng.CONSOLE_COLOR_BLUE.."["..i.."/"..#srcs.."] "..src..eng.CONSOLE_COLOR_RESET)
 
-		-- compile frfrfr ong no cap ngl tbh
 		if proj.type == "sharedlib" then
 			proj.cflags = proj.cflags.." -fPIC"
 		end
-		local success = os.execute(compiler..proj.cflags.." -o "..obj.." -c "..src)
+
+		-- compile frfrfr ong no cap ngl tbh
+		local cmd = compiler..proj.cflags.." -o "..obj.." -c "..src
+		if eng.show_command then
+			print(cmd)
+		end
+		local success = os.execute(cmd)
 		if not success then
 			error(eng.CONSOLE_COLOR_ERROR.."compiling "..src.." failed"..eng.CONSOLE_COLOR_RESET)
 		end
@@ -483,10 +530,13 @@ function project_methods.build(proj)
 	-- link executable
 	if proj.type == "executable" then
 		print("Linking "..proj.name)
-		local success = os.execute(
-			-- the ldflags must come last lamo
-			eng.cc.." "..objma.." -o "..proj.builddir.."/bin/"..proj.targetma.." "..proj.ldflags
-		)
+		-- the ldflags must come last lamo
+		local cmd = eng.cc.." "..objma.." -o "..proj.builddir.."/bin/"..proj.targetma.." "..proj.ldflags
+		if eng.show_command then
+			print(cmd)
+		end
+
+		local success = os.execute(cmd)
 		if not success then
 			error(eng.CONSOLE_COLOR_ERROR.."linking "..proj.name.." failed"..eng.CONSOLE_COLOR_RESET)
 		end
@@ -495,15 +545,22 @@ function project_methods.build(proj)
 	-- link static library
 	if proj.type == "staticlib" then
 		print("Linking "..proj.name)
-		os.execute("ar rcs "..proj.builddir.."/static/"..proj.targetma.." "..objma)
+		local cmd = "ar rcs "..proj.builddir.."/static/"..proj.targetma.." "..objma
+		if eng.show_command then
+			print(cmd)
+		end
+		os.execute(cmd)
 	end
 
 	-- link shared library
 	if proj.type == "sharedlib" then
-		local success = os.execute(
-			-- the ldflags must come last lamo
-			eng.cc.." -shared "..objma.." -o "..proj.builddir.."/bin/"..proj.targetma.." "..proj.ldflags
-		)
+		-- the ldflags must come last lamo
+		local cmd = eng.cc.." -shared "..objma.." -o "..proj.builddir.."/bin/"..proj.targetma.." "..proj.ldflags
+		if eng.show_command then
+			print(cmd)
+		end
+
+		local success = os.execute(cmd)
 		if not success then
 			error(eng.CONSOLE_COLOR_ERROR.."linking "..proj.name.." failed"..eng.CONSOLE_COLOR_RESET)
 		end
