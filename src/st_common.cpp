@@ -25,8 +25,13 @@
  */
 
 // yes this is intentional idc
-// at the beginning bcuz it fucks wiht the standard headers on linux
-#include <whereami.c>
+// on linux it has to be included before everything because it fucks with standard headers
+// on windows it's the opposite, windows.h fucks with everything so it's easier to just include it after shit
+#ifndef _WIN32
+	#include <whereami.c>
+#else
+	#include <whereami.h>
+#endif
 
 #include <trippin/common.hpp>
 #include <trippin/log.hpp>
@@ -109,3 +114,10 @@ tr::String st::path(tr::Ref<tr::Arena> arena, tr::String from)
 	// ok there's nothing just duplicate it
 	return from.duplicate(arena);
 }
+
+// yes this is intentional idc
+// on linux it has to be included before everything because it fucks with standard headers
+// on windows it's the opposite, windows.h fucks with everything so it's easier to just include it after shit
+#ifdef _WIN32
+	#include <whereami.c>
+#endif

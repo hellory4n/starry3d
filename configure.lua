@@ -8,7 +8,7 @@ assetssrc = "sandbox/assets"
 assetsdst = "build/bin/assets"
 
 imgui_enabled = true
-bfd_enabled = true
+bfd_enabled = false
 gen_compile_commands = true
 
 srcs = {
@@ -29,7 +29,7 @@ io.write("Starry3D auto configurator 3000++\n")
 io.write("Compile mode (debug/release): ")
 compmode = io.read("*l")
 
-io.write("Target platform (windows/linux): ")
+io.write("Target platform (windows/linux, windows requires mingw-w64 gcc and g++): ")
 platform = io.read("*l")
 
 io.write("Use a sanitizer? (e.g. 'address' for asan, press enter to not use one): ")
@@ -113,7 +113,7 @@ end
 ldflags = "-Lbuild/glfw/src"
 
 if platform == "windows" then
-	ldflags = ldflags.." -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lpthread -lstdc++"
+	ldflags = ldflags.." -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lpthread -lstdc++ -static"
 else
 	ldflags = ldflags.." -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread"
 	if bfd_enabled then
@@ -148,13 +148,24 @@ f:write("cflags = "..cflags.."\n")
 f:write("ldflags = "..ldflags.."\n")
 
 f:write("\nrule glfw_build\n")
--- TODO windows cross compiling
-f:write("  command = "..
-		"mkdir "..builddir.."/glfw -p && "..
-		"cmake -S "..starrydir.."/thirdparty/glfw -B "..builddir.."/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF && "..
-		"cd "..builddir.."/glfw && "..
-		"make"
-)
+if platform == "windows" then
+	f:write("  command = "..
+			"mkdir "..builddir.."/glfw -p && "..
+			-- cmake can't find a file that exists :D
+			"cp "..starrydir.."/thirdparty/glfw/CMake/x86_64-w64-mingw32.cmake "..builddir.."/win32.cmake && "..
+			"cmake -S "..starrydir.."/thirdparty/glfw -B "..builddir.."/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE=$$(pwd)/"..builddir.."/win32.cmake && "..
+			"cd "..builddir.."/glfw && "..
+			"make && "..
+			"mv src/libglfw3.a src/glfw3.lib"
+	)
+else
+	f:write("  command = "..
+			"mkdir "..builddir.."/glfw -p && "..
+			"cmake -S "..starrydir.."/thirdparty/glfw -B "..builddir.."/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF && "..
+			"cd "..builddir.."/glfw && "..
+			"make"
+	)
+end
 f:write("\n  description = Compiling GLFW\n")
 
 

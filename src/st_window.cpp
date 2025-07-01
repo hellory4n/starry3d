@@ -58,7 +58,7 @@ void st::open_window(st::WindowOptions options)
 	glfwSwapInterval(options.vsync ? 1 : 0); // TODO is that the only options?
 
 	// some callbacks
-	glfwSetFramebufferSizeCallback(st::engine.window, [](GLFWwindow* _, int w, int h) -> void {
+	glfwSetFramebufferSizeCallback(st::engine.window, [](GLFWwindow*, int w, int h) -> void {
 		glViewport(0, 0, w, h);
 		st::engine.window_size = {static_cast<uint32>(w), static_cast<uint32>(h)};
 	});
