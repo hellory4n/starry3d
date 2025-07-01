@@ -1,8 +1,8 @@
-#include <st_render.hpp>
-#include <st_window.hpp>
+#include <starry/render.hpp>
+#include <starry/window.hpp>
 
 #include "hello_triangle.hpp"
-#include "shader/basic.glsl.hpp"
+#include "starry/shader/basic.glsl.hpp"
 
 namespace sandbox {
 	tr::Ref<st::Mesh> mesh;

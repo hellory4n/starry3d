@@ -31,7 +31,7 @@
 #include <trippin/string.hpp>
 #include <trippin/math.hpp>
 
-#include "st_render.hpp"
+#include "render.hpp"
 
 namespace st {
 

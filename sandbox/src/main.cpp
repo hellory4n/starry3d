@@ -1,9 +1,9 @@
 #include <trippin/common.hpp>
 #include <trippin/log.hpp>
-#include <st_common.hpp>
-#include <st_window.hpp>
-#include <st_render.hpp>
-#include <st_imgui.hpp>
+#include <starry/common.hpp>
+#include <starry/window.hpp>
+#include <starry/render.hpp>
+#include <starry/imgui.hpp>
 
 #include "debug_mode.hpp"
 #include "hello_triangle.hpp"

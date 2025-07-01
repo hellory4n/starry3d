@@ -36,8 +36,8 @@
 #include <trippin/common.hpp>
 #include <trippin/log.hpp>
 
-#include "st_window.hpp"
-#include "st_common.hpp"
+#include "window.hpp"
+#include "common.hpp"
 
 namespace st {
 	// it has to live somewhere

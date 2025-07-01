@@ -32,7 +32,7 @@
 #include <trippin/string.hpp>
 #include <trippin/math.hpp>
 
-#include "st_render.hpp"
+#include "render.hpp"
 
 // make sure there's always ST_WINDOWS or ST_LINUX defined
 // TODO macOS

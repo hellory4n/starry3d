@@ -28,9 +28,8 @@
 #include <GLFW/glfw3.h>
 #include <trippin/log.hpp>
 
-#include "st_window.hpp"
-
-#include "st_common.hpp"
+#include "common.hpp"
+#include "window.hpp"
 
 void st::open_window(st::WindowOptions options)
 {

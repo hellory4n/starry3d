@@ -29,9 +29,9 @@
 #include <stb_image.h>
 #include <trippin/log.hpp>
 
-#include "st_common.hpp"
-#include "st_window.hpp"
-#include "st_render.hpp"
+#include "common.hpp"
+#include "window.hpp"
+#include "render.hpp"
 
 namespace st {
 	tr::Ref<ShaderProgram> current_shader;

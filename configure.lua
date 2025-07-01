@@ -54,7 +54,7 @@ cflags = "-std=c++17 -Wall -Wextra -Wpedantic "
 
 -- includes
 cflags = cflags ..
-	" -I"..starrydir.."/src"..
+	" -I"..starrydir..
 	" -I"..starrydir.."/thirdparty"..
 	" -I"..starrydir.."/thirdparty/libtrippin"..
 	" -I"..starrydir.."/thirdparty/glfw/include"..
@@ -84,14 +84,14 @@ srcsfrfr = {
 	starrydir.."/thirdparty/libtrippin/trippin/string.cpp",
 
 	-- starry3d
-	starrydir.."/src/st_common.cpp",
-	starrydir.."/src/st_window.cpp",
-	starrydir.."/src/st_render.cpp",
+	starrydir.."/starry/common.cpp",
+	starrydir.."/starry/window.cpp",
+	starrydir.."/starry/render.cpp",
 }
 
 -- imgui
 if imgui_enabled then
-	table.insert(srcsfrfr, starrydir.."/src/st_imgui.cpp")
+	table.insert(srcsfrfr, starrydir.."/starry/imgui.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_widgets.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_tables.cpp")
@@ -119,8 +119,7 @@ ldflags = "-Lbuild/glfw/src"
 if platform == "windows" then
 	ldflags = ldflags.." -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lpthread -lstdc++ -static"
 else
-	ldflags = ldflags.." -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread"
-	ldflags = ldflags.." -ldl -lrt -lstdc++"
+	ldflags = ldflags.." -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt -lstdc++"
 end
 
 -- man.

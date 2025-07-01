@@ -1,6 +1,6 @@
 #include <trippin/memory.hpp>
-#include <st_window.hpp>
-#include <st_imgui.hpp>
+#include <starry/window.hpp>
+#include <starry/imgui.hpp>
 
 #include "debug_mode.hpp"
 

@@ -23,12 +23,12 @@
  *
  */
 
-#include "st_common.hpp"
-#include "st_imgui.hpp"
-
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+
+#include "common.hpp"
+#include "imgui.hpp"
 
 void st::imgui::init()
 {

@@ -137,7 +137,8 @@ You also have to link with some libraries on top of glfw:
 Now put this in your `main.cpp` and run to check if it worked:
 
 ```c
-#include <libtrippin.hpp>
+#include <trippin/common.hpp>
+#include <trippin/log.hpp>
 #include <st_common.hpp>
 #include <st_window.hpp>
 #include <st_render.hpp>
@@ -225,7 +226,8 @@ includes = {
 Now put this in `src/main.cpp`:
 
 ```c
-#include <libtrippin.hpp>
+#include <trippin/common.hpp>
+#include <trippin/log.hpp>
 #include <st_common.hpp>
 #include <st_window.hpp>
 #include <st_render.hpp>
