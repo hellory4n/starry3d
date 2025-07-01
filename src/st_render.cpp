@@ -105,7 +105,7 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 
 	// figure out the format :DDDD
 	for (tr::ArrayItem<VertexAttribute> attrib : format) {
-		int32 size;
+		uint32 size = 0;
 		switch (attrib.val.type) {
 		case VertexAttributeType::INT32:
 		case VertexAttributeType::UINT32:
@@ -137,7 +137,7 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 		}
 
 		bool ipointer = false;
-		GLenum type;
+		GLenum type = 0;
 		switch (attrib.val.type) {
 		case VertexAttributeType::INT32:
 		case VertexAttributeType::VEC2_INT32:
