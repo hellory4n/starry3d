@@ -31,9 +31,11 @@
 - Networking
 - More platforms
 - Decent 2D
-- Consider not using OpenGL (coming in 2054)
+- Consider using Vulkan (coming in 2054)
 
 ## Building
+
+This is intended for if you want to contribute or test the library (no one will)
 
 ### Windows
 
@@ -43,33 +45,40 @@ I have no idea just install WSL lmao
 
 You need these installed:
 - git
-- gcc or clang
+- clang
 - lua
-- cmake
+- cmake (on ubuntu you also need `pkg-config`)
 - make
-- X11 and wayland packages (it depends on your distro)
-- mingw64-gcc (optional)
+- ninja
+- X11 and wayland dev packages (it depends on your distro)
+    - debian/ubuntu/derivatives: `sudo apt install libwayland-dev libxkbcommon-dev xorg-dev`
+    - fedora/derivatives: `sudo dnf install wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
+- mingw-w64-gcc and mingw-w64-g++ (optional)
 
-After cloning the repo you should be able to just run:
+Now run `lua configure.lua`
 
-```sh
-# see what options you can use
-./engineer help
-# actually build
-./engineer build
-```
+Options:
+- Compilation mode (`debug`/`release`): release mode enables optimizations, while debug mode disables
+optimizations, enables debug symbols, and defines `DEBUG`/`_DEBUG`.
+- Target platform (`windows`/`linux`): If compiling for windows, uses `mingw-w64-gcc` for cross-compiling.
+- Use a sanitizer: You usually don't need this option. This maps directly to a `-fsanitize=` flag, so e.g.
+`address` becomes `-fsanitize=address` for ASan.
+- Generate `compile_commands.json` (`y`/`n`): Generates a `compile_commands.json` file for IDEs (if using
+clangd) to use.
+
+Now run `ninja` to compile. You'll now have an executable in `build/bin/sandbox`
+
+You can also use `./debugrun.sh` to run it with gdb.
 
 ## Usage
 
 You need these installed:
 - git
-- gcc or clang
-- lua
-- make
-- cmake (on ubuntu you also need `pkg-config`)
-- X11 and wayland packages (it depends on your distro)
-- binutils dev packages (it depends too)
-- mingw64-gcc (optional)
+- clang
+- X11 and wayland dev packages (it depends on your distro)
+    - debian/ubuntu/derivatives: `sudo apt install libwayland-dev libxkbcommon-dev xorg-dev`
+    - fedora/derivatives: `sudo dnf install wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
+- mingw-w64-gcc and mingw-w64-g++ (optional)
 
 Now you need to include Starry3D into your project. It's recommended to do so through Git submodules:
 
@@ -96,28 +105,34 @@ Now add these folders to your includes: (relative to where you put starry3d)
 - `thirdparty/glfw/include`
 - `thirdparty/stb`
 - `thirdparty/whereami/src`
-If you're using ImGui:
-- `thirdparty/imgui`
-- `thirdparty/imgui/backends`
+- If you're using ImGui:
+    - `thirdparty/imgui`
+    - `thirdparty/imgui/backends`
 
 Add these source files: (relative to where you put starry3d)
 - `src/st_common.cpp`
 - `src/st_render.cpp`
 - `src/st_window.cpp`
-- `thirdparty/libtrippin/libtrippin.cpp`
-If you're using ImGui:
-- `src/st_imgui.cpp`
-- `thirdparty/imgui/imgui.cpp`
-- `thirdparty/imgui/imgui_demo.cpp`
-- `thirdparty/imgui/imgui_draw.cpp`
-- `thirdparty/imgui/imgui_tables.cpp`
-- `thirdparty/imgui/imgui_widgets.cpp`
-- `thirdparty/imgui/backends/imgui_impl_glfw.cpp`
-- `thirdparty/imgui/backends/imgui_impl_opengl3.cpp`
+- `thirdparty/libtrippin/trippin/collection.cpp`
+- `thirdparty/libtrippin/trippin/common.cpp`
+- `thirdparty/libtrippin/trippin/iofs.cpp`
+- `thirdparty/libtrippin/trippin/log.cpp`
+- `thirdparty/libtrippin/trippin/math.cpp`
+- `thirdparty/libtrippin/trippin/memory.cpp`
+- `thirdparty/libtrippin/trippin/string.cpp`
+- If you're using ImGui:
+    - `src/st_imgui.cpp`
+    - `thirdparty/imgui/imgui.cpp`
+    - `thirdparty/imgui/imgui_demo.cpp`
+    - `thirdparty/imgui/imgui_draw.cpp`
+    - `thirdparty/imgui/imgui_tables.cpp`
+    - `thirdparty/imgui/imgui_widgets.cpp`
+    - `thirdparty/imgui/backends/imgui_impl_glfw.cpp`
+    - `thirdparty/imgui/backends/imgui_impl_opengl3.cpp`
 
-You also have to link with some libraries:
+You also have to link with some libraries on top of glfw:
 - Windows (MinGW): `opengl32`, `gdi32`, `winmm`, `comdlg32`, `ole32`, `pthread`
-- Linux: `X11`, `Xrandr`, `GL`, `Xinerama`, `m`, `pthread`, `bfd`, `dl`, `rt`
+- Linux: `X11`, `Xrandr`, `GL`, `Xinerama`, `m`, `pthread`, `dl`, `rt`
 
 Now put this in your `main.cpp` and run to check if it worked:
 
@@ -172,114 +187,42 @@ int main(void)
 }
 ```
 
-### Option B: Using static libraries
+### Option B: Using ninja/lua
 
-Make sure you're using C++17 or higher, it won't work in anything older.
+Starry3D uses ninja and `configure.lua` for its build process, and this script works with your own projects
+too.
 
-Run this from where you put starry3d:
+You need CMake (on ubuntu you also need `pkg-config`), Make, Ninja, and Lua installed.
 
-```sh
-./engineer build-lib
-```
-
-Now copy these into where you put your libraries:
-- `build/static/libtrippin.a`
-- `build/static/libstarry3d.a`
-- `build/static/libglfw3.a`
-- `build/static/libimgui.a` (optional)
-
-Add these to your includes: (relative to where you put starry3d)
-- `src/`
-- `thirdparty/`
-- `thirdparty/libtrippin`
-- `thirdparty/glfw/include`
-- `thirdparty/stb`
-- `thirdparty/whereami/src`
-If you're using ImGui:
-- `thirdparty/imgui`
-- `thirdparty/imgui/backends`
-
-And link with these libraries:
-- Windows (MinGW): `starry3d`, `trippin`, `glfw3`, `opengl32`, `gdi32`, `winmm`, `comdlg32`, `ole32`, `pthread`
-- Linux: `starry3d`, `trippin`, `glfw3`, `X11`, `Xrandr`, `GL`, `Xinerama`, `m`, `pthread`, `dl`, `rt`
-
-If you're using ImGui you'll also have to link with `imgui`
-
-Now put this in your `main.cpp` and run to check if it worked:
-
-```c
-#include <libtrippin.hpp>
-#include <st_common.hpp>
-#include <st_window.hpp>
-#include <st_render.hpp>
-#include <st_imgui.hpp>
-
-// TODO implement them
-static void init_game() {}
-static void update_game() {}
-static void free_game() {}
-
-int main(void)
-{
-    tr::use_log_file("log.txt");
-    tr::init();
-
-    st::init("very_handsome_game", "assets");
-    st::WindowOptions window;
-    window.title = "Very Handsome Game™";
-    window.size = {1280, 720};
-    window.resizable = true;
-    st::open_window(window);
-    st::imgui::init();
-
-    init_game();
-
-    while (!st::is_window_closing()) {
-        st::poll_events();
-        st::clear_screen(tr::Color::rgb(0x734a16));
-
-        update_game();
-
-        st::imgui::begin();
-            // imgui goes here
-        st::imgui::end();
-
-        st::end_drawing();
-    }
-
-    free_game();
-
-    st::imgui::free();
-    st::free_window();
-    st::free();
-
-    tr::free();
-    return 0;
-}
-```
-
-### Option C: Using [engineer](https://github.com/hellory4n/libtrippin/tree/main/engineerbuild)
-
-I have a build system for some reason. `sandbox/` includes an example of this setup.
-
-Make sure to get `engineer`, `engineer.lua`, `libengineer.lua`, and `starry3d.lua` from there.
-
-Then you should only have to change these lines at the start:
+Copy `configure.lua` and edit this part at the start:
 
 ```lua
--- where are your assets
-local assets = "assets"
--- where is starry3d
-local starrydir = "thirdparty/starry3d"
-local project = eng.newproj("very_handsome_game", "executable", "c++17")
-project:add_includes({"src"})
--- add your .cpp files here
-project:add_sources({
-	"src/main.cpp"
-})
+-- the project name
+project = "JohnGaming"
+-- where you put starry3d
+starrydir = "thirdparty/starry3d"
+-- the build directory duh
+builddir = "build"
+
+-- the assets folder
+assetssrc = "assets"
+-- where it'll be copied at the end
+assetsdst = "build/bin/assets"
+
+-- imgui is optional :)
+imgui_enabled = true
+
+-- put your .cpp files and include folders here
+srcs = {
+    "src/main.cpp",
+}
+
+includes = {
+    "src"
+}
 ```
 
-Now put this in `src/main.cpp` and run `./engineer run` to check if it worked:
+Now put this in `src/main.cpp`:
 
 ```c
 #include <libtrippin.hpp>
@@ -332,7 +275,18 @@ int main(void)
 }
 ```
 
-You can run `./engineer help` for more information
+Now, to compile, first setup the project with `lua configure.lua`
+
+Options:
+- Compilation mode (`debug`/`release`): release mode enables optimizations, while debug mode disables
+optimizations, enables debug symbols, and defines `DEBUG`/`_DEBUG`.
+- Target platform (`windows`/`linux`): If compiling for windows, uses `mingw-w64-gcc` for cross-compiling.
+- Use a sanitizer: You usually don't need this option. This maps directly to a `-fsanitize=` flag, so e.g.
+`address` becomes `-fsanitize=address` for ASan.
+- Generate `compile_commands.json` (`y`/`n`): Generates a `compile_commands.json` file for IDEs (if using
+clangd) to use.
+
+Now run `ninja` to compile. You'll now have an executable in `build/bin/`
 
 ## FAQ
 
@@ -344,6 +298,6 @@ No fuck off.
 
 Why not.
 
-### Can't you be a normal human being and use Rust Go Zig Odin Nim Sip Cliff Swig Beef (this one is real) Swag S'mores?
+### Why C++? Can't you be a normal human being and use Rust Go Zig Odin Nim Sip Cliff Swig Beef (this one is real) Swag S'mores?
 
 No fuck off.

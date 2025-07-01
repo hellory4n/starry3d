@@ -8,8 +8,6 @@ assetssrc = "sandbox/assets"
 assetsdst = "build/bin/assets"
 
 imgui_enabled = true
-bfd_enabled = false
-gen_compile_commands = true
 
 srcs = {
 	"sandbox/src/main.cpp",
@@ -28,12 +26,18 @@ io.write("Starry3D auto configurator 3000++\n")
 
 io.write("Compile mode (debug/release): ")
 compmode = io.read("*l")
+assert(compmode == "debug" or compmode == "release")
 
 io.write("Target platform (windows/linux, windows requires mingw-w64 gcc and g++): ")
 platform = io.read("*l")
+assert(platform == "linux" or platform == "windows")
 
 io.write("Use a sanitizer? (e.g. 'address' for asan, press enter to not use one): ")
 sanitize = io.read("*l")
+
+io.write("Generate compile_commands.json for clangd? (y/n): ")
+compile_commands = io.read("*l")
+assert(compile_commands == "y" or compile_commands == "n")
 
 io.write("\nGenerating...\n")
 
@@ -46,7 +50,7 @@ if platform == "windows" then
 	compiler = "x86_64-w64-mingw32-g++"
 end
 
-cflags = "-std=c++17 -Wall -Wextra -Wpedantic -g "
+cflags = "-std=c++17 -Wall -Wextra -Wpedantic "
 
 -- includes
 cflags = cflags ..
@@ -116,16 +120,12 @@ if platform == "windows" then
 	ldflags = ldflags.." -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lpthread -lstdc++ -static"
 else
 	ldflags = ldflags.." -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread"
-	if bfd_enabled then
-		ldflags = ldflags.." -lbfd"
-		cflags = cflags.." -DBACKWARD_HAS_BFD=1"
-	end
 	ldflags = ldflags.." -ldl -lrt -lstdc++"
 end
 
 -- man.
 if compmode == "debug" then
-	cflags = cflags.." -O0 -DDEBUG -D_DEBUG"
+	cflags = cflags.." -O0 -g -DDEBUG -D_DEBUG"
 else
 	cflags = cflags.." -O2"
 end
@@ -204,6 +204,6 @@ f:close()
 
 io.write("Generated build.ninja; run `ninja` to compile\n")
 
-if gen_compile_commands then
+if compile_commands == "y" then
 	os.execute("ninja -t compdb > compile_commands.json")
 end

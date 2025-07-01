@@ -1,4 +1,2 @@
 thirdparty/** linguist-vendored
-# that comes from libtrippin
-libengineer.lua linguist-vendored
 * text=auto eol=lf
