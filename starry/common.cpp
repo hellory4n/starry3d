@@ -42,17 +42,6 @@ void st::init()
 	st::engine.mouse_state = tr::Array<InputState>(st::engine.arena, int(st::MouseButton::LAST) + 1);
 	st::engine.mouse_prev_down = tr::Array<bool>(st::engine.arena, int(st::MouseButton::LAST) + 1);
 
-	// default camera
-	// because not having a camera would be annoying to debug
-	// TODO this is probably stupid
-	st::engine.camera = {};
-	st::engine.camera.position = {0, 0, -1};
-	st::engine.camera.rotation = {35, 35, 0};
-	st::engine.camera.projection = CameraProjection::PERSPECTIVE;
-	st::engine.camera.far = 1'000;
-	st::engine.camera.near = 0.001;
-	st::engine.camera.fov = 90;
-
 	tr::info("initialized starry3d %s", st::VERSION);
 }
 

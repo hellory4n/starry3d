@@ -1,6 +1,3 @@
-[submodule "thirdparty/glfw"]
-	path = thirdparty/glfw
-	url = https://github.com/glfw/glfw
 [submodule "thirdparty/libtrippin"]
 	path = thirdparty/libtrippin
 	url = https://github.com/hellory4n/libtrippin
@@ -11,6 +8,6 @@
 [submodule "thirdparty/stb"]
 	path = thirdparty/stb
 	url = https://github.com/nothings/stb
-[submodule "thirdparty/whereami"]
-	path = thirdparty/whereami
-	url = https://github.com/gpakosz/whereami
+[submodule "thirdparty/sokol"]
+	path = thirdparty/sokol
+	url = https://github.com/floooh/sokol

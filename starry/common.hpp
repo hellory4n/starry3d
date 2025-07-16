@@ -32,8 +32,6 @@
 #include <trippin/string.hpp>
 #include <trippin/math.hpp>
 
-#include "render.hpp"
-
 // make sure there's always ST_WINDOWS or ST_LINUX defined
 // TODO macOS
 #if !defined(ST_WINDOWS) && !defined(ST_LINUX)
@@ -44,13 +42,10 @@
 	#endif
 #endif
 
-// didn't want to include glfw here
-struct GLFWwindow;
-
 namespace st {
 
 // Vresionlsdn.
-constexpr const char* VERSION = "v0.4.0";
+constexpr const char* VERSION = "v0.5.0";
 
 enum class InputState {
 	NOT_PRESSED,
@@ -63,7 +58,7 @@ struct Starry3D {
 	tr::Arena arena;
 
 	// window
-	GLFWwindow* window;
+	// GLFWwindow* window;
 	tr::Vec2<uint32> window_size;
 
 	// timing
@@ -83,19 +78,22 @@ struct Starry3D {
 	tr::String user_dir = "";
 
 	// render crap
-	tr::MaybePtr<ShaderProgram> current_shader;
-	Camera camera;
-	// TODO a function to change these
-	// st::ShaderSettings or smth idk man
-	tr::String model_uniform = "u_model";
-	tr::String view_uniform = "u_view";
-	tr::String proj_uniform = "u_projection";
 
 	Starry3D() {};
 };
 
 // This is where the engine's internal state goes. You probably shouldn't use this directly.
 extern Starry3D engine;
+
+// As the name implies, it's an application.
+class Application
+{
+public:
+	virtual void init() = 0;
+	// dt is delta time :)
+	virtual void update(float64 dt) = 0;
+	virtual void free() = 0;
+};
 
 // Initializes the crap library.
 void init();

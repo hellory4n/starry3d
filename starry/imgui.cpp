@@ -28,40 +28,39 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-#include "common.hpp"
 #include "imgui.hpp"
 
 void st::imgui::init()
 {
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	// we have a place for that garbage :)
-	io.IniFilename = tr::path(st::engine.arena, "user://imgui.ini");
+	// IMGUI_CHECKVERSION();
+	// ImGui::CreateContext();
+	// ImGuiIO& io = ImGui::GetIO();
+	// io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	// io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	// io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	// // we have a place for that garbage :)
+	// io.IniFilename = tr::path(st::engine.arena, "user://imgui.ini");
 
-	ImGui_ImplGlfw_InitForOpenGL(st::engine.window, true);
-	ImGui_ImplOpenGL3_Init();
+	// ImGui_ImplGlfw_InitForOpenGL(st::engine.window, true);
+	// ImGui_ImplOpenGL3_Init();
 }
 
 void st::imgui::free()
 {
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
+	// ImGui_ImplOpenGL3_Shutdown();
+	// ImGui_ImplGlfw_Shutdown();
+	// ImGui::DestroyContext();
 }
 
 void st::imgui::begin()
 {
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
+	// ImGui_ImplOpenGL3_NewFrame();
+	// ImGui_ImplGlfw_NewFrame();
+	// ImGui::NewFrame();
 }
 
 void st::imgui::end()
 {
-	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	// ImGui::Render();
+	// ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
