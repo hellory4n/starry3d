@@ -11,8 +11,6 @@ imgui_enabled = true
 
 srcs = {
 	"sandbox/src/main.cpp",
-	"sandbox/src/debug_mode.cpp",
-	"sandbox/src/hello_triangle.cpp",
 }
 
 includes = {
@@ -56,15 +54,11 @@ cflags = "-std=c++17 -Wall -Wextra -Wpedantic "
 cflags = cflags ..
 	" -I"..starrydir..
 	" -I"..starrydir.."/thirdparty"..
-	" -I"..starrydir.."/thirdparty/libtrippin"..
-	" -I"..starrydir.."/thirdparty/glfw/include"..
-	" -I"..starrydir.."/thirdparty/stb"..
-	" -I"..starrydir.."/thirdparty/whereami/src"
+	" -I"..starrydir.."/thirdparty/libtrippin"
 
 if imgui_enabled then
 	cflags = cflags ..
-		" -I"..starrydir.."/thirdparty/imgui"..
-		" -I"..starrydir.."/thirdparty/imgui/backends"
+		" -I"..starrydir.."/thirdparty/imgui"
 end
 
 -- custom includes
@@ -86,8 +80,6 @@ srcsfrfr = {
 
 	-- starry3d
 	starrydir.."/starry/common.cpp",
-	starrydir.."/starry/window.cpp",
-	starrydir.."/starry/render.cpp",
 }
 
 -- imgui
@@ -98,8 +90,6 @@ if imgui_enabled then
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_tables.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_draw.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_demo.cpp")
-	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/backends/imgui_impl_glfw.cpp")
-	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/backends/imgui_impl_opengl3.cpp")
 end
 
 -- custom sources
@@ -107,20 +97,16 @@ for _, src in ipairs(srcs) do
 	table.insert(srcsfrfr, src)
 end
 
-if platform == "windows" then
-	cflags = cflags.." -DST_WINDOWS"
-else
-	cflags = cflags.." -DST_LINUX"
-end
-
 -- ldflags
 -- idfk why libglfw3.a goes into the src folder it just does
 ldflags = "-Lbuild/glfw/src"
 
 if platform == "windows" then
-	ldflags = ldflags.." -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lpthread -lstdc++ -static"
+	ldflags = ldflags.." -lkernel32 -luser32 -lshell32 -lpthread -lstdc++ -static"
 else
-	ldflags = ldflags.." -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt -lstdc++"
+	-- TODO is -pthread necessary?
+	ldflags = ldflags.." -lX11 -lXi -lXcursor -lGL -ldl -lm -lstdc++ -pthread"
+	cflags = cflags.." -pthread"
 end
 
 -- man.
@@ -147,28 +133,6 @@ f:write("cxx = "..compiler.."\n")
 f:write("cflags = "..cflags.."\n")
 f:write("ldflags = "..ldflags.."\n")
 
-f:write("\nrule glfw_build\n")
-if platform == "windows" then
-	f:write("  command = "..
-			"mkdir "..builddir.."/glfw -p && "..
-			-- cmake can't find a file that exists :D
-			"cp "..starrydir.."/thirdparty/glfw/CMake/x86_64-w64-mingw32.cmake "..builddir.."/win32.cmake && "..
-			"cmake -S "..starrydir.."/thirdparty/glfw -B "..builddir.."/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE=$$(pwd)/"..builddir.."/win32.cmake && "..
-			"cd "..builddir.."/glfw && "..
-			"make && "..
-			"mv src/libglfw3.a src/glfw3.lib"
-	)
-else
-	f:write("  command = "..
-			"mkdir "..builddir.."/glfw -p && "..
-			"cmake -S "..starrydir.."/thirdparty/glfw -B "..builddir.."/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF && "..
-			"cd "..builddir.."/glfw && "..
-			"make"
-	)
-end
-f:write("\n  description = Compiling GLFW\n")
-
-
 f:write("\nrule compile\n")
 f:write("  command = $cxx $cflags -c $in -o $out\n")
 f:write("  description = Compiling $in\n")
@@ -178,9 +142,6 @@ f:write("  command = $cxx $in $ldflags -o $out && "..
 	-- that's to copy assets :)
 	"mkdir "..assetsdst.." -p && cp -r "..assetssrc.."/* "..assetsdst.."\n")
 f:write("  description = Linking $out\n")
-
--- man
-f:write("\nbuild "..builddir.."/glfw/libglfw3.a: glfw_build\n")
 
 -- build crap :)
 for _, src in ipairs(srcsfrfr) do
@@ -192,7 +153,6 @@ f:write("\nbuild "..builddir.."/bin/"..project..": link ")
 for _, src in ipairs(srcsfrfr) do
 	f:write(builddir.."/obj/"..src:gsub("%.cpp", ".o"):gsub("/", "_").." ")
 end
-f:write("| "..builddir.."/glfw/libglfw3.a\n")
 
 f:write("\ndefault "..builddir.."/bin/"..project.."\n")
 

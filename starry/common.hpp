@@ -4,7 +4,8 @@
  *
  * st_common.hpp
  * Utilities, engine initialization/deinitialization, and the
- * engine's global state
+ * engine's global state. This should never be included by
+ * the engine's headers.
  *
  * Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
  *
@@ -54,37 +55,6 @@ enum class InputState {
 	JUST_RELEASED,
 };
 
-struct Starry3D {
-	tr::Arena arena;
-
-	// window
-	// GLFWwindow* window;
-	tr::Vec2<uint32> window_size;
-
-	// timing
-	float64 prev_time;
-	float64 current_time;
-	float64 delta_time;
-
-	// input
-	tr::Array<InputState> key_state;
-	tr::Array<bool> key_prev_down;
-	tr::Array<InputState> mouse_state;
-	tr::Array<bool> mouse_prev_down;
-
-	// path crap
-	tr::String app_name = "Starry3D";
-	tr::String app_dir = "";
-	tr::String user_dir = "";
-
-	// render crap
-
-	Starry3D() {};
-};
-
-// This is where the engine's internal state goes. You probably shouldn't use this directly.
-extern Starry3D engine;
-
 // As the name implies, it's an application.
 class Application
 {
@@ -95,11 +65,49 @@ public:
 	virtual void free() = 0;
 };
 
-// Initializes the crap library.
-void init();
+struct ApplicationSettings
+{
+	// Used for the window title
+	tr::String name = "Starry3D";
+	// Where app:// refers to (relative to the executable's directory)
+	tr::String app_dir = "assets";
+	// Where user:// refers to (relative to the app data directory which is platform specific,
+	// default is app name)
+	// - on Windows: %APPDATA% or C:\Users\user\AppData\Roaming
+	// - on Linux: ~/.local/share
+	tr::String user_dir = "";
+	tr::Array<tr::String> logfiles;
 
-// Deinitializes the crap library.
-void free();
+	tr::Vec2<uint32> window_size = {640, 480};
+	bool fullscreen = false;
+	bool vsync = false;
+	bool high_dpi = false;
+};
+
+struct Starry3D {
+	tr::Arena arena;
+	tr::Arena sokol_arena;
+	Application* application;
+	ApplicationSettings settings;
+
+	// timing
+	float64 prev_time;
+	float64 current_time;
+
+	// input
+	tr::Array<InputState> key_state;
+	tr::Array<bool> key_prev_down;
+	tr::Array<InputState> mouse_state;
+	tr::Array<bool> mouse_prev_down;
+
+	Starry3D() {};
+};
+
+// This is where the engine's internal state goes. You probably shouldn't use this directly.
+extern Starry3D engine;
+
+// Initializes the crap library.
+void run(Application& app, ApplicationSettings settings);
 
 }
 

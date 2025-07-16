@@ -1,49 +1,37 @@
 #include <trippin/common.hpp>
 #include <trippin/log.hpp>
 #include <starry/common.hpp>
-#include <starry/window.hpp>
-#include <starry/render.hpp>
 #include <starry/imgui.hpp>
 
-#include "debug_mode.hpp"
-#include "hello_triangle.hpp"
+// TODO put this in another header
+class Sandbox : public st::Application
+{
+	void init() override;
+	void update(float64 dt) override;
+	void free() override;
+};
+
+void Sandbox::init()
+{
+	tr::log("initialized sandbox :)");
+}
+
+void Sandbox::update(float64) {}
+
+void Sandbox::free()
+{
+	tr::log("freed sandbox :)");
+}
 
 int main(void)
 {
-	tr::use_log_file("log.txt");
-	tr::init();
+	st::ApplicationSettings settings = {};
+	settings.name = "sandbox";
+	settings.app_dir = "assets";
+	settings.logfiles = {"log.txt"};
+	settings.window_size = {800, 600};
 
-	st::init();
-	st::WindowOptions window;
-	window.title = "sandbox";
-	window.size = {1280, 720};
-	window.resizable = true;
-	st::open_window(window);
-	st::imgui::init();
-
-	sandbox::init_triangle();
-
-	while (!st::is_window_closing()) {
-		st::poll_events();
-		st::clear_screen(tr::Color::rgb(0x734a16));
-
-		if (st::is_key_just_released(st::Key::F8)) {
-			st::close_window();
-		}
-
-		sandbox::render_triangle();
-
-		st::imgui::begin();
-			sandbox::debug_mode();
-		st::imgui::end();
-
-		st::end_drawing();
-	}
-
-	st::imgui::free();
-	st::free_window();
-	st::free();
-
-	tr::free();
+	Sandbox app = {};
+	st::run(app, settings);
 	return 0;
 }
