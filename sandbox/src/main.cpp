@@ -13,7 +13,7 @@ int main(void)
 	tr::use_log_file("log.txt");
 	tr::init();
 
-	st::init("sandbox", "assets");
+	st::init();
 	st::WindowOptions window;
 	window.title = "sandbox";
 	window.size = {1280, 720};

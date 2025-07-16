@@ -5,23 +5,25 @@
 #include "starry/shader/basic.glsl.hpp"
 
 namespace sandbox {
-	tr::Ref<st::Mesh> mesh;
-	tr::Ref<st::ShaderProgram> shader;
-	tr::Ref<st::Texture> texture;
+	static tr::Arena arena;
 
-	tr::Vec3<float64> position;
-	tr::Vec3<float64> rotation;
+	static st::Mesh mesh;
+	static st::ShaderProgram* shader;
+	static st::Texture texture;
+
+	static tr::Vec3<float64> position;
+	static tr::Vec3<float64> rotation;
 }
 
 void sandbox::init_triangle()
 {
 	// shader crap
-	tr::Ref<st::VertexShader> vert_shader = new st::VertexShader(st::BASIC_SHADER_VERTEX);
-	tr::Ref<st::FragmentShader> frag_shader = new st::FragmentShader(st::BASIC_SHADER_FRAGMENT);
+	st::VertexShader vert_shader = st::VertexShader(st::BASIC_SHADER_VERTEX);
+	st::FragmentShader frag_shader = st::FragmentShader(st::BASIC_SHADER_FRAGMENT);
 
-	sandbox::shader = new st::ShaderProgram();
-	sandbox::shader->attach(vert_shader.get());
-	sandbox::shader->attach(frag_shader.get());
+	sandbox::shader = &sandbox::arena.make<st::ShaderProgram>();
+	sandbox::shader->attach(vert_shader);
+	sandbox::shader->attach(frag_shader);
 	sandbox::shader->link();
 	sandbox::shader->use();
 
@@ -45,10 +47,10 @@ void sandbox::init_triangle()
 	};
 	tr::Array<st::Triangle> indices(indices_arr, sizeof(indices_arr) / sizeof(st::Triangle));
 
-	sandbox::mesh = new st::Mesh(format, vertices, indices, false);
+	sandbox::mesh = st::Mesh(format, vertices, indices, false);
 
-	sandbox::texture = new st::Texture("app://enough_fckery.jpg");
-	sandbox::mesh->set_texture(sandbox::texture);
+	sandbox::texture = st::Texture::load("app://enough_fckery.jpg").unwrap();
+	sandbox::mesh.set_texture(sandbox::texture);
 }
 
 void sandbox::render_triangle()
@@ -60,5 +62,5 @@ void sandbox::render_triangle()
 	if (st::is_key_held(st::Key::UP))    sandbox::position.z += 1 * dt;
 	if (st::is_key_held(st::Key::DOWN))  sandbox::position.z -= 1 * dt;
 
-	sandbox::mesh->draw(sandbox::position, sandbox::rotation);
+	sandbox::mesh.draw(sandbox::position, sandbox::rotation);
 }

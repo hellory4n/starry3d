@@ -82,6 +82,7 @@ srcsfrfr = {
 	starrydir.."/thirdparty/libtrippin/trippin/math.cpp",
 	starrydir.."/thirdparty/libtrippin/trippin/memory.cpp",
 	starrydir.."/thirdparty/libtrippin/trippin/string.cpp",
+	starrydir.."/thirdparty/libtrippin/trippin/error.cpp",
 
 	-- starry3d
 	starrydir.."/starry/common.cpp",

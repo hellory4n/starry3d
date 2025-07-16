@@ -79,7 +79,7 @@ void st::open_window(st::WindowOptions options)
 		case GLFW_PLATFORM_WAYLAND: platform_str = "Wayland"; break;
 		case GLFW_PLATFORM_COCOA:   platform_str = "Cocoa";   break;
 	}
-	tr::info("created window for %s", platform_str.buffer());
+	tr::info("created window for %s", platform_str.buf());
 
 	if (!glfwRawMouseMotionSupported()) {
 		tr::warn("warning: raw mouse motion is not supported");
@@ -116,7 +116,7 @@ void st::poll_events()
 	// handle the extra fancy key/mouse states
 
 	// it gets mad if you try to check for anything before space
-	for (int32 key = static_cast<int32>(Key::SPACE); key <= static_cast<int32>(Key::LAST); key++) {
+	for (int32 key = int32(Key::SPACE); key <= int32(Key::LAST); key++) {
 		bool is_down = glfwGetKey(st::engine.window, key) == GLFW_PRESS;
 
 		// help
@@ -138,7 +138,7 @@ void st::poll_events()
 	}
 
 	// christ
-	for (int32 btn = static_cast<int32>(MouseButton::BTN_1); btn <= static_cast<int32>(MouseButton::LAST); btn++) {
+	for (int32 btn = int32(MouseButton::BTN_1); btn <= int32(MouseButton::LAST); btn++) {
 		bool is_down = glfwGetMouseButton(st::engine.window, btn) == GLFW_PRESS;
 
 		// help
@@ -172,29 +172,29 @@ void st::poll_events()
 
 // help
 bool st::is_key_just_pressed(st::Key key) {
-	return st::engine.key_state[static_cast<usize>(key)] == InputState::JUST_PRESSED;
+	return st::engine.key_state[usize(key)] == InputState::JUST_PRESSED;
 }
 bool st::is_key_just_released(st::Key key) {
-	return st::engine.key_state[static_cast<usize>(key)] == InputState::JUST_RELEASED;
+	return st::engine.key_state[usize(key)] == InputState::JUST_RELEASED;
 }
 bool st::is_key_not_pressed(st::Key key) {
-	return st::engine.key_state[static_cast<usize>(key)] == InputState::NOT_PRESSED;
+	return st::engine.key_state[usize(key)] == InputState::NOT_PRESSED;
 }
 bool st::is_key_held(st::Key key) {
-	return st::engine.key_state[static_cast<usize>(key)] != InputState::NOT_PRESSED;
+	return st::engine.key_state[usize(key)] != InputState::NOT_PRESSED;
 }
 
 bool st::is_mouse_just_pressed(st::MouseButton key) {
-	return st::engine.mouse_state[static_cast<usize>(key)] == InputState::JUST_PRESSED;
+	return st::engine.mouse_state[usize(key)] == InputState::JUST_PRESSED;
 }
 bool st::is_mouse_just_released(st::MouseButton key) {
-	return st::engine.mouse_state[static_cast<usize>(key)] == InputState::JUST_RELEASED;
+	return st::engine.mouse_state[usize(key)] == InputState::JUST_RELEASED;
 }
 bool st::is_mouse_not_pressed(st::MouseButton key) {
-	return st::engine.mouse_state[static_cast<usize>(key)] == InputState::NOT_PRESSED;
+	return st::engine.mouse_state[usize(key)] == InputState::NOT_PRESSED;
 }
 bool st::is_mouse_held(st::MouseButton key) {
-	return st::engine.mouse_state[static_cast<usize>(key)] != InputState::NOT_PRESSED;
+	return st::engine.mouse_state[usize(key)] != InputState::NOT_PRESSED;
 }
 
 tr::Vec2<float64> st::mouse_position()

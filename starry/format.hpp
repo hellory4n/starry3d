@@ -30,6 +30,7 @@
 #include <trippin/memory.hpp>
 #include <trippin/string.hpp>
 #include <trippin/math.hpp>
+#include <trippin/error.hpp>
 
 #include "render.hpp"
 
@@ -206,10 +207,10 @@ struct VoxModel
 	VoxModel() : dimensions(0, 0, 0), items() {}
 
 	// Loads a .stvox model and returns it, or null if it fails.
-	static tr::Maybe<VoxModel> load(tr::String path);
+	static tr::Result<VoxModel, tr::Error> load(tr::String path);
 
 	// Tries to save the model into a .stvox model. Returns true if it succeeds, returns false otherwise.
-	bool save(tr::String path);
+	tr::Result<void, tr::Error> save(tr::String path);
 };
 
 // As the name implies, it controls the global appearance of voxel models. This should be swappable and still
@@ -222,10 +223,10 @@ struct VoxAppearance
 	tr::Array<tr::Color> palette;
 
 	// Loads the file lmao.
-	static tr::Maybe<VoxAppearance> load(tr::String path);
+	static tr::Result<VoxAppearance, tr::Error> load(tr::String path);
 
 	// Tries to save the file into a file. Returns true if it succeeded, returns false otherwise.
-	bool save(tr::String path);
+	tr::Result<void, tr::Error> save(tr::String path);
 };
 
 // Sets the current `VoxAppearance`

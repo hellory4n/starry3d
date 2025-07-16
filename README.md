@@ -139,10 +139,10 @@ Now put this in your `main.cpp` and run to check if it worked:
 ```c
 #include <trippin/common.hpp>
 #include <trippin/log.hpp>
-#include <st_common.hpp>
-#include <st_window.hpp>
-#include <st_render.hpp>
-#include <st_imgui.hpp>
+#include <starry/common.hpp>
+#include <starry/window.hpp>
+#include <starry/render.hpp>
+#include <starry/imgui.hpp>
 
 // TODO implement them
 static void init_game() {}
@@ -228,10 +228,10 @@ Now put this in `src/main.cpp`:
 ```c
 #include <trippin/common.hpp>
 #include <trippin/log.hpp>
-#include <st_common.hpp>
-#include <st_window.hpp>
-#include <st_render.hpp>
-#include <st_imgui.hpp>
+#include <starry/common.hpp>
+#include <starry/window.hpp>
+#include <starry/render.hpp>
+#include <starry/imgui.hpp>
 
 // TODO implement them
 static void init_game() {}

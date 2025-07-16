@@ -30,6 +30,7 @@
 #include <trippin/memory.hpp>
 #include <trippin/string.hpp>
 #include <trippin/math.hpp>
+#include <trippin/error.hpp>
 
 namespace st {
 
@@ -100,15 +101,18 @@ struct Triangle {
 class Texture;
 
 // Represents a mesh in the GPU.
-class Mesh : public tr::RefCounted
+class Mesh
 {
 	uint32 vao;
 	uint32 vbo;
 	uint32 ebo;
 	uint32 index_count;
-	tr::MaybeRef<Texture> texture;
+	tr::MaybePtr<Texture> texture;
 
 public:
+	// shut up
+	Mesh() : vao(0), vbo(0), ebo(0), index_count(0), texture() {}
+
 	// `elem_size` is the size of the type you're using for vertices. `readonly` allows you to update the
 	// mesh later.
 	Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size, usize length,
@@ -117,7 +121,7 @@ public:
 	// not really necessary idc
 	template<typename T> Mesh(tr::Array<VertexAttribute> format, tr::Array<T> vertices,
 		tr::Array<Triangle> indices, bool readonly)
-		: Mesh(format, vertices.buffer(), sizeof(T), vertices.length(), indices, readonly) {}
+		: Mesh(format, vertices.buf(), sizeof(T), vertices.len(), indices, readonly) {}
 
 	~Mesh();
 
@@ -133,14 +137,14 @@ public:
 	// TODO draw_instanced(), update_data()
 
 	// Makes the mesh use a specific texture :)
-	void set_texture(tr::Ref<Texture> texture);
+	void set_texture(const Texture& texture);
 };
 
 // A program on the GPU©®¢™¢™¢™©®©®©®™™™©®©®™™™©®©®™™¢®¢™™
 class ShaderProgram;
 
 // Shader. There's different shader classes just in case I decide to add compute shaders for some fucking reason.
-class Shader : public tr::RefCounted
+class Shader
 {
 protected:
 	uint32 shader;
@@ -168,7 +172,7 @@ public:
 };
 
 // A program on the GPU©®¢™¢™¢™©®©®©®™™™©®©®™™™©®©®™™¢®¢™™
-class ShaderProgram : public tr::RefCounted
+class ShaderProgram
 {
 	uint32 program;
 
@@ -177,7 +181,7 @@ public:
 	~ShaderProgram();
 
 	// Le
-	void attach(tr::Ref<Shader> shader);
+	void attach(const Shader& shader);
 	void link();
 	// Uses the program for rendering crap.
 	void use();
@@ -192,7 +196,7 @@ public:
 };
 
 // It's an image on the GPU :)
-class Texture : public tr::RefCounted
+class Texture
 {
 	uint32 id;
 	friend class Mesh;
@@ -200,7 +204,7 @@ class Texture : public tr::RefCounted
 public:
 	tr::Vec2<uint32> size;
 
-	Texture(tr::String path);
+	static tr::Result<Texture, tr::StringError> load(tr::String path);
 	Texture() : id(0), size(0, 0) {}
 	~Texture();
 };

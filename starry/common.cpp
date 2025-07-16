@@ -24,15 +24,6 @@
  *
  */
 
-// yes this is intentional idc
-// on linux it has to be included before everything because it fucks with standard headers
-// on windows it's the opposite, windows.h fucks with everything so it's easier to just include it after shit
-#ifndef _WIN32
-	#include <whereami.c>
-#else
-	#include <whereami.h>
-#endif
-
 #include <trippin/common.hpp>
 #include <trippin/log.hpp>
 
@@ -44,34 +35,12 @@ namespace st {
 	Starry3D engine;
 }
 
-void st::init(tr::String app_name, tr::String asset_dir)
+void st::init()
 {
-	st::engine.arena = new tr::Arena(tr::mb_to_bytes(1));
-
-	st::engine.key_state = tr::Array<InputState>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
-	st::engine.key_prev_down = tr::Array<bool>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
-	st::engine.mouse_state = tr::Array<InputState>(st::engine.arena, static_cast<int>(st::MouseButton::LAST) + 1);
-	st::engine.mouse_prev_down = tr::Array<bool>(st::engine.arena, static_cast<int>(st::MouseButton::LAST) + 1);
-
-	// man
-	st::engine.app_dir = tr::String(st::engine.arena, "", 1024);
-	int dirname_len;
-	wai_getExecutablePath(st::engine.app_dir, st::engine.app_dir.length(), &dirname_len);
-	st::engine.app_dir[dirname_len] = '\0';
-	st::engine.app_dir = tr::sprintf(st::engine.arena, 1024, "%s/%s", st::engine.app_dir.buffer(),
-		asset_dir.buffer()
-	);
-	tr::info("app:// is pointing to %s", st::engine.app_dir.buffer());
-
-	// woman
-	#ifdef ST_WINDOWS
-	char* appdata = getenv("APPDATA");
-	st::engine.user_dir = tr::sprintf(st::engine.arena, 1024, "%s/%s", appdata, app_name.buffer());
-	#else
-	char* home = getenv("HOME");
-	st::engine.user_dir = tr::sprintf(st::engine.arena, 1024, "%s/.local/share/%s", home, app_name.buffer());
-	#endif
-	tr::info("user:// is pointing to %s", st::engine.user_dir.buffer());
+	st::engine.key_state = tr::Array<InputState>(st::engine.arena, int(st::Key::LAST) + 1);
+	st::engine.key_prev_down = tr::Array<bool>(st::engine.arena, int(st::Key::LAST) + 1);
+	st::engine.mouse_state = tr::Array<InputState>(st::engine.arena, int(st::MouseButton::LAST) + 1);
+	st::engine.mouse_prev_down = tr::Array<bool>(st::engine.arena, int(st::MouseButton::LAST) + 1);
 
 	// default camera
 	// because not having a camera would be annoying to debug
@@ -89,35 +58,5 @@ void st::init(tr::String app_name, tr::String asset_dir)
 
 void st::free()
 {
-	delete st::engine.arena;
 	tr::info("deinitialized starry3d");
 }
-
-tr::String st::path(tr::Ref<tr::Arena> arena, tr::String from)
-{
-	if (from.starts_with("app://")) {
-		tr::String pathfrfr = from.substr(arena, sizeof("app://") - 1, from.length() + 1);
-		return tr::sprintf(arena, 1024, "%s/%s", st::engine.app_dir.buffer(), pathfrfr.buffer());
-	}
-	else if (from.starts_with("user://")) {
-		tr::String pathfrfr = from.substr(arena, sizeof("user://") - 1, from.length() + 1);
-		return tr::sprintf(arena, 1024, "%s/%s", st::engine.user_dir.buffer(), pathfrfr.buffer());
-	}
-
-	// justin case
-	#ifdef DEBUG
-	if (!from.is_absolute()) {
-		tr::warn("%s is relative, did you mean \"app://%s\"?", from.buffer(), from.buffer());
-	}
-	#endif
-
-	// ok there's nothing just duplicate it
-	return from.duplicate(arena);
-}
-
-// yes this is intentional idc
-// on linux it has to be included before everything because it fucks with standard headers
-// on windows it's the opposite, windows.h fucks with everything so it's easier to just include it after shit
-#ifdef _WIN32
-	#include <whereami.c>
-#endif

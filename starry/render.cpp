@@ -23,19 +23,16 @@
  *
  */
 
+#include <trippin/log.hpp>
+#include <trippin/iofs.hpp>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#include <trippin/log.hpp>
 
 #include "common.hpp"
 #include "window.hpp"
 #include "render.hpp"
-
-namespace st {
-	tr::Ref<ShaderProgram> current_shader;
-}
 
 void st::clear_screen(tr::Color color)
 {
@@ -66,7 +63,7 @@ tr::Matrix4x4 st::Camera::projection_matrix()
 	tr::Vec2<uint32> winsize = st::window_size();
 
 	if (this->projection == CameraProjection::PERSPECTIVE) {
-		return tr::Matrix4x4::perspective(tr::deg2rad(this->fov), static_cast<float32>(winsize.x) /
+		return tr::Matrix4x4::perspective(tr::deg2rad(this->fov), float32(winsize.x) /
 			winsize.y, this->near, this->far
 		);
 	}
@@ -75,7 +72,7 @@ tr::Matrix4x4 st::Camera::projection_matrix()
 		float32 left = -this->zoom / 2.f;
 		float32 right = this->zoom / 2.f;
 
-		float32 height = this->zoom * (static_cast<float32>(winsize.y) / winsize.x);
+		float32 height = this->zoom * (float32(winsize.y) / winsize.x);
 		float32 bottom = -height / 2.f;
 		float32 top = height / 2.f;
 
@@ -91,7 +88,7 @@ st::Camera* st::camera()
 st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size, usize length,
 	tr::Array<st::Triangle> indices, bool readonly)
 {
-	this->index_count = indices.length() * 3;
+	this->index_count = indices.len() * 3;
 
 	// vao
 	glGenVertexArrays(1, &this->vao);
@@ -173,10 +170,14 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 		}
 
 		if (ipointer) {
-			glVertexAttribIPointer(attrib.i, size, type, elem_size, reinterpret_cast<const void*>(attrib.val.offset));
+			glVertexAttribIPointer(attrib.i, size, type, elem_size,
+				reinterpret_cast<const void*>(attrib.val.offset)
+			);
 		}
 		else {
-			glVertexAttribPointer(attrib.i, size, type, false, elem_size, reinterpret_cast<const void*>(attrib.val.offset));
+			glVertexAttribPointer(attrib.i, size, type, false, elem_size,
+				reinterpret_cast<const void*>(attrib.val.offset)
+			);
 		}
 		glEnableVertexAttribArray(attrib.i);
 	}
@@ -184,7 +185,7 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 	// ebo
 	glGenBuffers(1, &this->ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.length() * sizeof(Triangle), indices.buffer(),
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.len() * sizeof(Triangle), indices.buf(),
 		readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
 
 	// unbind vao
@@ -192,7 +193,7 @@ st::Mesh::Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size,
 
 	tr::info("uploaded mesh (vao %u, vbo %u, ebo %u)", this->vao, this->vbo, this->ebo);
 	tr::info("- vertices:  %zu (%zu KB)", length, tr::bytes_to_kb(length * elem_size));
-	tr::info("- triangles: %zu (%zu KB)", indices.length(), tr::bytes_to_kb(indices.length() *
+	tr::info("- triangles: %zu (%zu KB)", indices.len(), tr::bytes_to_kb(indices.len() *
 		sizeof(st::Triangle))
 	);
 }
@@ -208,13 +209,16 @@ st::Mesh::~Mesh()
 
 void st::Mesh::draw(tr::Matrix4x4 model, tr::Matrix4x4 view, tr::Matrix4x4 projection)
 {
-	st::current_shader->set_uniform(st::engine.model_uniform, model);
-	st::current_shader->set_uniform(st::engine.view_uniform, view);
-	st::current_shader->set_uniform(st::engine.proj_uniform, projection);
+	if (st::engine.current_shader.is_valid()) {
+		ShaderProgram& shader = st::engine.current_shader.unwrap_ref();
+		shader.set_uniform(st::engine.model_uniform, model);
+		shader.set_uniform(st::engine.view_uniform, view);
+		shader.set_uniform(st::engine.proj_uniform, projection);
+	}
 
-	if (this->texture != nullptr) {
+	if (this->texture.is_valid()) {
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, this->texture->id);
+		glBindTexture(GL_TEXTURE_2D, this->texture.unwrap_ref().id);
 	}
 
 	glBindVertexArray(this->vao);
@@ -239,10 +243,11 @@ void st::Mesh::draw(tr::Vec3<float64> pos, tr::Vec3<float64> rot)
 	this->draw(rot_matrix * pos_matrix);
 }
 
-void st::Mesh::set_texture(tr::Ref<st::Texture> texture)
+void st::Mesh::set_texture(const st::Texture& texture)
 {
-	TR_ASSERT_MSG(texture->id != 0, "texture id is 0, did you initialize it?");
-	this->texture = tr::MaybeRef<Texture>(texture);
+	TR_ASSERT_MSG(texture.id != 0, "texture id is 0, did you initialize it?");
+	// TODO this sucks
+	this->texture = const_cast<Texture&>(texture);
 }
 
 void st::Shader::check_compilation(const char* shader_type)
@@ -259,7 +264,7 @@ void st::Shader::check_compilation(const char* shader_type)
 st::VertexShader::VertexShader(tr::String src)
 {
 	this->shader = glCreateShader(GL_VERTEX_SHADER);
-	char* whythefuck = src.buffer();
+	char* whythefuck = src.buf();
 	glShaderSource(this->shader, 1, &whythefuck, nullptr);
 	glCompileShader(this->shader);
 
@@ -276,7 +281,7 @@ st::VertexShader::~VertexShader()
 st::FragmentShader::FragmentShader(tr::String src)
 {
 	this->shader = glCreateShader(GL_FRAGMENT_SHADER);
-	char* whythefuck = src.buffer();
+	char* whythefuck = src.buf();
 	glShaderSource(this->shader, 1, &whythefuck, nullptr);
 	glCompileShader(this->shader);
 
@@ -302,9 +307,9 @@ st::ShaderProgram::~ShaderProgram()
 	tr::info("deleted shader program (id %u)", this->program);
 }
 
-void st::ShaderProgram::attach(tr::Ref<Shader> shader)
+void st::ShaderProgram::attach(const st::Shader& shader)
 {
-	glAttachShader(this->program, shader->shader);
+	glAttachShader(this->program, shader.shader);
 }
 
 void st::ShaderProgram::link()
@@ -325,19 +330,22 @@ void st::ShaderProgram::link()
 void st::ShaderProgram::use()
 {
 	glUseProgram(this->program);
-	st::current_shader = this;
+	st::engine.current_shader = *this;
 }
 
-st::Texture::Texture(tr::String path)
+tr::Result<st::Texture, tr::StringError> st::Texture::load(tr::String path)
 {
-	tr::Ref<tr::Arena> tmp = new tr::Arena(tr::kb_to_bytes(1));
-	tr::String real_path = st::path(tmp, path);
+	Texture texture = {};
+	tr::String real_path = tr::path(tr::scratchpad(), path);
 
 	// TODO texture cache
 	int32 width, height, channels;
 	uint8* data = stbi_load(real_path, &width, &height, &channels, 0);
 	if (data == nullptr) {
-		tr::panic("couldn't load texture from %s", path.buffer());
+		// TODO this could be an overload in tr::StringError
+		return tr::StringError(tr::fmt(tr::scratchpad(), "couldn't load texture from %s",
+			path.buf())
+		);
 	}
 
 	// TODO there's no way this is correct but i can't be bothered to check
@@ -356,17 +364,18 @@ st::Texture::Texture(tr::String path)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	this->size = {static_cast<uint32>(width), static_cast<uint32>(height)};
+	texture.size = {uint32(width), uint32(height)};
 
 	// actually make the texture
-	glGenTextures(1, &this->id);
-	glBindTexture(GL_TEXTURE_2D, this->id);
+	glGenTextures(1, &texture.id);
+	glBindTexture(GL_TEXTURE_2D, texture.id);
 	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 	// TODO there should be a setting for this probably
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	stbi_image_free(data);
-	tr::info("loaded texture from %s (id %u)", path.buffer(), this->id);
+	tr::info("loaded texture from %s (id %u)", path.buf(), texture.id);
+	return texture;
 }
 
 st::Texture::~Texture()

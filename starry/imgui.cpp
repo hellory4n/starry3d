@@ -23,6 +23,7 @@
  *
  */
 
+#include <trippin/iofs.hpp>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -39,7 +40,7 @@ void st::imgui::init()
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	// we have a place for that garbage :)
-	io.IniFilename = st::path(st::engine.arena, "user://imgui.ini");
+	io.IniFilename = tr::path(st::engine.arena, "user://imgui.ini");
 
 	ImGui_ImplGlfw_InitForOpenGL(st::engine.window, true);
 	ImGui_ImplOpenGL3_Init();
