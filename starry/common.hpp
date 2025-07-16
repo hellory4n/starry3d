@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * st_common.hpp
+ * common.hpp
  * Utilities, engine initialization/deinitialization, and the
  * engine's global state. This should never be included by
  * the engine's headers.
@@ -86,7 +86,6 @@ struct ApplicationSettings
 
 struct Starry3D {
 	tr::Arena arena;
-	tr::Arena sokol_arena;
 	Application* application;
 	ApplicationSettings settings;
 

@@ -2,8 +2,8 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * imgui.hpp
- * Integrates Starry3D with Dear ImGui
+ * render.hpp
+ * The renderer duh
  *
  * Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
  *
@@ -23,26 +23,21 @@
  *
  */
 
-#ifndef _ST_IMGUI_H
-#define _ST_IMGUI_H
-
-#include <imgui.h>
+#ifndef _ST_RENDER_H
+#define _ST_RENDER_H
 
 namespace st {
 
-namespace imgui {
-	// Initializes ImGui
-	void init();
+// internal :)
+void __init_renderer();
+void __free_renderer();
+void __draw();
 
-	// Deinitializes ImGui
-	void free();
+void init_triangle();
 
-	// Put this at the start of your main loop
-	void begin();
+void draw_triangle();
 
-	// Put this at the end of your main loop
-	void end();
-}
+void free_triangle();
 
 }
 

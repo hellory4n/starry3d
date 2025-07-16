@@ -11,3 +11,7 @@
 [submodule "thirdparty/sokol"]
 	path = thirdparty/sokol
 	url = https://github.com/floooh/sokol
+# putting it into the build process would be too annoying :)
+[submodule "thirdparty/sokol-tools-bin"]
+	path = thirdparty/sokol-tools-bin
+	url = https://github.com/floooh/sokol-tools-bin

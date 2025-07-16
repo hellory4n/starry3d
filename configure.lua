@@ -11,6 +11,7 @@ imgui_enabled = true
 
 srcs = {
 	"sandbox/src/main.cpp",
+	"sandbox/src/app.cpp",
 }
 
 includes = {
@@ -80,6 +81,7 @@ srcsfrfr = {
 
 	-- starry3d
 	starrydir.."/starry/common.cpp",
+	starrydir.."/starry/render.cpp",
 }
 
 -- imgui

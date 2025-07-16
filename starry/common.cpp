@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * st_common.cpp
+ * common.cpp
  * Utilities, engine initialization/deinitialization, and the
  * engine's global state
  *
@@ -33,15 +33,17 @@
 #define SOKOL_ASSERT(X) TR_ASSERT(X)
 #define SOKOL_UNREACHABLE() tr::panic("unreachable code from sokol")
 #define SOKOL_NO_ENTRY
-#define SOKOL_IMPL
+#define SOKOL_APP_IMPL
 // it's one single line
 // TODO i'll definitely forget to remove this when it's fixed
 TR_GCC_IGNORE_WARNING(-Wmissing-field-initializers)
-#include <thirdparty/sokol/sokol_app.h>
+#include <sokol/sokol_app.h>
 TR_GCC_RESTORE()
-#include <thirdparty/sokol/sokol_time.h>
+#define SOKOL_TIME_IMPL
+#include <sokol/sokol_time.h>
 
 #include "common.hpp"
+#include "render.hpp"
 
 namespace st {
 	// it has to live somewhere
@@ -53,7 +55,7 @@ namespace st {
 	static void __free();
 	static void __event(const sapp_event* event);
 	// it's a hassle
-	static void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+	void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
 		uint32 line_nr, const char* filename_or_null, void* user_data
 	);
 }
@@ -84,11 +86,6 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	sokol_app.high_dpi = settings.high_dpi;
 	sokol_app.fullscreen = settings.fullscreen;
 
-	// we need SSBOs :)
-	// TODO does sokol support that?
-	sokol_app.gl_major_version = 4;
-	sokol_app.gl_minor_version = 3;
-
 	sapp_run(sokol_app);
 }
 
@@ -110,13 +107,20 @@ static void st::__init()
 	}
 
 	tr::init();
+	// TODO this fails bcuz sokol calls st::__free, which calls tr::free, which calls st::__free
+	// i only wanted for it to be called on panic
+	// tr::call_on_quit(st::__free);
 
 	tr::info("initialized starry3d %s", st::VERSION);
+
+	st::__init_renderer();
 	st::engine.application->init();
 }
 
 static void st::__update()
 {
+	st::__draw();
+
 	st::engine.prev_time = st::engine.current_time;
 	st::engine.current_time = stm_sec(stm_now());
 	float64 delta_time = st::engine.current_time - st::engine.prev_time;
@@ -127,6 +131,7 @@ static void st::__update()
 static void st::__free()
 {
 	st::engine.application->free();
+	st::__free_renderer();
 	tr::free();
 }
 
@@ -136,7 +141,7 @@ static void st::__event(const sapp_event* event)
 	(void)event;
 }
 
-static void st::__sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+void st::__sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
 	uint32 line_nr, const char* filename_or_null, void* user_data)
 {
 	// shut up
@@ -147,7 +152,6 @@ static void st::__sokol_log(const char* tag, uint32 level, uint32 item_id, const
 
 	const char* msg = msg_or_null == nullptr ? "unknown message" : msg_or_null;
 
-	// i could convert the item id to readable messages but i don't want to
 	switch (level) {
 		case 0: tr::panic("sokol panic (item id %u): %s", item_id, msg); break;
 		case 1: tr::error("sokol error (item id %u): %s", item_id, msg); break;
