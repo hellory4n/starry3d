@@ -44,6 +44,15 @@ TR_GCC_RESTORE()
 #define SOKOL_TIME_IMPL
 #include <sokol/sokol_time.h>
 
+// i fucking love windows
+#ifdef _WIN32
+	#undef DELETE
+	#undef ERROR
+	#undef TRANSPARENT
+	#undef Key
+	#undef MouseButton
+#endif
+
 #include "starry/optional/imgui.hpp"
 #include "starry/render.hpp"
 #include "starry/common.hpp"

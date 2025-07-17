@@ -105,7 +105,7 @@ end
 ldflags = "-Lbuild/glfw/src"
 
 if platform == "windows" then
-	ldflags = ldflags.." -lkernel32 -luser32 -lshell32 -lpthread -lstdc++ -static"
+	ldflags = ldflags.." -lkernel32 -luser32 -lshell32 -lgdi32 -lpthread -lstdc++ -static"
 else
 	-- TODO is -pthread necessary?
 	ldflags = ldflags.." -lX11 -lXi -lXcursor -lGL -ldl -lm -lstdc++ -pthread"
