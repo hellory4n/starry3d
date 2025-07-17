@@ -23,41 +23,70 @@
  *
  */
 
+#include <trippin/common.hpp>
+#include <trippin/log.hpp>
+#include <trippin/iofs.hpp>
+
+#define SOKOL_GLCORE
+#define SOKOL_ASSERT(X) TR_ASSERT(X)
+#define SOKOL_UNREACHABLE() tr::panic("unreachable code from sokol")
+#define SOKOL_NO_ENTRY
+#include <sokol/sokol_app.h>
+#include <sokol/sokol_gfx.h>
+#include <sokol/sokol_log.h>
+#include <sokol/sokol_glue.h>
 #include <imgui.h>
+#define SOKOL_IMGUI_IMPL
+#include <sokol/util/sokol_imgui.h>
 
 #include "imgui.hpp"
 
+namespace st {
+	// it's a hassle
+	// implemented in common.cpp
+	void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+		uint32 line_nr, const char* filename_or_null, void* user_data
+	);
+}
+
 void st::imgui::init()
 {
-	// IMGUI_CHECKVERSION();
-	// ImGui::CreateContext();
-	// ImGuiIO& io = ImGui::GetIO();
-	// io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-	// io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-	// io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	// // we have a place for that garbage :)
-	// io.IniFilename = tr::path(st::engine.arena, "user://imgui.ini");
+	simgui_desc_t imgui_desc = {};
+	imgui_desc.logger.func = st::__sokol_log;
+	// TODO should this be configurable?
+	imgui_desc.ini_filename = tr::path(tr::scratchpad(), "user://imgui.ini");
+	simgui_setup(imgui_desc);
 
-	// ImGui_ImplGlfw_InitForOpenGL(st::engine.window, true);
-	// ImGui_ImplOpenGL3_Init();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 }
 
 void st::imgui::free()
 {
-	// ImGui_ImplOpenGL3_Shutdown();
-	// ImGui_ImplGlfw_Shutdown();
-	// ImGui::DestroyContext();
+	simgui_shutdown();
 }
 
-void st::imgui::begin()
+void st::imgui::update()
 {
-	// ImGui_ImplOpenGL3_NewFrame();
-	// ImGui_ImplGlfw_NewFrame();
-	// ImGui::NewFrame();
+	int width = sapp_width();
+	int height = sapp_height();
+
+	simgui_frame_desc_t frame_desc = {};
+	frame_desc.width = width;
+	frame_desc.height = height;
+	frame_desc.delta_time = sapp_frame_duration();
+	frame_desc.dpi_scale = sapp_dpi_scale();
+	simgui_new_frame(frame_desc);
 }
 
-void st::imgui::end()
+void st::imgui::render()
 {
-	// ImGui::Render();
-	// ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	simgui_render();
+}
+
+void st::imgui::on_event(const void* event)
+{
+	simgui_handle_event(reinterpret_cast<const sapp_event*>(event));
 }

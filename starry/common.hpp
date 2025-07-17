@@ -47,6 +47,8 @@ namespace st {
 
 // Vresionlsdn.
 constexpr const char* VERSION = "v0.5.0";
+// Vresionlsdn. Format is XYYZZ
+constexpr uint32 VERSION_NUM = 5'00; // can't do 0'05'00 bcuz it would become an octal number
 
 enum class InputState {
 	NOT_PRESSED,
@@ -85,21 +87,15 @@ struct ApplicationSettings
 };
 
 struct Starry3D {
-	tr::Arena arena;
-	Application* application;
-	ApplicationSettings settings;
-
-	// timing
-	float64 prev_time;
-	float64 current_time;
+	tr::Arena arena = {};
+	Application* application = nullptr;
+	ApplicationSettings settings = {};
 
 	// input
 	tr::Array<InputState> key_state;
 	tr::Array<bool> key_prev_down;
 	tr::Array<InputState> mouse_state;
 	tr::Array<bool> mouse_prev_down;
-
-	Starry3D() {};
 };
 
 // This is where the engine's internal state goes. You probably shouldn't use this directly.

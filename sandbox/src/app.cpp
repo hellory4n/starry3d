@@ -1,4 +1,5 @@
 #include <starry/render.hpp>
+#include <starry/imgui.hpp>
 #include "app.hpp"
 
 void Sandbox::init()
@@ -10,6 +11,8 @@ void Sandbox::init()
 void Sandbox::update(float64)
 {
 	st::draw_triangle();
+
+	ImGui::ShowDemoWindow();
 }
 
 void Sandbox::free()

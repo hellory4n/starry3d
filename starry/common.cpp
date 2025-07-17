@@ -43,6 +43,7 @@ TR_GCC_RESTORE()
 #include <sokol/sokol_time.h>
 
 #include "common.hpp"
+#include "imgui.hpp"
 #include "render.hpp"
 
 namespace st {
@@ -85,6 +86,7 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	sokol_app.swap_interval = settings.vsync ? 1 : 0;
 	sokol_app.high_dpi = settings.high_dpi;
 	sokol_app.fullscreen = settings.fullscreen;
+	sokol_app.enable_clipboard = true;
 
 	sapp_run(sokol_app);
 }
@@ -114,23 +116,28 @@ static void st::__init()
 	tr::info("initialized starry3d %s", st::VERSION);
 
 	st::__init_renderer();
+	#ifdef ST_IMGUI
+	st::imgui::init();
+	#endif
 	st::engine.application->init();
 }
 
 static void st::__update()
 {
+	#ifdef ST_IMGUI
+	st::imgui::update();
+	#endif
+
+	st::engine.application->update(sapp_frame_duration());
 	st::__draw();
-
-	st::engine.prev_time = st::engine.current_time;
-	st::engine.current_time = stm_sec(stm_now());
-	float64 delta_time = st::engine.current_time - st::engine.prev_time;
-
-	st::engine.application->update(delta_time);
 }
 
 static void st::__free()
 {
 	st::engine.application->free();
+	#ifdef ST_IMGUI
+	st::imgui::free();
+	#endif
 	st::__free_renderer();
 	tr::free();
 }
@@ -139,6 +146,9 @@ static void st::__event(const sapp_event* event)
 {
 	// TODO do something with it
 	(void)event;
+	#ifdef ST_IMGUI
+	st::imgui::on_event(event);
+	#endif
 }
 
 void st::__sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,

@@ -92,6 +92,7 @@ if imgui_enabled then
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_tables.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_draw.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_demo.cpp")
+	cflags = cflags.." -DST_IMGUI"
 end
 
 -- custom sources

@@ -23,6 +23,7 @@
  *
  */
 
+#ifdef ST_IMGUI
 #ifndef _ST_IMGUI_H
 #define _ST_IMGUI_H
 
@@ -31,19 +32,18 @@
 namespace st {
 
 namespace imgui {
-	// Initializes ImGui
 	void init();
-
-	// Deinitializes ImGui
 	void free();
-
-	// Put this at the start of your main loop
-	void begin();
-
-	// Put this at the end of your main loop
-	void end();
+	void update();
+	void render();
+	void on_event(const void* event);
 }
 
 }
 
+#endif
+
+#else
+	// just so you know why imgui doesn't work
+	#error Using starry/imgui.hpp requires ST_IMGUI to be defined in the project
 #endif

@@ -39,6 +39,7 @@
 #include <sokol/sokol_glue.h>
 
 #include "shader/basic.glsl.h"
+#include "imgui.hpp"
 #include "render.hpp"
 
 namespace st {
@@ -82,6 +83,10 @@ void st::__draw()
 	sg_apply_pipeline(st::renderer.pipeline);
 	sg_apply_bindings(st::renderer.bindings);
 	sg_draw(0, 3, 1);
+
+	#ifdef ST_IMGUI
+	st::imgui::render();
+	#endif
 
 	sg_end_pass();
 	sg_commit();
