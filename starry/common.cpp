@@ -49,6 +49,7 @@ TR_GCC_RESTORE()
 namespace st {
 	// it has to live somewhere
 	Starry3D engine;
+	tr::Signal<void> on_close(engine.arena);
 
 	// sokol callbacks
 	static void __init();
@@ -93,10 +94,8 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 
 static void st::__init()
 {
-	// st::engine.key_state = tr::Array<InputState>(st::engine.arena, int(st::Key::LAST) + 1);
-	// st::engine.key_prev_down = tr::Array<bool>(st::engine.arena, int(st::Key::LAST) + 1);
-	// st::engine.mouse_state = tr::Array<InputState>(st::engine.arena, int(st::MouseButton::LAST) + 1);
-	// st::engine.mouse_prev_down = tr::Array<bool>(st::engine.arena, int(st::MouseButton::LAST) + 1);
+	st::engine.key_state = tr::Array<InputState>(st::engine.arena, int(st::Key::LAST) + 1);
+	st::engine.mouse_state = tr::Array<InputState>(st::engine.arena, int(st::MouseButton::LAST) + 1);
 
 	if (st::engine.settings.user_dir == "") {
 		st::engine.settings.user_dir = st::engine.settings.name;
@@ -130,25 +129,105 @@ static void st::__update()
 
 	st::engine.application->update(sapp_frame_duration());
 	st::__draw();
+
+	// update key states
+	for (auto [_, key] : st::engine.key_state) {
+		switch (key.state) {
+		case InputState::State::NOT_PRESSED:
+			if (key.pressed) key.state = InputState::State::JUST_PRESSED;
+			break;
+
+		case InputState::State::JUST_PRESSED:
+			key.state = key.pressed ? InputState::State::HELD : InputState::State::JUST_RELEASED;
+			break;
+
+		case InputState::State::HELD:
+			if (!key.pressed) key.state = InputState::State::JUST_RELEASED;
+			break;
+
+		case InputState::State::JUST_RELEASED:
+			key.state = InputState::State::NOT_PRESSED;
+			break;
+		}
+	}
+
+	// update mouse states
+	// that's pretty much the same thing as the key states
+	for (auto [_, mouse] : st::engine.mouse_state) {
+		switch (mouse.state) {
+		case InputState::State::NOT_PRESSED:
+			if (mouse.pressed) mouse.state = InputState::State::JUST_PRESSED;
+			break;
+
+		case InputState::State::JUST_PRESSED:
+			mouse.state = mouse.pressed ? InputState::State::HELD : InputState::State::JUST_RELEASED;
+			break;
+
+		case InputState::State::HELD:
+			if (!mouse.pressed) mouse.state = InputState::State::JUST_RELEASED;
+			break;
+
+		case InputState::State::JUST_RELEASED:
+			mouse.state = InputState::State::NOT_PRESSED;
+			break;
+		}
+	}
 }
 
 static void st::__free()
 {
 	st::engine.application->free();
+
 	#ifdef ST_IMGUI
 	st::imgui::free();
 	#endif
 	st::__free_renderer();
+	tr::info("deinitialized starry3d");
 	tr::free();
 }
 
 static void st::__event(const sapp_event* event)
 {
-	// TODO do something with it
-	(void)event;
+	// TODO it'll get funky if you have a player controller and a text field
+	// pretty sure imgui can handle that tho
 	#ifdef ST_IMGUI
 	st::imgui::on_event(event);
 	#endif
+
+	// I know.
+	TR_GCC_IGNORE_WARNING(-Wswitch)
+	switch (event->type) {
+	case SAPP_EVENTTYPE_KEY_DOWN:
+		st::engine.key_state[event->key_code].pressed = true;\
+		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
+		break;
+
+	case SAPP_EVENTTYPE_KEY_UP:
+		st::engine.key_state[event->key_code].pressed = false;
+		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
+		break;
+
+	case SAPP_EVENTTYPE_MOUSE_DOWN:
+		st::engine.mouse_state[event->mouse_button].pressed = true;
+		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
+		break;
+
+	case SAPP_EVENTTYPE_MOUSE_UP:
+		st::engine.mouse_state[event->mouse_button].pressed = false;
+		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
+		break;
+
+	case SAPP_EVENTTYPE_MOUSE_MOVE:
+		st::engine.mouse_position = {event->mouse_x, event->mouse_y};
+		st::engine.relative_mouse_position = {event->mouse_dx, event->mouse_dy};
+		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
+		break;
+
+	case SAPP_EVENTTYPE_QUIT_REQUESTED:
+		st::on_close.emit();
+		break;
+	}
+	TR_GCC_RESTORE();
 }
 
 void st::__sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
@@ -168,4 +247,89 @@ void st::__sokol_log(const char* tag, uint32 level, uint32 item_id, const char* 
 		case 2: tr::warn("sokol warning (item id %u): %s", item_id, msg); break;
 		case 3: tr::info("sokol (item id %u): %s", item_id, msg); break;
 	}
+}
+
+void st::close_window()
+{
+	sapp_request_quit();
+}
+
+bool st::is_key_just_pressed(st::Key key)
+{
+	return st::engine.key_state[usize(key)].state == InputState::State::JUST_PRESSED;
+}
+
+bool st::is_key_just_released(st::Key key)
+{
+	return st::engine.key_state[usize(key)].state == InputState::State::JUST_RELEASED;
+}
+
+bool st::is_key_held(st::Key key)
+{
+	return st::engine.key_state[usize(key)].state != InputState::State::NOT_PRESSED;
+}
+
+bool st::is_key_not_pressed(st::Key key)
+{
+	return st::engine.key_state[usize(key)].state == InputState::State::NOT_PRESSED;
+}
+
+bool st::is_mouse_just_pressed(st::MouseButton btn)
+{
+	return st::engine.mouse_state[usize(btn)].state == InputState::State::JUST_PRESSED;
+}
+
+bool st::is_mouse_just_released(st::MouseButton btn)
+{
+	return st::engine.mouse_state[usize(btn)].state == InputState::State::JUST_RELEASED;
+}
+
+bool st::is_mouse_held(st::MouseButton btn)
+{
+	return st::engine.mouse_state[usize(btn)].state != InputState::State::NOT_PRESSED;
+}
+
+bool st::is_mouse_not_pressed(st::MouseButton btn)
+{
+	return st::engine.mouse_state[usize(btn)].state == InputState::State::NOT_PRESSED;
+}
+
+tr::Vec2<float64> st::mouse_position()
+{
+	return st::engine.mouse_position;
+}
+
+tr::Vec2<float64> st::relative_mouse_position()
+{
+	return st::engine.relative_mouse_position;
+}
+
+st::Modifiers st::modifiers()
+{
+	return st::engine.current_modifiers;
+}
+
+void st::set_mouse_enabled(bool val)
+{
+	sapp_show_mouse(val);
+}
+
+float64 st::time_sec()
+{
+	return stm_sec(stm_now());
+}
+
+uint64 st::frames()
+{
+	return sapp_frame_count();
+}
+
+float64 st::delta_time_sec()
+{
+	return sapp_frame_duration();
+}
+
+float64 fps()
+{
+	return 1.0 / st::delta_time_sec();
 }

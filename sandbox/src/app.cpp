@@ -10,9 +10,13 @@ void Sandbox::init()
 
 void Sandbox::update(float64)
 {
+	ImGui::ShowDemoWindow();
+
 	st::draw_triangle();
 
-	ImGui::ShowDemoWindow();
+	if (st::is_key_just_pressed(st::Key::H)) tr::log("just pressed");
+	if (st::is_key_held(st::Key::H)) tr::log("held");
+	if (st::is_key_just_released(st::Key::H)) tr::log("just released");
 }
 
 void Sandbox::free()

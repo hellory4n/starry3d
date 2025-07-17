@@ -61,11 +61,14 @@ void st::imgui::init()
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+	tr::info("initialized imgui v%s", IMGUI_VERSION);
 }
 
 void st::imgui::free()
 {
 	simgui_shutdown();
+	tr::info("deinitialized imgui");
 }
 
 void st::imgui::update()
