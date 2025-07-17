@@ -66,7 +66,7 @@ namespace st {
 	static void __init();
 	static void __update();
 	static void __free();
-	static void __event(const sapp_event* event);
+	static void __on_event(const sapp_event* event);
 	// it's a hassle
 	void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
 		uint32 line_nr, const char* filename_or_null, void* user_data
@@ -89,7 +89,7 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	sokol_app.init_cb = st::__init;
 	sokol_app.frame_cb = st::__update;
 	sokol_app.cleanup_cb = st::__free;
-	sokol_app.event_cb = st::__event;
+	sokol_app.event_cb = st::__on_event;
 	sokol_app.logger.func = st::__sokol_log;
 
 	sokol_app.width = settings.window_size.x;
@@ -119,9 +119,14 @@ static void st::__init()
 	}
 
 	tr::init();
-	// TODO this fails bcuz sokol calls st::__free, which calls tr::free, which calls st::__free
-	// i only wanted for it to be called on panic
-	// tr::call_on_quit(st::__free);
+	// we have to do this fuckery so there's no fuckery of sokol calling st::__free which calls
+	// tr::free which calls st::__free
+	// this should only happen on panic (sokol will handle it when quitting normally)
+	tr::call_on_quit([]() {
+		if (!st::engine.exiting) {
+			st::__free();
+		}
+	});
 
 	tr::info("initialized starry3d %s", st::VERSION);
 
@@ -187,6 +192,9 @@ static void st::__update()
 
 static void st::__free()
 {
+	st::engine.exiting = true;
+
+	tr::info("freeing application...");
 	st::engine.application->free();
 
 	#ifdef ST_IMGUI
@@ -194,10 +202,11 @@ static void st::__free()
 	#endif
 	st::__free_renderer();
 	tr::info("deinitialized starry3d");
+	// TODO libtrippin deinitializes twice on panic
 	tr::free();
 }
 
-static void st::__event(const sapp_event* event)
+static void st::__on_event(const sapp_event* event)
 {
 	// TODO it'll get funky if you have a player controller and a text field
 	// pretty sure imgui can handle that tho
@@ -209,7 +218,7 @@ static void st::__event(const sapp_event* event)
 	TR_GCC_IGNORE_WARNING(-Wswitch)
 	switch (event->type) {
 	case SAPP_EVENTTYPE_KEY_DOWN:
-		st::engine.key_state[event->key_code].pressed = true;\
+		st::engine.key_state[event->key_code].pressed = true;
 		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
 		break;
 

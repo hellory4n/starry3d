@@ -246,6 +246,8 @@ struct Starry3D {
 	tr::Arena arena = {};
 	Application* application = nullptr;
 	ApplicationSettings settings = {};
+	// i wanted it to free on panic using libtrippin's `tr::call_on_quit` it's complicated
+	bool exiting = false;
 
 	// input
 	tr::Array<InputState> key_state;
