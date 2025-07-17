@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * imgui.hpp
+ * starry/optional/imgui.hpp
  * Integrates Starry3D with Dear ImGui
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
@@ -47,5 +47,5 @@ namespace imgui {
 
 #else
 	// just so you know why imgui doesn't work
-	#error Using starry/imgui.hpp requires ST_IMGUI to be defined in the project
+	#error Using starry/optional/imgui.hpp requires ST_IMGUI to be defined in the project
 #endif

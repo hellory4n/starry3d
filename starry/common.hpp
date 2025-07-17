@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * common.hpp
+ * starry/common.hpp
  * Utilities, engine initialization/deinitialization, and the engine's
  * global state. This should never be included by the engine's headers.
  *

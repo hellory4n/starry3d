@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * render.hpp
+ * starry/render.hpp
  * The renderer duh
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>

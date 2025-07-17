@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * imgui.cpp
+ * starry/optional/imgui.cpp
  * Integrates Starry3D with Dear ImGui
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
@@ -41,7 +41,7 @@
 #define SOKOL_IMGUI_IMPL
 #include <sokol/util/sokol_imgui.h>
 
-#include "imgui.hpp"
+#include "starry/optional/imgui.hpp"
 
 namespace st {
 	// it's a hassle

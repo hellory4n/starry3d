@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * common.cpp
+ * starry/common.cpp
  * Utilities, engine initialization/deinitialization, and the engine's
  * global state.
  *
@@ -44,9 +44,9 @@ TR_GCC_RESTORE()
 #define SOKOL_TIME_IMPL
 #include <sokol/sokol_time.h>
 
-#include "common.hpp"
-#include "imgui.hpp"
-#include "render.hpp"
+#include "starry/optional/imgui.hpp"
+#include "starry/render.hpp"
+#include "starry/common.hpp"
 
 namespace st {
 	// it has to live somewhere

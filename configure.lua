@@ -86,7 +86,7 @@ srcsfrfr = {
 
 -- imgui
 if imgui_enabled then
-	table.insert(srcsfrfr, starrydir.."/starry/imgui.cpp")
+	table.insert(srcsfrfr, starrydir.."/starry/optional/imgui.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_widgets.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_tables.cpp")

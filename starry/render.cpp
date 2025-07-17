@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * render.cpp
+ * starry/render.cpp
  * The renderer duh
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
@@ -41,8 +41,8 @@
 #include <sokol/sokol_glue.h>
 
 #include "shader/basic.glsl.h"
-#include "imgui.hpp"
-#include "render.hpp"
+#include "starry/optional/imgui.hpp"
+#include "starry/render.hpp"
 
 namespace st {
 	// didn't want to include sokol in common.hpp
