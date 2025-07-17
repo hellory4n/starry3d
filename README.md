@@ -65,8 +65,8 @@ You need these installed:
 - a C/C++ compiler (note MSVC isn't tested often)
 - windowing packages:
     - windows: should come with visual studio
-    - debian/ubuntu/derivatives: `sudo apt install libxkbcommon-dev xorg-dev`
-    - fedora/derivatives: `sudo dnf install libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
+    - debian/ubuntu/derivatives: `sudo apt install libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libxkbcommon-dev`
+    - fedora/derivatives: `sudo dnf install mesa-libGL-devel libX11-devel libXrandr-devel libXi-devel libXcursor-devel libXinerama-devel`
     - arch/derivatives: `sudo pacman -S mesa libx11 libxrandr libxi libxcursor libxinerama`
 
 Now you need to include Starry3D into your project. It's recommended to do so through Git submodules:
@@ -138,7 +138,7 @@ void Game::init()
 void Game::update(float64 dt)
 {
     // you can put imgui calls here too
-    // just import <starry/optional/imgui.hpp> first
+    // just include <starry/optional/imgui.hpp> first
 }
 
 void Game::free()
