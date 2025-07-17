@@ -107,9 +107,11 @@ ldflags = "-Lbuild/glfw/src"
 if platform == "windows" then
 	ldflags = ldflags.." -lkernel32 -luser32 -lshell32 -lgdi32 -lpthread -lstdc++ -static"
 else
-	-- TODO is -pthread necessary?
-	ldflags = ldflags.." -lX11 -lXi -lXcursor -lGL -ldl -lm -lstdc++ -pthread"
-	cflags = cflags.." -pthread"
+	-- TODO sokol says to include -pthread but it works fine without it
+	-- so maybe they fixed the issue but never updated that part?
+	-- i'm not sure
+	ldflags = ldflags.." -lX11 -lXi -lXcursor -lGL -ldl -lm -lstdc++"
+	-- cflags = cflags.." -pthread"
 end
 
 -- man.

@@ -3,7 +3,7 @@
 ## NOTE: This is old
 
 This was written for the original 1.x libtrippin in C. While most things from here still apply, I don't feel
-like writing my opinion on every C++ feature just yet.
+like writing my opinion on every C++ feature just yet. (there's a lot of them if you didn't know)
 
 These are the conventions I use for libtrippin and my other crap too.
 

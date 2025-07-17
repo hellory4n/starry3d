@@ -19,9 +19,6 @@ log.txt
 # man
 .vscode
 
-# what is imgui doing
-imgui.ini
-
 # why?
 .ninja_log
 .ninja_lock

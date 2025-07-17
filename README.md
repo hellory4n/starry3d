@@ -7,7 +7,7 @@
 
 ## Features
 
-- C++17 and OpenGL 3.3
+- C++17
 - Cross platform ish. (windows and linux)
 - Probably runs on anything ever
 - Optimized for voxel graphics
@@ -19,19 +19,8 @@
 
 - 2D support is nearly non-existent
 - Currently only Windows and Linux supported
-    - macOS support is possible but I don't have a Mac
-    - WebGL support is also possible but I don't care about that enough to support it
-    - Only tested on Clang and GCC, getting it to compile with MSVC/Visual Studio would take some work
-    - I don't want to torture myself with Android just yet
-
-## Features coming soon™ (never)
-
-- Physics
-- Particles
-- Networking
-- More platforms
-- Decent 2D
-- Consider using Vulkan (coming in 2054)
+    - It does use [sokol](https://github.com/floooh/sokol) which is cross-platform, but I only tested Windows
+    and Linux
 
 ## Building
 
@@ -47,12 +36,11 @@ You need these installed:
 - git
 - clang
 - lua
-- cmake (on ubuntu you also need `pkg-config`)
-- make
 - ninja
-- X11 and wayland dev packages (it depends on your distro)
-    - debian/ubuntu/derivatives: `sudo apt install libwayland-dev libxkbcommon-dev xorg-dev`
-    - fedora/derivatives: `sudo dnf install wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
+- X11 and OpenGL dev packages (it depends on your distro)
+    - debian/ubuntu/derivatives: `sudo apt install libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libxkbcommon-dev`
+    - fedora/derivatives: `sudo dnf install mesa-libGL-devel libX11-devel libXrandr-devel libXi-devel libXcursor-devel libXinerama-devel`
+    - arch/derivatives: `sudo pacman -S mesa libx11 libxrandr libxi libxcursor libxinerama`
 - mingw-w64-gcc and mingw-w64-g++ (optional)
 
 Now run `lua configure.lua`
@@ -74,11 +62,12 @@ You can also use `./debugrun.sh` to run it with gdb.
 
 You need these installed:
 - git
-- clang
-- X11 and wayland dev packages (it depends on your distro)
-    - debian/ubuntu/derivatives: `sudo apt install libwayland-dev libxkbcommon-dev xorg-dev`
-    - fedora/derivatives: `sudo dnf install wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
-- mingw-w64-gcc and mingw-w64-g++ (optional)
+- a C/C++ compiler (note MSVC isn't tested often)
+- windowing packages:
+    - windows: should come with visual studio
+    - debian/ubuntu/derivatives: `sudo apt install libxkbcommon-dev xorg-dev`
+    - fedora/derivatives: `sudo dnf install libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
+    - arch/derivatives: `sudo pacman -S mesa libx11 libxrandr libxi libxcursor libxinerama`
 
 Now you need to include Starry3D into your project. It's recommended to do so through Git submodules:
 
@@ -93,26 +82,18 @@ git submodule update --init --recursive
 
 Make sure you're using C++17 or higher, it won't work in anything older.
 
-Note that compiling on Visual Studio isn't tested, and I don't know if it works or not.
-
-First you need GLFW, you could either link against a [precompiled version](https://github.com/glfw/glfw/releases/tag/3.4) or [compile it yourself](https://www.glfw.org/docs/latest/compile.html). Both static and shared
-libraries should work.
-
 Now add these folders to your includes: (relative to where you put starry3d)
-- `src/`
+- the starry3d directory itself
 - `thirdparty/`
 - `thirdparty/libtrippin`
-- `thirdparty/glfw/include`
-- `thirdparty/stb`
 - `thirdparty/whereami/src`
-- If you're using ImGui:
+- if you're using ImGui:
     - `thirdparty/imgui`
     - `thirdparty/imgui/backends`
 
 Add these source files: (relative to where you put starry3d)
-- `src/st_common.cpp`
-- `src/st_render.cpp`
-- `src/st_window.cpp`
+- `starry/common.cpp`
+- `starry/render.cpp`
 - `thirdparty/libtrippin/trippin/collection.cpp`
 - `thirdparty/libtrippin/trippin/common.cpp`
 - `thirdparty/libtrippin/trippin/iofs.cpp`
@@ -120,8 +101,9 @@ Add these source files: (relative to where you put starry3d)
 - `thirdparty/libtrippin/trippin/math.cpp`
 - `thirdparty/libtrippin/trippin/memory.cpp`
 - `thirdparty/libtrippin/trippin/string.cpp`
+- `thirdparty/libtrippin/trippin/error.cpp`
 - If you're using ImGui:
-    - `src/st_imgui.cpp`
+    - `starry/optional/imgui.cpp`
     - `thirdparty/imgui/imgui.cpp`
     - `thirdparty/imgui/imgui_demo.cpp`
     - `thirdparty/imgui/imgui_draw.cpp`
@@ -131,69 +113,60 @@ Add these source files: (relative to where you put starry3d)
     - `thirdparty/imgui/backends/imgui_impl_opengl3.cpp`
 
 You also have to link with some libraries on top of glfw:
-- Windows (MinGW): `opengl32`, `gdi32`, `winmm`, `comdlg32`, `ole32`, `pthread`
-- Linux: `X11`, `Xrandr`, `GL`, `Xinerama`, `m`, `pthread`, `dl`, `rt`
+- Windows (MinGW only): `-lkernel32 -luser32 -lshell32 -lgdi32 -lpthread -lstdc++ -static`
+- Linux: `-lX11 -lXi -lXcursor -lGL -ldl -lm -lstdc++`
+
+And if you're using ImGui you have to define `ST_IMGUI` (it has to be in the project/compile flags)
 
 Now put this in your `main.cpp` and run to check if it worked:
 
-```c
-#include <trippin/common.hpp>
-#include <trippin/log.hpp>
+```cpp
 #include <starry/common.hpp>
-#include <starry/window.hpp>
-#include <starry/render.hpp>
-#include <starry/imgui.hpp>
 
-// TODO implement them
-static void init_game() {}
-static void update_game() {}
-static void free_game() {}
+class Game : public st::Application
+{
+	void init() override;
+	void update(float64 dt) override;
+	void free() override;
+};
+
+void Game::init()
+{
+	tr::log("initialized game");
+}
+
+void Game::update(float64 dt)
+{
+    // you can put imgui calls here too
+    // just import <starry/optional/imgui.hpp> first
+}
+
+void Game::free()
+{
+	tr::log("deinitialized game");
+}
 
 int main(void)
 {
-    tr::use_log_file("log.txt");
-    tr::init();
+    // see st::ApplicationSettings for all these settings
+	st::ApplicationSettings settings = {};
+	settings.name = "handsome_game";
+	settings.app_dir = "assets";
+	settings.logfiles = {"log.txt"};
+	settings.window_size = {800, 600};
 
-    st::init("very_handsome_game", "assets");
-    st::WindowOptions window;
-    window.title = "Very Handsome Game™";
-    window.size = {1280, 720};
-    window.resizable = true;
-    st::open_window(window);
-    st::imgui::init();
-
-    init_game();
-
-    while (!st::is_window_closing()) {
-        st::poll_events();
-        st::clear_screen(tr::Color::rgb(0x734a16));
-
-        update_game();
-
-        st::imgui::begin();
-            // imgui goes here
-        st::imgui::end();
-
-        st::end_drawing();
-    }
-
-    free_game();
-
-    st::imgui::free();
-    st::free_window();
-    st::free();
-
-    tr::free();
-    return 0;
+	Game game = {};
+	st::run(game, settings);
+	return 0;
 }
 ```
 
 ### Option B: Using ninja/lua
 
 Starry3D uses ninja and `configure.lua` for its build process, and this script works with your own projects
-too.
+too
 
-You need CMake (on ubuntu you also need `pkg-config`), Make, Ninja, and Lua installed.
+You're gonna need ninja and lua installed. (cross-compiling to windows requires mingw-w64-g++ but that's optional)
 
 Copy `configure.lua` and edit this part at the start:
 
@@ -225,55 +198,44 @@ includes = {
 
 Now put this in `src/main.cpp`:
 
-```c
-#include <trippin/common.hpp>
-#include <trippin/log.hpp>
+```cpp
 #include <starry/common.hpp>
-#include <starry/window.hpp>
-#include <starry/render.hpp>
-#include <starry/imgui.hpp>
 
-// TODO implement them
-static void init_game() {}
-static void update_game() {}
-static void free_game() {}
+class Game : public st::Application
+{
+	void init() override;
+	void update(float64 dt) override;
+	void free() override;
+};
+
+void Game::init()
+{
+	tr::log("initialized game");
+}
+
+void Game::update(float64 dt)
+{
+    // you can put imgui calls here too
+    // just import <starry/optional/imgui.hpp> first
+}
+
+void Game::free()
+{
+	tr::log("deinitialized game");
+}
 
 int main(void)
 {
-    tr::use_log_file("log.txt");
-    tr::init();
+    // see st::ApplicationSettings for all these settings
+	st::ApplicationSettings settings = {};
+	settings.name = "handsome_game";
+	settings.app_dir = "assets";
+	settings.logfiles = {"log.txt"};
+	settings.window_size = {800, 600};
 
-    st::init("very_handsome_game", "assets");
-    st::WindowOptions window;
-    window.title = "Very Handsome Game™";
-    window.size = {1280, 720};
-    window.resizable = true;
-    st::open_window(window);
-    st::imgui::init();
-
-    init_game();
-
-    while (!st::is_window_closing()) {
-        st::poll_events();
-        st::clear_screen(tr::Color::rgb(0x734a16));
-
-        update_game();
-
-        st::imgui::begin();
-            // imgui goes here
-        st::imgui::end();
-
-        st::end_drawing();
-    }
-
-    free_game();
-
-    st::imgui::free();
-    st::free_window();
-    st::free();
-
-    tr::free();
-    return 0;
+	Game game = {};
+	st::run(game, settings);
+	return 0;
 }
 ```
 
@@ -298,7 +260,8 @@ No fuck off.
 
 ### Why?
 
-Why not.
+Voxel rendering can be quite the pickle, so I think it's easier and better to just do the whole thing
+from scratch. Also why not
 
 ### Why C++? Can't you be a normal human being and use Rust Go Zig Odin Nim Sip Cliff Swig Beef (this one is real) Swag S'mores?
 
