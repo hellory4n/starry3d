@@ -125,14 +125,14 @@ Now put this in your `main.cpp` and run to check if it worked:
 
 class Game : public st::Application
 {
-	void init() override;
-	void update(float64 dt) override;
-	void free() override;
+    void init() override;
+    void update(float64 dt) override;
+    void free() override;
 };
 
 void Game::init()
 {
-	tr::log("initialized game");
+    tr::log("initialized game");
 }
 
 void Game::update(float64 dt)
@@ -143,21 +143,21 @@ void Game::update(float64 dt)
 
 void Game::free()
 {
-	tr::log("deinitialized game");
+    tr::log("deinitialized game");
 }
 
 int main(void)
 {
     // see st::ApplicationSettings for all these settings
-	st::ApplicationSettings settings = {};
-	settings.name = "handsome_game";
-	settings.app_dir = "assets";
-	settings.logfiles = {"log.txt"};
-	settings.window_size = {800, 600};
+    st::ApplicationSettings settings = {};
+    settings.name = "handsome_game";
+    settings.app_dir = "assets";
+    settings.logfiles = {"log.txt"};
+    settings.window_size = {800, 600};
 
-	Game game = {};
-	st::run(game, settings);
-	return 0;
+    Game game = {};
+    st::run(game, settings);
+    return 0;
 }
 ```
 
@@ -203,14 +203,14 @@ Now put this in `src/main.cpp`:
 
 class Game : public st::Application
 {
-	void init() override;
-	void update(float64 dt) override;
-	void free() override;
+    void init() override;
+    void update(float64 dt) override;
+    void free() override;
 };
 
 void Game::init()
 {
-	tr::log("initialized game");
+    tr::log("initialized game");
 }
 
 void Game::update(float64 dt)
@@ -221,21 +221,21 @@ void Game::update(float64 dt)
 
 void Game::free()
 {
-	tr::log("deinitialized game");
+    tr::log("deinitialized game");
 }
 
 int main(void)
 {
     // see st::ApplicationSettings for all these settings
-	st::ApplicationSettings settings = {};
-	settings.name = "handsome_game";
-	settings.app_dir = "assets";
-	settings.logfiles = {"log.txt"};
-	settings.window_size = {800, 600};
+    st::ApplicationSettings settings = {};
+    settings.name = "handsome_game";
+    settings.app_dir = "assets";
+    settings.logfiles = {"log.txt"};
+    settings.window_size = {800, 600};
 
-	Game game = {};
-	st::run(game, settings);
-	return 0;
+    Game game = {};
+    st::run(game, settings);
+    return 0;
 }
 ```
 
