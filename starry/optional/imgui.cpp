@@ -29,14 +29,12 @@
 #include <trippin/log.hpp>
 #include <trippin/iofs.hpp>
 
-#define SOKOL_GLCORE
-#define SOKOL_ASSERT(X) TR_ASSERT(X)
-#define SOKOL_UNREACHABLE() tr::panic("unreachable code from sokol")
-#define SOKOL_NO_ENTRY
+#include "starry/configs/sokol.hpp" // IWYU pragma: keep
 #include <sokol/sokol_app.h>
 #include <sokol/sokol_gfx.h>
 #include <sokol/sokol_log.h>
 #include <sokol/sokol_glue.h>
+// TODO use imconfig.h?
 #include <imgui.h>
 #define SOKOL_IMGUI_IMPL
 #include <sokol/util/sokol_imgui.h>

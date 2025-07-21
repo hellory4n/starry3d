@@ -29,12 +29,8 @@
 #include <trippin/memory.hpp>
 #include <trippin/math.hpp>
 
-// help.
-#define SOKOL_ASSERT(X) TR_ASSERT(X)
-#define SOKOL_UNREACHABLE tr::panic("unreachable code from sokol")
-#define SOKOL_NO_ENTRY
+#include "starry/configs/sokol.hpp" // IWYU pragma: keep
 #define SOKOL_GFX_IMPL
-#define SOKOL_GLCORE
 #include <sokol/sokol_gfx.h>
 #include <sokol/sokol_app.h>
 #define SOKOL_GLUE_IMPL

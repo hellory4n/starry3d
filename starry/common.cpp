@@ -30,11 +30,7 @@
 #include <trippin/log.hpp>
 #include <trippin/iofs.hpp>
 
-// help.
-#define SOKOL_GLCORE
-#define SOKOL_ASSERT(X) TR_ASSERT(X)
-#define SOKOL_UNREACHABLE() tr::panic("unreachable code from sokol")
-#define SOKOL_NO_ENTRY
+#include "starry/configs/sokol.hpp" // IWYU pragma: keep
 #define SOKOL_APP_IMPL
 // it's one single line
 // TODO i'll definitely forget to remove this when it's fixed
