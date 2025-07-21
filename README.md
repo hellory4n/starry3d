@@ -125,25 +125,28 @@ Now put this in your `main.cpp` and run to check if it worked:
 
 class Game : public st::Application
 {
-    void init() override;
-    void update(float64 dt) override;
-    void free() override;
+    tr::Result<void, tr::Error> init() override;
+    tr::Result<void, tr::Error> update(float64 dt) override;
+    tr::Result<void, tr::Error> free() override;
 };
 
-void Game::init()
+tr::Result<void, tr::Error> Game::init()
 {
     tr::log("initialized game");
+    return {};
 }
 
-void Game::update(float64 dt)
+tr::Result<void, tr::Error> Game::update(float64 dt)
 {
     // you can put imgui calls here too
-    // just include <starry/optional/imgui.hpp> first
+    // just import <starry/optional/imgui.hpp> first
+    return {};
 }
 
-void Game::free()
+tr::Result<void, tr::Error> Game::free()
 {
     tr::log("deinitialized game");
+    return {};
 }
 
 int main(void)
@@ -203,25 +206,28 @@ Now put this in `src/main.cpp`:
 
 class Game : public st::Application
 {
-    void init() override;
-    void update(float64 dt) override;
-    void free() override;
+    tr::Result<void, tr::Error> init() override;
+    tr::Result<void, tr::Error> update(float64 dt) override;
+    tr::Result<void, tr::Error> free() override;
 };
 
-void Game::init()
+tr::Result<void, tr::Error> Game::init()
 {
     tr::log("initialized game");
+    return {};
 }
 
-void Game::update(float64 dt)
+tr::Result<void, tr::Error> Game::update(float64 dt)
 {
     // you can put imgui calls here too
     // just import <starry/optional/imgui.hpp> first
+    return {};
 }
 
-void Game::free()
+tr::Result<void, tr::Error> Game::free()
 {
     tr::log("deinitialized game");
+    return {};
 }
 
 int main(void)

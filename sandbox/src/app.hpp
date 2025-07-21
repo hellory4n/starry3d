@@ -3,7 +3,7 @@
 
 class Sandbox : public st::Application
 {
-	void init() override;
-	void update(float64 dt) override;
-	void free() override;
+	tr::Result<void, tr::Error> init() override;
+	tr::Result<void, tr::Error> update(float64 dt) override;
+	tr::Result<void, tr::Error> free() override;
 };

@@ -134,7 +134,7 @@ static void st::__init()
 	#ifdef ST_IMGUI
 	st::imgui::init();
 	#endif
-	st::engine.application->init();
+	st::engine.application->init().unwrap();
 }
 
 static void st::__update()
@@ -143,7 +143,7 @@ static void st::__update()
 	st::imgui::update();
 	#endif
 
-	st::engine.application->update(sapp_frame_duration());
+	st::engine.application->update(sapp_frame_duration()).unwrap();
 	st::__draw();
 
 	// update key states
@@ -195,7 +195,7 @@ static void st::__free()
 	st::engine.exiting = true;
 
 	tr::info("freeing application...");
-	st::engine.application->free();
+	st::engine.application->free().unwrap();
 
 	#ifdef ST_IMGUI
 	st::imgui::free();
@@ -203,6 +203,7 @@ static void st::__free()
 	st::__free_renderer();
 	tr::info("deinitialized starry3d");
 	// TODO libtrippin deinitializes twice on panic
+	// i should just add some way of checking if it's panicking on tr::call_on_quit()
 	tr::free();
 }
 
@@ -214,7 +215,8 @@ static void st::__on_event(const sapp_event* event)
 	st::imgui::on_event(event);
 	#endif
 
-	// I know.
+	// 'enumeration values not handled in switch'
+	// i know you fucking scoundrel
 	TR_GCC_IGNORE_WARNING(-Wswitch)
 	switch (event->type) {
 	case SAPP_EVENTTYPE_KEY_DOWN:

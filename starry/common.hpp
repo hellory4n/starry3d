@@ -34,6 +34,7 @@
 #include <trippin/string.hpp>
 #include <trippin/math.hpp>
 #include <trippin/collection.hpp>
+#include <trippin/error.hpp>
 
 // make sure there's always ST_WINDOWS or ST_LINUX defined
 // TODO macOS
@@ -43,6 +44,11 @@
 	#else
 		#define ST_LINUX
 	#endif
+#endif
+
+// apple uses clang so it should work
+#ifdef __APPLE__
+	#warning macOS is not officially supported
 #endif
 
 namespace st {
@@ -58,8 +64,8 @@ struct InputState {
 		JUST_PRESSED,
 		HELD,
 		JUST_RELEASED,
-	} state;
-	bool pressed;
+	} state = State::NOT_PRESSED;
+	bool pressed = false;
 };
 
 // The key to success. Note the values are identical to GLFW and Sokol
@@ -217,10 +223,10 @@ TR_BIT_FLAG(Modifiers);
 class Application
 {
 public:
-	virtual void init() = 0;
+	virtual tr::Result<void, tr::Error> init() = 0;
 	// dt is delta time :)
-	virtual void update(float64 dt) = 0;
-	virtual void free() = 0;
+	virtual tr::Result<void, tr::Error> update(float64 dt) = 0;
+	virtual tr::Result<void, tr::Error> free() = 0;
 };
 
 struct ApplicationSettings
@@ -234,7 +240,7 @@ struct ApplicationSettings
 	// - on Windows: %APPDATA% or C:\Users\user\AppData\Roaming
 	// - on Linux: ~/.local/share
 	tr::String user_dir = "";
-	tr::Array<tr::String> logfiles;
+	tr::Array<tr::String> logfiles = {};
 
 	tr::Vec2<uint32> window_size = {640, 480};
 	bool fullscreen = false;

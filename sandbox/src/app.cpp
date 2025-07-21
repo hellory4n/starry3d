@@ -2,13 +2,14 @@
 #include <starry/optional/imgui.hpp>
 #include "app.hpp"
 
-void Sandbox::init()
+tr::Result<void, tr::Error> Sandbox::init()
 {
 	st::init_triangle();
 	tr::log("initialized sandbox :)");
+	return {};
 }
 
-void Sandbox::update(float64)
+tr::Result<void, tr::Error> Sandbox::update(float64)
 {
 	ImGui::ShowDemoWindow();
 
@@ -17,10 +18,14 @@ void Sandbox::update(float64)
 	if (st::is_key_just_pressed(st::Key::H)) tr::log("just pressed");
 	if (st::is_key_held(st::Key::H)) tr::log("held");
 	if (st::is_key_just_released(st::Key::H)) tr::log("just released");
+
+	return {};
 }
 
-void Sandbox::free()
+tr::Result<void, tr::Error> Sandbox::free()
 {
 	st::free_triangle();
 	tr::log("freed sandbox :)");
+
+	return {};
 }
