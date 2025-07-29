@@ -1,2 +1,4 @@
 thirdparty/** linguist-vendored
+# TODO put that in the build process you energumenous gentleman
+**.glsl.h linguist-vendored
 * text=auto eol=lf

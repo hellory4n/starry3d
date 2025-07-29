@@ -25,11 +25,11 @@
  *
  */
 
-#include <trippin/common.hpp>
-#include <trippin/log.hpp>
-#include <trippin/iofs.hpp>
+#include <trippin/common.h>
+#include <trippin/log.h>
+#include <trippin/iofs.h>
 
-#include "starry/configs/sokol.hpp" // IWYU pragma: keep
+#include "starry/configs/sokol.h" // IWYU pragma: keep
 #include <sokol/sokol_app.h>
 #include <sokol/sokol_gfx.h>
 #include <sokol/sokol_log.h>
@@ -39,7 +39,7 @@
 #define SOKOL_IMGUI_IMPL
 #include <sokol/util/sokol_imgui.h>
 
-#include "starry/optional/imgui.hpp"
+#include "starry/optional/imgui.h"
 
 namespace st {
 	// it's a hassle

@@ -2,8 +2,8 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * starry/configs/sokol.hpp
- * Some configuration for sokol :)
+ * starry/render.h
+ * The renderer duh
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
  *
@@ -25,12 +25,22 @@
  *
  */
 
-#ifndef _ST_CONFIGS_SOKOL_H
-#define _ST_CONFIGS_SOKOL_H
+#ifndef _ST_RENDER_H
+#define _ST_RENDER_H
 
-#define SOKOL_GLCORE
-#define SOKOL_ASSERT(X) TR_ASSERT(X)
-#define SOKOL_UNREACHABLE tr::panic("unreachable code from sokol")
-#define SOKOL_NO_ENTRY
+namespace st {
+
+// internal :)
+void __init_renderer();
+void __free_renderer();
+void __draw();
+
+void init_triangle();
+
+void draw_triangle();
+
+void free_triangle();
+
+}
 
 #endif

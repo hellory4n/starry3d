@@ -1,5 +1,5 @@
-#include <starry/common.hpp>
-#include "app.hpp"
+#include <starry/common.h>
+#include "app.h"
 
 int main(void)
 {

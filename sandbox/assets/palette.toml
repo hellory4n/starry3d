@@ -1,0 +1,74 @@
+[palette]
+format = "starrypal0.4"
+
+black5 = 0x0e141f
+black4 = 0x273445
+black3 = 0x485a6c
+black2 = 0x667785
+black1 = 0x95a3ab
+
+white5 = 0x555761
+white4 = 0x7e8087
+white3 = 0xabacae
+white2 = 0xd4d4d4
+white1 = 0xfafafa
+
+strawberry5 = 0x7a0000
+strawberry4 = 0xa10705
+strawberry3 = 0xc6262e
+strawberry2 = 0xed5353
+strawberry1 = 0xff8c82
+
+orange5 = 0xa62100
+orange4 = 0xcc3b02
+orange3 = 0xf37329
+orange2 = 0xffa154
+orange1 = 0xffc27d
+
+banana5 = 0xad5f00
+banana4 = 0xd48e15
+banana3 = 0xf9c440
+banana2 = 0xffe16b
+banana1 = 0xfff394
+
+lime5 = 0x206b00
+lime4 = 0x3a9104
+lime3 = 0x68b723
+lime2 = 0x9bdb4d
+lime1 = 0xd1ff82
+
+mint5 = 0x007367
+mint4 = 0x0e9a83
+mint3 = 0x28bca3
+mint2 = 0x43d6b5
+mint1 = 0x89ffdd
+
+blueberry5 = 0x002e99
+blueberry4 = 0x0d52bf
+blueberry3 = 0x3689e6
+blueberry2 = 0x64baff
+blueberry1 = 0x8cd5ff
+
+grape5 = 0x452981
+grape4 = 0x7239b3
+grape3 = 0xa56de2
+grape2 = 0xcd9ef7
+grape1 = 0xe4c6fa
+
+bubblegum5 = 0x910e38
+bubblegum4 = 0xbc245d
+bubblegum3 = 0xde3e80
+bubblegum2 = 0xf4679d
+bubblegum1 = 0xfe9ab8
+
+latte5 = 0x804b00
+latte4 = 0xb6802e
+latte3 = 0xcfa25e
+latte2 = 0xe7c591
+latte1 = 0xefdfc4
+
+cocoa5 = 0x3d211b
+cocoa4 = 0x57392d
+cocoa3 = 0x715344
+cocoa2 = 0x8a715e
+cocoa1 = 0xa3907c

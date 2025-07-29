@@ -1,15 +1,15 @@
-#include <starry/render.hpp>
-#include <starry/optional/imgui.hpp>
-#include "app.hpp"
+#include <starry/render.h>
+#include <starry/optional/imgui.h>
+#include "app.h"
 
-tr::Result<void, tr::Error> Sandbox::init()
+tr::Result<void, const tr::Error&> Sandbox::init()
 {
 	st::init_triangle();
 	tr::log("initialized sandbox :)");
 	return {};
 }
 
-tr::Result<void, tr::Error> Sandbox::update(float64)
+tr::Result<void, const tr::Error&> Sandbox::update(float64)
 {
 	ImGui::ShowDemoWindow();
 
@@ -22,7 +22,7 @@ tr::Result<void, tr::Error> Sandbox::update(float64)
 	return {};
 }
 
-tr::Result<void, tr::Error> Sandbox::free()
+tr::Result<void, const tr::Error&> Sandbox::free()
 {
 	st::free_triangle();
 	tr::log("freed sandbox :)");

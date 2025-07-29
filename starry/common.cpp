@@ -26,11 +26,11 @@
  *
  */
 
-#include <trippin/common.hpp>
-#include <trippin/log.hpp>
-#include <trippin/iofs.hpp>
+#include <trippin/common.h>
+#include <trippin/log.h>
+#include <trippin/iofs.h>
 
-#include "starry/configs/sokol.hpp" // IWYU pragma: keep
+#include "starry/configs/sokol.h" // IWYU pragma: keep
 #define SOKOL_APP_IMPL
 // it's one single line
 // TODO i'll definitely forget to remove this when it's fixed
@@ -49,9 +49,11 @@ TR_GCC_RESTORE()
 	#undef MouseButton
 #endif
 
-#include "starry/optional/imgui.hpp"
-#include "starry/render.hpp"
-#include "starry/common.hpp"
+#ifdef ST_IMGUI
+	#include "starry/optional/imgui.h"
+#endif
+#include "starry/render.h"
+#include "starry/common.h"
 
 namespace st {
 	// it has to live somewhere

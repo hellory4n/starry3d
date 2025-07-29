@@ -43,7 +43,7 @@ You need these installed:
     - arch/derivatives: `sudo pacman -S mesa libx11 libxrandr libxi libxcursor libxinerama`
 - mingw-w64-gcc and mingw-w64-g++ (optional)
 
-Now run `lua configure.lua`
+Now run `./configure.lua`
 
 Options:
 - Compilation mode (`debug`/`release`): release mode enables optimizations, while debug mode disables
@@ -113,7 +113,7 @@ Add these source files: (relative to where you put starry3d)
     - `thirdparty/imgui/backends/imgui_impl_opengl3.cpp`
 
 You also have to link with some libraries on top of glfw:
-- Windows (MinGW only): `-lkernel32 -luser32 -lshell32 -lgdi32 -lpthread -lstdc++ -static`
+- Windows (MinGW only): `-lkernel32 -luser32 -lshell32 -ld3d11 -ldxgi -lpthread -lstdc++ -static`
 - Linux: `-lX11 -lXi -lXcursor -lGL -ldl -lm -lstdc++`
 
 And if you're using ImGui you have to define `ST_IMGUI` (it has to be in the project/compile flags)
@@ -121,29 +121,29 @@ And if you're using ImGui you have to define `ST_IMGUI` (it has to be in the pro
 Now put this in your `main.cpp` and run to check if it worked:
 
 ```cpp
-#include <starry/common.hpp>
+#include <starry/common.h>
 
 class Game : public st::Application
 {
-    tr::Result<void, tr::Error> init() override;
-    tr::Result<void, tr::Error> update(float64 dt) override;
-    tr::Result<void, tr::Error> free() override;
+    tr::Result<void, const tr::Error&> init() override;
+    tr::Result<void, const tr::Error&> update(float64 dt) override;
+    tr::Result<void, const tr::Error&> free() override;
 };
 
-tr::Result<void, tr::Error> Game::init()
+tr::Result<void, const tr::Error&> Game::init()
 {
     tr::log("initialized game");
     return {};
 }
 
-tr::Result<void, tr::Error> Game::update(float64 dt)
+tr::Result<void, const tr::Error&> Game::update(float64 dt)
 {
     // you can put imgui calls here too
-    // just import <starry/optional/imgui.hpp> first
+    // just include <starry/optional/imgui.h> first
     return {};
 }
 
-tr::Result<void, tr::Error> Game::free()
+tr::Result<void, const tr::Error&> Game::free()
 {
     tr::log("deinitialized game");
     return {};
@@ -202,29 +202,29 @@ includes = {
 Now put this in `src/main.cpp`:
 
 ```cpp
-#include <starry/common.hpp>
+#include <starry/common.h>
 
 class Game : public st::Application
 {
-    tr::Result<void, tr::Error> init() override;
-    tr::Result<void, tr::Error> update(float64 dt) override;
-    tr::Result<void, tr::Error> free() override;
+    tr::Result<void, const tr::Error&> init() override;
+    tr::Result<void, const tr::Error&> update(float64 dt) override;
+    tr::Result<void, const tr::Error&> free() override;
 };
 
-tr::Result<void, tr::Error> Game::init()
+tr::Result<void, const tr::Error&> Game::init()
 {
     tr::log("initialized game");
     return {};
 }
 
-tr::Result<void, tr::Error> Game::update(float64 dt)
+tr::Result<void, const tr::Error&> Game::update(float64 dt)
 {
     // you can put imgui calls here too
-    // just import <starry/optional/imgui.hpp> first
+    // just include <starry/optional/imgui.h> first
     return {};
 }
 
-tr::Result<void, tr::Error> Game::free()
+tr::Result<void, const tr::Error&> Game::free()
 {
     tr::log("deinitialized game");
     return {};
@@ -245,7 +245,7 @@ int main(void)
 }
 ```
 
-Now, to compile, first setup the project with `lua configure.lua`
+Now, to compile, first setup the project with `./configure.lua`
 
 Options:
 - Compilation mode (`debug`/`release`): release mode enables optimizations, while debug mode disables

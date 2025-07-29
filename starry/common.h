@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * starry/common.hpp
+ * starry/common.h
  * Utilities, engine initialization/deinitialization, and the engine's
  * global state. This should never be included by the engine's headers.
  *
@@ -29,26 +29,36 @@
 #ifndef _ST_COMMON_H
 #define _ST_COMMON_H
 
-#include <trippin/common.hpp>
-#include <trippin/memory.hpp>
-#include <trippin/string.hpp>
-#include <trippin/math.hpp>
-#include <trippin/collection.hpp>
-#include <trippin/error.hpp>
+#include <trippin/common.h>
+#include <trippin/memory.h>
+#include <trippin/string.h>
+#include <trippin/math.h>
+#include <trippin/collection.h>
+#include <trippin/error.h>
 
-// make sure there's always ST_WINDOWS or ST_LINUX defined
-// TODO macOS
+// make sure there's always ST_WINDOWS/ST_LINUX/etc defined
+// *bsd should usually check for linux
+// TODO does *bsd work?
+// TODO mobile and web support would be nice (sokol supports both)
 #if !defined(ST_WINDOWS) && !defined(ST_LINUX)
 	#ifdef _WIN32
 		#define ST_WINDOWS
+	#elif defined(__APPLE__)
+		#define ST_APPLE
 	#else
 		#define ST_LINUX
 	#endif
 #endif
 
-// apple uses clang so it should work
+// apple, android, and emscripten use clang so it should work
 #ifdef __APPLE__
-	#warning macOS is not officially supported
+	#warning Apple OSes are not officially supported
+#endif
+#ifdef __ANDROID__
+	#warning Android is not officially supported
+#endif
+#ifdef __EMSCRIPTEN__
+	#warning Emscripten is not officially supported
 #endif
 
 namespace st {
@@ -223,10 +233,10 @@ TR_BIT_FLAG(Modifiers);
 class Application
 {
 public:
-	virtual tr::Result<void, tr::Error> init() = 0;
+	virtual tr::Result<void, const tr::Error&> init() = 0;
 	// dt is delta time :)
-	virtual tr::Result<void, tr::Error> update(float64 dt) = 0;
-	virtual tr::Result<void, tr::Error> free() = 0;
+	virtual tr::Result<void, const tr::Error&> update(float64 dt) = 0;
+	virtual tr::Result<void, const tr::Error&> free() = 0;
 };
 
 struct ApplicationSettings

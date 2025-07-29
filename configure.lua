@@ -1,3 +1,4 @@
+#!/bin/lua
 ----------------------------------------
 -- CHANGE THESE FOR YOUR OWN PROJECTS --
 ----------------------------------------
@@ -101,11 +102,9 @@ for _, src in ipairs(srcs) do
 end
 
 -- ldflags
--- idfk why libglfw3.a goes into the src folder it just does
-ldflags = "-Lbuild/glfw/src"
-
+ldflags = ""
 if platform == "windows" then
-	ldflags = ldflags.." -lkernel32 -luser32 -lshell32 -lgdi32 -lpthread -lstdc++ -static"
+	ldflags = ldflags.." -lkernel32 -luser32 -lshell32 -lgdi32 -ld3d11 -ldxgi -lpthread -lstdc++ -static"
 else
 	-- TODO sokol says to include -pthread but it works fine without it
 	-- so maybe they fixed the issue but never updated that part?

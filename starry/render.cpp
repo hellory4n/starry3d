@@ -25,20 +25,22 @@
  *
  */
 
-#include <trippin/common.hpp>
-#include <trippin/memory.hpp>
-#include <trippin/math.hpp>
+#include <trippin/common.h>
+#include <trippin/memory.h>
+#include <trippin/math.h>
 
-#include "starry/configs/sokol.hpp" // IWYU pragma: keep
+#include "starry/configs/sokol.h" // IWYU pragma: keep
 #define SOKOL_GFX_IMPL
 #include <sokol/sokol_gfx.h>
 #include <sokol/sokol_app.h>
 #define SOKOL_GLUE_IMPL
 #include <sokol/sokol_glue.h>
 
-#include "shader/basic.glsl.h"
-#include "starry/optional/imgui.hpp"
-#include "starry/render.hpp"
+#ifdef ST_IMGUI
+	#include "starry/optional/imgui.h"
+#endif
+#include "starry/shader/basic.glsl.h"
+#include "starry/render.h"
 
 namespace st {
 	// didn't want to include sokol in common.hpp
