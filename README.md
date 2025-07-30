@@ -86,10 +86,8 @@ Now add these folders to your includes: (relative to where you put starry3d)
 - the starry3d directory itself
 - `thirdparty/`
 - `thirdparty/libtrippin`
-- `thirdparty/whereami/src`
 - if you're using ImGui:
     - `thirdparty/imgui`
-    - `thirdparty/imgui/backends`
 
 Add these source files: (relative to where you put starry3d)
 - `starry/common.cpp`
@@ -109,11 +107,9 @@ Add these source files: (relative to where you put starry3d)
     - `thirdparty/imgui/imgui_draw.cpp`
     - `thirdparty/imgui/imgui_tables.cpp`
     - `thirdparty/imgui/imgui_widgets.cpp`
-    - `thirdparty/imgui/backends/imgui_impl_glfw.cpp`
-    - `thirdparty/imgui/backends/imgui_impl_opengl3.cpp`
 
-You also have to link with some libraries on top of glfw:
-- Windows (MinGW only): `-lkernel32 -luser32 -lshell32 -ld3d11 -ldxgi -lpthread -lstdc++ -static`
+You also have to link with some system libraries:
+- Windows (MinGW only): `-lkernel32 -luser32 -lshell32 -lgdi32 -ld3d11 -ldxgi -lpthread -lstdc++ -static`
 - Linux: `-lX11 -lXi -lXcursor -lGL -ldl -lm -lstdc++`
 
 And if you're using ImGui you have to define `ST_IMGUI` (it has to be in the project/compile flags)
