@@ -1,4 +1,9 @@
+* text=auto eol=lf
 thirdparty/** linguist-vendored
+
+starry/**/*.h diff=cpp
+starry/**/*.cpp diff=cpp
+sandbox/**/*.h diff=cpp
+sandbox/**/*.cpp diff=cpp
 # TODO put that in the build process you energumenous gentleman
 **.glsl.h linguist-vendored
-* text=auto eol=lf

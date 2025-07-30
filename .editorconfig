@@ -1,4 +1,4 @@
-[*.cpp, *.hpp, *.glsl]
+[*.cpp, *.h, *.lua, *.glsl]
 indent_style = tab
 tab_size = 4
 
