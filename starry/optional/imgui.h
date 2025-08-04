@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * starry/optional/imgui.hpp
+ * starry/optional/imgui.h
  * Integrates Starry3D with Dear ImGui
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
@@ -25,27 +25,28 @@
  *
  */
 
-#ifdef ST_IMGUI
 #ifndef _ST_IMGUI_H
 #define _ST_IMGUI_H
 
-#include <imgui.h>
+#ifdef ST_IMGUI
+	#include <imgui.h>
+#else
+	// just so you know why imgui doesn't work
+	#error Using starry/optional/imgui.h requires ST_IMGUI to be defined in the project
+#endif
 
 namespace st {
 
 namespace imgui {
-	void init();
-	void free();
-	void update();
-	void render();
-	void on_event(const void* event);
-}
 
-}
+void init();
+void free();
+void update();
+void render();
+void on_event(const void* event);
 
-#endif
+} // namespace imgui
 
-#else
-	// just so you know why imgui doesn't work
-	#error Using starry/optional/imgui.hpp requires ST_IMGUI to be defined in the project
+} // namespace st
+
 #endif

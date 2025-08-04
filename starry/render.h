@@ -41,6 +41,6 @@ void draw_triangle();
 
 void free_triangle();
 
-}
+} // namespace st
 
 #endif

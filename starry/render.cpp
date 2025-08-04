@@ -26,39 +26,40 @@
  */
 
 #include <trippin/common.h>
-#include <trippin/memory.h>
 #include <trippin/math.h>
+#include <trippin/memory.h>
 
 #include "starry/configs/sokol.h" // IWYU pragma: keep
 #define SOKOL_GFX_IMPL
-#include <sokol/sokol_gfx.h>
 #include <sokol/sokol_app.h>
+#include <sokol/sokol_gfx.h>
 #define SOKOL_GLUE_IMPL
 #include <sokol/sokol_glue.h>
 
 #ifdef ST_IMGUI
 	#include "starry/optional/imgui.h"
 #endif
-#include "starry/shader/basic.glsl.h"
 #include "starry/render.h"
+#include "starry/shader/basic.glsl.h"
 
 namespace st {
-	// didn't want to include sokol in common.hpp
-	struct Renderer
-	{
-		sg_pipeline pipeline = {};
-		sg_bindings bindings = {};
-		sg_pass_action pass_action = {};
-	};
 
-	static Renderer renderer;
+// didn't want to include sokol in common.hpp
+struct Renderer
+{
+	sg_pipeline pipeline = {};
+	sg_bindings bindings = {};
+	sg_pass_action pass_action = {};
+};
 
-	// it's a hassle
-	// implemented in common.cpp
-	void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		uint32 line_nr, const char* filename_or_null, void* user_data
-	);
-}
+static Renderer renderer;
+
+// it's a hassle
+// implemented in common.cpp
+void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+		 uint32 line_nr, const char* filename_or_null, void* user_data);
+
+} // namespace st
 
 void st::__init_renderer()
 {
@@ -84,9 +85,9 @@ void st::__draw()
 	sg_apply_bindings(st::renderer.bindings);
 	sg_draw(0, 3, 1);
 
-	#ifdef ST_IMGUI
+#ifdef ST_IMGUI
 	st::imgui::render();
-	#endif
+#endif
 
 	sg_end_pass();
 	sg_commit();
@@ -98,9 +99,9 @@ void st::init_triangle()
 	sg_shader shader = sg_make_shader(basic_shader_desc(sg_query_backend()));
 
 	tr::Array<float32> verts = {
-		-0.5f, -0.5f, 0.0f, // bottom left
-		 0.5f, -0.5f, 0.0f, // bottom right
-		 0.0f,  0.5f, 0.0f, // top
+	    -0.5f, -0.5f, 0.0f, // bottom left
+	    0.5f,  -0.5f, 0.0f, // bottom right
+	    0.0f,  0.5f,  0.0f, // top
 	};
 
 	sg_buffer_desc buffer_desc = {};

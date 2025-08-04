@@ -1,6 +1,9 @@
-#include <starry/render.h>
-#include <starry/optional/imgui.h>
 #include "app.h"
+
+#include <cstdio>
+
+#include <starry/optional/imgui.h>
+#include <starry/render.h>
 
 tr::Result<void, const tr::Error&> Sandbox::init()
 {

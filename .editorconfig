@@ -1,8 +1,23 @@
-[*.cpp, *.h, *.lua, *.glsl]
-indent_style = tab
-tab_size = 4
+root = true
 
-# github uses 8 spaces for tabs
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 8
+indent_style = tab
+insert_final_newline = true
+max_line_length = 120
+trim_trailing_whitespace = true
+
+# so it's consistent duh
 [*.md]
 indent_style = space
-tab_size = 4
+
+# yaml and its consequences have been a disaster for the human race
+[{*.{yml, yaml}, .clang{-format, -tidy, d}}, build.ninja]
+indent_size = 2
+indent_style = space
+
+# windows bullshit :(
+[*.sln, *.vcxproj, *.bat]
+end_of_line = crlf

@@ -1,4 +1,5 @@
 #include <starry/common.h>
+
 #include "app.h"
 
 int main(void)

@@ -29,17 +29,18 @@
 #ifndef _ST_COMMON_H
 #define _ST_COMMON_H
 
+#include <trippin/collection.h>
 #include <trippin/common.h>
+#include <trippin/error.h>
+#include <trippin/math.h>
 #include <trippin/memory.h>
 #include <trippin/string.h>
-#include <trippin/math.h>
-#include <trippin/collection.h>
-#include <trippin/error.h>
 
 // make sure there's always ST_WINDOWS/ST_LINUX/etc defined
 // *bsd should usually check for linux
 // TODO does *bsd work?
 // TODO mobile and web support would be nice (sokol supports both)
+// TODO is this necessary?
 #if !defined(ST_WINDOWS) && !defined(ST_LINUX)
 	#ifdef _WIN32
 		#define ST_WINDOWS
@@ -68,8 +69,10 @@ constexpr const char* VERSION = "v0.5.0";
 // Vresionlsdn. Format is XYYZZ
 constexpr uint32 VERSION_NUM = 5'00; // can't do 0'05'00 bcuz it would become an octal number
 
-struct InputState {
-	enum class State {
+struct InputState
+{
+	enum class State
+	{
 		NOT_PRESSED,
 		JUST_PRESSED,
 		HELD,
@@ -84,10 +87,10 @@ enum class Key
 	UNKNOWN = 0,
 	SPACE = 32,
 	APOSTROPHE = 39, // '
-	COMMA = 44, // ,
-	MINUS = 45, // -
-	PERIOD = 46, // .
-	SLASH = 47, // /
+	COMMA = 44,	 // ,
+	MINUS = 45,	 // -
+	PERIOD = 46,	 // .
+	SLASH = 47,	 // /
 	NUM_0 = 48,
 	NUM_1 = 49,
 	NUM_2 = 50,
@@ -99,7 +102,7 @@ enum class Key
 	NUM_8 = 56,
 	NUM_9 = 57,
 	SEMICOLON = 59, // ;
-	EQUAL = 61, // =
+	EQUAL = 61,	// =
 	A = 65,
 	B = 66,
 	C = 67,
@@ -126,10 +129,10 @@ enum class Key
 	X = 88,
 	Y = 89,
 	Z = 90,
-	LEFT_BRACKET = 91, // [
-	BACKSLASH = 92, /* \ why do multiline // comments exist? */
-	RIGHT_BRACKET = 93, // ]
-	GRAVE_ACCENT = 96, // `
+	LEFT_BRACKET = 91,     // [
+	BACKSLASH = 92,	       /* \ why do multiline // comments exist? */
+	RIGHT_BRACKET = 93,    // ]
+	GRAVE_ACCENT = 96,     // `
 	INTERNATIONAL_1 = 161, // not in US keyboards
 	INTERNATIONAL_2 = 162, // not in US keyboards
 	ESCAPE = 256,
@@ -220,8 +223,8 @@ enum class Modifiers
 {
 	NONE = 0x0,
 	SHIFT = 0x1, // left or right shift
-	CTRL = 0x2, // left or right ctrl
-	ALT = 0x4, // left or right alt
+	CTRL = 0x2,  // left or right ctrl
+	ALT = 0x4,   // left or right alt
 	SUPER = 0x8, // left or right super key (also known as windows/meta)
 	LEFT_MOUSE_BUTTON = 0x100,
 	RIGHT_MOUSE_BUTTON = 0x200,
@@ -258,7 +261,8 @@ struct ApplicationSettings
 	bool high_dpi = false;
 };
 
-struct Starry3D {
+struct Starry3D
+{
 	tr::Arena arena = {};
 	Application* application = nullptr;
 	ApplicationSettings settings = {};
@@ -279,14 +283,15 @@ extern Starry3D engine;
 // Initializes the crap library.
 void run(Application& app, ApplicationSettings settings);
 
-// Kindly requests the window to be closed. If you want to force quit just use `tr::quit`/`tr::panic`
+// Kindly requests the window to be closed. If you want to force quit just use
+// `tr::quit`/`tr::panic`
 void close_window();
 
 // Emitted when the application is closed. This is called before `Application.free()`
 extern tr::Signal<void> on_close;
 
-// Returns the window size. May not be 100% accurate because of high DPI crap (you can enable high DPi from
-// `st::ApplicationSettings`)
+// Returns the window size. May not be 100% accurate because of high DPI crap (you can enable high
+// DPi from `st::ApplicationSettings`)
 tr::Vec2<uint32> window_size();
 
 // TODO signal-based input handling?
@@ -309,7 +314,8 @@ tr::Vec2<float64> relative_mouse_position();
 
 // TODO mouse_scroll()
 
-// Returns the current modifiers. Only valid if a key or mouse button is pressed, or if the mouse was moved.
+// Returns the current modifiers. Only valid if a key or mouse button is pressed, or if the mouse
+// was moved.
 Modifiers modifiers();
 
 // If false, the mouse gets disabled, which enables raw mouse input.
@@ -327,6 +333,6 @@ float64 delta_time_sec();
 // Gets the amount of frames per second.
 float64 fps();
 
-}
+} // namespace st
 
 #endif

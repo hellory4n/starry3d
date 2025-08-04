@@ -26,14 +26,15 @@
  */
 
 #include <trippin/common.h>
-#include <trippin/log.h>
 #include <trippin/iofs.h>
+#include <trippin/log.h>
 
-#include "starry/configs/sokol.h" // IWYU pragma: keep
 #include <sokol/sokol_app.h>
 #include <sokol/sokol_gfx.h>
-#include <sokol/sokol_log.h>
 #include <sokol/sokol_glue.h>
+#include <sokol/sokol_log.h>
+
+#include "starry/configs/sokol.h" // IWYU pragma: keep
 // TODO use imconfig.h?
 #include <imgui.h>
 #define SOKOL_IMGUI_IMPL
@@ -42,12 +43,11 @@
 #include "starry/optional/imgui.h"
 
 namespace st {
-	// it's a hassle
-	// implemented in common.cpp
-	void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		uint32 line_nr, const char* filename_or_null, void* user_data
-	);
-}
+// it's a hassle
+// implemented in common.cpp
+void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+		 uint32 line_nr, const char* filename_or_null, void* user_data);
+} // namespace st
 
 void st::imgui::init()
 {

@@ -27,8 +27,8 @@
  */
 
 #include <trippin/common.h>
-#include <trippin/log.h>
 #include <trippin/iofs.h>
+#include <trippin/log.h>
 
 #include "starry/configs/sokol.h" // IWYU pragma: keep
 #define SOKOL_APP_IMPL
@@ -52,24 +52,25 @@ TR_GCC_RESTORE()
 #ifdef ST_IMGUI
 	#include "starry/optional/imgui.h"
 #endif
-#include "starry/render.h"
 #include "starry/common.h"
+#include "starry/render.h"
 
 namespace st {
-	// it has to live somewhere
-	Starry3D engine;
-	tr::Signal<void> on_close(engine.arena);
 
-	// sokol callbacks
-	static void __init();
-	static void __update();
-	static void __free();
-	static void __on_event(const sapp_event* event);
-	// it's a hassle
-	void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		uint32 line_nr, const char* filename_or_null, void* user_data
-	);
-}
+// it has to live somewhere
+Starry3D engine;
+tr::Signal<void> on_close(engine.arena);
+
+// sokol callbacks
+static void __init();
+static void __update();
+static void __free();
+static void __on_event(const sapp_event* event);
+// it's a hassle
+void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+		 uint32 line_nr, const char* filename_or_null, void* user_data);
+
+} // namespace st
 
 void st::run(st::Application& app, st::ApplicationSettings settings)
 {
@@ -103,8 +104,10 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 
 static void st::__init()
 {
-	st::engine.key_state = tr::Array<InputState>(st::engine.arena, int(st::Key::LAST) + 1);
-	st::engine.mouse_state = tr::Array<InputState>(st::engine.arena, int(st::MouseButton::LAST) + 1);
+	st::engine.key_state =
+	    tr::Array<InputState>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
+	st::engine.mouse_state =
+	    tr::Array<InputState>(st::engine.arena, static_cast<int>(st::MouseButton::LAST) + 1);
 
 	if (st::engine.settings.user_dir == "") {
 		st::engine.settings.user_dir = st::engine.settings.name;
@@ -129,17 +132,17 @@ static void st::__init()
 	tr::info("initialized starry3d %s", st::VERSION);
 
 	st::__init_renderer();
-	#ifdef ST_IMGUI
+#ifdef ST_IMGUI
 	st::imgui::init();
-	#endif
+#endif
 	st::engine.application->init().unwrap();
 }
 
 static void st::__update()
 {
-	#ifdef ST_IMGUI
+#ifdef ST_IMGUI
 	st::imgui::update();
-	#endif
+#endif
 
 	st::engine.application->update(sapp_frame_duration()).unwrap();
 	st::__draw();
@@ -152,7 +155,8 @@ static void st::__update()
 			break;
 
 		case InputState::State::JUST_PRESSED:
-			key.state = key.pressed ? InputState::State::HELD : InputState::State::JUST_RELEASED;
+			key.state = key.pressed ? InputState::State::HELD
+						: InputState::State::JUST_RELEASED;
 			break;
 
 		case InputState::State::HELD:
@@ -174,7 +178,8 @@ static void st::__update()
 			break;
 
 		case InputState::State::JUST_PRESSED:
-			mouse.state = mouse.pressed ? InputState::State::HELD : InputState::State::JUST_RELEASED;
+			mouse.state = mouse.pressed ? InputState::State::HELD
+						    : InputState::State::JUST_RELEASED;
 			break;
 
 		case InputState::State::HELD:
@@ -195,9 +200,9 @@ static void st::__free()
 	tr::info("freeing application...");
 	st::engine.application->free().unwrap();
 
-	#ifdef ST_IMGUI
+#ifdef ST_IMGUI
 	st::imgui::free();
-	#endif
+#endif
 	st::__free_renderer();
 	tr::info("deinitialized starry3d");
 	// TODO libtrippin deinitializes twice on panic
@@ -207,11 +212,11 @@ static void st::__free()
 
 static void st::__on_event(const sapp_event* event)
 {
-	// TODO it'll get funky if you have a player controller and a text field
-	// pretty sure imgui can handle that tho
-	#ifdef ST_IMGUI
+// TODO it'll get funky if you have a player controller and a text field
+// pretty sure imgui can handle that tho
+#ifdef ST_IMGUI
 	st::imgui::on_event(event);
-	#endif
+#endif
 
 	// 'enumeration values not handled in switch'
 	// i know you fucking scoundrel
@@ -219,28 +224,33 @@ static void st::__on_event(const sapp_event* event)
 	switch (event->type) {
 	case SAPP_EVENTTYPE_KEY_DOWN:
 		st::engine.key_state[event->key_code].pressed = true;
-		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
+		st::engine.current_modifiers =
+		    static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_KEY_UP:
 		st::engine.key_state[event->key_code].pressed = false;
-		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
+		st::engine.current_modifiers =
+		    static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_MOUSE_DOWN:
 		st::engine.mouse_state[event->mouse_button].pressed = true;
-		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
+		st::engine.current_modifiers =
+		    static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_MOUSE_UP:
 		st::engine.mouse_state[event->mouse_button].pressed = false;
-		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
+		st::engine.current_modifiers =
+		    static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_MOUSE_MOVE:
 		st::engine.mouse_position = {event->mouse_x, event->mouse_y};
 		st::engine.relative_mouse_position = {event->mouse_dx, event->mouse_dy};
-		st::engine.current_modifiers = Modifiers(event->modifiers); // the values are the same
+		st::engine.current_modifiers =
+		    static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_QUIT_REQUESTED:
@@ -251,7 +261,7 @@ static void st::__on_event(const sapp_event* event)
 }
 
 void st::__sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-	uint32 line_nr, const char* filename_or_null, void* user_data)
+		     uint32 line_nr, const char* filename_or_null, void* user_data)
 {
 	// shut up
 	(void)tag;
@@ -262,10 +272,18 @@ void st::__sokol_log(const char* tag, uint32 level, uint32 item_id, const char* 
 	const char* msg = msg_or_null == nullptr ? "unknown message" : msg_or_null;
 
 	switch (level) {
-		case 0: tr::panic("sokol panic (item id %u): %s", item_id, msg); break;
-		case 1: tr::error("sokol error (item id %u): %s", item_id, msg); break;
-		case 2: tr::warn("sokol warning (item id %u): %s", item_id, msg); break;
-		case 3: tr::info("sokol (item id %u): %s", item_id, msg); break;
+	case 0:
+		tr::panic("sokol panic (item id %u): %s", item_id, msg);
+		break;
+	case 1:
+		tr::error("sokol error (item id %u): %s", item_id, msg);
+		break;
+	case 2:
+		tr::warn("sokol warning (item id %u): %s", item_id, msg);
+		break;
+	case 3:
+		tr::info("sokol (item id %u): %s", item_id, msg);
+		break;
 	}
 }
 
@@ -276,42 +294,50 @@ void st::close_window()
 
 bool st::is_key_just_pressed(st::Key key)
 {
-	return st::engine.key_state[usize(key)].state == InputState::State::JUST_PRESSED;
+	return st::engine.key_state[static_cast<usize>(key)].state ==
+	       InputState::State::JUST_PRESSED;
 }
 
 bool st::is_key_just_released(st::Key key)
 {
-	return st::engine.key_state[usize(key)].state == InputState::State::JUST_RELEASED;
+	return st::engine.key_state[static_cast<usize>(key)].state ==
+	       InputState::State::JUST_RELEASED;
 }
 
 bool st::is_key_held(st::Key key)
 {
-	return st::engine.key_state[usize(key)].state != InputState::State::NOT_PRESSED;
+	return st::engine.key_state[static_cast<usize>(key)].state !=
+	       InputState::State::NOT_PRESSED;
 }
 
 bool st::is_key_not_pressed(st::Key key)
 {
-	return st::engine.key_state[usize(key)].state == InputState::State::NOT_PRESSED;
+	return st::engine.key_state[static_cast<usize>(key)].state ==
+	       InputState::State::NOT_PRESSED;
 }
 
 bool st::is_mouse_just_pressed(st::MouseButton btn)
 {
-	return st::engine.mouse_state[usize(btn)].state == InputState::State::JUST_PRESSED;
+	return st::engine.mouse_state[static_cast<usize>(btn)].state ==
+	       InputState::State::JUST_PRESSED;
 }
 
 bool st::is_mouse_just_released(st::MouseButton btn)
 {
-	return st::engine.mouse_state[usize(btn)].state == InputState::State::JUST_RELEASED;
+	return st::engine.mouse_state[static_cast<usize>(btn)].state ==
+	       InputState::State::JUST_RELEASED;
 }
 
 bool st::is_mouse_held(st::MouseButton btn)
 {
-	return st::engine.mouse_state[usize(btn)].state != InputState::State::NOT_PRESSED;
+	return st::engine.mouse_state[static_cast<usize>(btn)].state !=
+	       InputState::State::NOT_PRESSED;
 }
 
 bool st::is_mouse_not_pressed(st::MouseButton btn)
 {
-	return st::engine.mouse_state[usize(btn)].state == InputState::State::NOT_PRESSED;
+	return st::engine.mouse_state[static_cast<usize>(btn)].state ==
+	       InputState::State::NOT_PRESSED;
 }
 
 tr::Vec2<float64> st::mouse_position()
