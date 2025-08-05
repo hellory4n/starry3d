@@ -32,13 +32,20 @@
 
 #include "starry/configs/sokol.h" // IWYU pragma: keep
 #define SOKOL_APP_IMPL
-// it's one single line
-// TODO i'll definitely forget to remove this when it's fixed
+// :(
 TR_GCC_IGNORE_WARNING(-Wmissing-field-initializers)
+TR_GCC_IGNORE_WARNING(-Wold-style-cast)
+TR_GCC_IGNORE_WARNING(-Wshorten-64-to-32)
+TR_GCC_IGNORE_WARNING(-Wcast-qual)
+TR_GCC_IGNORE_WARNING(-Wconversion)
 #include <sokol/sokol_app.h>
-TR_GCC_RESTORE()
 #define SOKOL_TIME_IMPL
 #include <sokol/sokol_time.h>
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
 
 // i fucking love windows
 #ifdef _WIN32

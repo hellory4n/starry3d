@@ -230,7 +230,7 @@ enum class Modifiers : uint16
 	RIGHT_MOUSE_BUTTON = 0x200,
 	MIDDLE_MOUSE_BUTTON = 0x400,
 };
-TR_BIT_FLAG(Modifiers);
+TR_BIT_FLAG(Modifiers)
 
 // As the name implies, it's an application.
 class Application

@@ -37,8 +37,13 @@
 #include "starry/configs/sokol.h" // IWYU pragma: keep
 // TODO use imconfig.h?
 #include <imgui.h>
+// :(
+TR_GCC_IGNORE_WARNING(-Wold-style-cast)
+TR_GCC_IGNORE_WARNING(-Wcast-qual)
 #define SOKOL_IMGUI_IMPL
 #include <sokol/util/sokol_imgui.h>
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
 
 #include "starry/optional/imgui.h"
 

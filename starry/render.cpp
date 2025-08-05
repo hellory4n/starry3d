@@ -30,6 +30,10 @@
 #include <trippin/memory.h>
 
 #include "starry/configs/sokol.h" // IWYU pragma: keep
+// :(
+TR_GCC_IGNORE_WARNING(-Wold-style-cast)
+TR_GCC_IGNORE_WARNING(-Wimplicit-int-conversion)
+TR_GCC_IGNORE_WARNING(-Wcast-qual)
 #define SOKOL_GFX_IMPL
 #include <sokol/sokol_app.h>
 #include <sokol/sokol_gfx.h>
@@ -41,6 +45,8 @@
 #endif
 #include "starry/render.h"
 #include "starry/shader/basic.glsl.h"
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
 
 namespace st {
 
