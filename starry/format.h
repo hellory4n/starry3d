@@ -111,12 +111,7 @@ struct Palette
 
 public:
 	Palette();
-	// "Single-argument constructors must be marked explicit to avoid unintentional implicit
-	// conversions"
-	// this is on purpose you twatwaffle
-	// NOLINTBEGIN(google-explicit-constructor)
 	Palette(tr::Array<tr::Color> c) : colors(c) {}
-	// NOLINTEND(google-explicit-constructor)
 
 	// unnecessary don't care
 	tr::Color& operator[](usize idx) const

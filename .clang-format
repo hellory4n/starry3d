@@ -1,10 +1,13 @@
 BasedOnStyle: LLVM
 Language: Cpp
+Standard: c++17
 
 # one of the most controversial issues for unemployed people
 UseTab: Always
 IndentWidth: 8
 TabWidth: 8
+ContinuationIndentWidth: 8
+ConstructorInitializerIndentWidth: 8
 IndentPPDirectives: BeforeHash
 
 # spacing

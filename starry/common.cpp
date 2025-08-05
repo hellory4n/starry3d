@@ -105,9 +105,9 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 static void st::_init()
 {
 	st::engine.key_state =
-	    tr::Array<InputState>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
-	st::engine.mouse_state =
-	    tr::Array<InputState>(st::engine.arena, static_cast<int>(st::MouseButton::LAST) + 1);
+		tr::Array<InputState>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
+	st::engine.mouse_state = tr::Array<InputState>(st::engine.arena,
+						       static_cast<int>(st::MouseButton::LAST) + 1);
 
 	if (st::engine.settings.user_dir == "") {
 		st::engine.settings.user_dir = st::engine.settings.name;
@@ -225,32 +225,32 @@ static void st::_on_event(const sapp_event* event)
 	case SAPP_EVENTTYPE_KEY_DOWN:
 		st::engine.key_state[event->key_code].pressed = true;
 		st::engine.current_modifiers =
-		    static_cast<Modifiers>(event->modifiers); // the values are the same
+			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_KEY_UP:
 		st::engine.key_state[event->key_code].pressed = false;
 		st::engine.current_modifiers =
-		    static_cast<Modifiers>(event->modifiers); // the values are the same
+			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_MOUSE_DOWN:
 		st::engine.mouse_state[event->mouse_button].pressed = true;
 		st::engine.current_modifiers =
-		    static_cast<Modifiers>(event->modifiers); // the values are the same
+			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_MOUSE_UP:
 		st::engine.mouse_state[event->mouse_button].pressed = false;
 		st::engine.current_modifiers =
-		    static_cast<Modifiers>(event->modifiers); // the values are the same
+			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_MOUSE_MOVE:
 		st::engine.mouse_position = {event->mouse_x, event->mouse_y};
 		st::engine.relative_mouse_position = {event->mouse_dx, event->mouse_dy};
 		st::engine.current_modifiers =
-		    static_cast<Modifiers>(event->modifiers); // the values are the same
+			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_QUIT_REQUESTED:
@@ -260,12 +260,8 @@ static void st::_on_event(const sapp_event* event)
 	TR_GCC_RESTORE();
 }
 
-// 2 adjacent parameters of '_sokol_log' of similar type ('uint32') are easily swapped by mistake
-// i didn't write it man :(
-// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 void st::_sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
 		    uint32 line_nr, const char* filename_or_null, void* user_data)
-// NOLINTEND(bugprone-easily-swappable-parameters)
 {
 	// shut up
 	(void)tag;

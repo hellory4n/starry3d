@@ -99,9 +99,9 @@ void st::init_triangle()
 	sg_shader shader = sg_make_shader(basic_shader_desc(sg_query_backend()));
 
 	tr::Array<float32> verts = {
-	    -0.5f, -0.5f, 0.0f, // bottom left
-	    0.5f,  -0.5f, 0.0f, // bottom right
-	    0.0f,  0.5f,  0.0f, // top
+		-0.5f, -0.5f, 0.0f, // bottom left
+		0.5f,  -0.5f, 0.0f, // bottom right
+		0.0f,  0.5f,  0.0f, // top
 	};
 
 	sg_buffer_desc buffer_desc = {};

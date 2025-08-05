@@ -7,50 +7,36 @@ Checks:
   - modernize-use-bool-literals
   - modernize-use-default-member-init
   - modernize-use-nullptr
+
   - readability-avoid-nested-conditional-operator
   - readability-convert-member-functions-to-static
   - readability-function-cognitive-complexity
   - readability-implicit-bool-conversion
   - readability-inconsistent-declaration-parameter-name
   - readability-make-member-function-const
-  - readability-math-missing-parentheses
-  - readability-misplaced-array-index
   - readability-non-const-parameter
-  - readability-qualified-auto
-  - readability-redundant-casting
-  - readability-redundant-inline-specifier
-  - readability-reference-to-constructed-temporary
   - readability-simplify-boolean-expr
   - readability-static-accessed-through-instance
-  - readability-identifier-naming
+  - readability-reference-to-constructed-temporary
+
+  - bugprone-argument-comment
+  - bugprone-branch-clone
+  - bugprone-integer-division
+  - bugprone-macro-parentheses
+  - bugprone-misplaced-pointer-arithmetic-in-alloc
+  - bugprone-sizeof-expression
+  - bugprone-suspicious-missing-comma
+  - bugprone-too-small-loop-variable
+
+  - performance-for-range-copy
+  - performance-inefficient-string-concatenation
+  - performance-inefficient-vector-operation
+
+  - portability-simd-intrinsics
+  - portability-restrict-system-includes
+
   - llvm-else-after-return
 
-  # TODO you should probably specify the checks individually
-  - bugprone-*
-  - concurrency-*
-  - performance-*
-  - portability-*
-  - clang-analyzer-*
-  - google-*
-  - cert-*
-  - misc-*
-
-  # this is insane so we have to remove some warnings
-  # "'todo' has no username"
-  # i don't care
-  - -google-readability-todo
-  # "static variable may throw exceptions that can't be caught while being initialized"
-  # we don't use exceptions
-  - -cert-err58-cpp
-  # "don't use C-style variadic functions"
-  # this breaks `tr::fmt` and company
-  - -cert-dcl50-cpp
-  # "use anonymous namespace instead of 'static'"
-  # shut up :)
-  - -misc-use-anonymous-namespace
-  # "member variable has public visibility"
-  # yeah no shit
-  - -misc-non-private-member-variables-in-classes
 
 HeaderFileExtensions: ["", h, hh, hpp, hxx, inc, glsl]
 ImplementationFileExtensions: [c, cc, cpp, cxx, m, mm, java]
@@ -64,28 +50,3 @@ CheckOptions:
   modernize-use-bool-literals.IgnoreMacros: false
   modernize-use-default-member-init.IgnoreMacros: false
   modernize-use-default-member-init.UseAssignment: true
-
-  # naming (pain and suffering)
-  readability-identifier-naming.VariableCase: lower_case
-  readability-identifier-naming.GlobalConstantCase: UPPER_CASE
-  readability-identifier-naming.FunctionCase: lower_case
-  # apparently '_fucking_function' is actually not snake_case
-  readability-identifier-naming.FunctionIgnoredRegexp: '^_.*'
-  readability-identifier-naming.ClassCase: CamelCase
-  readability-identifier-naming.StructCase: CamelCase
-  readability-identifier-naming.EnumCase: CamelCase
-  readability-identifier-naming.EnumConstantCase: UPPER_CASE
-  readability-identifier-naming.NamespaceCase: lower_case
-  readability-identifier-naming.TypedefCase: CamelCase
-  readability-identifier-naming.TypeAliasCase: CamelCase
-  readability-identifier-naming.MemberCase: lower_case
-  readability-identifier-naming.PrivateMemberCase: lower_case
-  readability-identifier-naming.ProtectedMemberCase: lower_case
-  readability-identifier-naming.PublicCase: lower_case
-  readability-identifier-naming.StaticMemberCase: lower_case
-  readability-identifier-naming.ClassConstantCase: UPPER_CASE
-  readability-identifier-naming.ParameterCase: lower_case
-  readability-identifier-naming.LocalVariableCase: lower_case
-  readability-identifier-naming.TemplateParameterCase: CamelCase
-  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
-  readability-identifier-naming.ConstexprVariableCase: UPPER_CASE
