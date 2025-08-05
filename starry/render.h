@@ -31,9 +31,9 @@
 namespace st {
 
 // internal :)
-void __init_renderer();
-void __free_renderer();
-void __draw();
+void _init_renderer();
+void _free_renderer();
+void _draw();
 
 void init_triangle();
 

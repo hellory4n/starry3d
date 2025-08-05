@@ -71,7 +71,7 @@ constexpr uint32 VERSION_NUM = 5'00; // can't do 0'05'00 bcuz it would become an
 
 struct InputState
 {
-	enum class State
+	enum class State : uint8
 	{
 		NOT_PRESSED,
 		JUST_PRESSED,
@@ -82,7 +82,7 @@ struct InputState
 };
 
 // The key to success. Note the values are identical to GLFW and Sokol
-enum class Key
+enum class Key : uint16
 {
 	UNKNOWN = 0,
 	SPACE = 32,
@@ -209,7 +209,7 @@ enum class Key
 };
 
 // Mouse btutton :)
-enum class MouseButton
+enum class MouseButton : uint8
 {
 	LEFT = 0,
 	RIGHT = 1,
@@ -219,7 +219,7 @@ enum class MouseButton
 };
 
 // Bit flags for modifiers when pressing keys/mouse buttons
-enum class Modifiers
+enum class Modifiers : uint16
 {
 	NONE = 0x0,
 	SHIFT = 0x1, // left or right shift
@@ -270,11 +270,11 @@ struct Starry3D
 	bool exiting = false;
 
 	// input
-	tr::Array<InputState> key_state;
-	tr::Array<InputState> mouse_state;
-	Modifiers current_modifiers;
-	tr::Vec2<float64> mouse_position;
-	tr::Vec2<float64> relative_mouse_position;
+	tr::Array<InputState> key_state = {};
+	tr::Array<InputState> mouse_state = {};
+	Modifiers current_modifiers = {};
+	tr::Vec2<float64> mouse_position = {};
+	tr::Vec2<float64> relative_mouse_position = {};
 };
 
 // This is where the engine's internal state goes. You probably shouldn't use this directly.

@@ -102,9 +102,8 @@ enum class VoxPalette : uint8
 
 // Represents a color palette for voxel models. It could just use regular colors but this is faster
 // :). This is pretty much just a fancy wrapper for an array, + a static method for loading
-class Palette
+struct Palette
 {
-public:
 	// that's how many colors fit in a byte
 	static constexpr usize MAX_COLORS = 255;
 
@@ -112,10 +111,15 @@ public:
 
 public:
 	Palette();
+	// "Single-argument constructors must be marked explicit to avoid unintentional implicit
+	// conversions"
+	// this is on purpose you twatwaffle
+	// NOLINTBEGIN(google-explicit-constructor)
 	Palette(tr::Array<tr::Color> c) : colors(c) {}
+	// NOLINTEND(google-explicit-constructor)
 
 	// unnecessary don't care
-	tr::Color& operator[](usize idx)
+	tr::Color& operator[](usize idx) const
 	{
 		return this->colors[idx];
 	}

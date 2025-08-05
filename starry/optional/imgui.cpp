@@ -43,16 +43,18 @@
 #include "starry/optional/imgui.h"
 
 namespace st {
+
 // it's a hassle
 // implemented in common.cpp
-void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		 uint32 line_nr, const char* filename_or_null, void* user_data);
+extern void _sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+		       uint32 line_nr, const char* filename_or_null, void* user_data);
+
 } // namespace st
 
 void st::imgui::init()
 {
 	simgui_desc_t imgui_desc = {};
-	imgui_desc.logger.func = st::__sokol_log;
+	imgui_desc.logger.func = st::_sokol_log;
 	// TODO should this be configurable?
 	imgui_desc.ini_filename = tr::path(tr::scratchpad(), "user://imgui.ini");
 	simgui_setup(imgui_desc);

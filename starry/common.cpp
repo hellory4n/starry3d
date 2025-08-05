@@ -62,13 +62,13 @@ Starry3D engine;
 tr::Signal<void> on_close(engine.arena);
 
 // sokol callbacks
-static void __init();
-static void __update();
-static void __free();
-static void __on_event(const sapp_event* event);
+static void _init();
+static void _update();
+static void _free();
+static void _on_event(const sapp_event* event);
 // it's a hassle
-void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		 uint32 line_nr, const char* filename_or_null, void* user_data);
+extern void _sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+		       uint32 line_nr, const char* filename_or_null, void* user_data);
 
 } // namespace st
 
@@ -85,14 +85,14 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	// quite the pickle
 	sapp_desc sokol_app = {};
 
-	sokol_app.init_cb = st::__init;
-	sokol_app.frame_cb = st::__update;
-	sokol_app.cleanup_cb = st::__free;
-	sokol_app.event_cb = st::__on_event;
-	sokol_app.logger.func = st::__sokol_log;
+	sokol_app.init_cb = st::_init;
+	sokol_app.frame_cb = st::_update;
+	sokol_app.cleanup_cb = st::_free;
+	sokol_app.event_cb = st::_on_event;
+	sokol_app.logger.func = st::_sokol_log;
 
-	sokol_app.width = settings.window_size.x;
-	sokol_app.height = settings.window_size.y;
+	sokol_app.width = static_cast<int32>(settings.window_size.x);
+	sokol_app.height = static_cast<int32>(settings.window_size.y);
 	sokol_app.window_title = settings.name;
 	sokol_app.swap_interval = settings.vsync ? 1 : 0;
 	sokol_app.high_dpi = settings.high_dpi;
@@ -102,7 +102,7 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	sapp_run(sokol_app);
 }
 
-static void st::__init()
+static void st::_init()
 {
 	st::engine.key_state =
 	    tr::Array<InputState>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
@@ -125,27 +125,27 @@ static void st::__init()
 	// this should only happen on panic (sokol will handle it when quitting normally)
 	tr::call_on_quit([]() {
 		if (!st::engine.exiting) {
-			st::__free();
+			st::_free();
 		}
 	});
 
 	tr::info("initialized starry3d %s", st::VERSION);
 
-	st::__init_renderer();
+	st::_init_renderer();
 #ifdef ST_IMGUI
 	st::imgui::init();
 #endif
 	st::engine.application->init().unwrap();
 }
 
-static void st::__update()
+static void st::_update()
 {
 #ifdef ST_IMGUI
 	st::imgui::update();
 #endif
 
 	st::engine.application->update(sapp_frame_duration()).unwrap();
-	st::__draw();
+	st::_draw();
 
 	// update key states
 	for (auto [_, key] : st::engine.key_state) {
@@ -193,7 +193,7 @@ static void st::__update()
 	}
 }
 
-static void st::__free()
+static void st::_free()
 {
 	st::engine.exiting = true;
 
@@ -203,14 +203,14 @@ static void st::__free()
 #ifdef ST_IMGUI
 	st::imgui::free();
 #endif
-	st::__free_renderer();
+	st::_free_renderer();
 	tr::info("deinitialized starry3d");
 	// TODO libtrippin deinitializes twice on panic
 	// i should just add some way of checking if it's panicking on tr::call_on_quit()
 	tr::free();
 }
 
-static void st::__on_event(const sapp_event* event)
+static void st::_on_event(const sapp_event* event)
 {
 // TODO it'll get funky if you have a player controller and a text field
 // pretty sure imgui can handle that tho
@@ -260,8 +260,12 @@ static void st::__on_event(const sapp_event* event)
 	TR_GCC_RESTORE();
 }
 
-void st::__sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		     uint32 line_nr, const char* filename_or_null, void* user_data)
+// 2 adjacent parameters of '_sokol_log' of similar type ('uint32') are easily swapped by mistake
+// i didn't write it man :(
+// NOLINTBEGIN(bugprone-easily-swappable-parameters)
+void st::_sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+		    uint32 line_nr, const char* filename_or_null, void* user_data)
+// NOLINTEND(bugprone-easily-swappable-parameters)
 {
 	// shut up
 	(void)tag;
@@ -281,7 +285,7 @@ void st::__sokol_log(const char* tag, uint32 level, uint32 item_id, const char* 
 	case 2:
 		tr::warn("sokol warning (item id %u): %s", item_id, msg);
 		break;
-	case 3:
+	default:
 		tr::info("sokol (item id %u): %s", item_id, msg);
 		break;
 	}
@@ -375,7 +379,7 @@ float64 st::delta_time_sec()
 	return sapp_frame_duration();
 }
 
-float64 fps()
+float64 st::fps()
 {
 	return 1.0 / st::delta_time_sec();
 }

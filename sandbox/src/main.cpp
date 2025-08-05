@@ -2,7 +2,7 @@
 
 #include "app.h"
 
-int main(void)
+int main()
 {
 	st::ApplicationSettings settings = {};
 	settings.name = "sandbox";

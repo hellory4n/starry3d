@@ -56,25 +56,25 @@ static Renderer renderer;
 
 // it's a hassle
 // implemented in common.cpp
-void __sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		 uint32 line_nr, const char* filename_or_null, void* user_data);
+extern void _sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+		       uint32 line_nr, const char* filename_or_null, void* user_data);
 
 } // namespace st
 
-void st::__init_renderer()
+void st::_init_renderer()
 {
 	sg_desc sg_desc = {};
 	sg_desc.environment = sglue_environment();
-	sg_desc.logger.func = st::__sokol_log;
-	sg_setup(sg_desc);
+	sg_desc.logger.func = st::_sokol_log;
+	sg_setup(&sg_desc);
 }
 
-void st::__free_renderer()
+void st::_free_renderer()
 {
 	sg_shutdown();
 }
 
-void st::__draw()
+void st::_draw()
 {
 	sg_pass pass = {};
 	pass.action = st::renderer.pass_action;
@@ -107,7 +107,7 @@ void st::init_triangle()
 	sg_buffer_desc buffer_desc = {};
 	buffer_desc.size = verts.len() * sizeof(float32);
 	// SG_RANGE doesn't work with tr::Array<T>
-	buffer_desc.data = {verts.buf(), verts.len() * sizeof(float32)};
+	buffer_desc.data = {*verts, verts.len() * sizeof(float32)};
 	buffer_desc.label = "triangle_vertices";
 	st::renderer.bindings.vertex_buffers[0] = sg_make_buffer(buffer_desc);
 
