@@ -145,7 +145,6 @@ static void st::_init()
 	// make sure user:// exists
 	tr::String userdir = tr::path(tr::scratchpad(), "user://");
 	tr::create_dir(userdir).unwrap();
-	// tr::panic("DO NOT REDEEM!!!!!!!!!!!!!");
 	TR_ASSERT_MSG(tr::file_exists(userdir), "couldn't create user://");
 
 	st::_init_renderer();

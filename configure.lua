@@ -50,9 +50,16 @@ if platform == "windows" then
 	compiler = "x86_64-w64-mingw32-g++"
 end
 
-cflags =
-    "-std=c++17 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wconversion -Wold-style-cast " ..
-    "-Wextra-semi -Wmissing-noreturn -Wimplicit-fallthrough -Wnull-dereference -Wcast-qual "
+-- TODO consider not
+cflags = ""
+if (platform == "windows") then
+	cflags = "-std=c++17 -Wall -Wextra -Wpedantic -fsanitize=undefined "
+else
+	cflags =
+	    "-std=c++17 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wconversion" ..
+	    "-Wold-style-cast -Wextra-semi -Wmissing-noreturn -Wimplicit-fallthrough" ..
+	    "-Wnull-dereference -Wcast-qual "
+end
 
 -- includes
 cflags = cflags ..
@@ -106,8 +113,8 @@ end
 -- ldflags
 ldflags = ""
 if platform == "windows" then
-	ldflags = ldflags .. " -lkernel32 -luser32 -lshell32 -lgdi32 -ld3d11 -ldxgi -lpthread" ..
-	    "-lstdc++ -static"
+	ldflags = ldflags .. " -lkernel32 -luser32 -lshell32 -lgdi32 -ld3d11 -ldxgi -lpthread " ..
+	    "-lstdc++ -lmsvcr90 -static -fsanitize=undefined "
 else
 	-- TODO sokol says to include -pthread but it works fine without it
 	-- so maybe they fixed the issue but never updated that part?
