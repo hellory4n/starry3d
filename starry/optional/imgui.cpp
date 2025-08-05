@@ -25,6 +25,11 @@
  *
  */
 
+// it has to go before sokol
+/* clang-format off */
+#include "starry/common.h" // IWYU pragma: keep
+/* clang-format on */
+
 #include <trippin/common.h>
 #include <trippin/iofs.h>
 #include <trippin/log.h>
@@ -34,7 +39,6 @@
 #include <sokol/sokol_glue.h>
 #include <sokol/sokol_log.h>
 
-#include "starry/configs/sokol.h" // IWYU pragma: keep
 // TODO use imconfig.h?
 #include <imgui.h>
 // :(

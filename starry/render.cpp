@@ -29,7 +29,8 @@
 #include <trippin/math.h>
 #include <trippin/memory.h>
 
-#include "starry/configs/sokol.h" // IWYU pragma: keep
+#include "starry/common.h" // IWYU pragma: keep
+
 // :(
 TR_GCC_IGNORE_WARNING(-Wold-style-cast)
 TR_GCC_IGNORE_WARNING(-Wimplicit-int-conversion)

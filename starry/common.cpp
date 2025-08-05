@@ -26,11 +26,12 @@
  *
  */
 
+#include "starry/common.h"
+
 #include <trippin/common.h>
 #include <trippin/iofs.h>
 #include <trippin/log.h>
 
-#include "starry/configs/sokol.h" // IWYU pragma: keep
 #define SOKOL_APP_IMPL
 // :(
 TR_GCC_IGNORE_WARNING(-Wmissing-field-initializers)
@@ -59,7 +60,6 @@ TR_GCC_RESTORE()
 #ifdef ST_IMGUI
 	#include "starry/optional/imgui.h"
 #endif
-#include "starry/common.h"
 #include "starry/render.h"
 
 namespace st {
@@ -130,13 +130,23 @@ static void st::_init()
 	// we have to do this fuckery so there's no fuckery of sokol calling st::__free which calls
 	// tr::free which calls st::__free
 	// this should only happen on panic (sokol will handle it when quitting normally)
-	tr::call_on_quit([]() {
+	// TODO i updated tr::call_on_quit for this but i can't be bothered to make it work like
+	// that
+	tr::call_on_quit([](bool _) {
 		if (!st::engine.exiting) {
 			st::_free();
 		}
 	});
 
 	tr::info("initialized starry3d %s", st::VERSION);
+	tr::info("app:// pointing to %s", *tr::path(tr::scratchpad(), "app://"));
+	tr::info("user:// pointing to %s", *tr::path(tr::scratchpad(), "user://"));
+
+	// make sure user:// exists
+	tr::String userdir = tr::path(tr::scratchpad(), "user://");
+	tr::create_dir(userdir).unwrap();
+	// tr::panic("DO NOT REDEEM!!!!!!!!!!!!!");
+	TR_ASSERT_MSG(tr::file_exists(userdir), "couldn't create user://");
 
 	st::_init_renderer();
 #ifdef ST_IMGUI

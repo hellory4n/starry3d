@@ -47,11 +47,15 @@
 	#elif defined(__APPLE__)
 		#define ST_APPLE
 	#else
-		#define ST_LINUX
+		// we're not checking for __linux__ directly because *BSD exists,
+		// and each BSD has their own define to check
+		// they're not very different anyway
+		#define ST_LINUXBSD
 	#endif
 #endif
 
 // apple, android, and emscripten use clang so it should work
+// TODO support them?
 #ifdef __APPLE__
 	#warning Apple OSes are not officially supported
 #endif
@@ -334,5 +338,19 @@ float64 delta_time_sec();
 float64 fps();
 
 } // namespace st
+
+// sokol config
+// really should only be used by starry3d itself
+#if defined(ST_WINDOWS)
+	#define SOKOL_D3D11
+#elif defined(ST_APPLE)
+	#define SOKOL_METAL
+#else
+	#define SOKOL_GLCORE
+#endif
+
+#define SOKOL_ASSERT(X) TR_ASSERT(X)
+#define SOKOL_UNREACHABLE tr::panic("unreachable code from sokol")
+#define SOKOL_NO_ENTRY
 
 #endif
