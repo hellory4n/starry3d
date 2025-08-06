@@ -56,8 +56,8 @@ if (platform == "windows") then
 	cflags = "-std=c++17 -Wall -Wextra -Wpedantic "
 else
 	cflags =
-	    "-std=c++17 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wconversion" ..
-	    "-Wold-style-cast -Wextra-semi -Wmissing-noreturn -Wimplicit-fallthrough" ..
+	    "-std=c++17 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wconversion " ..
+	    "-Wold-style-cast -Wextra-semi -Wmissing-noreturn -Wimplicit-fallthrough " ..
 	    "-Wnull-dereference -Wcast-qual "
 end
 
