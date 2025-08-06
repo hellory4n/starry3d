@@ -1,2 +1,4 @@
 #!/bin/sh
-gdb -q -ex run -ex "quit" --args ./build/bin/sandbox
+set -e
+ninja
+gdb -q -ex run -ex "quit" --args ./build/bin/sandbox $@

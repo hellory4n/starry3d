@@ -1,7 +1,7 @@
 #!/bin/lua
-----------------------------------------
--- CHANGE THESE FOR YOUR OWN PROJECTS --
-----------------------------------------
+------------------------------------------
+--- CHANGE THESE FOR YOUR OWN PROJECTS ---
+------------------------------------------
 project = "sandbox"
 starrydir = "."
 builddir = "build"
@@ -19,9 +19,9 @@ includes = {
 	"sandbox/src"
 }
 
------------------------
--- ACTUAL BUILD CRAP --
------------------------
+-------------------------
+--- ACTUAL BUILD CRAP ---
+-------------------------
 io.write("Starry3D auto configurator 3000++\n")
 
 io.write("Compile mode (debug/release): ")
@@ -41,9 +41,9 @@ assert(compile_commands == "y" or compile_commands == "n")
 
 io.write("\nGenerating...\n")
 
----------------------------------------------------------------------
--- GETTING THE CRAP INFORMATION SO IT CAN ACTUALLY GENERATE FRFRFR --
----------------------------------------------------------------------
+----------------------------------------------------------------
+--- GETTING THE CRAP INFO SO IT CAN ACTUALLY GENERATE FRFRFR ---
+----------------------------------------------------------------
 
 compiler = "clang++"
 if platform == "windows" then
@@ -53,7 +53,7 @@ end
 -- TODO consider not
 cflags = ""
 if (platform == "windows") then
-	cflags = "-std=c++17 -Wall -Wextra -Wpedantic -fsanitize=undefined "
+	cflags = "-std=c++17 -Wall -Wextra -Wpedantic "
 else
 	cflags =
 	    "-std=c++17 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wconversion" ..
@@ -68,8 +68,7 @@ cflags = cflags ..
     " -I" .. starrydir .. "/thirdparty/libtrippin"
 
 if imgui_enabled then
-	cflags = cflags ..
-	    " -I" .. starrydir .. "/thirdparty/imgui"
+	cflags = cflags .. " -I" .. starrydir .. "/thirdparty/imgui"
 end
 
 -- custom includes
@@ -114,7 +113,7 @@ end
 ldflags = ""
 if platform == "windows" then
 	ldflags = ldflags .. " -lkernel32 -luser32 -lshell32 -lgdi32 -ld3d11 -ldxgi -lpthread " ..
-	    "-lstdc++ -lmsvcr90 -static -fsanitize=undefined "
+	    "-lstdc++ -lmsvcr90 -static "
 else
 	-- TODO sokol says to include -pthread but it works fine without it
 	-- so maybe they fixed the issue but never updated that part?
@@ -135,9 +134,9 @@ if sanitize ~= "" then
 	ldflags = ldflags .. " -fsanitize=" .. sanitize
 end
 
-------------------------------------------------
--- GENERATE THE BUILD FILES FRFRFR ONG NO CAP --
-------------------------------------------------
+--------------------------------------------------
+--- GENERATE THE BUILD FILES FRFRFR ONG NO CAP ---
+--------------------------------------------------
 
 local f = io.open("build.ninja", "w")
 assert(f)
@@ -173,9 +172,9 @@ f:write("\ndefault " .. builddir .. "/bin/" .. project .. "\n")
 
 f:close()
 
-----------------
--- ITS JOEVER --
-----------------
+------------------
+--- ITS JOEVER ---
+------------------
 
 io.write("Generated build.ninja; run `ninja` to compile\n")
 
