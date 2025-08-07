@@ -104,7 +104,7 @@ void st::_init_renderer()
 
 	pipeline_desc.shader = shader;
 	pipeline_desc.layout.attrs[ATTR_basic_vs_position].format = SG_VERTEXFORMAT_FLOAT3;
-	pipeline_desc.layout.attrs[ATTR_basic_vs_color].format = SG_VERTEXFORMAT_FLOAT2;
+	pipeline_desc.layout.attrs[ATTR_basic_vs_color].format = SG_VERTEXFORMAT_FLOAT4;
 
 	pipeline_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
 	pipeline_desc.depth.write_enabled = true;
