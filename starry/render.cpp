@@ -96,7 +96,6 @@ void st::_init_renderer()
 	// SG_RANGE doesn't work with tr::Array<T>
 	buffer_desc.data = {*verts, verts.len() * sizeof(float32)};
 	buffer_desc.usage.vertex_buffer = true;
-	buffer_desc.label = "triangle_vertices";
 	st::renderer.bindings.vertex_buffers[0] = sg_make_buffer(buffer_desc);
 
 	// first the alt-right pipeline
