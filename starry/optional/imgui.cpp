@@ -51,15 +51,6 @@ TR_GCC_RESTORE()
 
 #include "starry/optional/imgui.h"
 
-namespace st {
-
-// it's a hassle
-// implemented in common.cpp
-extern void _sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		       uint32 line_nr, const char* filename_or_null, void* user_data);
-
-} // namespace st
-
 void st::imgui::init()
 {
 	simgui_desc_t imgui_desc = {};

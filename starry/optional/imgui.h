@@ -32,13 +32,14 @@
 	#include <imgui.h>
 #else
 	// just so you know why imgui doesn't work
-	#error Using starry/optional/imgui.h requires ST_IMGUI to be defined in the project
+	#error "Using starry/optional/imgui.h requires ST_IMGUI to be defined in the project"
 #endif
 
 namespace st {
 
 namespace imgui {
 
+// TODO shouldn't this be private? (_init, _free, etc)
 void init();
 void free();
 void update();

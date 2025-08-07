@@ -35,12 +35,6 @@ void _init_renderer();
 void _free_renderer();
 void _draw();
 
-void init_triangle();
-
-void draw_triangle();
-
-void free_triangle();
-
 } // namespace st
 
 #endif

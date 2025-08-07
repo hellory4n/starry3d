@@ -2,8 +2,8 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * starry/shader/basic.glsl
- * Just some test faffery :)
+ * starry/world.h
+ * The API for the voxel world and stuff.
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
  *
@@ -25,38 +25,45 @@
  *
  */
 
-@ctype mat4 tr::Matrix4x4
-@ctype vec2 tr::Vec2<float32>
-@ctype vec3 tr::Vec3<float32>
-@ctype vec4 tr::Vec4<float32>
+#ifndef _ST_WORLD_H
+#define _ST_WORLD_H
 
-@vs vs
-in vec3 vs_position;
-in vec4 vs_color;
+#include <trippin/math.h>
 
-out vec4 fs_color;
+namespace st {
 
-layout(binding = 0) uniform vs_params {
-	mat4 u_model;
-	mat4 u_view;
-	mat4 u_projection;
+enum class CameraProjection : uint8
+{
+	PERSPECTIVE,
+	ORTHOGRAPHIC
 };
 
-void main()
+struct Camera
 {
-	gl_Position = u_projection * u_view * u_model * vec4(vs_position, 1.0);
-	fs_color = vs_color;
-}
-@end
+	tr::Vec3<float32> position = {};
+	// In degrees
+	tr::Vec3<float32> rotation = {};
+	union {
+		// In degrees
+		float32 fov = 45;
+		float32 zoom;
+	};
+	// How near can objects be before they get clipped
+	float32 near = 0.001f;
+	// How far can objects be before they get clipped
+	float32 far = 1000.0f;
+	// The projection duh
+	CameraProjection projection = CameraProjection::PERSPECTIVE;
 
-@fs fs
-in vec4 fs_color;
-out vec4 frag_color;
+	// Calculates and returns the view matrix
+	tr::Matrix4x4 view_matrix() const;
+	// Calculates and returns the projection matrix
+	tr::Matrix4x4 projection_matrix() const;
 
-void main()
-{
-	frag_color = fs_color;
-}
-@end
+	// Returns the current camera. This is also how you set the current camera
+	static Camera& current();
+};
 
-@program basic vs fs
+} // namespace st
+
+#endif

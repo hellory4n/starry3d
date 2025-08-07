@@ -1,0 +1,4 @@
+#!/bin/sh
+# quite the mouthful
+# TODO get the system info and choose the correct binary from that
+./thirdparty/sokol-tools-bin/bin/linux/sokol-shdc $@

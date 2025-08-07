@@ -73,9 +73,6 @@ static void _init();
 static void _update();
 static void _free();
 static void _on_event(const sapp_event* event);
-// it's a hassle
-extern void _sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		       uint32 line_nr, const char* filename_or_null, void* user_data);
 
 } // namespace st
 
@@ -83,6 +80,7 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 {
 	st::engine.application = &app;
 	st::engine.settings = settings;
+	st::engine.window_size = settings.window_size;
 
 	// hehe
 	stm_setup();
@@ -272,6 +270,11 @@ static void st::_on_event(const sapp_event* event)
 	case SAPP_EVENTTYPE_QUIT_REQUESTED:
 		st::on_close.emit();
 		break;
+
+	case SAPP_EVENTTYPE_RESIZED:
+		st::engine.window_size = {static_cast<uint32>(event->window_width),
+					  static_cast<uint32>(event->window_height)};
+		break;
 	}
 	TR_GCC_RESTORE();
 }
@@ -394,4 +397,9 @@ float64 st::delta_time_sec()
 float64 st::fps()
 {
 	return 1.0 / st::delta_time_sec();
+}
+
+tr::Vec2<uint32> st::window_size()
+{
+	return st::engine.window_size;
 }

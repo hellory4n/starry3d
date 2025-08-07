@@ -48,6 +48,7 @@ TR_GCC_IGNORE_WARNING(-Wcast-qual)
 #include "starry/shader/basic.glsl.h"
 TR_GCC_RESTORE()
 TR_GCC_RESTORE()
+TR_GCC_RESTORE()
 
 namespace st {
 
@@ -61,19 +62,61 @@ struct Renderer
 
 static Renderer renderer;
 
-// it's a hassle
-// implemented in common.cpp
-extern void _sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		       uint32 line_nr, const char* filename_or_null, void* user_data);
+static inline sg_color tr_color_to_sg_color(tr::Color color)
+{
+	auto colorf = static_cast<tr::Vec4<float32>>(color);
+	return {colorf.x, colorf.y, colorf.z, colorf.w};
+}
 
 } // namespace st
 
 void st::_init_renderer()
 {
+	// Man
+	st::engine.camera.position = {0, 0, -5};
+	st::engine.camera.projection = CameraProjection::ORTHOGRAPHIC;
+	st::engine.camera.zoom = 5;
+
 	sg_desc sg_desc = {};
 	sg_desc.environment = sglue_environment();
 	sg_desc.logger.func = st::_sokol_log;
 	sg_setup(&sg_desc);
+
+	// idfk what am i doing
+	sg_shader shader = sg_make_shader(basic_shader_desc(sg_query_backend()));
+
+	tr::Array<float32> verts = {
+		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, // bottom left
+		0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // bottom right
+		0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top
+	};
+
+	sg_buffer_desc buffer_desc = {};
+	buffer_desc.size = verts.len() * sizeof(float32);
+	// SG_RANGE doesn't work with tr::Array<T>
+	buffer_desc.data = {*verts, verts.len() * sizeof(float32)};
+	buffer_desc.usage.vertex_buffer = true;
+	buffer_desc.label = "triangle_vertices";
+	st::renderer.bindings.vertex_buffers[0] = sg_make_buffer(buffer_desc);
+
+	// first the alt-right pipeline
+	// now there's the render pipeline :(
+	sg_pipeline_desc pipeline_desc = {};
+
+	pipeline_desc.shader = shader;
+	pipeline_desc.layout.attrs[ATTR_basic_vs_position].format = SG_VERTEXFORMAT_FLOAT3;
+	pipeline_desc.layout.attrs[ATTR_basic_vs_color].format = SG_VERTEXFORMAT_FLOAT2;
+
+	pipeline_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
+	pipeline_desc.depth.write_enabled = true;
+
+	pipeline_desc.label = "triangle_pipeline";
+	st::renderer.pipeline = sg_make_pipeline(pipeline_desc);
+
+	// what the fuck is a render pass
+	st::renderer.pass_action.colors[0].load_action = SG_LOADACTION_CLEAR;
+	st::renderer.pass_action.colors[0].clear_value =
+		tr_color_to_sg_color(tr::Color::rgb(0x06062d)); // color fresh from my ass <3
 }
 
 void st::_free_renderer()
@@ -90,6 +133,14 @@ void st::_draw()
 
 	sg_apply_pipeline(st::renderer.pipeline);
 	sg_apply_bindings(st::renderer.bindings);
+
+	// we do have to update the uniforms
+	vs_params_t uniform = {};
+	uniform.u_model = tr::Matrix4x4::identity();
+	uniform.u_view = Camera::current().view_matrix();
+	uniform.u_projection = Camera::current().projection_matrix();
+	sg_apply_uniforms(UB_vs_params, SG_RANGE(uniform));
+
 	sg_draw(0, 3, 1);
 
 #ifdef ST_IMGUI
@@ -99,38 +150,3 @@ void st::_draw()
 	sg_end_pass();
 	sg_commit();
 }
-
-void st::init_triangle()
-{
-	// idfk what am i doing
-	sg_shader shader = sg_make_shader(basic_shader_desc(sg_query_backend()));
-
-	tr::Array<float32> verts = {
-		-0.5f, -0.5f, 0.0f, // bottom left
-		0.5f,  -0.5f, 0.0f, // bottom right
-		0.0f,  0.5f,  0.0f, // top
-	};
-
-	sg_buffer_desc buffer_desc = {};
-	buffer_desc.size = verts.len() * sizeof(float32);
-	// SG_RANGE doesn't work with tr::Array<T>
-	buffer_desc.data = {*verts, verts.len() * sizeof(float32)};
-	buffer_desc.label = "triangle_vertices";
-	st::renderer.bindings.vertex_buffers[0] = sg_make_buffer(buffer_desc);
-
-	// first the alt-right pipeline
-	// now there's the render pipeline :(
-	sg_pipeline_desc pipeline_desc = {};
-	pipeline_desc.shader = shader;
-	pipeline_desc.layout.attrs[ATTR_basic_position].format = SG_VERTEXFORMAT_FLOAT3;
-	pipeline_desc.label = "triangle_pipeline";
-	st::renderer.pipeline = sg_make_pipeline(pipeline_desc);
-
-	// what the fuck is a render pass
-	st::renderer.pass_action.colors[0].load_action = SG_LOADACTION_CLEAR;
-	st::renderer.pass_action.colors[0].clear_value = {0, 0, 0, 1};
-}
-
-void st::draw_triangle() {}
-
-void st::free_triangle() {}

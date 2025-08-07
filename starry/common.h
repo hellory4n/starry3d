@@ -36,6 +36,8 @@
 #include <trippin/memory.h>
 #include <trippin/string.h>
 
+#include "starry/world.h"
+
 // make sure there's always ST_WINDOWS/ST_LINUX/etc defined
 // *bsd should usually check for linux
 // TODO does *bsd work?
@@ -57,13 +59,13 @@
 // apple, android, and emscripten use clang so it should work
 // TODO support them?
 #ifdef __APPLE__
-	#warning Apple OSes are not officially supported
+	#warning "Apple OSes are not officially supported"
 #endif
 #ifdef __ANDROID__
-	#warning Android is not officially supported
+	#warning "Android is not officially supported"
 #endif
 #ifdef __EMSCRIPTEN__
-	#warning Emscripten is not officially supported
+	#warning "Emscripten is not officially supported"
 #endif
 
 namespace st {
@@ -279,6 +281,10 @@ struct Starry3D
 	Modifiers current_modifiers = {};
 	tr::Vec2<float64> mouse_position = {};
 	tr::Vec2<float64> relative_mouse_position = {};
+	tr::Vec2<uint32> window_size = {};
+
+	// world
+	Camera camera = {};
 };
 
 // This is where the engine's internal state goes. You probably shouldn't use this directly.
@@ -336,6 +342,10 @@ float64 delta_time_sec();
 
 // Gets the amount of frames per second.
 float64 fps();
+
+// Internal function so sokol uses libtrippin's logging functions :)
+void _sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
+		uint32 line_nr, const char* filename_or_null, void* user_data);
 
 } // namespace st
 
