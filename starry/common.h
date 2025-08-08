@@ -281,7 +281,7 @@ struct Starry3D
 	Modifiers current_modifiers = {};
 	tr::Vec2<float32> mouse_position = {};
 	tr::Vec2<float32> relative_mouse_position = {};
-	bool moved_this_frame = false;
+	bool mouse_moved_this_frame = false;
 	tr::Vec2<uint32> window_size = {};
 
 	// world

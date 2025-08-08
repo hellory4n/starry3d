@@ -155,8 +155,8 @@ static void st::_init()
 static void st::_update()
 {
 	// uh
-	if (!st::engine.moved_this_frame) st::engine.relative_mouse_position = {};
-	st::engine.moved_this_frame = false;
+	if (!st::engine.mouse_moved_this_frame) st::engine.relative_mouse_position = {};
+	st::engine.mouse_moved_this_frame = false;
 
 #ifdef ST_IMGUI
 	st::imgui::update();
@@ -267,7 +267,7 @@ static void st::_on_event(const sapp_event* event)
 	case SAPP_EVENTTYPE_MOUSE_MOVE:
 		st::engine.mouse_position = {event->mouse_x, event->mouse_y};
 		st::engine.relative_mouse_position = {event->mouse_dx, event->mouse_dy};
-		st::engine.moved_this_frame = true;
+		st::engine.mouse_moved_this_frame = true;
 		st::engine.current_modifiers =
 			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
