@@ -154,6 +154,10 @@ static void st::_init()
 
 static void st::_update()
 {
+	// uh
+	if (!st::engine.moved_this_frame) st::engine.relative_mouse_position = {};
+	st::engine.moved_this_frame = false;
+
 #ifdef ST_IMGUI
 	st::imgui::update();
 #endif
@@ -263,6 +267,7 @@ static void st::_on_event(const sapp_event* event)
 	case SAPP_EVENTTYPE_MOUSE_MOVE:
 		st::engine.mouse_position = {event->mouse_x, event->mouse_y};
 		st::engine.relative_mouse_position = {event->mouse_dx, event->mouse_dy};
+		st::engine.moved_this_frame = true;
 		st::engine.current_modifiers =
 			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
@@ -359,12 +364,12 @@ bool st::is_mouse_not_pressed(st::MouseButton btn)
 	       InputState::State::NOT_PRESSED;
 }
 
-tr::Vec2<float64> st::mouse_position()
+tr::Vec2<float32> st::mouse_position()
 {
 	return st::engine.mouse_position;
 }
 
-tr::Vec2<float64> st::relative_mouse_position()
+tr::Vec2<float32> st::relative_mouse_position()
 {
 	return st::engine.relative_mouse_position;
 }
@@ -374,9 +379,24 @@ st::Modifiers st::modifiers()
 	return st::engine.current_modifiers;
 }
 
-void st::set_mouse_enabled(bool val)
+void st::set_mouse_visible(bool val)
 {
 	sapp_show_mouse(val);
+}
+
+bool st::is_mouse_visible()
+{
+	return sapp_mouse_shown();
+}
+
+void st::lock_mouse(bool val)
+{
+	sapp_lock_mouse(val);
+}
+
+bool st::is_mouse_locked()
+{
+	return sapp_mouse_locked();
 }
 
 float64 st::time_sec()

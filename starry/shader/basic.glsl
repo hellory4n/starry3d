@@ -31,6 +31,7 @@
 @ctype vec4 tr::Vec4<float32>
 
 @vs vs
+@hlsl_options flip_vert_y
 in vec3 vs_position;
 in vec4 vs_color;
 

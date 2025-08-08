@@ -40,6 +40,10 @@ enum class CameraProjection : uint8
 
 struct Camera
 {
+	// idk man
+	static constexpr tr::Vec3<float32> FRONT = {0, 0, -1};
+	static constexpr tr::Vec3<float32> UP = {0, 1, 0};
+
 	tr::Vec3<float32> position = {};
 	// In degrees
 	tr::Vec3<float32> rotation = {};

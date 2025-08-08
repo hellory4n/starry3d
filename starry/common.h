@@ -279,8 +279,9 @@ struct Starry3D
 	tr::Array<InputState> key_state = {};
 	tr::Array<InputState> mouse_state = {};
 	Modifiers current_modifiers = {};
-	tr::Vec2<float64> mouse_position = {};
-	tr::Vec2<float64> relative_mouse_position = {};
+	tr::Vec2<float32> mouse_position = {};
+	tr::Vec2<float32> relative_mouse_position = {};
+	bool moved_this_frame = false;
 	tr::Vec2<uint32> window_size = {};
 
 	// world
@@ -317,10 +318,10 @@ bool is_mouse_held(MouseButton btn);
 bool is_mouse_not_pressed(MouseButton btn);
 
 // Returns the mouse position in pixels (0, 0 is the top left)
-tr::Vec2<float64> mouse_position();
+tr::Vec2<float32> mouse_position();
 
 // Returns the relative mouse position since last frame, in pixels (aligned towards the top left)
-tr::Vec2<float64> relative_mouse_position();
+tr::Vec2<float32> relative_mouse_position();
 
 // TODO mouse_scroll()
 
@@ -328,8 +329,17 @@ tr::Vec2<float64> relative_mouse_position();
 // was moved.
 Modifiers modifiers();
 
-// If false, the mouse gets disabled, which enables raw mouse input.
-void set_mouse_enabled(bool val);
+// Self-explanatory
+void set_mouse_visible(bool val);
+
+// Self-explanatory
+bool is_mouse_visible();
+
+// Traps the player's mouse in eternal purgatory (the window). Useful for FPS controllers
+void lock_mouse(bool val);
+
+// Yeah.
+bool is_mouse_locked();
 
 // Gets the time since the window started, in seconds
 float64 time_sec();
