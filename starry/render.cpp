@@ -86,9 +86,9 @@ void st::_init_renderer()
 	sg_shader shader = sg_make_shader(basic_shader_desc(sg_query_backend()));
 
 	tr::Array<float32> verts = {
-		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, // bottom left
-		0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // bottom right
 		0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top
+		0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // bottom right
+		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, // bottom left
 	};
 
 	sg_buffer_desc buffer_desc = {};
@@ -108,6 +108,7 @@ void st::_init_renderer()
 
 	pipeline_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
 	pipeline_desc.depth.write_enabled = true;
+	pipeline_desc.cull_mode = SG_CULLMODE_BACK;
 
 	pipeline_desc.label = "triangle_pipeline";
 	st::renderer.pipeline = sg_make_pipeline(pipeline_desc);
