@@ -32,6 +32,7 @@
 #include "starry/common.h" // IWYU pragma: keep
 
 // :(
+// TODO this whole file is a mess and sucks
 TR_GCC_IGNORE_WARNING(-Wold-style-cast)
 TR_GCC_IGNORE_WARNING(-Wimplicit-int-conversion)
 TR_GCC_IGNORE_WARNING(-Wcast-qual)
@@ -55,7 +56,9 @@ namespace st {
 // didn't want to include sokol in common.hpp
 struct Renderer
 {
-	sg_pipeline pipeline = {};
+	tr::MaybePtr<sg_pipeline> pipeline = {};
+	sg_pipeline basic_pipeline = {};
+
 	sg_bindings bindings = {};
 	sg_pass_action pass_action = {};
 };
@@ -66,6 +69,27 @@ static inline sg_color tr_color_to_sg_color(tr::Color color)
 {
 	auto colorf = static_cast<tr::Vec4<float32>>(color);
 	return {colorf.x, colorf.y, colorf.z, colorf.w};
+}
+
+static void make_basic_pipeline()
+{
+	// idfk what am i doing
+	sg_shader shader = sg_make_shader(basic_shader_desc(sg_query_backend()));
+
+	sg_pipeline_desc pipeline_desc = {};
+
+	pipeline_desc.shader = shader;
+	pipeline_desc.layout.attrs[ATTR_basic_vs_position].format = SG_VERTEXFORMAT_FLOAT3;
+	pipeline_desc.layout.attrs[ATTR_basic_vs_color].format = SG_VERTEXFORMAT_FLOAT4;
+
+	pipeline_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
+	pipeline_desc.depth.write_enabled = true;
+	// pipeline_desc.cull_mode = SG_CULLMODE_BACK;
+	pipeline_desc.cull_mode = SG_CULLMODE_NONE;
+	pipeline_desc.face_winding = SG_FACEWINDING_CCW;
+
+	pipeline_desc.label = "basic_pipeline";
+	st::renderer.basic_pipeline = sg_make_pipeline(pipeline_desc);
 }
 
 } // namespace st
@@ -82,9 +106,6 @@ void st::_init_renderer()
 	sg_desc.logger.func = st::_sokol_log;
 	sg_setup(&sg_desc);
 
-	// idfk what am i doing
-	sg_shader shader = sg_make_shader(basic_shader_desc(sg_query_backend()));
-
 	tr::Array<float32> verts = {
 		0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top
 		0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // bottom right
@@ -100,18 +121,9 @@ void st::_init_renderer()
 
 	// first the alt-right pipeline
 	// now there's the render pipeline :(
-	sg_pipeline_desc pipeline_desc = {};
-
-	pipeline_desc.shader = shader;
-	pipeline_desc.layout.attrs[ATTR_basic_vs_position].format = SG_VERTEXFORMAT_FLOAT3;
-	pipeline_desc.layout.attrs[ATTR_basic_vs_color].format = SG_VERTEXFORMAT_FLOAT4;
-
-	pipeline_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
-	pipeline_desc.depth.write_enabled = true;
-	pipeline_desc.cull_mode = SG_CULLMODE_BACK;
-
-	pipeline_desc.label = "triangle_pipeline";
-	st::renderer.pipeline = sg_make_pipeline(pipeline_desc);
+	st::make_basic_pipeline();
+	// that's how you set the current pipeline
+	st::renderer.pipeline = st::renderer.basic_pipeline;
 
 	// what the fuck is a render pass
 	st::renderer.pass_action.colors[0].load_action = SG_LOADACTION_CLEAR;
@@ -131,7 +143,7 @@ void st::_draw()
 	pass.swapchain = sglue_swapchain();
 	sg_begin_pass(pass);
 
-	sg_apply_pipeline(st::renderer.pipeline);
+	sg_apply_pipeline(st::renderer.pipeline.unwrap_ref());
 	sg_apply_bindings(st::renderer.bindings);
 
 	// we do have to update the uniforms

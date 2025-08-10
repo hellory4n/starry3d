@@ -25,13 +25,14 @@
  *
  */
 
+// compile with: ./sokol-shdc -i starry/shader/basic.glsl -o starry/shader/basic.glsl.h -l glsl430
+
 @ctype mat4 tr::Matrix4x4
 @ctype vec2 tr::Vec2<float32>
 @ctype vec3 tr::Vec3<float32>
 @ctype vec4 tr::Vec4<float32>
 
 @vs vs
-@hlsl_options flip_vert_y
 in vec3 vs_position;
 in vec4 vs_color;
 

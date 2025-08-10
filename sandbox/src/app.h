@@ -3,7 +3,7 @@
 
 class Sandbox : public st::Application
 {
-	static constexpr float32 MOUSE_SENSITIVITY = 0.1f;
+	static constexpr float32 MOUSE_SENSITIVITY = 0.25f;
 	static constexpr float32 PLAYER_SPEED = 5.0f;
 
 	bool _ui_enabled = true;

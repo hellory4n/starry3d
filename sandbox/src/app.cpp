@@ -22,6 +22,7 @@ tr::Result<void, const tr::Error&> Sandbox::update(float64 dt)
 
 	// hlep
 	if (st::is_key_just_pressed(st::Key::ESCAPE)) _ui_enabled = !_ui_enabled;
+	// st::set_mouse_visible(_ui_enabled);
 	st::lock_mouse(!_ui_enabled);
 
 	player_controller(dt);

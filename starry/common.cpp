@@ -280,6 +280,11 @@ static void st::_on_event(const sapp_event* event)
 		st::engine.window_size = {static_cast<uint32>(event->window_width),
 					  static_cast<uint32>(event->window_height)};
 		break;
+
+	case SAPP_EVENTTYPE_FOCUSED:
+		st::lock_mouse(false);
+		st::set_mouse_visible(true);
+		break;
 	}
 	TR_GCC_RESTORE();
 }
