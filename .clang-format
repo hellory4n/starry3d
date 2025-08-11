@@ -1,14 +1,16 @@
-BasedOnStyle: LLVM
+BasedOnStyle: WebKit
 Language: Cpp
 Standard: c++17
+Cpp11BracedListStyle: true
 
-# one of the most controversial issues for unemployed people
+# very controversial for unemployed people
 UseTab: Always
 IndentWidth: 8
 TabWidth: 8
 ContinuationIndentWidth: 8
 ConstructorInitializerIndentWidth: 8
 IndentPPDirectives: BeforeHash
+NamespaceIndentation: Inner
 
 # spacing
 SpaceBeforeParens: ControlStatements
@@ -20,6 +22,14 @@ IndentAccessModifiers: false
 AccessModifierOffset: -8
 BreakAfterAttributes: Always
 AlignOperands: Align
+BreakTemplateDeclarations: Yes
+AlignAfterOpenBracket: BlockIndent
+AlignArrayOfStructures: Right
+AlignEscapedNewlines: LeftWithLastLine
+EmptyLineBeforeAccessModifier: Always
+PackConstructorInitializers: BinPack
+QualifierAlignment: Left
+SpaceAfterTemplateKeyword: false
 
 # slightly modified K&R style
 BreakBeforeBraces: Custom
@@ -37,8 +47,9 @@ BraceWrapping:
 # alternative single line styles
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: All
 AllowShortCaseLabelsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
 IndentCaseLabels: false
 
 # includes
@@ -58,8 +69,16 @@ IncludeCategories:
 PointerAlignment: Left
 ColumnLimit: 100
 AlignConsecutiveMacros: false
+InsertBraces: true
+InsertNewlineAtEOF: true
+LineEnding: LF
 
 # stop busting
 WhitespaceSensitiveMacros:
   - TR_GCC_IGNORE_WARNING
   - TR_GCC_PRAGMA
+
+# TR_TRY_ASSIGN is a quirky macro so we have to tell clang-format about that
+# TODO there's probably a way to make this nicer but i hate yaml
+Macros:
+  - TR_TRY_ASSIGN(Var, Expr)=const auto UNIQUE_NAME = (Expr); if (!UNIQUE_NAME.is_valid()) { return UNIQUE_NAME.unwrap_err(); } Var = UNIQUE_NAME.unwrap()
