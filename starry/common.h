@@ -363,7 +363,9 @@ void _sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_o
 // really should only be used by starry3d itself
 // TODO you should probably use SOKOL_D3D11 on windows but it's fucking with everything
 // i LOVE microsoft
-#if defined(ST_APPLE)
+#if defined(ST_WINDOWS)
+	#define SOKOL_D3D11
+#elif defined(ST_APPLE)
 	#define SOKOL_METAL
 #else
 	#define SOKOL_GLCORE

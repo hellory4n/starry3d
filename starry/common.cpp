@@ -39,9 +39,13 @@ TR_GCC_IGNORE_WARNING(-Wold-style-cast)
 TR_GCC_IGNORE_WARNING(-Wshorten-64-to-32)
 TR_GCC_IGNORE_WARNING(-Wcast-qual)
 TR_GCC_IGNORE_WARNING(-Wconversion)
+TR_GCC_IGNORE_WARNING(-Wunknown-pragmas)
+TR_GCC_IGNORE_WARNING(-Wextra) // this is why clang is better
 #include <sokol/sokol_app.h>
 #define SOKOL_TIME_IMPL
 #include <sokol/sokol_time.h>
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
 TR_GCC_RESTORE()
 TR_GCC_RESTORE()
 TR_GCC_RESTORE()
@@ -109,6 +113,7 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 
 static void st::_init()
 {
+	// TODO this function is kinda ugly
 	st::engine.key_state =
 		tr::Array<InputState>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
 	st::engine.mouse_state = tr::Array<InputState>(st::engine.arena,
@@ -130,20 +135,43 @@ static void st::_init()
 	// this should only happen on panic (sokol will handle it when quitting normally)
 	// TODO i updated tr::call_on_quit for this but i can't be bothered to make it work like
 	// that
-	tr::call_on_quit([](bool _) {
+	tr::call_on_quit([](bool) {
 		if (!st::engine.exiting) {
 			st::_free();
 		}
 	});
 
 	tr::info("initialized starry3d %s", st::VERSION);
+	// some debug info
+	// TODO sokol supports more but i doubt i'll support them any time soon
+#ifdef ST_WINDOWS
+	tr::info("windowing backend: Win32");
+#elif defined(ST_APPLE)
+	tr::info("windowing backend: Cocoa");
+#else
+	tr::info("windowing backend: X11");
+#endif
+
+#ifdef SOKOL_GLCORE
+	tr::info("graphics backend: OpenGL Core");
+#elif defined(SOKOL_GLES)
+	tr::info("graphics backend: OpenGL ES");
+#elif defined(SOKOL_D3D11)
+	tr::info("graphics bakend: Direct3D 11");
+#elif defined(SOKOL_METAL)
+	tr::info("graphics backend: Metal");
+#endif
+
 	tr::info("app:// pointing to %s", *tr::path(tr::scratchpad(), "app://"));
 	tr::info("user:// pointing to %s", *tr::path(tr::scratchpad(), "user://"));
 
-	// make sure user:// exists
+	// make sure user:// and app:// exists
 	tr::String userdir = tr::path(tr::scratchpad(), "user://");
 	tr::create_dir(userdir).unwrap();
 	TR_ASSERT_MSG(tr::file_exists(userdir), "couldn't create user://");
+	TR_ASSERT_MSG(
+		tr::file_exists(tr::path(tr::scratchpad(), "app://")),
+		"app:// is pointing to an invalid directory, are you sure this is the right path?");
 
 	st::_init_renderer();
 #ifdef ST_IMGUI

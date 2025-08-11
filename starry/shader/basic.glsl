@@ -25,7 +25,7 @@
  *
  */
 
-// compile with: ./sokol-shdc -i starry/shader/basic.glsl -o starry/shader/basic.glsl.h -l glsl430
+// compile with: ./sokol-shdc -i starry/shader/basic.glsl -o starry/shader/basic.glsl.h -l glsl430:hlsl5
 
 @ctype mat4 tr::Matrix4x4
 @ctype vec2 tr::Vec2<float32>

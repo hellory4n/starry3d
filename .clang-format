@@ -62,3 +62,4 @@ AlignConsecutiveMacros: false
 # stop busting
 WhitespaceSensitiveMacros:
   - TR_GCC_IGNORE_WARNING
+  - TR_GCC_PRAGMA
