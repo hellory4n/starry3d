@@ -93,6 +93,7 @@ Add these source files: (relative to where you put starry3d)
 - `starry/common.cpp`
 - `starry/render.cpp`
 - `starry/world.cpp`
+- `starry/asset.cpp`
 - `thirdparty/libtrippin/trippin/collection.cpp`
 - `thirdparty/libtrippin/trippin/common.cpp`
 - `thirdparty/libtrippin/trippin/iofs.cpp`

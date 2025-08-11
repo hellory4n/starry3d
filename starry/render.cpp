@@ -37,16 +37,16 @@ TR_GCC_IGNORE_WARNING(-Wold-style-cast)
 TR_GCC_IGNORE_WARNING(-Wimplicit-int-conversion)
 TR_GCC_IGNORE_WARNING(-Wcast-qual)
 TR_GCC_IGNORE_WARNING(-Wextra) // this is why clang is better
-#define SOKOL_GFX_IMPL
+#define SOKOL_GFX_IMPL // sokol_gfx.h is included in render.h
 #include <sokol/sokol_app.h>
-#include <sokol/sokol_gfx.h>
-#define SOKOL_GLUE_IMPL
-#include <sokol/sokol_glue.h>
 
 #ifdef ST_IMGUI
 	#include "starry/optional/imgui.h"
 #endif
 #include "starry/render.h"
+#define SOKOL_GLUE_IMPL
+#include <sokol/sokol_glue.h>
+
 #include "starry/shader/basic.glsl.h"
 TR_GCC_RESTORE()
 TR_GCC_RESTORE()
@@ -55,17 +55,8 @@ TR_GCC_RESTORE()
 
 namespace st {
 
-// didn't want to include sokol in common.hpp
-struct Renderer
-{
-	tr::MaybePtr<sg_pipeline> pipeline = {};
-	sg_pipeline basic_pipeline = {};
-
-	sg_bindings bindings = {};
-	sg_pass_action pass_action = {};
-};
-
-static Renderer renderer;
+// it has to live somewhere
+Renderer renderer;
 
 static inline sg_color tr_color_to_sg_color(tr::Color color)
 {
@@ -73,7 +64,7 @@ static inline sg_color tr_color_to_sg_color(tr::Color color)
 	return {colorf.x, colorf.y, colorf.z, colorf.w};
 }
 
-static void make_basic_pipeline()
+static inline void make_basic_pipeline()
 {
 	// idfk what am i doing
 	sg_shader shader = sg_make_shader(basic_shader_desc(sg_query_backend()));

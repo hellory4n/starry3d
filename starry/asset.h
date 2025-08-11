@@ -2,9 +2,8 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * starry/render.h
- * The renderer duh. This is an internal header that shouldn't have to be
- * used by the application itself.
+ * starry/asset.h
+ * Manages loading assets
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
  *
@@ -26,31 +25,35 @@
  *
  */
 
-#ifndef _ST_RENDER_H
-#define _ST_RENDER_H
+#ifndef _ST_ASSET_H
+#define _ST_ASSET_H
 
 #include <trippin/common.h>
-
-#include <sokol/sokol_gfx.h>
+#include <trippin/error.h>
+#include <trippin/math.h>
 
 namespace st {
 
-// The renderer's state. Not in the main engine
-struct Renderer
+// Image on the GPU
+class Texture
 {
-	tr::MaybePtr<sg_pipeline> pipeline = {};
-	sg_pipeline basic_pipeline = {};
+	// an sg_image is just an uint32 for the id
+	// so no need to include sokol here
+	uint32 _sg_image_id = 0;
+	uint32 _width = 0;
+	uint32 _height = 0;
 
-	sg_bindings bindings = {};
-	sg_pass_action pass_action = {};
+public:
+	// Loads an texture and puts it into a cache thing. If it was already loaded, then it
+	// returns the existing texture.
+	static tr::Result<const Texture&, const tr::Error&> load(tr::String path);
+
+	// Returns the internal texture handle.
+	uint32 handle() const;
+
+	// Returns the texture's size in pixels
+	tr::Vec2<uint32> size() const;
 };
-
-extern Renderer renderer;
-
-// internal :)
-void _init_renderer();
-void _free_renderer();
-void _draw();
 
 } // namespace st
 

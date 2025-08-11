@@ -36,6 +36,7 @@
 #include <trippin/memory.h>
 #include <trippin/string.h>
 
+#include "starry/asset.h"
 #include "starry/world.h"
 
 // make sure there's always ST_WINDOWS/ST_LINUX/etc defined
@@ -93,10 +94,10 @@ enum class Key : uint16
 	UNKNOWN = 0,
 	SPACE = 32,
 	APOSTROPHE = 39, // '
-	COMMA = 44,	 // ,
-	MINUS = 45,	 // -
-	PERIOD = 46,	 // .
-	SLASH = 47,	 // /
+	COMMA = 44, // ,
+	MINUS = 45, // -
+	PERIOD = 46, // .
+	SLASH = 47, // /
 	NUM_0 = 48,
 	NUM_1 = 49,
 	NUM_2 = 50,
@@ -108,7 +109,7 @@ enum class Key : uint16
 	NUM_8 = 56,
 	NUM_9 = 57,
 	SEMICOLON = 59, // ;
-	EQUAL = 61,	// =
+	EQUAL = 61, // =
 	A = 65,
 	B = 66,
 	C = 67,
@@ -135,10 +136,10 @@ enum class Key : uint16
 	X = 88,
 	Y = 89,
 	Z = 90,
-	LEFT_BRACKET = 91,     // [
-	BACKSLASH = 92,	       /* \ why do multiline // comments exist? */
-	RIGHT_BRACKET = 93,    // ]
-	GRAVE_ACCENT = 96,     // `
+	LEFT_BRACKET = 91, // [
+	BACKSLASH = 92, /* \ why do multiline // comments exist? */
+	RIGHT_BRACKET = 93, // ]
+	GRAVE_ACCENT = 96, // `
 	INTERNATIONAL_1 = 161, // not in US keyboards
 	INTERNATIONAL_2 = 162, // not in US keyboards
 	ESCAPE = 256,
@@ -229,8 +230,8 @@ enum class Modifiers : uint16
 {
 	NONE = 0x0,
 	SHIFT = 0x1, // left or right shift
-	CTRL = 0x2,  // left or right ctrl
-	ALT = 0x4,   // left or right alt
+	CTRL = 0x2, // left or right ctrl
+	ALT = 0x4, // left or right alt
 	SUPER = 0x8, // left or right super key (also known as windows/meta)
 	LEFT_MOUSE_BUTTON = 0x100,
 	RIGHT_MOUSE_BUTTON = 0x200,
@@ -270,9 +271,11 @@ struct ApplicationSettings
 struct Starry3D
 {
 	tr::Arena arena = {};
+	tr::Arena asset_arena = {};
 	Application* application = nullptr;
 	ApplicationSettings settings = {};
 	// i wanted it to free on panic using libtrippin's `tr::call_on_quit` it's complicated
+	// TODO this sucks, fix it
 	bool exiting = false;
 
 	// input
@@ -286,6 +289,19 @@ struct Starry3D
 
 	// world
 	Camera camera = {};
+
+	// assets
+	tr::HashMap<tr::String, Texture> texture_cache = {};
+
+	// we do have to init everything that needs arenas
+	Starry3D()
+	{
+		key_state = tr::Array<InputState>(arena, static_cast<int>(st::Key::LAST) + 1);
+		mouse_state =
+			tr::Array<InputState>(arena, static_cast<int>(st::MouseButton::LAST) + 1);
+
+		texture_cache = tr::HashMap<tr::String, Texture>(asset_arena);
+	}
 };
 
 // This is where the engine's internal state goes. You probably shouldn't use this directly.
@@ -354,8 +370,10 @@ float64 delta_time_sec();
 float64 fps();
 
 // Internal function so sokol uses libtrippin's logging functions :)
-void _sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		uint32 line_nr, const char* filename_or_null, void* user_data);
+void _sokol_log(
+	const char* tag, uint32 level, uint32 item_id, const char* msg_or_null, uint32 line_nr,
+	const char* filename_or_null, void* user_data
+);
 
 } // namespace st
 

@@ -114,11 +114,6 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 static void st::_init()
 {
 	// TODO this function is kinda ugly
-	st::engine.key_state =
-		tr::Array<InputState>(st::engine.arena, static_cast<int>(st::Key::LAST) + 1);
-	st::engine.mouse_state = tr::Array<InputState>(st::engine.arena,
-						       static_cast<int>(st::MouseButton::LAST) + 1);
-
 	if (st::engine.settings.user_dir == "") {
 		st::engine.settings.user_dir = st::engine.settings.name;
 	}
@@ -171,7 +166,8 @@ static void st::_init()
 	TR_ASSERT_MSG(tr::file_exists(userdir), "couldn't create user://");
 	TR_ASSERT_MSG(
 		tr::file_exists(tr::path(tr::scratchpad(), "app://")),
-		"app:// is pointing to an invalid directory, are you sure this is the right path?");
+		"app:// is pointing to an invalid directory, are you sure this is the right path?"
+	);
 
 	st::_init_renderer();
 #ifdef ST_IMGUI
@@ -183,7 +179,9 @@ static void st::_init()
 static void st::_update()
 {
 	// uh
-	if (!st::engine.mouse_moved_this_frame) st::engine.relative_mouse_position = {};
+	if (!st::engine.mouse_moved_this_frame) {
+		st::engine.relative_mouse_position = {};
+	}
 	st::engine.mouse_moved_this_frame = false;
 
 #ifdef ST_IMGUI
@@ -197,7 +195,9 @@ static void st::_update()
 	for (auto [_, key] : st::engine.key_state) {
 		switch (key.state) {
 		case InputState::State::NOT_PRESSED:
-			if (key.pressed) key.state = InputState::State::JUST_PRESSED;
+			if (key.pressed) {
+				key.state = InputState::State::JUST_PRESSED;
+			}
 			break;
 
 		case InputState::State::JUST_PRESSED:
@@ -206,7 +206,9 @@ static void st::_update()
 			break;
 
 		case InputState::State::HELD:
-			if (!key.pressed) key.state = InputState::State::JUST_RELEASED;
+			if (!key.pressed) {
+				key.state = InputState::State::JUST_RELEASED;
+			}
 			break;
 
 		case InputState::State::JUST_RELEASED:
@@ -220,7 +222,9 @@ static void st::_update()
 	for (auto [_, mouse] : st::engine.mouse_state) {
 		switch (mouse.state) {
 		case InputState::State::NOT_PRESSED:
-			if (mouse.pressed) mouse.state = InputState::State::JUST_PRESSED;
+			if (mouse.pressed) {
+				mouse.state = InputState::State::JUST_PRESSED;
+			}
 			break;
 
 		case InputState::State::JUST_PRESSED:
@@ -229,7 +233,9 @@ static void st::_update()
 			break;
 
 		case InputState::State::HELD:
-			if (!mouse.pressed) mouse.state = InputState::State::JUST_RELEASED;
+			if (!mouse.pressed) {
+				mouse.state = InputState::State::JUST_RELEASED;
+			}
 			break;
 
 		case InputState::State::JUST_RELEASED:
@@ -305,8 +311,10 @@ static void st::_on_event(const sapp_event* event)
 		break;
 
 	case SAPP_EVENTTYPE_RESIZED:
-		st::engine.window_size = {static_cast<uint32>(event->window_width),
-					  static_cast<uint32>(event->window_height)};
+		st::engine.window_size = {
+			static_cast<uint32>(event->window_width),
+			static_cast<uint32>(event->window_height)
+		};
 		break;
 
 	case SAPP_EVENTTYPE_FOCUSED:
@@ -317,8 +325,10 @@ static void st::_on_event(const sapp_event* event)
 	TR_GCC_RESTORE();
 }
 
-void st::_sokol_log(const char* tag, uint32 level, uint32 item_id, const char* msg_or_null,
-		    uint32 line_nr, const char* filename_or_null, void* user_data)
+void st::_sokol_log(
+	const char* tag, uint32 level, uint32 item_id, const char* msg_or_null, uint32 line_nr,
+	const char* filename_or_null, void* user_data
+)
 {
 	// shut up
 	(void)tag;

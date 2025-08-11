@@ -30,6 +30,7 @@ EmptyLineBeforeAccessModifier: Always
 PackConstructorInitializers: BinPack
 QualifierAlignment: Left
 SpaceAfterTemplateKeyword: false
+BreakBeforeBinaryOperators: None
 
 # slightly modified K&R style
 BreakBeforeBraces: Custom
@@ -47,7 +48,7 @@ BraceWrapping:
 # alternative single line styles
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: All
+AllowShortFunctionsOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortLambdasOnASingleLine: All
 IndentCaseLabels: false
