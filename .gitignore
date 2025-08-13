@@ -16,8 +16,10 @@ build.ninja
 # the game has logs
 log.txt
 
-# man
+# editor-specific
 .vscode
+.idea
+.zed
 
 # why?
 .ninja_log

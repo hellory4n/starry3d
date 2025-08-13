@@ -18,6 +18,9 @@ indent_style = space
 indent_size = 2
 indent_style = space
 
+[*.json]
+indent_size = 4
+
 # windows bullshit :(
 [*.sln, *.vcxproj, *.bat]
 end_of_line = crlf

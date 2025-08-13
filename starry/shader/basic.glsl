@@ -34,9 +34,9 @@
 
 @vs vs
 in vec3 vs_position;
-in vec4 vs_color;
+in vec2 vs_texcoord;
 
-out vec4 fs_color;
+out vec2 fs_texcoord;
 
 layout(binding = 0) uniform vs_params {
 	mat4 u_model;
@@ -47,17 +47,21 @@ layout(binding = 0) uniform vs_params {
 void main()
 {
 	gl_Position = u_projection * u_view * u_model * vec4(vs_position, 1.0);
-	fs_color = vs_color;
+	fs_texcoord = vs_texcoord;
 }
 @end
 
 @fs fs
-in vec4 fs_color;
+in vec2 fs_texcoord;
 out vec4 frag_color;
+
+layout(binding = 0) uniform texture2D _u_texture;
+layout(binding = 0) uniform sampler _u_texture_smp;
+#define u_texture sampler2D(_u_texture, _u_texture_smp)
 
 void main()
 {
-	frag_color = fs_color;
+	frag_color = texture(u_texture, fs_texcoord);
 }
 @end
 
