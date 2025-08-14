@@ -343,7 +343,12 @@ void st::_sokol_log(
 		tr::panic("sokol panic (item id %u): %s", item_id, msg);
 		break;
 	case 1:
+// tr::panic is more useful than tr::error when developing the library
+#ifndef DEBUG
 		tr::error("sokol error (item id %u): %s", item_id, msg);
+#else
+		tr::panic("sokol error (item id %u): %s", item_id, msg);
+#endif
 		break;
 	case 2:
 		tr::warn("sokol warning (item id %u): %s", item_id, msg);

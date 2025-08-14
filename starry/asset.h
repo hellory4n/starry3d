@@ -48,11 +48,16 @@ public:
 	// returns the existing texture.
 	static tr::Result<const Texture&, const tr::Error&> load(tr::String path);
 
+	void free();
+
 	// Returns the internal texture handle.
 	uint32 handle() const;
 
 	// Returns the texture's size in pixels
 	tr::Vec2<uint32> size() const;
+
+	// Uses the texture :)
+	void bind(int32 slot) const;
 };
 
 } // namespace st

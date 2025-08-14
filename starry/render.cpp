@@ -29,7 +29,7 @@
 #include <trippin/math.h>
 #include <trippin/memory.h>
 
-#include "starry/common.h" // IWYU pragma: keep
+#include "starry/common.h"
 
 // :(
 // TODO this whole file is a mess and sucks
@@ -46,6 +46,7 @@ TR_GCC_IGNORE_WARNING(-Wextra) // this is why clang is better
 #include "starry/render.h"
 #define SOKOL_GLUE_IMPL
 #include <sokol/sokol_glue.h>
+#include <stb/stb_image.h>
 
 #include "starry/shader/basic.glsl.h"
 TR_GCC_RESTORE()
@@ -85,11 +86,24 @@ static inline void make_basic_pipeline()
 	st::renderer.basic_pipeline = sg_make_pipeline(pipeline_desc);
 }
 
+static sg_sampler_desc _global_sampler_desc = {};
+
 } // namespace st
 
 void st::_init_renderer()
 {
-	// Man
+	// YOU CAN'T EVEN GET TRUE TO BECOME 1????? LITERALLY 1984
+	// NOLINTBEGIN(readability-implicit-bool-conversion)
+	stbi_set_flip_vertically_on_load(true);
+	// NOLINTEND(readability-implicit-bool-conversion)
+
+	// yeah
+	st::_global_sampler_desc.wrap_u = SG_WRAP_REPEAT;
+	st::_global_sampler_desc.wrap_v = SG_WRAP_REPEAT;
+	st::_global_sampler_desc.min_filter = SG_FILTER_LINEAR;
+	st::_global_sampler_desc.mag_filter = SG_FILTER_LINEAR;
+	st::_global_sampler_desc.compare = SG_COMPAREFUNC_NEVER;
+
 	st::engine.camera.position = {0, 0, -5};
 	st::engine.camera.projection = CameraProjection::ORTHOGRAPHIC;
 	st::engine.camera.zoom = 5;
@@ -122,6 +136,15 @@ void st::_init_renderer()
 	st::renderer.pass_action.colors[0].load_action = SG_LOADACTION_CLEAR;
 	st::renderer.pass_action.colors[0].clear_value =
 		tr_color_to_sg_color(tr::Color::rgb(0x06062d)); // color fresh from my ass <3
+
+	// it screams in pain and agony if there's no texture set yet
+	// so we have to make some placeholder bullshit
+	sg_image placeholder_img = sg_alloc_image();
+	st::renderer.bindings.images[IMG__u_texture] = placeholder_img;
+	st::renderer.bindings.samplers[SMP__u_texture_smp] = sg_alloc_sampler();
+	sg_init_sampler(
+		st::renderer.bindings.samplers[SMP__u_texture_smp], &st::_global_sampler_desc
+	);
 }
 
 void st::_free_renderer()
@@ -154,4 +177,17 @@ void st::_draw()
 
 	sg_end_pass();
 	sg_commit();
+}
+
+tr::String st::RenderError::message() const
+{
+	// TODO could have more detail
+	switch (_type) {
+	case RenderErrorType::RESOURCE_CREATION_FAILED:
+		return "resource creation failed";
+	case RenderErrorType::RESOURCE_INVALID:
+		return "resource is invalid";
+	default:
+		return "error type seems to be invalid";
+	}
 }

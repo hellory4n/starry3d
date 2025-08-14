@@ -19,8 +19,7 @@
 
 - 2D support is nearly non-existent
 - Currently only Windows and Linux supported
-    - It does use [sokol](https://github.com/floooh/sokol) which is cross-platform, but I only tested Windows
-    and Linux
+    - It does use [sokol](https://github.com/floooh/sokol) which is cross-platform, but I only tested Windows and Linux
 
 ## Building
 
@@ -46,13 +45,10 @@ You need these installed:
 Now run `./configure.lua`
 
 Options:
-- Compilation mode (`debug`/`release`): release mode enables optimizations, while debug mode disables
-optimizations, enables debug symbols, and defines `DEBUG`/`_DEBUG`.
+- Compilation mode (`debug`/`release`): release mode enables optimizations, while debug mode disables optimizations, enables debug symbols, and defines `DEBUG`/`_DEBUG`.
 - Target platform (`windows`/`linux`): If compiling for windows, uses `mingw-w64-gcc` for cross-compiling.
-- Use a sanitizer: You usually don't need this option. This maps directly to a `-fsanitize=` flag, so e.g.
-`address` becomes `-fsanitize=address` for ASan.
-- Generate `compile_commands.json` (`y`/`n`): Generates a `compile_commands.json` file for IDEs (if using
-clangd) to use.
+- Use a sanitizer: You usually don't need this option. This maps directly to a `-fsanitize=` flag, so e.g. `address` becomes `-fsanitize=address` for ASan.
+- Generate `compile_commands.json` (`y`/`n`): Generates a `compile_commands.json` file for IDEs (if using clangd) to use.
 
 Now run `ninja` to compile. You'll now have an executable in `build/bin/sandbox`
 
@@ -246,19 +242,16 @@ int main(void)
 Now, to compile, first setup the project with `./configure.lua`
 
 Options:
-- Compilation mode (`debug`/`release`): release mode enables optimizations, while debug mode disables
-optimizations, enables debug symbols, and defines `DEBUG`/`_DEBUG`.
+- Compilation mode (`debug`/`release`): release mode enables optimizations, while debug mode disables optimizations, enables debug symbols, and defines `DEBUG`/`_DEBUG`.
 - Target platform (`windows`/`linux`): If compiling for windows, uses `mingw-w64-gcc` for cross-compiling.
-- Use a sanitizer: You usually don't need this option. This maps directly to a `-fsanitize=` flag, so e.g.
-`address` becomes `-fsanitize=address` for ASan.
-- Generate `compile_commands.json` (`y`/`n`): Generates a `compile_commands.json` file for IDEs (if using
-clangd) to use.
+- Use a sanitizer: It, well, uses a sanitizer. This maps directly to a `-fsanitize=` flag, so e.g. `address` becomes `-fsanitize=address` for ASan.
+- Generate `compile_commands.json` (`y`/`n`): Generates a `compile_commands.json` file for IDEs (if using clangd) to use.
 
 Now run `ninja` to compile. You'll now have an executable in `build/bin/`
 
 ## FAQ
 
-### Have you tried [game engine] you fucking moron
+### Have you tried \[game engine] you fucking moron
 
 No fuck off.
 

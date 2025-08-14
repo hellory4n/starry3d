@@ -29,8 +29,24 @@
 
 #include <trippin/iofs.h>
 
+#include "trippin/common.h"
+#include "trippin/log.h"
+#include "trippin/memory.h"
+
 #define STB_IMAGE_IMPLEMENTATION
+#include <sokol/sokol_gfx.h>
+// jesus
+TR_GCC_IGNORE_WARNING(-Wold-style-cast)
+TR_GCC_IGNORE_WARNING(-Wsign-conversion)
+TR_GCC_IGNORE_WARNING(-Wcast-qual)
+TR_GCC_IGNORE_WARNING(-Wimplicit-fallthrough)
+TR_GCC_IGNORE_WARNING(-Wimplicit-int-conversion)
 #include <stb/stb_image.h>
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
 
 #include "starry/common.h"
 #include "starry/render.h"
@@ -43,6 +59,7 @@ tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String pa
 	}
 
 	// first load file
+	// TODO sokol_fetch is a thing dumbass
 	TR_TRY_ASSIGN(
 		tr::File& file,
 		tr::File::open(st::engine.asset_arena, path, tr::FileMode::READ_BINARY)
@@ -67,8 +84,15 @@ tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String pa
 	desc.pixel_format = SG_PIXELFORMAT_RGBA8;
 	desc.data.subimage[0][0].ptr = pixels;
 	desc.data.subimage[0][0].size = static_cast<usize>(width * height * CHANNELS);
-	// sg_init_image(st::renderer.bindings.images[IMG])
 
+	sg_image image = sg_make_image(desc);
+	if (sg_query_image_state(image) != SG_RESOURCESTATE_VALID) {
+		return tr::scratchpad().make<RenderError>(
+			RenderErrorType::RESOURCE_CREATION_FAILED
+		);
+	}
+
+	// TODO libtrippin v2.5 has TR_DEFER now
 	stbi_image_free(pixels);
 
 	st::Texture texture = {};
@@ -80,6 +104,14 @@ tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String pa
 	return st::engine.texture_cache[path];
 }
 
+void st::Texture::free()
+{
+	if (sg_query_image_state(sg_image{_sg_image_id}) == SG_RESOURCESTATE_VALID) {
+		sg_destroy_image(sg_image{_sg_image_id});
+	}
+	_sg_image_id = SG_INVALID_ID;
+}
+
 uint32 st::Texture::handle() const
 {
 	return _sg_image_id;
@@ -88,4 +120,14 @@ uint32 st::Texture::handle() const
 tr::Vec2<uint32> st::Texture::size() const
 {
 	return {_width, _height};
+}
+
+void st::Texture::bind(int32 slot) const
+{
+	TR_ASSERT_MSG(
+		slot < SG_MAX_IMAGE_BINDSLOTS,
+		"can't bind texture to slot %i; only %i texture bind slots available", slot,
+		SG_MAX_IMAGE_BINDSLOTS
+	);
+	st::renderer.bindings.images[slot] = sg_image{_sg_image_id};
 }

@@ -30,8 +30,11 @@
 #define _ST_RENDER_H
 
 #include <trippin/common.h>
+#include <trippin/error.h>
 
 #include <sokol/sokol_gfx.h>
+
+#include "trippin/string.h"
 
 namespace st {
 
@@ -46,6 +49,27 @@ struct Renderer
 };
 
 extern Renderer renderer;
+
+enum class RenderErrorType
+{
+	UNKNOWN,
+	RESOURCE_CREATION_FAILED,
+	RESOURCE_INVALID,
+};
+
+// GPUs are great, until they suck.
+class RenderError : public tr::Error
+{
+	RenderErrorType _type;
+
+public:
+	RenderError(RenderErrorType type)
+		: _type(type)
+	{
+	}
+
+	tr::String message() const override;
+};
 
 // internal :)
 void _init_renderer();

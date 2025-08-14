@@ -31,19 +31,20 @@ PackConstructorInitializers: BinPack
 QualifierAlignment: Left
 SpaceAfterTemplateKeyword: false
 BreakBeforeBinaryOperators: None
+SpaceBeforeCpp11BracedList: false
 
 # slightly modified K&R style
 BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterClass: true
-  AfterStruct: true
-  AfterEnum: true
-  AfterNamespace: false
-  AfterFunction: true
-  BeforeElse: true
-  BeforeCatch: true
-  AfterControlStatement: false
-  IndentBraces: false
+        AfterClass: true
+        AfterStruct: true
+        AfterEnum: true
+        AfterNamespace: false
+        AfterFunction: true
+        BeforeElse: true
+        BeforeCatch: true
+        AfterControlStatement: false
+        IndentBraces: false
 
 # alternative single line styles
 AllowShortIfStatementsOnASingleLine: true
@@ -57,14 +58,14 @@ IndentCaseLabels: false
 SortIncludes: true
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '^<[A-Za-z0-9_]+>$' # stdlib, e.g. `<functional>`, `<cstdio>`
-    Priority: 1
-  - Regex: '^<trippin/.*\.h>$' # that's our stdlib so it goes after that
-    Priority: 2
-  - Regex: '^<.*\.h>$'         # other third-party headers
-    Priority: 3
-  - Regex: '^".*"$'            # headers from the project itself
-    Priority: 4
+        - Regex: "^<[A-Za-z0-9_]+>$" # stdlib, e.g. `<functional>`, `<cstdio>`
+          Priority: 1
+        - Regex: '^<trippin/.*\.h>$' # that's our stdlib so it goes after that
+          Priority: 2
+        - Regex: '^<.*\.h>$' # other third-party headers
+          Priority: 3
+        - Regex: '^".*"$' # headers from the project itself
+          Priority: 4
 
 # misc
 PointerAlignment: Left
@@ -76,10 +77,10 @@ LineEnding: LF
 
 # stop busting
 WhitespaceSensitiveMacros:
-  - TR_GCC_IGNORE_WARNING
-  - TR_GCC_PRAGMA
+        - TR_GCC_IGNORE_WARNING
+        - TR_GCC_PRAGMA
 
 # TR_TRY_ASSIGN is a quirky macro so we have to tell clang-format about that
 # TODO there's probably a way to make this nicer but i hate yaml
 Macros:
-  - TR_TRY_ASSIGN(Var, Expr)=const auto UNIQUE_NAME = (Expr); if (!UNIQUE_NAME.is_valid()) { return UNIQUE_NAME.unwrap_err(); } Var = UNIQUE_NAME.unwrap()
+        - TR_TRY_ASSIGN(Var, Expr)=const auto UNIQUE_NAME = (Expr); if (!UNIQUE_NAME.is_valid()) { return UNIQUE_NAME.unwrap_err(); } Var = UNIQUE_NAME.unwrap()
