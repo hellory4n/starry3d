@@ -71,6 +71,26 @@ public:
 	tr::String message() const override;
 };
 
+// TODO update to c++20 you cunt
+static inline sg_sampler_desc& sampler_desc()
+{
+	static sg_sampler_desc sampling_it = {};
+	sampling_it.wrap_u = SG_WRAP_REPEAT;
+	sampling_it.wrap_v = SG_WRAP_REPEAT;
+	sampling_it.min_filter = SG_FILTER_LINEAR;
+	sampling_it.mag_filter = SG_FILTER_LINEAR;
+	sampling_it.compare = SG_COMPAREFUNC_NEVER;
+	return sampling_it;
+}
+
+// from https://github.com/zeromake/learnopengl-examples/blob/master/libs/sokol/sokol_helper.h
+static inline void sg_image_alloc_smp(int image_idx, int sampler_idx)
+{
+	st::renderer.bindings.images[image_idx] = sg_alloc_image();
+	st::renderer.bindings.samplers[sampler_idx] = sg_alloc_sampler();
+	sg_init_sampler(st::renderer.bindings.samplers[sampler_idx], st::sampler_desc());
+}
+
 // internal :)
 void _init_renderer();
 void _free_renderer();

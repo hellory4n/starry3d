@@ -1,5 +1,6 @@
 #include "app.h"
 
+#include <starry/asset.h>
 #include <starry/optional/imgui.h>
 #include <starry/render.h>
 
@@ -12,6 +13,9 @@ tr::Result<void, const tr::Error&> Sandbox::init()
 	cam.fov = 90;
 	cam.projection = st::CameraProjection::PERSPECTIVE;
 
+	const st::Texture& texture = st::Texture::load("app://enough_fckery.jpg").unwrap();
+	texture.bind(0);
+
 	tr::log("initialized sandbox :)");
 	return {};
 }
@@ -21,7 +25,9 @@ tr::Result<void, const tr::Error&> Sandbox::update(float64 dt)
 	debug_mode();
 
 	// hlep
-	if (st::is_key_just_pressed(st::Key::ESCAPE)) _ui_enabled = !_ui_enabled;
+	if (st::is_key_just_pressed(st::Key::ESCAPE)) {
+		_ui_enabled = !_ui_enabled;
+	}
 	// st::set_mouse_visible(_ui_enabled);
 	st::lock_mouse(!_ui_enabled);
 
@@ -38,7 +44,9 @@ tr::Result<void, const tr::Error&> Sandbox::free()
 
 void Sandbox::player_controller(float64 dt) const
 {
-	if (_ui_enabled) return;
+	if (_ui_enabled) {
+		return;
+	}
 
 	// TODO we have a whole math library for this shit
 	// so like, use it?
@@ -53,13 +61,25 @@ void Sandbox::player_controller(float64 dt) const
 	cam.rotation.x = tr::clamp(cam.rotation.x, -89.0f, 89.0f);
 
 	tr::Vec3<float32> in = {};
-	if (st::is_key_held(st::Key::W)) in.z += 1;
-	if (st::is_key_held(st::Key::S)) in.z -= 1;
-	if (st::is_key_held(st::Key::A)) in.x -= 1;
-	if (st::is_key_held(st::Key::D)) in.x += 1;
+	if (st::is_key_held(st::Key::W)) {
+		in.z += 1;
+	}
+	if (st::is_key_held(st::Key::S)) {
+		in.z -= 1;
+	}
+	if (st::is_key_held(st::Key::A)) {
+		in.x -= 1;
+	}
+	if (st::is_key_held(st::Key::D)) {
+		in.x += 1;
+	}
 	// TODO is this ass?
-	if (st::is_key_held(st::Key::SPACE)) in.y += 1;
-	if (st::is_key_held(st::Key::LEFT_SHIFT)) in.y -= 1;
+	if (st::is_key_held(st::Key::SPACE)) {
+		in.y += 1;
+	}
+	if (st::is_key_held(st::Key::LEFT_SHIFT)) {
+		in.y -= 1;
+	}
 
 	float32 yaw = tr::deg2rad(cam.rotation.y);
 	tr::Vec3<float32> forward = {sinf(yaw), 0, -cosf(yaw)};
@@ -71,8 +91,9 @@ void Sandbox::player_controller(float64 dt) const
 		in.z /= len_xz;
 	}
 
-	tr::Vec3<float32> move = {right.x * in.x + forward.x * in.z, in.y,
-				  right.z * in.x + forward.z * in.z};
+	tr::Vec3<float32> move = {
+		right.x * in.x + forward.x * in.z, in.y, right.z * in.x + forward.z * in.z
+	};
 	// TODO did i fuck it up?
 	cam.position += -(move * PLAYER_SPEED * static_cast<float32>(dt));
 	cam.rotation.z = 0; // just in case

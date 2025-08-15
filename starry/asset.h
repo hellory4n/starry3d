@@ -32,18 +32,24 @@
 #include <trippin/error.h>
 #include <trippin/math.h>
 
+#include "trippin/string.h"
+
 namespace st {
 
 // Image on the GPU
 class Texture
 {
+	tr::String _path;
 	// an sg_image is just an uint32 for the id
 	// so no need to include sokol here
-	uint32 _sg_image_id = 0;
+	uint32 _image_id = 0;
+	uint32 _sampler_id = 0;
 	uint32 _width = 0;
 	uint32 _height = 0;
 
 public:
+	Texture();
+
 	// Loads an texture and puts it into a cache thing. If it was already loaded, then it
 	// returns the existing texture.
 	static tr::Result<const Texture&, const tr::Error&> load(tr::String path);
@@ -57,7 +63,7 @@ public:
 	tr::Vec2<uint32> size() const;
 
 	// Uses the texture :)
-	void bind(int32 slot) const;
+	void bind(int32 slot = 0) const;
 };
 
 } // namespace st

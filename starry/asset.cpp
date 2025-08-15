@@ -50,6 +50,14 @@ TR_GCC_RESTORE()
 
 #include "starry/common.h"
 #include "starry/render.h"
+#include "starry/shader/basic.glsl.h"
+
+st::Texture::Texture()
+{
+	_image_id = sg_alloc_image().id;
+	// TODO do you even need one for each texture?
+	_sampler_id = sg_make_sampler(st::sampler_desc()).id;
+}
 
 tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String path)
 {
@@ -61,8 +69,10 @@ tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String pa
 	// first load file
 	// TODO sokol_fetch is a thing dumbass
 	TR_TRY_ASSIGN(
-		tr::File& file,
-		tr::File::open(st::engine.asset_arena, path, tr::FileMode::READ_BINARY)
+		tr::File& file, tr::File::open(
+					st::engine.asset_arena, tr::path(tr::scratchpad(), path),
+					tr::FileMode::READ_BINARY
+				)
 	);
 	TR_TRY_ASSIGN(tr::Array<uint8> data, file.read_all_bytes(st::engine.asset_arena));
 	file.close();
@@ -77,6 +87,12 @@ tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String pa
 		return tr::scratchpad().make<tr::StringError>("couldn't parse image file");
 	}
 
+	// the constructor setups some placeholder texture faffery
+	Texture texture = {};
+	texture._width = width;
+	texture._height = height;
+	texture._path = path;
+
 	// then finally give it to sokol
 	sg_image_desc desc = {};
 	desc.width = width;
@@ -84,37 +100,36 @@ tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String pa
 	desc.pixel_format = SG_PIXELFORMAT_RGBA8;
 	desc.data.subimage[0][0].ptr = pixels;
 	desc.data.subimage[0][0].size = static_cast<usize>(width * height * CHANNELS);
+	sg_init_image(sg_image{texture._image_id}, desc);
 
-	sg_image image = sg_make_image(desc);
-	if (sg_query_image_state(image) != SG_RESOURCESTATE_VALID) {
+	// TODO libtrippin v2.5 has TR_DEFER now
+	stbi_image_free(pixels);
+
+	if (sg_query_image_state(sg_image{texture._image_id}) != SG_RESOURCESTATE_VALID) {
 		return tr::scratchpad().make<RenderError>(
 			RenderErrorType::RESOURCE_CREATION_FAILED
 		);
 	}
 
-	// TODO libtrippin v2.5 has TR_DEFER now
-	stbi_image_free(pixels);
-
-	st::Texture texture = {};
-	texture._width = static_cast<uint32>(width);
-	texture._height = static_cast<uint32>(height);
-	texture._sg_image_id = 0;
-
 	st::engine.texture_cache[path] = texture;
+	tr::info(
+		"loaded texture from %s (id %i, sampler id %i)", *path, texture._image_id,
+		texture._sampler_id
+	);
 	return st::engine.texture_cache[path];
 }
 
 void st::Texture::free()
 {
-	if (sg_query_image_state(sg_image{_sg_image_id}) == SG_RESOURCESTATE_VALID) {
-		sg_destroy_image(sg_image{_sg_image_id});
+	if (sg_query_image_state(sg_image{_image_id}) == SG_RESOURCESTATE_VALID) {
+		sg_destroy_image(sg_image{_image_id});
 	}
-	_sg_image_id = SG_INVALID_ID;
-}
-
-uint32 st::Texture::handle() const
-{
-	return _sg_image_id;
+	if (sg_query_sampler_state(sg_sampler{_sampler_id}) == SG_RESOURCESTATE_VALID) {
+		sg_destroy_sampler(sg_sampler{_sampler_id});
+	}
+	_image_id = SG_INVALID_ID;
+	_sampler_id = SG_INVALID_ID;
+	tr::info("freed texture from %s", *_path);
 }
 
 tr::Vec2<uint32> st::Texture::size() const
@@ -129,5 +144,7 @@ void st::Texture::bind(int32 slot) const
 		"can't bind texture to slot %i; only %i texture bind slots available", slot,
 		SG_MAX_IMAGE_BINDSLOTS
 	);
-	st::renderer.bindings.images[slot] = sg_image{_sg_image_id};
+	TR_ASSERT(_image_id != SG_INVALID_ID);
+	st::renderer.bindings.images[slot] = sg_image{_image_id};
+	st::renderer.bindings.samplers[slot] = sg_sampler{_sampler_id};
 }

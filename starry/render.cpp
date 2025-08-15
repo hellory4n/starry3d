@@ -86,8 +86,6 @@ static inline void make_basic_pipeline()
 	st::renderer.basic_pipeline = sg_make_pipeline(pipeline_desc);
 }
 
-static sg_sampler_desc _global_sampler_desc = {};
-
 } // namespace st
 
 void st::_init_renderer()
@@ -98,12 +96,6 @@ void st::_init_renderer()
 	// NOLINTEND(readability-implicit-bool-conversion)
 
 	// yeah
-	st::_global_sampler_desc.wrap_u = SG_WRAP_REPEAT;
-	st::_global_sampler_desc.wrap_v = SG_WRAP_REPEAT;
-	st::_global_sampler_desc.min_filter = SG_FILTER_LINEAR;
-	st::_global_sampler_desc.mag_filter = SG_FILTER_LINEAR;
-	st::_global_sampler_desc.compare = SG_COMPAREFUNC_NEVER;
-
 	st::engine.camera.position = {0, 0, -5};
 	st::engine.camera.projection = CameraProjection::ORTHOGRAPHIC;
 	st::engine.camera.zoom = 5;
@@ -113,11 +105,15 @@ void st::_init_renderer()
 	sg_desc.logger.func = st::_sokol_log;
 	sg_setup(&sg_desc);
 
+	// TODO st::Vertex or some shit
+	/* clang-format off */
 	tr::Array<float32> verts = {
-		0.0f,  0.5f,  0.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top
-		0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // bottom right
-		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, // bottom left
+		// position            // uv
+		0.0f,  0.5f,  0.0f,    0.0f, -0.5f, // top
+		0.5f,  -0.5f, 0.0f,    0.0f, 1.0f, // bottom right
+		-0.5f, -0.5f, 0.0f,    1.0f, 0.0f, // bottom left
 	};
+	/* clang-format on */
 
 	sg_buffer_desc buffer_desc = {};
 	buffer_desc.size = verts.len() * sizeof(float32);
@@ -139,12 +135,7 @@ void st::_init_renderer()
 
 	// it screams in pain and agony if there's no texture set yet
 	// so we have to make some placeholder bullshit
-	sg_image placeholder_img = sg_alloc_image();
-	st::renderer.bindings.images[IMG__u_texture] = placeholder_img;
-	st::renderer.bindings.samplers[SMP__u_texture_smp] = sg_alloc_sampler();
-	sg_init_sampler(
-		st::renderer.bindings.samplers[SMP__u_texture_smp], &st::_global_sampler_desc
-	);
+	sg_image_alloc_smp(IMG__u_texture, SMP__u_texture_smp);
 }
 
 void st::_free_renderer()
