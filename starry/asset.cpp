@@ -74,8 +74,8 @@ tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String pa
 					tr::FileMode::READ_BINARY
 				)
 	);
+	TR_DEFER(file.close());
 	TR_TRY_ASSIGN(tr::Array<uint8> data, file.read_all_bytes(st::engine.asset_arena));
-	file.close();
 
 	// then parse the data
 	constexpr int CHANNELS = 4; // rgba
@@ -86,6 +86,7 @@ tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String pa
 	if (pixels == nullptr) {
 		return tr::scratchpad().make<tr::StringError>("couldn't parse image file");
 	}
+	TR_DEFER(stbi_image_free(pixels));
 
 	// the constructor setups some placeholder texture faffery
 	Texture texture = {};
@@ -101,9 +102,6 @@ tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String pa
 	desc.data.subimage[0][0].ptr = pixels;
 	desc.data.subimage[0][0].size = static_cast<usize>(width * height * CHANNELS);
 	sg_init_image(sg_image{texture._image_id}, desc);
-
-	// TODO libtrippin v2.5 has TR_DEFER now
-	stbi_image_free(pixels);
 
 	if (sg_query_image_state(sg_image{texture._image_id}) != SG_RESOURCESTATE_VALID) {
 		return tr::scratchpad().make<RenderError>(
@@ -147,4 +145,11 @@ void st::Texture::bind(int32 slot) const
 	TR_ASSERT(_image_id != SG_INVALID_ID);
 	st::renderer.bindings.images[slot] = sg_image{_image_id};
 	st::renderer.bindings.samplers[slot] = sg_sampler{_sampler_id};
+}
+
+void st::Texture::_free_all_textures()
+{
+	for (auto [_, texture] : st::engine.texture_cache) {
+		texture.free();
+	}
 }

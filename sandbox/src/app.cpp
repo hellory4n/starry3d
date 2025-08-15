@@ -6,7 +6,7 @@
 
 #include "debug_mode.h"
 
-tr::Result<void, const tr::Error&> Sandbox::init()
+tr::Result<void> Sandbox::init()
 {
 	st::Camera& cam = st::Camera::current();
 	cam.position = {0, 0, -5};
@@ -20,7 +20,7 @@ tr::Result<void, const tr::Error&> Sandbox::init()
 	return {};
 }
 
-tr::Result<void, const tr::Error&> Sandbox::update(float64 dt)
+tr::Result<void> Sandbox::update(float64 dt)
 {
 	debug_mode();
 
@@ -35,7 +35,7 @@ tr::Result<void, const tr::Error&> Sandbox::update(float64 dt)
 	return {};
 }
 
-tr::Result<void, const tr::Error&> Sandbox::free()
+tr::Result<void> Sandbox::free()
 {
 	tr::log("freed sandbox :)");
 

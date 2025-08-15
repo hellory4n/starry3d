@@ -243,10 +243,10 @@ TR_BIT_FLAG(Modifiers)
 class Application
 {
 public:
-	virtual tr::Result<void, const tr::Error&> init() = 0;
+	virtual tr::Result<void> init() = 0;
 	// dt is delta time :)
-	virtual tr::Result<void, const tr::Error&> update(float64 dt) = 0;
-	virtual tr::Result<void, const tr::Error&> free() = 0;
+	virtual tr::Result<void> update(float64 dt) = 0;
+	virtual tr::Result<void> free() = 0;
 };
 
 struct ApplicationSettings
@@ -301,6 +301,13 @@ struct Starry3D
 			tr::Array<InputState>(arena, static_cast<int>(st::MouseButton::LAST) + 1);
 
 		texture_cache = tr::HashMap<tr::String, Texture>(asset_arena);
+	}
+
+	void free()
+	{
+		arena.free();
+		asset_arena.free();
+		// application is freed somewhere else
 	}
 };
 

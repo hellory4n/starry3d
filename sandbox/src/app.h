@@ -11,7 +11,7 @@ class Sandbox : public st::Application
 	void player_controller(float64 dt) const;
 
 public:
-	tr::Result<void, const tr::Error&> init() override;
-	tr::Result<void, const tr::Error&> update(float64 dt) override;
-	tr::Result<void, const tr::Error&> free() override;
+	tr::Result<void> init() override;
+	tr::Result<void> update(float64 dt) override;
+	tr::Result<void> free() override;
 };

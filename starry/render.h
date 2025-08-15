@@ -31,10 +31,9 @@
 
 #include <trippin/common.h>
 #include <trippin/error.h>
+#include <trippin/string.h>
 
 #include <sokol/sokol_gfx.h>
-
-#include "trippin/string.h"
 
 namespace st {
 

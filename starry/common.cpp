@@ -64,6 +64,7 @@ TR_GCC_RESTORE()
 #ifdef ST_IMGUI
 	#include "starry/optional/imgui.h"
 #endif
+#include "starry/asset.h"
 #include "starry/render.h"
 
 namespace st {
@@ -163,9 +164,9 @@ static void st::_init()
 	// make sure user:// and app:// exists
 	tr::String userdir = tr::path(tr::scratchpad(), "user://");
 	tr::create_dir(userdir).unwrap();
-	TR_ASSERT_MSG(tr::file_exists(userdir), "couldn't create user://");
+	TR_ASSERT_MSG(tr::path_exists(userdir), "couldn't create user://");
 	TR_ASSERT_MSG(
-		tr::file_exists(tr::path(tr::scratchpad(), "app://")),
+		tr::path_exists(tr::path(tr::scratchpad(), "app://")),
 		"app:// is pointing to an invalid directory, are you sure this is the right path?"
 	);
 
@@ -255,7 +256,10 @@ static void st::_free()
 #ifdef ST_IMGUI
 	st::imgui::free();
 #endif
+	st::Texture::_free_all_textures();
 	st::_free_renderer();
+
+	st::engine.free();
 	tr::info("deinitialized starry3d");
 	// TODO libtrippin deinitializes twice on panic
 	// i should just add some way of checking if it's panicking on tr::call_on_quit()

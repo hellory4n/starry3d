@@ -93,5 +93,5 @@ void st::imgui::render()
 
 void st::imgui::on_event(const void* event)
 {
-	simgui_handle_event(reinterpret_cast<const sapp_event*>(event));
+	simgui_handle_event(static_cast<const sapp_event*>(event));
 }
