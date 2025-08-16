@@ -83,6 +83,13 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	engine.settings = settings;
 	engine.window_size = settings.window_size;
 
+	// so we can log before sokol setups
+	// TODO this could be a thing in libtrippin
+	for (auto [_, path] : engine.settings.logfiles) {
+		tr::use_log_file(path);
+	}
+	tr::init();
+
 	// hehe
 	stm_setup();
 

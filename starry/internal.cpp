@@ -79,9 +79,6 @@ void st::_update_engine()
 #endif
 	engine.application->update(st::delta_time_sec()).unwrap();
 	st::_update::render();
-#ifdef ST_IMGUI
-	st::imgui::render();
-#endif
 	st::_update::post_input();
 }
 
@@ -92,12 +89,6 @@ void st::_init::preinit()
 	}
 	tr::set_paths(engine.settings.app_dir, engine.settings.user_dir);
 
-	// TODO this could be a thing in libtrippin
-	for (auto [_, path] : engine.settings.logfiles) {
-		tr::use_log_file(path);
-	}
-
-	tr::init();
 	tr::call_on_quit([](bool is_panic) {
 		// sokol handles calling st::_free_engine when quitting safely ;)
 		if (!is_panic) {
