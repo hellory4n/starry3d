@@ -27,7 +27,7 @@
 
 // it has to go before sokol
 /* clang-format off */
-#include "starry/common.h" // IWYU pragma: keep
+#include "starry/internal.h"
 /* clang-format on */
 
 #include <trippin/common.h>

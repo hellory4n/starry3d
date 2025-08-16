@@ -25,20 +25,22 @@
  *
  */
 
+// TODO this is still a insane mess
+
 #include <trippin/common.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
 
-#include "starry/common.h"
+#include "starry/internal.h"
 
 // :(
-// TODO this whole file is a mess and sucks
 TR_GCC_IGNORE_WARNING(-Wold-style-cast)
 TR_GCC_IGNORE_WARNING(-Wimplicit-int-conversion)
 TR_GCC_IGNORE_WARNING(-Wcast-qual)
 TR_GCC_IGNORE_WARNING(-Wextra) // this is why clang is better
-#define SOKOL_GFX_IMPL // sokol_gfx.h is included in render.h
 #include <sokol/sokol_app.h>
+#define SOKOL_GFX_IMPL
+#include <sokol/sokol_gfx.h>
 
 #ifdef ST_IMGUI
 	#include "starry/optional/imgui.h"
@@ -55,9 +57,6 @@ TR_GCC_RESTORE()
 TR_GCC_RESTORE()
 
 namespace st {
-
-// it has to live somewhere
-Renderer renderer;
 
 static inline sg_color tr_color_to_sg_color(tr::Color color)
 {
@@ -83,12 +82,12 @@ static inline void make_basic_pipeline()
 	pipeline_desc.face_winding = SG_FACEWINDING_CCW;
 
 	pipeline_desc.label = "basic_pipeline";
-	st::renderer.basic_pipeline = sg_make_pipeline(pipeline_desc);
+	engine.basic_pipeline = sg_make_pipeline(pipeline_desc);
 }
 
-} // namespace st
+}
 
-void st::_init_renderer()
+void st::_init::render()
 {
 	// YOU CAN'T EVEN GET TRUE TO BECOME 1????? LITERALLY 1984
 	// NOLINTBEGIN(readability-implicit-bool-conversion)
@@ -96,9 +95,9 @@ void st::_init_renderer()
 	// NOLINTEND(readability-implicit-bool-conversion)
 
 	// yeah
-	st::engine.camera.position = {0, 0, -5};
-	st::engine.camera.projection = CameraProjection::ORTHOGRAPHIC;
-	st::engine.camera.zoom = 5;
+	engine.camera.position = {0, 0, -5};
+	engine.camera.projection = CameraProjection::ORTHOGRAPHIC;
+	engine.camera.zoom = 5;
 
 	sg_desc sg_desc = {};
 	sg_desc.environment = sglue_environment();
@@ -120,17 +119,17 @@ void st::_init_renderer()
 	// SG_RANGE doesn't work with tr::Array<T>
 	buffer_desc.data = {*verts, verts.len() * sizeof(float32)};
 	buffer_desc.usage.vertex_buffer = true;
-	st::renderer.bindings.vertex_buffers[0] = sg_make_buffer(buffer_desc);
+	engine.bindings.vertex_buffers[0] = sg_make_buffer(buffer_desc);
 
 	// first the alt-right pipeline
 	// now there's the render pipeline :(
 	st::make_basic_pipeline();
 	// that's how you set the current pipeline
-	st::renderer.pipeline = st::renderer.basic_pipeline;
+	engine.pipeline = engine.basic_pipeline;
 
 	// what the fuck is a render pass
-	st::renderer.pass_action.colors[0].load_action = SG_LOADACTION_CLEAR;
-	st::renderer.pass_action.colors[0].clear_value =
+	engine.pass_action.colors[0].load_action = SG_LOADACTION_CLEAR;
+	engine.pass_action.colors[0].clear_value =
 		tr_color_to_sg_color(tr::Color::rgb(0x06062d)); // color fresh from my ass <3
 
 	// it screams in pain and agony if there's no texture set yet
@@ -138,20 +137,20 @@ void st::_init_renderer()
 	sg_image_alloc_smp(IMG__u_texture, SMP__u_texture_smp);
 }
 
-void st::_free_renderer()
+void st::_free::render()
 {
 	sg_shutdown();
 }
 
-void st::_draw()
+void st::_update::render()
 {
 	sg_pass pass = {};
-	pass.action = st::renderer.pass_action;
+	pass.action = engine.pass_action;
 	pass.swapchain = sglue_swapchain();
 	sg_begin_pass(pass);
 
-	sg_apply_pipeline(st::renderer.pipeline.unwrap_ref());
-	sg_apply_bindings(st::renderer.bindings);
+	sg_apply_pipeline(engine.pipeline.unwrap_ref());
+	sg_apply_bindings(engine.bindings);
 
 	// we do have to update the uniforms
 	vs_params_t uniform = {};
@@ -181,4 +180,23 @@ tr::String st::RenderError::message() const
 	default:
 		return "error type seems to be invalid";
 	}
+}
+
+sg_sampler_desc& st::sampler_desc()
+{
+	// TODO update to c++20 you cunt
+	static sg_sampler_desc sampling_it = {};
+	sampling_it.wrap_u = SG_WRAP_REPEAT;
+	sampling_it.wrap_v = SG_WRAP_REPEAT;
+	sampling_it.min_filter = SG_FILTER_LINEAR;
+	sampling_it.mag_filter = SG_FILTER_LINEAR;
+	sampling_it.compare = SG_COMPAREFUNC_NEVER;
+	return sampling_it;
+}
+
+void st::sg_image_alloc_smp(int image_idx, int sampler_idx)
+{
+	engine.bindings.images[image_idx] = sg_alloc_image();
+	engine.bindings.samplers[sampler_idx] = sg_alloc_sampler();
+	sg_init_sampler(engine.bindings.samplers[sampler_idx], st::sampler_desc());
 }

@@ -68,6 +68,6 @@ struct Camera
 	static Camera& current();
 };
 
-} // namespace st
+}
 
 #endif

@@ -29,11 +29,21 @@
 
 #include <trippin/math.h>
 
-#include "starry/common.h"
+#include "starry/internal.h"
+
+void st::_init::world()
+{
+	// TODO use this
+}
+
+void st::_free::world()
+{
+	// TODO use this
+}
 
 st::Camera& st::Camera::current()
 {
-	return st::engine.camera;
+	return engine.camera;
 }
 
 tr::Matrix4x4 st::Camera::view_matrix() const

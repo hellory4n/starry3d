@@ -89,10 +89,11 @@ srcsfrfr = {
 	starrydir .. "/thirdparty/libtrippin/trippin/error.cpp",
 
 	-- starry3d
-	starrydir .. "/starry/common.cpp",
+	starrydir .. "/starry/app.cpp",
+	starrydir .. "/starry/asset.cpp",
+	starrydir .. "/starry/internal.cpp",
 	starrydir .. "/starry/render.cpp",
 	starrydir .. "/starry/world.cpp",
-	starrydir .. "/starry/asset.cpp",
 }
 
 -- imgui

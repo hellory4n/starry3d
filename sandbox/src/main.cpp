@@ -1,4 +1,4 @@
-#include <starry/common.h>
+#include <starry/app.h>
 
 #include "app.h"
 

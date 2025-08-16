@@ -14,7 +14,7 @@ trim_trailing_whitespace = true
 indent_style = space
 
 # yaml and its consequences have been a disaster for the human race
-[{*.{yml, yaml}, .clang{-format, -tidy, d}}, build.ninja]
+[*.{yml, yaml}, .clang{-format, -tidy, d}, build.ninja]
 indent_size = 2
 indent_style = space
 

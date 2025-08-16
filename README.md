@@ -86,10 +86,11 @@ Now add these folders to your includes: (relative to where you put starry3d)
     - `thirdparty/imgui`
 
 Add these source files: (relative to where you put starry3d)
-- `starry/common.cpp`
+- `starry/app.cpp`
+- `starry/asset.cpp`
+- `starry/internal.cpp`
 - `starry/render.cpp`
 - `starry/world.cpp`
-- `starry/asset.cpp`
 - `thirdparty/libtrippin/trippin/collection.cpp`
 - `thirdparty/libtrippin/trippin/common.cpp`
 - `thirdparty/libtrippin/trippin/iofs.cpp`
@@ -107,7 +108,7 @@ Add these source files: (relative to where you put starry3d)
     - `thirdparty/imgui/imgui_widgets.cpp`
 
 You also have to link with some system libraries:
-- Windows (MinGW only): `-lkernel32 -luser32 -lshell32 -lgdi32 -ld3d11 -ldxgi -lpthread -lstdc++ -static`
+- Windows (mingw-w64-gcc only): `-lkernel32 -luser32 -lshell32 -lgdi32 -ld3d11 -ldxgi -lpthread -lstdc++ -static`
 - Linux: `-lX11 -lXi -lXcursor -lGL -ldl -lm -lstdc++`
 
 And if you're using ImGui you have to define `ST_IMGUI` (it has to be in the project/compile flags)
@@ -115,7 +116,7 @@ And if you're using ImGui you have to define `ST_IMGUI` (it has to be in the pro
 Now put this in your `main.cpp` and run to check if it worked:
 
 ```cpp
-#include <starry/common.h>
+#include <starry/app.h>
 
 class Game : public st::Application
 {
@@ -196,7 +197,7 @@ includes = {
 Now put this in `src/main.cpp`:
 
 ```cpp
-#include <starry/common.h>
+#include <starry/app.h>
 
 class Game : public st::Application
 {

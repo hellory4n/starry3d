@@ -25,22 +25,22 @@
  *
  */
 
-#include "asset.h"
+#include "starry/asset.h"
 
+#include <trippin/common.h>
 #include <trippin/iofs.h>
+#include <trippin/log.h>
+#include <trippin/memory.h>
 
-#include "trippin/common.h"
-#include "trippin/log.h"
-#include "trippin/memory.h"
-
-#define STB_IMAGE_IMPLEMENTATION
 #include <sokol/sokol_gfx.h>
+
 // jesus
 TR_GCC_IGNORE_WARNING(-Wold-style-cast)
 TR_GCC_IGNORE_WARNING(-Wsign-conversion)
 TR_GCC_IGNORE_WARNING(-Wcast-qual)
 TR_GCC_IGNORE_WARNING(-Wimplicit-fallthrough)
 TR_GCC_IGNORE_WARNING(-Wimplicit-int-conversion)
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 TR_GCC_RESTORE()
 TR_GCC_RESTORE()
@@ -48,9 +48,19 @@ TR_GCC_RESTORE()
 TR_GCC_RESTORE()
 TR_GCC_RESTORE()
 
-#include "starry/common.h"
+#include "starry/internal.h"
 #include "starry/render.h"
 #include "starry/shader/basic.glsl.h"
+
+void st::_init::asset()
+{
+	// TODO use this
+}
+
+void st::_free::asset()
+{
+	// TODO use this
+}
 
 st::Texture::Texture()
 {
@@ -59,23 +69,23 @@ st::Texture::Texture()
 	_sampler_id = sg_make_sampler(st::sampler_desc()).id;
 }
 
-tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String path)
+tr::Result<const st::Texture&> st::Texture::load(tr::String path)
 {
 	// no need to load things twice
-	if (st::engine.texture_cache.contains(path)) {
-		return st::engine.texture_cache[path];
+	if (engine.textures.contains(path)) {
+		return engine.textures[path];
 	}
 
 	// first load file
 	// TODO sokol_fetch is a thing dumbass
 	TR_TRY_ASSIGN(
 		tr::File& file, tr::File::open(
-					st::engine.asset_arena, tr::path(tr::scratchpad(), path),
+					engine.asset_arena, tr::path(tr::scratchpad(), path),
 					tr::FileMode::READ_BINARY
 				)
 	);
 	TR_DEFER(file.close());
-	TR_TRY_ASSIGN(tr::Array<uint8> data, file.read_all_bytes(st::engine.asset_arena));
+	TR_TRY_ASSIGN(tr::Array<uint8> data, file.read_all_bytes(engine.asset_arena));
 
 	// then parse the data
 	constexpr int CHANNELS = 4; // rgba
@@ -109,12 +119,12 @@ tr::Result<const st::Texture&, const tr::Error&> st::Texture::load(tr::String pa
 		);
 	}
 
-	st::engine.texture_cache[path] = texture;
+	engine.textures[path] = texture;
 	tr::info(
 		"loaded texture from %s (id %i, sampler id %i)", *path, texture._image_id,
 		texture._sampler_id
 	);
-	return st::engine.texture_cache[path];
+	return engine.textures[path];
 }
 
 void st::Texture::free()
@@ -143,13 +153,13 @@ void st::Texture::bind(int32 slot) const
 		SG_MAX_IMAGE_BINDSLOTS
 	);
 	TR_ASSERT(_image_id != SG_INVALID_ID);
-	st::renderer.bindings.images[slot] = sg_image{_image_id};
-	st::renderer.bindings.samplers[slot] = sg_sampler{_sampler_id};
+	engine.bindings.images[slot] = sg_image{_image_id};
+	engine.bindings.samplers[slot] = sg_sampler{_sampler_id};
 }
 
 void st::Texture::_free_all_textures()
 {
-	for (auto [_, texture] : st::engine.texture_cache) {
+	for (auto [_, texture] : engine.textures) {
 		texture.free();
 	}
 }

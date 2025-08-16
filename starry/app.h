@@ -2,9 +2,9 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * starry/common.h
- * Utilities, engine initialization/deinitialization, and the engine's
- * global state. This should never be included by the engine's headers.
+ * starry/app.h
+ * Manages the app's window and input, as well as `st::run` which is quite
+ * important innit mate.
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
  *
@@ -36,29 +36,9 @@
 #include <trippin/memory.h>
 #include <trippin/string.h>
 
-#include "starry/asset.h"
-#include "starry/world.h"
-
-// make sure there's always ST_WINDOWS/ST_LINUX/etc defined
-// *bsd should usually check for linux
-// TODO does *bsd work?
-// TODO mobile and web support would be nice (sokol supports both)
-// TODO is this necessary?
-#if !defined(ST_WINDOWS) && !defined(ST_LINUX)
-	#ifdef _WIN32
-		#define ST_WINDOWS
-	#elif defined(__APPLE__)
-		#define ST_APPLE
-	#else
-		// we're not checking for __linux__ directly because *BSD exists,
-		// and each BSD has their own define to check
-		// they're not very different anyway
-		#define ST_LINUXBSD
-	#endif
-#endif
-
-// apple, android, and emscripten use clang so it should work
-// TODO support them?
+// sokol supports them, but we don't
+// these all use clang so #warning should work
+// TODO support them? it's that shrimple
 #ifdef __APPLE__
 	#warning "Apple OSes are not officially supported"
 #endif
@@ -268,52 +248,6 @@ struct ApplicationSettings
 	bool high_dpi = false;
 };
 
-struct Starry3D
-{
-	tr::Arena arena = {};
-	tr::Arena asset_arena = {};
-	Application* application = nullptr;
-	ApplicationSettings settings = {};
-	// i wanted it to free on panic using libtrippin's `tr::call_on_quit` it's complicated
-	// TODO this sucks, fix it
-	bool exiting = false;
-
-	// input
-	tr::Array<InputState> key_state = {};
-	tr::Array<InputState> mouse_state = {};
-	Modifiers current_modifiers = {};
-	tr::Vec2<float32> mouse_position = {};
-	tr::Vec2<float32> relative_mouse_position = {};
-	bool mouse_moved_this_frame = false;
-	tr::Vec2<uint32> window_size = {};
-
-	// world
-	Camera camera = {};
-
-	// assets
-	tr::HashMap<tr::String, Texture> texture_cache = {};
-
-	// we do have to init everything that needs arenas
-	Starry3D()
-	{
-		key_state = tr::Array<InputState>(arena, static_cast<int>(st::Key::LAST) + 1);
-		mouse_state =
-			tr::Array<InputState>(arena, static_cast<int>(st::MouseButton::LAST) + 1);
-
-		texture_cache = tr::HashMap<tr::String, Texture>(asset_arena);
-	}
-
-	void free()
-	{
-		arena.free();
-		asset_arena.free();
-		// application is freed somewhere else
-	}
-};
-
-// This is where the engine's internal state goes. You probably shouldn't use this directly.
-extern Starry3D engine;
-
 // Initializes the crap library.
 void run(Application& app, ApplicationSettings settings);
 
@@ -376,28 +310,6 @@ float64 delta_time_sec();
 // Gets the amount of frames per second.
 float64 fps();
 
-// Internal function so sokol uses libtrippin's logging functions :)
-void _sokol_log(
-	const char* tag, uint32 level, uint32 item_id, const char* msg_or_null, uint32 line_nr,
-	const char* filename_or_null, void* user_data
-);
-
-} // namespace st
-
-// sokol config
-// really should only be used by starry3d itself
-// TODO you should probably use SOKOL_D3D11 on windows but it's fucking with everything
-// i LOVE microsoft
-#if defined(ST_WINDOWS)
-	#define SOKOL_D3D11
-#elif defined(ST_APPLE)
-	#define SOKOL_METAL
-#else
-	#define SOKOL_GLCORE
-#endif
-
-#define SOKOL_ASSERT(X) TR_ASSERT(X)
-#define SOKOL_UNREACHABLE tr::panic("unreachable code from sokol")
-#define SOKOL_NO_ENTRY
+}
 
 #endif

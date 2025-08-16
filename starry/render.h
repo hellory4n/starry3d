@@ -33,21 +33,10 @@
 #include <trippin/error.h>
 #include <trippin/string.h>
 
-#include <sokol/sokol_gfx.h>
+// shit up
+struct sg_sampler_desc;
 
 namespace st {
-
-// The renderer's state. Not in the main engine
-struct Renderer
-{
-	tr::MaybePtr<sg_pipeline> pipeline = {};
-	sg_pipeline basic_pipeline = {};
-
-	sg_bindings bindings = {};
-	sg_pass_action pass_action = {};
-};
-
-extern Renderer renderer;
 
 enum class RenderErrorType
 {
@@ -70,31 +59,11 @@ public:
 	tr::String message() const override;
 };
 
-// TODO update to c++20 you cunt
-static inline sg_sampler_desc& sampler_desc()
-{
-	static sg_sampler_desc sampling_it = {};
-	sampling_it.wrap_u = SG_WRAP_REPEAT;
-	sampling_it.wrap_v = SG_WRAP_REPEAT;
-	sampling_it.min_filter = SG_FILTER_LINEAR;
-	sampling_it.mag_filter = SG_FILTER_LINEAR;
-	sampling_it.compare = SG_COMPAREFUNC_NEVER;
-	return sampling_it;
-}
+sg_sampler_desc& sampler_desc();
 
 // from https://github.com/zeromake/learnopengl-examples/blob/master/libs/sokol/sokol_helper.h
-static inline void sg_image_alloc_smp(int image_idx, int sampler_idx)
-{
-	st::renderer.bindings.images[image_idx] = sg_alloc_image();
-	st::renderer.bindings.samplers[sampler_idx] = sg_alloc_sampler();
-	sg_init_sampler(st::renderer.bindings.samplers[sampler_idx], st::sampler_desc());
+void sg_image_alloc_smp(int image_idx, int sampler_idx);
+
 }
-
-// internal :)
-void _init_renderer();
-void _free_renderer();
-void _draw();
-
-} // namespace st
 
 #endif

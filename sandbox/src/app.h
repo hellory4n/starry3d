@@ -1,5 +1,5 @@
 #pragma once
-#include <starry/common.h>
+#include <starry/app.h>
 
 class Sandbox : public st::Application
 {

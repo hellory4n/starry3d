@@ -2,9 +2,9 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * starry/common.cpp
- * Utilities, engine initialization/deinitialization, and the engine's
- * global state.
+ * starry/app.cpp
+ * Manages the app's window and input, as well as `st::run` which is quite
+ * important innit mate.
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
  *
@@ -26,7 +26,12 @@
  *
  */
 
-#include "starry/common.h"
+// it has to go before sokol
+/* clang-format off */
+#include "starry/internal.h"
+/* clang-format on */
+
+#include "starry/app.h"
 
 #include <trippin/common.h>
 #include <trippin/iofs.h>
@@ -64,40 +69,28 @@ TR_GCC_RESTORE()
 #ifdef ST_IMGUI
 	#include "starry/optional/imgui.h"
 #endif
-#include "starry/asset.h"
-#include "starry/render.h"
 
 namespace st {
 
-// it has to live somewhere
-Starry3D engine;
-tr::Signal<void> on_close(engine.arena);
-
-// sokol callbacks
-static void _init();
-static void _update();
-static void _free();
+// yeah
 static void _on_event(const sapp_event* event);
 
-} // namespace st
+}
 
 void st::run(st::Application& app, st::ApplicationSettings settings)
 {
-	st::engine.application = &app;
-	st::engine.settings = settings;
-	st::engine.window_size = settings.window_size;
+	engine.application = &app;
+	engine.settings = settings;
+	engine.window_size = settings.window_size;
 
 	// hehe
 	stm_setup();
 
-	// how the app is initialized:
-	// main -> st::init -> sapp_run -> st::init_starry -> Application.init
-	// quite the pickle
 	sapp_desc sokol_app = {};
 
-	sokol_app.init_cb = st::_init;
-	sokol_app.frame_cb = st::_update;
-	sokol_app.cleanup_cb = st::_free;
+	sokol_app.init_cb = st::_init_engine;
+	sokol_app.frame_cb = st::_update_engine;
+	sokol_app.cleanup_cb = st::_free_engine;
 	sokol_app.event_cb = st::_on_event;
 	sokol_app.logger.func = st::_sokol_log;
 
@@ -112,88 +105,19 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	sapp_run(sokol_app);
 }
 
-static void st::_init()
-{
-	// TODO this function is kinda ugly
-	if (st::engine.settings.user_dir == "") {
-		st::engine.settings.user_dir = st::engine.settings.name;
-	}
-	tr::set_paths(st::engine.settings.app_dir, st::engine.settings.user_dir);
-
-	// TODO this could be a thing in libtrippin
-	for (auto [_, path] : st::engine.settings.logfiles) {
-		tr::use_log_file(path);
-	}
-
-	tr::init();
-	// we have to do this fuckery so there's no fuckery of sokol calling st::__free which calls
-	// tr::free which calls st::__free
-	// this should only happen on panic (sokol will handle it when quitting normally)
-	// TODO i updated tr::call_on_quit for this but i can't be bothered to make it work like
-	// that
-	tr::call_on_quit([](bool) {
-		if (!st::engine.exiting) {
-			st::_free();
-		}
-	});
-
-	tr::info("initialized starry3d %s", st::VERSION);
-	// some debug info
-	// TODO sokol supports more but i doubt i'll support them any time soon
-#ifdef ST_WINDOWS
-	tr::info("windowing backend: Win32");
-#elif defined(ST_APPLE)
-	tr::info("windowing backend: Cocoa");
-#else
-	tr::info("windowing backend: X11");
-#endif
-
-#ifdef SOKOL_GLCORE
-	tr::info("graphics backend: OpenGL Core");
-#elif defined(SOKOL_GLES)
-	tr::info("graphics backend: OpenGL ES");
-#elif defined(SOKOL_D3D11)
-	tr::info("graphics bakend: Direct3D 11");
-#elif defined(SOKOL_METAL)
-	tr::info("graphics backend: Metal");
-#endif
-
-	tr::info("app:// pointing to %s", *tr::path(tr::scratchpad(), "app://"));
-	tr::info("user:// pointing to %s", *tr::path(tr::scratchpad(), "user://"));
-
-	// make sure user:// and app:// exists
-	tr::String userdir = tr::path(tr::scratchpad(), "user://");
-	tr::create_dir(userdir).unwrap();
-	TR_ASSERT_MSG(tr::path_exists(userdir), "couldn't create user://");
-	TR_ASSERT_MSG(
-		tr::path_exists(tr::path(tr::scratchpad(), "app://")),
-		"app:// is pointing to an invalid directory, are you sure this is the right path?"
-	);
-
-	st::_init_renderer();
-#ifdef ST_IMGUI
-	st::imgui::init();
-#endif
-	st::engine.application->init().unwrap();
-}
-
-static void st::_update()
+void st::_update::pre_input()
 {
 	// uh
-	if (!st::engine.mouse_moved_this_frame) {
-		st::engine.relative_mouse_position = {};
+	if (!engine.mouse_moved_this_frame) {
+		engine.relative_mouse_position = {};
 	}
-	st::engine.mouse_moved_this_frame = false;
+	engine.mouse_moved_this_frame = false;
+}
 
-#ifdef ST_IMGUI
-	st::imgui::update();
-#endif
-
-	st::engine.application->update(sapp_frame_duration()).unwrap();
-	st::_draw();
-
+void st::_update::post_input()
+{
 	// update key states
-	for (auto [_, key] : st::engine.key_state) {
+	for (auto [_, key] : engine.key_state) {
 		switch (key.state) {
 		case InputState::State::NOT_PRESSED:
 			if (key.pressed) {
@@ -220,7 +144,7 @@ static void st::_update()
 
 	// update mouse states
 	// that's pretty much the same thing as the key states
-	for (auto [_, mouse] : st::engine.mouse_state) {
+	for (auto [_, mouse] : engine.mouse_state) {
 		switch (mouse.state) {
 		case InputState::State::NOT_PRESSED:
 			if (mouse.pressed) {
@@ -246,24 +170,16 @@ static void st::_update()
 	}
 }
 
-static void st::_free()
+void st::_init::app()
 {
-	st::engine.exiting = true;
+	// TODO use this
+}
 
-	tr::info("freeing application...");
-	st::engine.application->free().unwrap();
-
-#ifdef ST_IMGUI
-	st::imgui::free();
-#endif
-	st::Texture::_free_all_textures();
-	st::_free_renderer();
-
-	st::engine.free();
-	tr::info("deinitialized starry3d");
-	// TODO libtrippin deinitializes twice on panic
-	// i should just add some way of checking if it's panicking on tr::call_on_quit()
-	tr::free();
+void st::_free::app()
+{
+	// sapp handles this for us
+	// so no `sapp_shutdown()` or whatever
+	// TODO use this
 }
 
 static void st::_on_event(const sapp_event* event)
@@ -279,34 +195,34 @@ static void st::_on_event(const sapp_event* event)
 	TR_GCC_IGNORE_WARNING(-Wswitch)
 	switch (event->type) {
 	case SAPP_EVENTTYPE_KEY_DOWN:
-		st::engine.key_state[event->key_code].pressed = true;
-		st::engine.current_modifiers =
+		engine.key_state[event->key_code].pressed = true;
+		engine.current_modifiers =
 			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_KEY_UP:
-		st::engine.key_state[event->key_code].pressed = false;
-		st::engine.current_modifiers =
+		engine.key_state[event->key_code].pressed = false;
+		engine.current_modifiers =
 			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_MOUSE_DOWN:
-		st::engine.mouse_state[event->mouse_button].pressed = true;
-		st::engine.current_modifiers =
+		engine.mouse_state[event->mouse_button].pressed = true;
+		engine.current_modifiers =
 			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_MOUSE_UP:
-		st::engine.mouse_state[event->mouse_button].pressed = false;
-		st::engine.current_modifiers =
+		engine.mouse_state[event->mouse_button].pressed = false;
+		engine.current_modifiers =
 			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
 	case SAPP_EVENTTYPE_MOUSE_MOVE:
-		st::engine.mouse_position = {event->mouse_x, event->mouse_y};
-		st::engine.relative_mouse_position = {event->mouse_dx, event->mouse_dy};
-		st::engine.mouse_moved_this_frame = true;
-		st::engine.current_modifiers =
+		engine.mouse_position = {event->mouse_x, event->mouse_y};
+		engine.relative_mouse_position = {event->mouse_dx, event->mouse_dy};
+		engine.mouse_moved_this_frame = true;
+		engine.current_modifiers =
 			static_cast<Modifiers>(event->modifiers); // the values are the same
 		break;
 
@@ -315,7 +231,7 @@ static void st::_on_event(const sapp_event* event)
 		break;
 
 	case SAPP_EVENTTYPE_RESIZED:
-		st::engine.window_size = {
+		engine.window_size = {
 			static_cast<uint32>(event->window_width),
 			static_cast<uint32>(event->window_height)
 		};
@@ -329,40 +245,6 @@ static void st::_on_event(const sapp_event* event)
 	TR_GCC_RESTORE();
 }
 
-void st::_sokol_log(
-	const char* tag, uint32 level, uint32 item_id, const char* msg_or_null, uint32 line_nr,
-	const char* filename_or_null, void* user_data
-)
-{
-	// shut up
-	(void)tag;
-	(void)user_data;
-	(void)filename_or_null;
-	(void)line_nr;
-
-	const char* msg = msg_or_null == nullptr ? "unknown message" : msg_or_null;
-
-	switch (level) {
-	case 0:
-		tr::panic("sokol panic (item id %u): %s", item_id, msg);
-		break;
-	case 1:
-// tr::panic is more useful than tr::error when developing the library
-#ifndef DEBUG
-		tr::error("sokol error (item id %u): %s", item_id, msg);
-#else
-		tr::panic("sokol error (item id %u): %s", item_id, msg);
-#endif
-		break;
-	case 2:
-		tr::warn("sokol warning (item id %u): %s", item_id, msg);
-		break;
-	default:
-		tr::info("sokol (item id %u): %s", item_id, msg);
-		break;
-	}
-}
-
 void st::close_window()
 {
 	sapp_request_quit();
@@ -370,65 +252,58 @@ void st::close_window()
 
 bool st::is_key_just_pressed(st::Key key)
 {
-	return st::engine.key_state[static_cast<usize>(key)].state ==
-	       InputState::State::JUST_PRESSED;
+	return engine.key_state[static_cast<usize>(key)].state == InputState::State::JUST_PRESSED;
 }
 
 bool st::is_key_just_released(st::Key key)
 {
-	return st::engine.key_state[static_cast<usize>(key)].state ==
-	       InputState::State::JUST_RELEASED;
+	return engine.key_state[static_cast<usize>(key)].state == InputState::State::JUST_RELEASED;
 }
 
 bool st::is_key_held(st::Key key)
 {
-	return st::engine.key_state[static_cast<usize>(key)].state !=
-	       InputState::State::NOT_PRESSED;
+	return engine.key_state[static_cast<usize>(key)].state != InputState::State::NOT_PRESSED;
 }
 
 bool st::is_key_not_pressed(st::Key key)
 {
-	return st::engine.key_state[static_cast<usize>(key)].state ==
-	       InputState::State::NOT_PRESSED;
+	return engine.key_state[static_cast<usize>(key)].state == InputState::State::NOT_PRESSED;
 }
 
 bool st::is_mouse_just_pressed(st::MouseButton btn)
 {
-	return st::engine.mouse_state[static_cast<usize>(btn)].state ==
-	       InputState::State::JUST_PRESSED;
+	return engine.mouse_state[static_cast<usize>(btn)].state == InputState::State::JUST_PRESSED;
 }
 
 bool st::is_mouse_just_released(st::MouseButton btn)
 {
-	return st::engine.mouse_state[static_cast<usize>(btn)].state ==
+	return engine.mouse_state[static_cast<usize>(btn)].state ==
 	       InputState::State::JUST_RELEASED;
 }
 
 bool st::is_mouse_held(st::MouseButton btn)
 {
-	return st::engine.mouse_state[static_cast<usize>(btn)].state !=
-	       InputState::State::NOT_PRESSED;
+	return engine.mouse_state[static_cast<usize>(btn)].state != InputState::State::NOT_PRESSED;
 }
 
 bool st::is_mouse_not_pressed(st::MouseButton btn)
 {
-	return st::engine.mouse_state[static_cast<usize>(btn)].state ==
-	       InputState::State::NOT_PRESSED;
+	return engine.mouse_state[static_cast<usize>(btn)].state == InputState::State::NOT_PRESSED;
 }
 
 tr::Vec2<float32> st::mouse_position()
 {
-	return st::engine.mouse_position;
+	return engine.mouse_position;
 }
 
 tr::Vec2<float32> st::relative_mouse_position()
 {
-	return st::engine.relative_mouse_position;
+	return engine.relative_mouse_position;
 }
 
 st::Modifiers st::modifiers()
 {
-	return st::engine.current_modifiers;
+	return engine.current_modifiers;
 }
 
 void st::set_mouse_visible(bool val)
@@ -473,5 +348,5 @@ float64 st::fps()
 
 tr::Vec2<uint32> st::window_size()
 {
-	return st::engine.window_size;
+	return engine.window_size;
 }

@@ -1,6 +1,7 @@
 #pragma once
-#include <starry/common.h>
+#include <starry/app.h>
 #include <starry/optional/imgui.h>
+#include <starry/world.h>
 
 static inline void debug_mode()
 {

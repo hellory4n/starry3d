@@ -69,6 +69,6 @@ public:
 	void bind(int32 slot = 0) const;
 };
 
-} // namespace st
+}
 
 #endif
