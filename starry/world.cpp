@@ -31,8 +31,7 @@
 #include <trippin/error.h>
 #include <trippin/log.h>
 #include <trippin/math.h>
-
-#include <sys/stat.h>
+#include <trippin/memory.h>
 
 #include "starry/asset.h"
 #include "starry/internal.h"
@@ -90,13 +89,19 @@ tr::Result<st::TextureAtlas> st::TextureAtlas::load(tr::String path)
 {
 	TextureAtlas atlas = {};
 	TR_TRY_ASSIGN(atlas._source, Texture::load(path));
-	atlas._textures = tr::HashMap<TextureId, tr::Rect<float32>>(engine.asset_arena);
+	// i hope you don't need a 65535x65535 px texture
+	// that's a lot of pixels innit
+	TR_ASSERT(atlas._source.unwrap().size() < tr::Vec2<uint32>{UINT16_MAX});
+
+	atlas._textures = tr::HashMap<TextureId, tr::Rect<uint16>>(engine.asset_arena);
 	return atlas;
 }
 
-void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint32> rect)
+void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint16> rect)
 {
 	tr::Vec2<uint32> texture_size = _source.unwrap().size();
+	// TODO tr::Vec2<T>.cast<To> or some shit
+	TR_ASSERT(tr::Vec2<uint32>{rect.position.x, rect.position.y} < texture_size)
 
 	// i am static_casting it
 	tr::Rect<float32> texcoords = {
@@ -112,5 +117,5 @@ void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint32> rect)
 		tr::warn("texture atlas already has %i, overwriting previous texture", id);
 	}
 
-	_textures[id] = texcoords;
+	_textures[id] = rect;
 }

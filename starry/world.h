@@ -81,17 +81,22 @@ using TextureId = uint16;
 // Represents a texture atlas :)
 class TextureAtlas
 {
-	// i know you could use an array but this allows arbitrary indexes
-	// instead of being all in order
-	tr::HashMap<TextureId, tr::Rect<float32>> _textures = {};
+	// i know you could use an array but this allows arbitrary indexes, instead of being all in
+	// order
+	// the actual float UVs are calculated in the shader, so the uniform doesn't take up
+	// too much space (512 kb instead of 1 mb)
+	tr::HashMap<TextureId, tr::Rect<uint16>> _textures = {};
 	tr::Maybe<Texture> _source = {};
 
 public:
 	// Makes a texture atlas :)
+	static void extracted(TextureAtlas& atlas);
 	static tr::Result<TextureAtlas> load(tr::String path);
 
 	// Adds a texture duh
-	void add(TextureId id, tr::Rect<uint32> rect);
+	void add(TextureId id, tr::Rect<uint16> rect);
+
+	void upload();
 };
 
 }

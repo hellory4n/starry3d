@@ -1,0 +1,124 @@
+/*
+ * starry3d: C++ voxel engine
+ * https://github.com/hellory4n/starry3d
+ *
+ * starry/shader/basic.glsl
+ * Just some test faffery :)
+ *
+ * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
+ *
+ * This software is provided 'as-is', without any express or implied
+ * warranty. In no event will the authors be held liable for any damages
+ * arising from the use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not
+ *    claim that you wrote the original software. If you use this software
+ *    in a product, an acknowledgment in the product documentation would be
+ *    appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be
+ *    misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ *
+ */
+
+// compile with: ./sokol-shdc -i starry/shader/voxel.glsl -o starry/shader/voxel.glsl.h -l glsl430:hlsl5
+
+@ctype mat4 tr::Matrix4x4
+@ctype vec2 tr::Vec2<float32>
+@ctype vec3 tr::Vec3<float32>
+@ctype vec4 tr::Vec4<float32>
+
+@vs vs
+in vec3 vs_position;
+in uint vs_texture_id;
+
+flat out uint fs_texture_id;
+
+layout(binding = 0) uniform vs_params {
+	mat4 u_model;
+	mat4 u_view;
+	mat4 u_projection;
+};
+
+void main()
+{
+	gl_Position = u_projection * u_view * u_model * vec4(vs_position, 1.0);
+	fs_texture_id = vs_texture_id;
+}
+@end
+
+@fs fs
+// this is actually 2 uint16s together
+// the high part is the index
+// the low part is which texcoord to use
+flat in uint fs_texture_id;
+
+out vec4 frag_color;
+
+layout(binding = 0) uniform texture2D _u_texture;
+layout(binding = 0) uniform sampler _u_texture_smp;
+#define u_texture sampler2D(_u_texture, _u_texture_smp)
+
+layout(binding = 1) uniform fs_params {
+	ivec2 u_atlas_size;
+};
+
+struct Rect
+{
+	uint x;
+	uint y;
+	uint w;
+	uint h;
+};
+
+layout(std430, binding = 2) readonly buffer fs_atlas {
+	Rect u_atlas[];
+};
+
+struct Texture
+{
+	uint id;
+	uint texcoord;
+};
+
+Texture unpack_texture_id(uint src)
+{
+	uint high = src >> 16;
+	uint low = src & 0xFFFF;
+	return Texture(high, low);
+}
+
+vec2 get_texcoord(Texture t)
+{
+	Rect rect = u_atlas[t.id];
+
+	float u0 = float(rect.x) / float(u_atlas_size.x);
+	float v0 = float(rect.y) / float(u_atlas_size.y);
+	float u1 = float(rect.x + rect.w) / float(u_atlas_size.x);
+	float v1 = float(rect.y + rect.h) / float(u_atlas_size.y);
+
+	switch (t.texcoord) {
+	case 0: // top left
+		return vec2(u0, v0);
+	case 1: // top right
+		return vec2(u1, v0);
+	case 2: // bottom right
+		return vec2(u1, v1);
+	case 3: // bottom left
+		return vec2(u0, v1);
+	default:
+		return vec2(0, 0);
+	}
+}
+
+void main()
+{
+	frag_color = texture(u_texture, get_texcoord(unpack_texture_id(fs_texture_id)));
+}
+@end
+
+@program voxel vs fs
