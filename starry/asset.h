@@ -52,8 +52,9 @@ public:
 
 	// Loads an texture and puts it into a cache thing. If it was already loaded, then it
 	// returns the existing texture.
-	static tr::Result<const Texture&> load(tr::String path);
+	static tr::Result<Texture> load(tr::String path);
 
+	// Probably don't use this, the engine frees the texture for you
 	void free();
 
 	// You'll never guess what this does

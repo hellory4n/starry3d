@@ -28,7 +28,13 @@
 #ifndef _ST_WORLD_H
 #define _ST_WORLD_H
 
+#include <trippin/collection.h>
+#include <trippin/common.h>
+#include <trippin/error.h>
 #include <trippin/math.h>
+#include <trippin/string.h>
+
+#include "starry/asset.h"
 
 namespace st {
 
@@ -66,6 +72,26 @@ struct Camera
 
 	// Returns the current camera. This is also how you set the current camera
 	static Camera& current();
+};
+
+// I love optimization. This refers to a texture on a `st::TextureAtlas`, normal textures are just
+// `st::Texture`
+using TextureId = uint16;
+
+// Represents a texture atlas :)
+class TextureAtlas
+{
+	// i know you could use an array but this allows arbitrary indexes
+	// instead of being all in other
+	tr::HashMap<TextureId, tr::Rect<float32>> textures = {};
+	tr::Maybe<Texture> texture = {};
+
+public:
+	// Makes a texture atlas :)
+	static tr::Result<TextureAtlas> load(tr::String path);
+
+	// Adds a texture duh
+	void add(TextureId id, tr::Rect<uint32> rect);
 };
 
 }

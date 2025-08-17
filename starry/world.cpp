@@ -30,6 +30,7 @@
 #include <trippin/math.h>
 
 #include "starry/internal.h"
+#include "trippin/log.h"
 
 void st::_init::world()
 {
@@ -77,4 +78,15 @@ tr::Matrix4x4 st::Camera::projection_matrix() const
 	float32 top = height / 2.f;
 
 	return tr::Matrix4x4::orthographic(left, right, bottom, top, near, far);
+}
+
+// TODO
+tr::Result<st::TextureAtlas> st::TextureAtlas::load(tr::String path)
+{
+	TR_TODO();
+}
+
+void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint32> rect)
+{
+	TR_TODO();
 }

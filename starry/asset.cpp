@@ -69,7 +69,7 @@ st::Texture::Texture()
 	_sampler_id = sg_make_sampler(st::sampler_desc()).id;
 }
 
-tr::Result<const st::Texture&> st::Texture::load(tr::String path)
+tr::Result<st::Texture> st::Texture::load(tr::String path)
 {
 	// no need to load things twice
 	if (engine.textures.contains(path)) {

@@ -94,7 +94,7 @@ void Sandbox::player_controller(float64 dt) const
 	tr::Vec3<float32> move = {
 		right.x * in.x + forward.x * in.z, in.y, right.z * in.x + forward.z * in.z
 	};
-	// TODO did i fuck it up?
+	// TODO did i fuck it?
 	cam.position += -(move * PLAYER_SPEED * static_cast<float32>(dt));
 	cam.rotation.z = 0; // just in case
 }
