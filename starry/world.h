@@ -82,9 +82,9 @@ using TextureId = uint16;
 class TextureAtlas
 {
 	// i know you could use an array but this allows arbitrary indexes
-	// instead of being all in other
-	tr::HashMap<TextureId, tr::Rect<float32>> textures = {};
-	tr::Maybe<Texture> texture = {};
+	// instead of being all in order
+	tr::HashMap<TextureId, tr::Rect<float32>> _textures = {};
+	tr::Maybe<Texture> _source = {};
 
 public:
 	// Makes a texture atlas :)

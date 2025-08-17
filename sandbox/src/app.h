@@ -1,6 +1,8 @@
 #pragma once
 #include <starry/app.h>
 
+namespace sbox {
+
 class Sandbox : public st::Application
 {
 	static constexpr float32 MOUSE_SENSITIVITY = 0.25f;
@@ -15,3 +17,5 @@ public:
 	tr::Result<void> update(float64 dt) override;
 	tr::Result<void> free() override;
 };
+
+}

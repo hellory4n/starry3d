@@ -13,6 +13,8 @@ imgui_enabled = true
 srcs = {
 	"sandbox/src/main.cpp",
 	"sandbox/src/app.cpp",
+	"sandbox/src/debug_mode.cpp",
+	"sandbox/src/world.cpp",
 }
 
 includes = {

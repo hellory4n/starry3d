@@ -27,10 +27,15 @@
 
 #include "starry/world.h"
 
+#include <trippin/collection.h>
+#include <trippin/error.h>
+#include <trippin/log.h>
 #include <trippin/math.h>
 
+#include <sys/stat.h>
+
+#include "starry/asset.h"
 #include "starry/internal.h"
-#include "trippin/log.h"
 
 void st::_init::world()
 {
@@ -83,10 +88,29 @@ tr::Matrix4x4 st::Camera::projection_matrix() const
 // TODO
 tr::Result<st::TextureAtlas> st::TextureAtlas::load(tr::String path)
 {
-	TR_TODO();
+	TextureAtlas atlas = {};
+	TR_TRY_ASSIGN(atlas._source, Texture::load(path));
+	atlas._textures = tr::HashMap<TextureId, tr::Rect<float32>>(engine.asset_arena);
+	return atlas;
 }
 
 void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint32> rect)
 {
-	TR_TODO();
+	tr::Vec2<uint32> texture_size = _source.unwrap().size();
+
+	// i am static_casting it
+	tr::Rect<float32> texcoords = {
+		static_cast<float32>(rect.position.x) / static_cast<float32>(texture_size.x),
+		static_cast<float32>(rect.position.y) / static_cast<float32>(texture_size.y),
+		static_cast<float32>(rect.position.x + rect.size.x) /
+			static_cast<float32>(texture_size.x),
+		static_cast<float32>(rect.position.y + rect.size.y) /
+			static_cast<float32>(texture_size.y),
+	};
+
+	if (_textures.contains(id)) {
+		tr::warn("texture atlas already has %i, overwriting previous texture", id);
+	}
+
+	_textures[id] = texcoords;
 }

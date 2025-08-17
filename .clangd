@@ -1,0 +1,4 @@
+# so it includes those as <...> instead of "..."
+# this is important so clang-format can format the headers and stuff
+CompileFlags:
+  Add: [-isystem, thirdparty, -isystem, thirdparty/libtrippin]

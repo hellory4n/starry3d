@@ -10,7 +10,7 @@ int main()
 	settings.logfiles = {"log.txt"};
 	settings.window_size = {800, 600};
 
-	Sandbox app = {};
+	sbox::Sandbox app = {};
 	st::run(app, settings);
 	return 0;
 }

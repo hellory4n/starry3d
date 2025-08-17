@@ -5,8 +5,9 @@
 #include <starry/render.h>
 
 #include "debug_mode.h"
+#include "world.h"
 
-tr::Result<void> Sandbox::init()
+tr::Result<void> sbox::Sandbox::init()
 {
 	st::Camera& cam = st::Camera::current();
 	cam.position = {0, 0, -5};
@@ -16,13 +17,15 @@ tr::Result<void> Sandbox::init()
 	const st::Texture& texture = st::Texture::load("app://enough_fckery.jpg").unwrap();
 	texture.bind(0);
 
+	sbox::setup_world();
+
 	tr::log("initialized sandbox :)");
 	return {};
 }
 
-tr::Result<void> Sandbox::update(float64 dt)
+tr::Result<void> sbox::Sandbox::update(float64 dt)
 {
-	debug_mode();
+	sbox::debug_mode();
 
 	// hlep
 	if (st::is_key_just_pressed(st::Key::ESCAPE)) {
@@ -35,14 +38,14 @@ tr::Result<void> Sandbox::update(float64 dt)
 	return {};
 }
 
-tr::Result<void> Sandbox::free()
+tr::Result<void> sbox::Sandbox::free()
 {
 	tr::log("freed sandbox :)");
 
 	return {};
 }
 
-void Sandbox::player_controller(float64 dt) const
+void sbox::Sandbox::player_controller(float64 dt) const
 {
 	if (_ui_enabled) {
 		return;
