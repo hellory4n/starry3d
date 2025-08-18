@@ -2,8 +2,8 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * starry/shader/basic.glsl
- * Just some test faffery :)
+ * starry/shader/voxel.glsl
+ * The shader that shades voxels shader shading it.
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
  *
@@ -25,7 +25,7 @@
  *
  */
 
-// compile with: ./sokol-shdc -i starry/shader/voxel.glsl -o starry/shader/voxel.glsl.h -l glsl430:hlsl5
+// compile with: ./sokol-shdc -i starry/shader/terrain.glsl -o starry/shader/terrain.glsl.h -l glsl430:hlsl5
 
 @ctype mat4 tr::Matrix4x4
 @ctype vec2 tr::Vec2<float32>
@@ -75,7 +75,7 @@ struct Rect
 	uint h;
 };
 
-layout(std430, binding = 2) readonly buffer fs_atlas {
+layout(std430, binding = 0) readonly buffer fs_atlas {
 	Rect u_atlas[];
 };
 
@@ -121,4 +121,4 @@ void main()
 }
 @end
 
-@program voxel vs fs
+@program terrain vs fs

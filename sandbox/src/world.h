@@ -1,6 +1,6 @@
 #pragma once
 
-#include <starry/world.h>
+#include <trippin/common.h>
 
 namespace sbox {
 

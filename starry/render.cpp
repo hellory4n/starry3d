@@ -32,6 +32,7 @@
 #include <trippin/memory.h>
 
 #include "starry/internal.h"
+#include "starry/world.h"
 
 // :(
 TR_GCC_IGNORE_WARNING(-Wold-style-cast)
@@ -50,7 +51,7 @@ TR_GCC_IGNORE_WARNING(-Wextra) // this is why clang is better
 #include <sokol/sokol_glue.h>
 #include <stb/stb_image.h>
 
-#include "starry/shader/basic.glsl.h"
+#include "starry/shader/terrain.glsl.h"
 TR_GCC_RESTORE()
 TR_GCC_RESTORE()
 TR_GCC_RESTORE()
@@ -64,16 +65,16 @@ static inline sg_color tr_color_to_sg_color(tr::Color color)
 	return {colorf.x, colorf.y, colorf.z, colorf.w};
 }
 
-static inline void make_basic_pipeline()
+static inline void make_terrain_pipeline()
 {
 	// idfk what am i doing
-	sg_shader shader = sg_make_shader(basic_shader_desc(sg_query_backend()));
+	sg_shader shader = sg_make_shader(terrain_shader_desc(sg_query_backend()));
 
 	sg_pipeline_desc pipeline_desc = {};
 
 	pipeline_desc.shader = shader;
-	pipeline_desc.layout.attrs[ATTR_basic_vs_position].format = SG_VERTEXFORMAT_FLOAT3;
-	pipeline_desc.layout.attrs[ATTR_basic_vs_texcoord].format = SG_VERTEXFORMAT_FLOAT2;
+	pipeline_desc.layout.attrs[ATTR_terrain_vs_position].format = SG_VERTEXFORMAT_FLOAT3;
+	pipeline_desc.layout.attrs[ATTR_terrain_vs_texture_id].format = SG_VERTEXFORMAT_UINT;
 
 	pipeline_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
 	pipeline_desc.depth.write_enabled = true;
@@ -81,10 +82,43 @@ static inline void make_basic_pipeline()
 	pipeline_desc.cull_mode = SG_CULLMODE_NONE;
 	pipeline_desc.face_winding = SG_FACEWINDING_CCW;
 
-	pipeline_desc.label = "basic_pipeline";
-	engine.basic_pipeline = sg_make_pipeline(pipeline_desc);
+	pipeline_desc.label = "terrain_pipeline";
+	engine.terrain_pipeline = sg_make_pipeline(pipeline_desc);
 }
 
+}
+
+void st::_upload_atlas()
+{
+	// new arena to not fill up tr::scratchpad with crap :)
+	tr::Arena scratch(tr::mb_to_bytes(1));
+	TR_DEFER(scratch.free());
+
+	TextureAtlas atlas = engine.current_atlas.unwrap();
+
+	// glsl doesn't have hashmaps, so we just make one giant array
+	// the size is UINT16_MAX * sizeof(tr::Rect<uint32>) = 1 MB
+	// which is not that much
+	// and it is faster than linear probing in glsl
+	tr::Array<tr::Rect<uint32>> man(scratch, UINT16_MAX);
+	for (auto [key, value] : atlas._textures) {
+		man[key] = value;
+	}
+
+	fs_params_t uniform = {};
+	// apparently you can't use an uvec2 on a uniform
+	// why the fuck??????????????
+	uniform.u_atlas_size[0] = static_cast<int32>(atlas.size().x);
+	uniform.u_atlas_size[1] = static_cast<int32>(atlas.size().y);
+	sg_apply_uniforms(UB_fs_params, SG_RANGE(uniform));
+
+	sg_buffer_desc buffer_desc = {};
+	buffer_desc.usage.storage_buffer = true;
+	buffer_desc.data = SG_RANGE_TR_ARRAY(man);
+	buffer_desc.label = "texture_atlas";
+	engine.bindings.storage_buffers[SBUF_fs_atlas] = sg_make_buffer(buffer_desc);
+
+	tr::info("uploaded texture atlas");
 }
 
 void st::_init::render()
@@ -104,28 +138,27 @@ void st::_init::render()
 	sg_desc.logger.func = st::_sokol_log;
 	sg_setup(&sg_desc);
 
-	// TODO st::Vertex or some shit
 	/* clang-format off */
-	tr::Array<float32> verts = {
-		// position            // uv
-		0.0f,  0.5f,  0.0f,    0.0f, -0.5f, // top
-		0.5f,  -0.5f, 0.0f,    0.0f, 1.0f, // bottom right
-		-0.5f, -0.5f, 0.0f,    1.0f, 0.0f, // bottom left
+	tr::Array<TerrainVertex> verts = {
+		// position            // texture id
+		{0.0f,  0.5f,  0.0f,   0, 0}, // top
+		{0.5f,  -0.5f, 0.0f,   0, 2}, // bottom right
+		{-0.5f, -0.5f, 0.0f,   1, 3}, // bottom left
 	};
 	/* clang-format on */
 
 	sg_buffer_desc buffer_desc = {};
-	buffer_desc.size = verts.len() * sizeof(float32);
+	buffer_desc.size = verts.len() * sizeof(TerrainVertex);
 	// SG_RANGE doesn't work with tr::Array<T>
-	buffer_desc.data = {*verts, verts.len() * sizeof(float32)};
+	buffer_desc.data = SG_RANGE_TR_ARRAY(verts);
 	buffer_desc.usage.vertex_buffer = true;
 	engine.bindings.vertex_buffers[0] = sg_make_buffer(buffer_desc);
 
 	// first the alt-right pipeline
 	// now there's the render pipeline :(
-	st::make_basic_pipeline();
+	st::make_terrain_pipeline();
 	// that's how you set the current pipeline
-	engine.pipeline = engine.basic_pipeline;
+	engine.pipeline = engine.terrain_pipeline;
 
 	// what the fuck is a render pass
 	engine.pass_action.colors[0].load_action = SG_LOADACTION_CLEAR;
@@ -150,7 +183,12 @@ void st::_update::render()
 	sg_begin_pass(pass);
 
 	sg_apply_pipeline(engine.pipeline.unwrap_ref());
-	sg_apply_bindings(engine.bindings);
+
+	// i know
+	if (engine.pls_upload_the_atlas_to_the_gpu) {
+		st::_upload_atlas();
+		engine.pls_upload_the_atlas_to_the_gpu = false;
+	}
 
 	// we do have to update the uniforms
 	vs_params_t uniform = {};
@@ -158,6 +196,8 @@ void st::_update::render()
 	uniform.u_view = Camera::current().view_matrix();
 	uniform.u_projection = Camera::current().projection_matrix();
 	sg_apply_uniforms(UB_vs_params, SG_RANGE(uniform));
+
+	sg_apply_bindings(engine.bindings);
 
 	sg_draw(0, 3, 1);
 

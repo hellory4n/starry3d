@@ -31,6 +31,7 @@
 
 #include <trippin/common.h>
 #include <trippin/error.h>
+#include <trippin/math.h>
 #include <trippin/string.h>
 
 // shit up
@@ -59,10 +60,32 @@ public:
 	tr::String message() const override;
 };
 
+#define SG_RANGE_TR_ARRAY(Array) {*(Array), (Array).len() * sizeof(decltype(Array)::Type)}
+
 sg_sampler_desc& sampler_desc();
 
 // from https://github.com/zeromake/learnopengl-examples/blob/master/libs/sokol/sokol_helper.h
 void sg_image_alloc_smp(int image_idx, int sampler_idx);
+
+static inline uint32 pack_texture_id(uint16 texture, uint16 texcoord)
+{
+	return static_cast<uint32>(texture << 16) | texcoord;
+}
+
+// It's like a vertex, but for terrain.
+struct TerrainVertex
+{
+	tr::Vec3<float32> position;
+	uint32 packed_texture_id;
+
+	TerrainVertex(float32 x, float32 y, float32 z, uint16 texture_id, uint16 texcoord)
+		: position(x, y, z)
+		, packed_texture_id(st::pack_texture_id(texture_id, texcoord))
+	{
+	}
+};
+
+void _upload_atlas();
 
 }
 

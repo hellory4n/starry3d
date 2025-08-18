@@ -76,10 +76,15 @@ struct Starry3D
 
 	// renderer
 	tr::MaybePtr<sg_pipeline> pipeline = {};
-	sg_pipeline basic_pipeline = {};
-
+	sg_pipeline terrain_pipeline = {};
 	sg_bindings bindings = {};
 	sg_pass_action pass_action = {};
+	tr::Maybe<TextureAtlas> current_atlas = {};
+	// you can't set uniforms any time you want
+	// so TextureAtlas sets this to true, the renderer looks at it, uploads the atlas, and sets
+	// it back to false
+	// i don't think anyone is gonna be setting the atlas multiple times but i don't care
+	bool pls_upload_the_atlas_to_the_gpu = false;
 
 	// world
 	Camera camera = {};

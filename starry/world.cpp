@@ -28,6 +28,7 @@
 #include "starry/world.h"
 
 #include <trippin/collection.h>
+#include <trippin/common.h>
 #include <trippin/error.h>
 #include <trippin/log.h>
 #include <trippin/math.h>
@@ -84,38 +85,33 @@ tr::Matrix4x4 st::Camera::projection_matrix() const
 	return tr::Matrix4x4::orthographic(left, right, bottom, top, near, far);
 }
 
-// TODO
 tr::Result<st::TextureAtlas> st::TextureAtlas::load(tr::String path)
 {
 	TextureAtlas atlas = {};
 	TR_TRY_ASSIGN(atlas._source, Texture::load(path));
-	// i hope you don't need a 65535x65535 px texture
-	// that's a lot of pixels innit
-	TR_ASSERT(atlas._source.unwrap().size() < tr::Vec2<uint32>{UINT16_MAX});
 
-	atlas._textures = tr::HashMap<TextureId, tr::Rect<uint16>>(engine.asset_arena);
+	atlas._textures = tr::HashMap<TextureId, tr::Rect<uint32>>(engine.asset_arena);
 	return atlas;
 }
 
-void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint16> rect)
+void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint32> rect)
 {
-	tr::Vec2<uint32> texture_size = _source.unwrap().size();
-	// TODO tr::Vec2<T>.cast<To> or some shit
-	TR_ASSERT(tr::Vec2<uint32>{rect.position.x, rect.position.y} < texture_size)
-
-	// i am static_casting it
-	tr::Rect<float32> texcoords = {
-		static_cast<float32>(rect.position.x) / static_cast<float32>(texture_size.x),
-		static_cast<float32>(rect.position.y) / static_cast<float32>(texture_size.y),
-		static_cast<float32>(rect.position.x + rect.size.x) /
-			static_cast<float32>(texture_size.x),
-		static_cast<float32>(rect.position.y + rect.size.y) /
-			static_cast<float32>(texture_size.y),
-	};
+	TR_ASSERT(rect.position < size())
 
 	if (_textures.contains(id)) {
 		tr::warn("texture atlas already has %i, overwriting previous texture", id);
 	}
 
 	_textures[id] = rect;
+}
+
+void st::TextureAtlas::set_current() const
+{
+	engine.current_atlas = *this;
+	engine.pls_upload_the_atlas_to_the_gpu = true; // i know
+}
+
+tr::Vec2<uint32> st::TextureAtlas::size() const
+{
+	return _source.unwrap().size();
 }
