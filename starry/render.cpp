@@ -68,7 +68,6 @@ static inline sg_color tr_color_to_sg_color(tr::Color color)
 
 static inline void make_terrain_pipeline()
 {
-	// idfk what am i doing
 	sg_shader shader = sg_make_shader(terrain_shader_desc(sg_query_backend()));
 
 	sg_pipeline_desc pipeline_desc = {};
@@ -145,15 +144,10 @@ void st::_upload_atlas()
 		man[key] = value;
 	}
 
-	sg_buffer_desc buffer_desc = {};
-	buffer_desc.usage.storage_buffer = true;
-	buffer_desc.data = SG_RANGE_TR_ARRAY(man);
-	buffer_desc.label = "texture_atlas";
-	engine.bindings.storage_buffers[SBUF_fs_atlas] = sg_make_buffer(buffer_desc);
-
+	sg_update_buffer(engine.bindings.storage_buffers[SBUF_fs_atlas], SG_RANGE_TR_ARRAY(man));
 	atlas._source.unwrap().bind(0);
 
-	tr::info("uploaded texture atlas");
+	tr::info("uploaded texture atlas from %s", *atlas._source.unwrap().path());
 }
 
 void st::_init::render()
@@ -174,6 +168,14 @@ void st::_init::render()
 	sg_setup(&sg_desc);
 
 	st::check_gpu_info();
+
+	sg_buffer_desc atlas_buffer_desc = {};
+	atlas_buffer_desc.usage.storage_buffer = true;
+	atlas_buffer_desc.usage.dynamic_update = true;
+	atlas_buffer_desc.usage.immutable = false;
+	atlas_buffer_desc.size = UINT16_MAX * sizeof(tr::Rect<uint32>);
+	atlas_buffer_desc.label = "texture_atlas";
+	engine.bindings.storage_buffers[SBUF_fs_atlas] = sg_make_buffer(atlas_buffer_desc);
 
 	/* clang-format off */
 	tr::Array<TerrainVertex> verts = {
@@ -215,7 +217,7 @@ void st::_init::render()
 
 	// it screams in pain and agony if there's no texture set yet
 	// so we have to make some placeholder bullshit
-	sg_image_alloc_smp(IMG__u_texture, SMP__u_texture_smp);
+	// sg_image_alloc_smp(IMG__u_texture, SMP__u_texture_smp);
 }
 
 void st::_free::render()
@@ -232,26 +234,28 @@ void st::_update::render()
 
 	sg_apply_pipeline(engine.pipeline.unwrap_ref());
 
-	// i know
-	if (engine.pls_upload_the_atlas_to_the_gpu) {
-		st::_upload_atlas();
-		engine.pls_upload_the_atlas_to_the_gpu = false;
-	}
-
-	sg_apply_bindings(engine.bindings);
-
 	// we do have to update the uniforms
 	params_t uniform = {};
 	uniform.u_model = tr::Matrix4x4::identity();
 	uniform.u_view = Camera::current().view_matrix();
 	uniform.u_projection = Camera::current().projection_matrix();
-	// apparently you can't use an uvec2 on a uniform
-	// why the fuck??????????????
-	uniform.u_atlas_size[0] = static_cast<int32>(engine.current_atlas.unwrap().size().x);
-	uniform.u_atlas_size[1] = static_cast<int32>(engine.current_atlas.unwrap().size().y);
+
+	// i know
+	if (engine.pls_upload_the_atlas_to_the_gpu) {
+		st::_upload_atlas();
+		engine.pls_upload_the_atlas_to_the_gpu = false;
+		// apparently you can't use an uvec2 on a uniform
+		// why the fuck??????????????
+		uniform.u_atlas_size[0] =
+			static_cast<int32>(engine.current_atlas.unwrap().size().x);
+		uniform.u_atlas_size[1] =
+			static_cast<int32>(engine.current_atlas.unwrap().size().y);
+	}
+
+	sg_apply_bindings(engine.bindings);
 	sg_apply_uniforms(UB_params, SG_RANGE(uniform));
 
-	sg_draw(0, 3, 1);
+	sg_draw(0, 6, 1);
 
 #ifdef ST_IMGUI
 	st::imgui::render();

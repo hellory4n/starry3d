@@ -162,3 +162,8 @@ void st::Texture::_free_all_textures()
 		texture.free();
 	}
 }
+
+tr::String st::Texture::path() const
+{
+	return _path;
+}

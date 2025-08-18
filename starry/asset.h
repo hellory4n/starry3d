@@ -68,6 +68,9 @@ public:
 
 	// Uses the texture :)
 	void bind(int32 slot = 0) const;
+
+	// Returns the path from where the texture came from :)
+	tr::String path() const;
 };
 
 }

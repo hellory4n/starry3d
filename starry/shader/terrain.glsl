@@ -63,27 +63,32 @@ flat in ivec2 fs_atlas_size;
 
 out vec4 frag_color;
 
-layout(binding = 0) uniform texture2D _u_texture;
-layout(binding = 0) uniform sampler _u_texture_smp;
-#define u_texture sampler2D(_u_texture, _u_texture_smp)
-
-struct Rect
-{
+struct Rect {
 	uint x;
 	uint y;
 	uint w;
 	uint h;
 };
 
-layout(std430, binding = 0) readonly buffer fs_atlas {
-	Rect u_atlas[];
-};
-
-struct Texture
-{
+struct Texture {
 	uint id;
 	uint texcoord;
 };
+
+layout(binding = 0) uniform texture2D _u_texture;
+layout(binding = 0) uniform sampler _u_texture_smp;
+#define u_texture sampler2D(_u_texture, _u_texture_smp)
+
+layout(binding = 0) readonly buffer fs_atlas {
+	Rect u_atlas[];
+};
+
+// green on success, red on fail
+void assert(bool x)
+{
+	if (x) frag_color = vec4(1, 0, 0, 1);
+	else frag_color = vec4(0, 1, 0, 1);
+}
 
 Texture unpack_texture_id(uint src)
 {
@@ -117,7 +122,11 @@ vec2 get_texcoord(Texture t)
 
 void main()
 {
-	frag_color = texture(u_texture, get_texcoord(unpack_texture_id(fs_texture_id)));
+	// frag_color = texture(u_texture, get_texcoord(unpack_texture_id(fs_texture_id)));
+	vec2 fick = get_texcoord(unpack_texture_id(fs_texture_id));
+	// frag_color = vec4(fick.x, 0, fick.y, 1);
+	// assert(u_atlas[2].x == 32 && u_atlas[2].y == 0 && u_atlas[2].w == 16);
+	assert(u_atlas[0].w == 16);
 }
 @end
 
