@@ -37,17 +37,20 @@ in vec3 vs_position;
 in uint vs_texture_id;
 
 flat out uint fs_texture_id;
+flat out ivec2 fs_atlas_size;
 
-layout(binding = 0) uniform vs_params {
+layout(binding = 0) uniform params {
 	mat4 u_model;
 	mat4 u_view;
 	mat4 u_projection;
+	ivec2 u_atlas_size;
 };
 
 void main()
 {
 	gl_Position = u_projection * u_view * u_model * vec4(vs_position, 1.0);
 	fs_texture_id = vs_texture_id;
+	fs_atlas_size = u_atlas_size;
 }
 @end
 
@@ -56,16 +59,13 @@ void main()
 // the high part is the index
 // the low part is which texcoord to use
 flat in uint fs_texture_id;
+flat in ivec2 fs_atlas_size;
 
 out vec4 frag_color;
 
 layout(binding = 0) uniform texture2D _u_texture;
 layout(binding = 0) uniform sampler _u_texture_smp;
 #define u_texture sampler2D(_u_texture, _u_texture_smp)
-
-layout(binding = 1) uniform fs_params {
-	ivec2 u_atlas_size;
-};
 
 struct Rect
 {
@@ -96,10 +96,10 @@ vec2 get_texcoord(Texture t)
 {
 	Rect rect = u_atlas[t.id];
 
-	float u0 = float(rect.x) / float(u_atlas_size.x);
-	float v0 = float(rect.y) / float(u_atlas_size.y);
-	float u1 = float(rect.x + rect.w) / float(u_atlas_size.x);
-	float v1 = float(rect.y + rect.h) / float(u_atlas_size.y);
+	float u0 = float(rect.x) / float(fs_atlas_size.x);
+	float v0 = float(rect.y) / float(fs_atlas_size.y);
+	float u1 = float(rect.x + rect.w) / float(fs_atlas_size.x);
+	float v1 = float(rect.y + rect.h) / float(fs_atlas_size.y);
 
 	switch (t.texcoord) {
 	case 0: // top left

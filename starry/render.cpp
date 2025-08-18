@@ -28,6 +28,7 @@
 // TODO this is still a insane mess
 
 #include <trippin/common.h>
+#include <trippin/log.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
 
@@ -73,6 +74,7 @@ static inline void make_terrain_pipeline()
 	sg_pipeline_desc pipeline_desc = {};
 
 	pipeline_desc.shader = shader;
+	pipeline_desc.index_type = SG_INDEXTYPE_UINT32;
 	pipeline_desc.layout.attrs[ATTR_terrain_vs_position].format = SG_VERTEXFORMAT_FLOAT3;
 	pipeline_desc.layout.attrs[ATTR_terrain_vs_texture_id].format = SG_VERTEXFORMAT_UINT;
 
@@ -84,6 +86,44 @@ static inline void make_terrain_pipeline()
 
 	pipeline_desc.label = "terrain_pipeline";
 	engine.terrain_pipeline = sg_make_pipeline(pipeline_desc);
+}
+
+// why not
+static void check_gpu_info()
+{
+	sg_limits limits = sg_query_limits();
+	tr::info(
+		"GPU limits:\n"
+		"- max_image_size_2d:      %i\n"
+		"- max_image_size_cube:    %i\n"
+		"- max_image_size_3d:      %i\n"
+		"- max_image_size_array:   %i\n"
+		"- max_image_array_layers: %i\n"
+		"- max_image_vertex_attrs: %i",
+		limits.max_image_size_2d, limits.max_image_size_cube, limits.max_image_size_3d,
+		limits.max_image_size_array, limits.max_image_array_layers, limits.max_vertex_attrs
+	);
+
+	sg_features features = sg_query_features();
+	tr::info(
+		"GPU features:\n"
+		"- origin_top_left (for textures): %s\n"
+		"- image_clamp_to_border:          %s\n"
+		"- mrt_independent_blend_state:    %s\n"
+		"- mrt_independent_write_mask:     %s\n"
+		"- compute (and SSBOs):            %s\n"
+		"- msaa_image_bindings:            %s",
+		features.origin_top_left ? "yes" : "no",
+		features.image_clamp_to_border ? "yes" : "no",
+		features.mrt_independent_blend_state ? "yes" : "no",
+		features.mrt_independent_write_mask ? "yes" : "no", features.compute ? "yes" : "no",
+		features.msaa_image_bindings ? "yes" : "no"
+	);
+
+	TR_ASSERT_MSG(
+		features.compute,
+		"starry3d requires a GPU with support for compute shaders and storage buffers"
+	);
 }
 
 }
@@ -105,18 +145,13 @@ void st::_upload_atlas()
 		man[key] = value;
 	}
 
-	fs_params_t uniform = {};
-	// apparently you can't use an uvec2 on a uniform
-	// why the fuck??????????????
-	uniform.u_atlas_size[0] = static_cast<int32>(atlas.size().x);
-	uniform.u_atlas_size[1] = static_cast<int32>(atlas.size().y);
-	sg_apply_uniforms(UB_fs_params, SG_RANGE(uniform));
-
 	sg_buffer_desc buffer_desc = {};
 	buffer_desc.usage.storage_buffer = true;
 	buffer_desc.data = SG_RANGE_TR_ARRAY(man);
 	buffer_desc.label = "texture_atlas";
 	engine.bindings.storage_buffers[SBUF_fs_atlas] = sg_make_buffer(buffer_desc);
+
+	atlas._source.unwrap().bind(0);
 
 	tr::info("uploaded texture atlas");
 }
@@ -138,21 +173,34 @@ void st::_init::render()
 	sg_desc.logger.func = st::_sokol_log;
 	sg_setup(&sg_desc);
 
+	st::check_gpu_info();
+
 	/* clang-format off */
 	tr::Array<TerrainVertex> verts = {
 		// position            // texture id
-		{0.0f,  0.5f,  0.0f,   0, 0}, // top
-		{0.5f,  -0.5f, 0.0f,   0, 2}, // bottom right
-		{-0.5f, -0.5f, 0.0f,   1, 3}, // bottom left
+		{ 0.5,   0.5f, 0.0f,   0, 1}, // top right
+		{ 0.5f, -0.5f, 0.0f,   0, 2}, // bottom right
+		{-0.5f, -0.5f, 0.0f,   0, 3}, // bottom left
+		{-0.5f,  0.5f, 0.0f,   0, 0}, // top left
 	};
 	/* clang-format on */
 
-	sg_buffer_desc buffer_desc = {};
-	buffer_desc.size = verts.len() * sizeof(TerrainVertex);
-	// SG_RANGE doesn't work with tr::Array<T>
-	buffer_desc.data = SG_RANGE_TR_ARRAY(verts);
-	buffer_desc.usage.vertex_buffer = true;
-	engine.bindings.vertex_buffers[0] = sg_make_buffer(buffer_desc);
+	tr::Array<Triangle> indices = {
+		{0, 1, 3},
+		{1, 2, 3},
+	};
+
+	sg_buffer_desc vertex_buffer_desc = {};
+	vertex_buffer_desc.size = verts.len() * sizeof(TerrainVertex);
+	vertex_buffer_desc.data = SG_RANGE_TR_ARRAY(verts);
+	vertex_buffer_desc.usage.vertex_buffer = true;
+	engine.bindings.vertex_buffers[0] = sg_make_buffer(vertex_buffer_desc);
+
+	sg_buffer_desc index_buffer_desc = {};
+	index_buffer_desc.size = indices.len() * sizeof(Triangle);
+	index_buffer_desc.data = SG_RANGE_TR_ARRAY(indices);
+	index_buffer_desc.usage.index_buffer = true;
+	engine.bindings.index_buffer = sg_make_buffer(index_buffer_desc);
 
 	// first the alt-right pipeline
 	// now there's the render pipeline :(
@@ -190,14 +238,18 @@ void st::_update::render()
 		engine.pls_upload_the_atlas_to_the_gpu = false;
 	}
 
+	sg_apply_bindings(engine.bindings);
+
 	// we do have to update the uniforms
-	vs_params_t uniform = {};
+	params_t uniform = {};
 	uniform.u_model = tr::Matrix4x4::identity();
 	uniform.u_view = Camera::current().view_matrix();
 	uniform.u_projection = Camera::current().projection_matrix();
-	sg_apply_uniforms(UB_vs_params, SG_RANGE(uniform));
-
-	sg_apply_bindings(engine.bindings);
+	// apparently you can't use an uvec2 on a uniform
+	// why the fuck??????????????
+	uniform.u_atlas_size[0] = static_cast<int32>(engine.current_atlas.unwrap().size().x);
+	uniform.u_atlas_size[1] = static_cast<int32>(engine.current_atlas.unwrap().size().y);
+	sg_apply_uniforms(UB_params, SG_RANGE(uniform));
 
 	sg_draw(0, 3, 1);
 

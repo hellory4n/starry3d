@@ -14,9 +14,6 @@ tr::Result<void> sbox::Sandbox::init()
 	cam.fov = 90;
 	cam.projection = st::CameraProjection::PERSPECTIVE;
 
-	const st::Texture& texture = st::Texture::load("app://enough_fckery.jpg").unwrap();
-	texture.bind(0);
-
 	sbox::setup_world();
 
 	tr::log("initialized sandbox :)");

@@ -85,6 +85,14 @@ struct TerrainVertex
 	}
 };
 
+// pink triangle on her sleeve let me know the truth let me know the truth
+struct Triangle
+{
+	uint32 v1;
+	uint32 v2;
+	uint32 v3;
+};
+
 void _upload_atlas();
 
 }

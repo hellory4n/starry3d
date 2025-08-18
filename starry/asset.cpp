@@ -50,7 +50,6 @@ TR_GCC_RESTORE()
 
 #include "starry/internal.h"
 #include "starry/render.h"
-#include "starry/shader/basic.glsl.h"
 
 void st::_init::asset()
 {
