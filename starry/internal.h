@@ -30,9 +30,7 @@
 #define _ST_INTERNAL_H
 
 // sokol config
-#if defined(_WIN32)
-	#define SOKOL_D3D11
-#elif defined(__APPLE__)
+#ifdef __APPLE__
 	#define SOKOL_METAL
 #else
 	#define SOKOL_GLCORE

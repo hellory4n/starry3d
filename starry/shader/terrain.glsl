@@ -25,21 +25,15 @@
  *
  */
 
-// compile with: ./sokol-shdc -i starry/shader/terrain.glsl -o starry/shader/terrain.glsl.h -l glsl430:hlsl5
+// compile with: ./sokol-shdc -i starry/shader/terrain.glsl -o starry/shader/terrain.glsl.h -l glsl430:metal_macos
 
-@ctype mat4 tr::Matrix4x4
-@ctype vec2 tr::Vec2<float32>
-@ctype vec3 tr::Vec3<float32>
-@ctype vec4 tr::Vec4<float32>
-@ctype ivec2 tr::Vec2<int32>
-@ctype ivec3 tr::Vec3<int32>
-@ctype ivec4 tr::Vec4<int32>
+@include defs.glsl
 
 @vs vs
 in vec3 vs_position;
-in uint vs_texture_id;
+in int vs_texture_id;
 
-flat out uint fs_texture_id;
+flat out int fs_texture_id;
 flat out ivec2 fs_atlas_size;
 
 layout(binding = 0) uniform params {
@@ -61,16 +55,16 @@ void main()
 // this is actually 2 uint16s together
 // the high part is the index
 // the low part is which texcoord to use
-flat in uint fs_texture_id;
+flat in int fs_texture_id;
 flat in ivec2 fs_atlas_size;
 
 out vec4 frag_color;
 
 struct Rect {
-	uint x;
-	uint y;
-	uint w;
-	uint h;
+	int x;
+	int y;
+	int w;
+	int h;
 };
 
 struct Texture {
@@ -82,7 +76,7 @@ layout(binding = 0) uniform texture2D _u_texture;
 layout(binding = 0) uniform sampler _u_texture_smp;
 #define u_texture sampler2D(_u_texture, _u_texture_smp)
 
-layout(binding = 0) readonly buffer fs_atlas {
+layout(std430, binding = 0) readonly buffer fs_atlas {
 	Rect u_atlas[];
 };
 
@@ -129,7 +123,7 @@ void main()
 	vec2 fick = get_texcoord(unpack_texture_id(fs_texture_id));
 	// frag_color = vec4(fick.x, 0, fick.y, 1);
 	// assert(u_atlas[2].x == 32 && u_atlas[2].y == 0 && u_atlas[2].w == 16);
-	assert(u_atlas[0].w == 16);
+	assert(u_atlas[0].w == 16 && fs_texture_id >= 0);
 }
 @end
 

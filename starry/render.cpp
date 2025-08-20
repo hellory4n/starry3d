@@ -75,7 +75,7 @@ static inline void make_terrain_pipeline()
 	pipeline_desc.shader = shader;
 	pipeline_desc.index_type = SG_INDEXTYPE_UINT32;
 	pipeline_desc.layout.attrs[ATTR_terrain_vs_position].format = SG_VERTEXFORMAT_FLOAT3;
-	pipeline_desc.layout.attrs[ATTR_terrain_vs_texture_id].format = SG_VERTEXFORMAT_UINT;
+	pipeline_desc.layout.attrs[ATTR_terrain_vs_texture_id].format = SG_VERTEXFORMAT_INT;
 
 	pipeline_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
 	pipeline_desc.depth.write_enabled = true;
@@ -144,7 +144,25 @@ void st::_upload_atlas()
 		man[key] = value;
 	}
 
-	sg_update_buffer(engine.bindings.storage_buffers[SBUF_fs_atlas], SG_RANGE_TR_ARRAY(man));
+// fucking shit doesn't fucking work
+// words cannot describe my fucking confusion
+// TODO fucking fix it like a normal person
+#if !defined(SOKOL_GLCORE) && !defined(SOKOL_GLES3)
+	#error "hey aren't you that guy from weezer? say it ain't soooowowowww"
+#else
+	_sg_buffer_t* buf = _sg_lookup_buffer(engine.bindings.storage_buffers[SBUF_fs_atlas].id);
+	GLenum gl_tgt = _sg_gl_buffer_target(&buf->cmn.usage);
+	GLuint gl_buf = buf->gl.buf[buf->cmn.active_slot];
+	_sg_gl_cache_store_buffer_binding(gl_tgt);
+	_sg_gl_cache_bind_buffer(gl_tgt, gl_buf);
+
+	void* ptr = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
+	memcpy(ptr, *man, man.len() * sizeof(tr::Rect<uint32>));
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+	_sg_gl_cache_restore_buffer_binding(gl_tgt);
+	sg_reset_state_cache();
+#endif
 	atlas._source.unwrap().bind(0);
 
 	tr::info("uploaded texture atlas from %s", *atlas._source.unwrap().path());
