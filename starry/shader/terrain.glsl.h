@@ -44,7 +44,7 @@ SOKOL_SHDC_ALIGN(16) typedef struct params_t {
     tr::Matrix4x4 u_model;
     tr::Matrix4x4 u_view;
     tr::Matrix4x4 u_projection;
-    int u_atlas_size[2];
+    tr::Vec2<int32> u_atlas_size;
     uint8_t _pad_200[8];
 } params_t;
 #pragma pack(pop)

@@ -172,7 +172,6 @@ void st::_init::render()
 	sg_buffer_desc atlas_buffer_desc = {};
 	atlas_buffer_desc.usage.storage_buffer = true;
 	atlas_buffer_desc.usage.dynamic_update = true;
-	atlas_buffer_desc.usage.immutable = false;
 	atlas_buffer_desc.size = UINT16_MAX * sizeof(tr::Rect<uint32>);
 	atlas_buffer_desc.label = "texture_atlas";
 	engine.bindings.storage_buffers[SBUF_fs_atlas] = sg_make_buffer(atlas_buffer_desc);
@@ -246,10 +245,8 @@ void st::_update::render()
 		engine.pls_upload_the_atlas_to_the_gpu = false;
 		// apparently you can't use an uvec2 on a uniform
 		// why the fuck??????????????
-		uniform.u_atlas_size[0] =
-			static_cast<int32>(engine.current_atlas.unwrap().size().x);
-		uniform.u_atlas_size[1] =
-			static_cast<int32>(engine.current_atlas.unwrap().size().y);
+		uniform.u_atlas_size.x = static_cast<int32>(engine.current_atlas.unwrap().size().x);
+		uniform.u_atlas_size.y = static_cast<int32>(engine.current_atlas.unwrap().size().y);
 	}
 
 	sg_apply_bindings(engine.bindings);

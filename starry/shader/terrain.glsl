@@ -31,6 +31,9 @@
 @ctype vec2 tr::Vec2<float32>
 @ctype vec3 tr::Vec3<float32>
 @ctype vec4 tr::Vec4<float32>
+@ctype ivec2 tr::Vec2<int32>
+@ctype ivec3 tr::Vec3<int32>
+@ctype ivec4 tr::Vec4<int32>
 
 @vs vs
 in vec3 vs_position;
