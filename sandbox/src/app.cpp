@@ -22,7 +22,7 @@ tr::Result<void> sbox::Sandbox::init()
 
 tr::Result<void> sbox::Sandbox::update(float64 dt)
 {
-	sbox::debug_mode();
+	// sbox::debug_mode();
 
 	// hlep
 	if (st::is_key_just_pressed(st::Key::ESCAPE)) {

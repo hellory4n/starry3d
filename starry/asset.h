@@ -40,10 +40,7 @@ namespace st {
 class Texture
 {
 	tr::String _path;
-	// an sg_image is just an uint32 for the id
-	// so no need to include sokol here
-	uint32 _image_id = 0;
-	uint32 _sampler_id = 0;
+	uint32 _id = 0;
 	uint32 _width = 0;
 	uint32 _height = 0;
 

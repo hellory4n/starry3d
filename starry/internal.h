@@ -30,12 +30,7 @@
 #define _ST_INTERNAL_H
 
 // sokol config
-#ifdef __APPLE__
-	#define SOKOL_METAL
-#else
-	#define SOKOL_GLCORE
-#endif
-
+#define SOKOL_GLCORE
 #define SOKOL_ASSERT(X) TR_ASSERT(X)
 #define SOKOL_UNREACHABLE TR_UNREACHABLE()
 #define SOKOL_NO_ENTRY
@@ -43,10 +38,9 @@
 #include <trippin/common.h>
 #include <trippin/memory.h>
 
-#include <sokol/sokol_gfx.h>
-
 #include "starry/app.h"
 #include "starry/asset.h"
+#include "starry/render.h"
 #include "starry/world.h"
 
 namespace st {
@@ -73,10 +67,8 @@ struct Starry3D
 	tr::Vec2<uint32> window_size = {};
 
 	// renderer
-	tr::MaybePtr<sg_pipeline> pipeline = {};
-	sg_pipeline terrain_pipeline = {};
-	sg_bindings bindings = {};
-	sg_pass_action pass_action = {};
+	Shader basic_shader = {};
+	Mesh mesh = {};
 	tr::Maybe<TextureAtlas> current_atlas = {};
 	// you can't set uniforms any time you want
 	// so TextureAtlas sets this to true, the renderer looks at it, uploads the atlas, and sets

@@ -63,80 +63,81 @@ void st::_free::asset()
 
 st::Texture::Texture()
 {
-	_image_id = sg_alloc_image().id;
-	// TODO do you even need one for each texture?
-	_sampler_id = sg_make_sampler(st::sampler_desc()).id;
+	// uint32 texture;
+	// glGenTextures(1, &texture);
+	// glBindTexture(GL_TEXTURE_2D, texture);
 }
 
 tr::Result<st::Texture> st::Texture::load(tr::String path)
 {
-	// no need to load things twice
-	if (engine.textures.contains(path)) {
-		return engine.textures[path];
-	}
+	// // no need to load things twice
+	// if (engine.textures.contains(path)) {
+	// 	return engine.textures[path];
+	// }
 
-	// first load file
-	// TODO sokol_fetch is a thing dumbass
-	TR_TRY_ASSIGN(
-		tr::File& file, tr::File::open(
-					engine.asset_arena, tr::path(tr::scratchpad(), path),
-					tr::FileMode::READ_BINARY
-				)
-	);
-	TR_DEFER(file.close());
-	TR_TRY_ASSIGN(tr::Array<uint8> data, file.read_all_bytes(engine.asset_arena));
+	// // first load file
+	// // TODO sokol_fetch is a thing dumbass
+	// TR_TRY_ASSIGN(
+	// 	tr::File& file, tr::File::open(
+	// 				engine.asset_arena, tr::path(tr::scratchpad(), path),
+	// 				tr::FileMode::READ_BINARY
+	// 			)
+	// );
+	// TR_DEFER(file.close());
+	// TR_TRY_ASSIGN(tr::Array<uint8> data, file.read_all_bytes(engine.asset_arena));
 
-	// then parse the data
-	constexpr int CHANNELS = 4; // rgba
-	int width, height, channels;
-	uint8* pixels = stbi_load_from_memory(
-		*data, static_cast<int>(data.len()), &width, &height, &channels, CHANNELS
-	);
-	if (pixels == nullptr) {
-		return tr::scratchpad().make<tr::StringError>("couldn't parse image file");
-	}
-	TR_DEFER(stbi_image_free(pixels));
+	// // then parse the data
+	// constexpr int CHANNELS = 4; // rgba
+	// int width, height, channels;
+	// uint8* pixels = stbi_load_from_memory(
+	// 	*data, static_cast<int>(data.len()), &width, &height, &channels, CHANNELS
+	// );
+	// if (pixels == nullptr) {
+	// 	return tr::scratchpad().make<tr::StringError>("couldn't parse image file");
+	// }
+	// TR_DEFER(stbi_image_free(pixels));
 
-	// the constructor setups some placeholder texture faffery
-	Texture texture = {};
-	texture._width = width;
-	texture._height = height;
-	texture._path = path;
+	// // the constructor setups some placeholder texture faffery
+	// Texture texture = {};
+	// texture._width = width;
+	// texture._height = height;
+	// texture._path = path;
 
-	// then finally give it to sokol
-	sg_image_desc desc = {};
-	desc.width = width;
-	desc.height = height;
-	desc.pixel_format = SG_PIXELFORMAT_RGBA8;
-	desc.data.subimage[0][0].ptr = pixels;
-	desc.data.subimage[0][0].size = static_cast<usize>(width * height * CHANNELS);
-	sg_init_image(sg_image{texture._image_id}, desc);
+	// // then finally give it to sokol
+	// sg_image_desc desc = {};
+	// desc.width = width;
+	// desc.height = height;
+	// desc.pixel_format = SG_PIXELFORMAT_RGBA8;
+	// desc.data.subimage[0][0].ptr = pixels;
+	// desc.data.subimage[0][0].size = static_cast<usize>(width * height * CHANNELS);
+	// sg_init_image(sg_image{texture._image_id}, desc);
 
-	if (sg_query_image_state(sg_image{texture._image_id}) != SG_RESOURCESTATE_VALID) {
-		return tr::scratchpad().make<RenderError>(
-			RenderErrorType::RESOURCE_CREATION_FAILED
-		);
-	}
+	// if (sg_query_image_state(sg_image{texture._image_id}) != SG_RESOURCESTATE_VALID) {
+	// 	return tr::scratchpad().make<RenderError>(
+	// 		RenderErrorType::RESOURCE_CREATION_FAILED
+	// 	);
+	// }
 
-	engine.textures[path] = texture;
-	tr::info(
-		"loaded texture from %s (id %i, sampler id %i)", *path, texture._image_id,
-		texture._sampler_id
-	);
-	return engine.textures[path];
+	// engine.textures[path] = texture;
+	// tr::info(
+	// 	"loaded texture from %s (id %i, sampler id %i)", *path, texture._image_id,
+	// 	texture._sampler_id
+	// );
+	// return engine.textures[path];
+	return Texture();
 }
 
 void st::Texture::free()
 {
-	if (sg_query_image_state(sg_image{_image_id}) == SG_RESOURCESTATE_VALID) {
-		sg_destroy_image(sg_image{_image_id});
-	}
-	if (sg_query_sampler_state(sg_sampler{_sampler_id}) == SG_RESOURCESTATE_VALID) {
-		sg_destroy_sampler(sg_sampler{_sampler_id});
-	}
-	_image_id = SG_INVALID_ID;
-	_sampler_id = SG_INVALID_ID;
-	tr::info("freed texture from %s", *_path);
+	// if (sg_query_image_state(sg_image{_image_id}) == SG_RESOURCESTATE_VALID) {
+	// 	sg_destroy_image(sg_image{_image_id});
+	// }
+	// if (sg_query_sampler_state(sg_sampler{_sampler_id}) == SG_RESOURCESTATE_VALID) {
+	// 	sg_destroy_sampler(sg_sampler{_sampler_id});
+	// }
+	// _image_id = SG_INVALID_ID;
+	// _sampler_id = SG_INVALID_ID;
+	// tr::info("freed texture from %s", *_path);
 }
 
 tr::Vec2<uint32> st::Texture::size() const
@@ -146,14 +147,14 @@ tr::Vec2<uint32> st::Texture::size() const
 
 void st::Texture::bind(int32 slot) const
 {
-	TR_ASSERT_MSG(
-		slot < SG_MAX_IMAGE_BINDSLOTS,
-		"can't bind texture to slot %i; only %i texture bind slots available", slot,
-		SG_MAX_IMAGE_BINDSLOTS
-	);
-	TR_ASSERT(_image_id != SG_INVALID_ID);
-	engine.bindings.images[slot] = sg_image{_image_id};
-	engine.bindings.samplers[slot] = sg_sampler{_sampler_id};
+	// TR_ASSERT_MSG(
+	// 	slot < SG_MAX_IMAGE_BINDSLOTS,
+	// 	"can't bind texture to slot %i; only %i texture bind slots available", slot,
+	// 	SG_MAX_IMAGE_BINDSLOTS
+	// );
+	// TR_ASSERT(_image_id != SG_INVALID_ID);
+	// engine.bindings.images[slot] = sg_image{_image_id};
+	// engine.bindings.samplers[slot] = sg_sampler{_sampler_id};
 }
 
 void st::Texture::_free_all_textures()

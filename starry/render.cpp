@@ -45,14 +45,14 @@ TR_GCC_IGNORE_WARNING(-Wextra) // this is why clang is better
 #include <sokol/sokol_gfx.h>
 
 #ifdef ST_IMGUI
-	#include "starry/optional/imgui.h"
+// #include "starry/optional/imgui.h"
 #endif
 #include "starry/render.h"
 #define SOKOL_GLUE_IMPL
 #include <sokol/sokol_glue.h>
 #include <stb/stb_image.h>
 
-#include "starry/shader/terrain.glsl.h"
+#include "starry/shader/basic.glsl.h"
 TR_GCC_RESTORE()
 TR_GCC_RESTORE()
 TR_GCC_RESTORE()
@@ -60,112 +60,84 @@ TR_GCC_RESTORE()
 
 namespace st {
 
-static inline sg_color tr_color_to_sg_color(tr::Color color)
-{
-	auto colorf = static_cast<tr::Vec4<float32>>(color);
-	return {colorf.x, colorf.y, colorf.z, colorf.w};
-}
-
-static inline void make_terrain_pipeline()
-{
-	sg_shader shader = sg_make_shader(terrain_shader_desc(sg_query_backend()));
-
-	sg_pipeline_desc pipeline_desc = {};
-
-	pipeline_desc.shader = shader;
-	pipeline_desc.index_type = SG_INDEXTYPE_UINT32;
-	pipeline_desc.layout.attrs[ATTR_terrain_vs_position].format = SG_VERTEXFORMAT_FLOAT3;
-	pipeline_desc.layout.attrs[ATTR_terrain_vs_texture_id].format = SG_VERTEXFORMAT_INT;
-
-	pipeline_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
-	pipeline_desc.depth.write_enabled = true;
-	// pipeline_desc.cull_mode = SG_CULLMODE_BACK;
-	pipeline_desc.cull_mode = SG_CULLMODE_NONE;
-	pipeline_desc.face_winding = SG_FACEWINDING_CCW;
-
-	pipeline_desc.label = "terrain_pipeline";
-	engine.terrain_pipeline = sg_make_pipeline(pipeline_desc);
-}
-
-// why not
-static void check_gpu_info()
-{
-	sg_limits limits = sg_query_limits();
-	tr::info(
-		"GPU limits:\n"
-		"- max_image_size_2d:      %i\n"
-		"- max_image_size_cube:    %i\n"
-		"- max_image_size_3d:      %i\n"
-		"- max_image_size_array:   %i\n"
-		"- max_image_array_layers: %i\n"
-		"- max_image_vertex_attrs: %i",
-		limits.max_image_size_2d, limits.max_image_size_cube, limits.max_image_size_3d,
-		limits.max_image_size_array, limits.max_image_array_layers, limits.max_vertex_attrs
-	);
-
-	sg_features features = sg_query_features();
-	tr::info(
-		"GPU features:\n"
-		"- origin_top_left (for textures): %s\n"
-		"- image_clamp_to_border:          %s\n"
-		"- mrt_independent_blend_state:    %s\n"
-		"- mrt_independent_write_mask:     %s\n"
-		"- compute (and SSBOs):            %s\n"
-		"- msaa_image_bindings:            %s",
-		features.origin_top_left ? "yes" : "no",
-		features.image_clamp_to_border ? "yes" : "no",
-		features.mrt_independent_blend_state ? "yes" : "no",
-		features.mrt_independent_write_mask ? "yes" : "no", features.compute ? "yes" : "no",
-		features.msaa_image_bindings ? "yes" : "no"
-	);
-
-	TR_ASSERT_MSG(
-		features.compute,
-		"starry3d requires a GPU with support for compute shaders and storage buffers"
-	);
-}
-
-}
-
-void st::_upload_atlas()
-{
-	// new arena to not fill up tr::scratchpad with crap :)
-	tr::Arena scratch(tr::mb_to_bytes(1));
-	TR_DEFER(scratch.free());
-
-	TextureAtlas atlas = engine.current_atlas.unwrap();
-
-	// glsl doesn't have hashmaps, so we just make one giant array
-	// the size is UINT16_MAX * sizeof(tr::Rect<uint32>) = 1 MB
-	// which is not that much
-	// and it is faster than linear probing in glsl
-	tr::Array<tr::Rect<uint32>> man(scratch, UINT16_MAX);
-	for (auto [key, value] : atlas._textures) {
-		man[key] = value;
-	}
-
-// fucking shit doesn't fucking work
-// words cannot describe my fucking confusion
-// TODO fucking fix it like a normal person
-#if !defined(SOKOL_GLCORE) && !defined(SOKOL_GLES3)
-	#error "hey aren't you that guy from weezer? say it ain't soooowowowww"
+// TODO should this be disabled in debug mode?
+#if false
+	#define ST_CHECK_GL()                                                                   \
+		TR_ASSERT_MSG(                                                                  \
+			glGetError() == GL_NO_ERROR, "oh no OpenGL is busted: %u", glGetError() \
+		)
 #else
-	_sg_buffer_t* buf = _sg_lookup_buffer(engine.bindings.storage_buffers[SBUF_fs_atlas].id);
-	GLenum gl_tgt = _sg_gl_buffer_target(&buf->cmn.usage);
-	GLuint gl_buf = buf->gl.buf[buf->cmn.active_slot];
-	_sg_gl_cache_store_buffer_binding(gl_tgt);
-	_sg_gl_cache_bind_buffer(gl_tgt, gl_buf);
-
-	void* ptr = glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_WRITE_ONLY);
-	memcpy(ptr, *man, man.len() * sizeof(tr::Rect<uint32>));
-	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
-	_sg_gl_cache_restore_buffer_binding(gl_tgt);
-	sg_reset_state_cache();
+	#define ST_CHECK_GL()
 #endif
-	atlas._source.unwrap().bind(0);
 
-	tr::info("uploaded texture atlas from %s", *atlas._source.unwrap().path());
+static inline void setup_buffers()
+{
+	glVertexAttribPointer(
+		ATTR_basic_vs_position, 3, GL_FLOAT, GL_FALSE, sizeof(tr::Vec3<float32>),
+		reinterpret_cast<const void*>(offsetof(BasicVertex, position))
+	);
+	ST_CHECK_GL();
+	glEnableVertexAttribArray(ATTR_basic_vs_position);
+	ST_CHECK_GL();
+
+	glVertexAttribPointer(
+		ATTR_basic_vs_color, 4, GL_FLOAT, GL_FALSE, sizeof(tr::Vec4<float32>),
+		reinterpret_cast<const void*>(offsetof(BasicVertex, color))
+	);
+	ST_CHECK_GL();
+	glEnableVertexAttribArray(ATTR_basic_vs_color);
+	ST_CHECK_GL();
+
+	// whatever clang format is trying to do makes no sense
+	/* clang-format off */
+	tr::Array<BasicVertex> vertices = {
+		{{0, 0.5, 0.0}, {1, 0, 0, 1}}, // top
+		{{-0.5, -0.5, 0.0}, {0, 1, 0, 1}}, // left
+		{{0.5, -0.5, 0.0}, {0, 0, 1, 1}}, // right
+	};
+	/* clang-format on */
+
+	tr::Array<Triangle> indices = {
+		{0, 1, 2},
+	};
+
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	ST_CHECK_GL();
+	glBindVertexArray(vao);
+	ST_CHECK_GL();
+
+	uint vbo;
+	glGenBuffers(1, &vbo);
+	ST_CHECK_GL();
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	ST_CHECK_GL();
+	glBufferData(
+		GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(vertices.len() * sizeof(BasicVertex)),
+		*vertices, GL_STATIC_DRAW
+	);
+	ST_CHECK_GL();
+
+	uint ebo;
+	glGenBuffers(1, &ebo);
+	ST_CHECK_GL();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	ST_CHECK_GL();
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	ST_CHECK_GL();
+	glBufferData(
+		GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(indices.len() * sizeof(Triangle)),
+		*indices, GL_STATIC_DRAW
+	);
+	ST_CHECK_GL();
+
+	engine.mesh.vao = vao;
+	engine.mesh.vbo = vbo;
+	engine.mesh.ebo = ebo;
+	engine.mesh.indices = indices.len() * 3;
+}
+
 }
 
 void st::_init::render()
@@ -185,56 +157,11 @@ void st::_init::render()
 	sg_desc.logger.func = st::_sokol_log;
 	sg_setup(&sg_desc);
 
-	st::check_gpu_info();
-
-	sg_buffer_desc atlas_buffer_desc = {};
-	atlas_buffer_desc.usage.storage_buffer = true;
-	atlas_buffer_desc.usage.dynamic_update = true;
-	atlas_buffer_desc.size = UINT16_MAX * sizeof(tr::Rect<uint32>);
-	atlas_buffer_desc.label = "texture_atlas";
-	engine.bindings.storage_buffers[SBUF_fs_atlas] = sg_make_buffer(atlas_buffer_desc);
-
-	/* clang-format off */
-	tr::Array<TerrainVertex> verts = {
-		// position            // texture id
-		{ 0.5,   0.5f, 0.0f,   0, 1}, // top right
-		{ 0.5f, -0.5f, 0.0f,   0, 2}, // bottom right
-		{-0.5f, -0.5f, 0.0f,   0, 3}, // bottom left
-		{-0.5f,  0.5f, 0.0f,   0, 0}, // top left
-	};
-	/* clang-format on */
-
-	tr::Array<Triangle> indices = {
-		{0, 1, 3},
-		{1, 2, 3},
-	};
-
-	sg_buffer_desc vertex_buffer_desc = {};
-	vertex_buffer_desc.size = verts.len() * sizeof(TerrainVertex);
-	vertex_buffer_desc.data = SG_RANGE_TR_ARRAY(verts);
-	vertex_buffer_desc.usage.vertex_buffer = true;
-	engine.bindings.vertex_buffers[0] = sg_make_buffer(vertex_buffer_desc);
-
-	sg_buffer_desc index_buffer_desc = {};
-	index_buffer_desc.size = indices.len() * sizeof(Triangle);
-	index_buffer_desc.data = SG_RANGE_TR_ARRAY(indices);
-	index_buffer_desc.usage.index_buffer = true;
-	engine.bindings.index_buffer = sg_make_buffer(index_buffer_desc);
-
-	// first the alt-right pipeline
-	// now there's the render pipeline :(
-	st::make_terrain_pipeline();
-	// that's how you set the current pipeline
-	engine.pipeline = engine.terrain_pipeline;
-
-	// what the fuck is a render pass
-	engine.pass_action.colors[0].load_action = SG_LOADACTION_CLEAR;
-	engine.pass_action.colors[0].clear_value =
-		tr_color_to_sg_color(tr::Color::rgb(0x06062d)); // color fresh from my ass <3
-
-	// it screams in pain and agony if there's no texture set yet
-	// so we have to make some placeholder bullshit
-	// sg_image_alloc_smp(IMG__u_texture, SMP__u_texture_smp);
+	// FUCK ME
+	engine.basic_shader =
+		Shader(tr::String(reinterpret_cast<const char*>(vs_source_glsl430)),
+		       tr::String(reinterpret_cast<const char*>(fs_source_glsl430)));
+	st::setup_buffers();
 }
 
 void st::_free::render()
@@ -244,40 +171,15 @@ void st::_free::render()
 
 void st::_update::render()
 {
-	sg_pass pass = {};
-	pass.action = engine.pass_action;
-	pass.swapchain = sglue_swapchain();
-	sg_begin_pass(pass);
+	engine.basic_shader.bind();
 
-	sg_apply_pipeline(engine.pipeline.unwrap_ref());
+	glBindVertexArray(engine.mesh.vao);
+	ST_CHECK_GL();
 
-	// we do have to update the uniforms
-	params_t uniform = {};
-	uniform.u_model = tr::Matrix4x4::identity();
-	uniform.u_view = Camera::current().view_matrix();
-	uniform.u_projection = Camera::current().projection_matrix();
-
-	// i know
-	if (engine.pls_upload_the_atlas_to_the_gpu) {
-		st::_upload_atlas();
-		engine.pls_upload_the_atlas_to_the_gpu = false;
-		// apparently you can't use an uvec2 on a uniform
-		// why the fuck??????????????
-		uniform.u_atlas_size.x = static_cast<int32>(engine.current_atlas.unwrap().size().x);
-		uniform.u_atlas_size.y = static_cast<int32>(engine.current_atlas.unwrap().size().y);
-	}
-
-	sg_apply_bindings(engine.bindings);
-	sg_apply_uniforms(UB_params, SG_RANGE(uniform));
-
-	sg_draw(0, 6, 1);
-
-#ifdef ST_IMGUI
-	st::imgui::render();
-#endif
-
-	sg_end_pass();
-	sg_commit();
+	glDrawElements(GL_TRIANGLES, engine.mesh.indices, GL_UNSIGNED_INT, nullptr);
+	ST_CHECK_GL();
+	glBindVertexArray(0);
+	ST_CHECK_GL();
 }
 
 tr::String st::RenderError::message() const
@@ -293,21 +195,59 @@ tr::String st::RenderError::message() const
 	}
 }
 
-sg_sampler_desc& st::sampler_desc()
+st::Shader::Shader(tr::String vert_src, tr::String frag_src)
 {
-	// TODO update to c++20 you cunt
-	static sg_sampler_desc sampling_it = {};
-	sampling_it.wrap_u = SG_WRAP_REPEAT;
-	sampling_it.wrap_v = SG_WRAP_REPEAT;
-	sampling_it.min_filter = SG_FILTER_LINEAR;
-	sampling_it.mag_filter = SG_FILTER_LINEAR;
-	sampling_it.compare = SG_COMPAREFUNC_NEVER;
-	return sampling_it;
+	GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
+	const char* FUCKYOU = *vert_src;
+	glShaderSource(vert_shader, 1, &FUCKYOU, nullptr);
+	glCompileShader(vert_shader);
+
+	int success;
+	glGetShaderiv(vert_shader, GL_COMPILE_STATUS, &success);
+	if (!success) { // NOLINT
+		char info[512];
+		glGetShaderInfoLog(vert_shader, sizeof(info), nullptr, info);
+	}
+
+	GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
+	FUCKYOU = *frag_src;
+	glShaderSource(frag_shader, 1, &FUCKYOU, nullptr);
+	glCompileShader(frag_shader);
+
+	glGetShaderiv(frag_shader, GL_COMPILE_STATUS, &success);
+	if (!success) { // NOLINT
+		char info[512];
+		glGetShaderInfoLog(frag_shader, sizeof(info), nullptr, info);
+	}
+
+	program = glCreateProgram();
+	glAttachShader(program, vert_shader);
+	glAttachShader(program, frag_shader);
+	glLinkProgram(program);
+
+	glGetProgramiv(program, GL_LINK_STATUS, &success);
+	if (!success) { // NOLINT
+		char info[512];
+		glGetProgramInfoLog(program, sizeof(info), nullptr, info);
+	}
+
+	glDeleteShader(vert_shader);
+	glDeleteShader(frag_shader);
+	bind();
+
+	tr::info("created shader program (id %u)", program);
 }
 
-void st::sg_image_alloc_smp(int image_idx, int sampler_idx)
+void st::Shader::free()
 {
-	engine.bindings.images[image_idx] = sg_alloc_image();
-	engine.bindings.samplers[sampler_idx] = sg_alloc_sampler();
-	sg_init_sampler(engine.bindings.samplers[sampler_idx], st::sampler_desc());
+	glDeleteProgram(program);
+	ST_CHECK_GL();
+	tr::info("deleted shader program (id %u)", program);
+	program = 0;
+}
+
+void st::Shader::bind() const
+{
+	glUseProgram(program);
+	ST_CHECK_GL();
 }

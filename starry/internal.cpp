@@ -50,7 +50,7 @@ void st::_init_engine()
 	st::_init::app();
 	st::_init::render();
 #ifdef ST_IMGUI
-	st::imgui::init();
+	// st::imgui::init();
 #endif
 	st::_init::asset();
 	st::_init::world();
@@ -63,7 +63,7 @@ void st::_free_engine()
 	st::_free::world();
 	st::_free::asset();
 #ifdef ST_IMGUI
-	st::imgui::free();
+	// st::imgui::free();
 #endif
 	st::_free::render();
 	st::_free::app();
@@ -75,7 +75,7 @@ void st::_update_engine()
 	// TODO are you sure about this order
 	st::_update::pre_input();
 #ifdef ST_IMGUI
-	st::imgui::update();
+	// st::imgui::update();
 #endif
 	engine.application->update(st::delta_time_sec()).unwrap();
 	st::_update::render();

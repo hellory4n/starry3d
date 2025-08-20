@@ -25,18 +25,13 @@
  *
  */
 
-// compile with: ./sokol-shdc -i starry/shader/basic.glsl -o starry/shader/basic.glsl.h -l glsl430:hlsl5
-
-@ctype mat4 tr::Matrix4x4
-@ctype vec2 tr::Vec2<float32>
-@ctype vec3 tr::Vec3<float32>
-@ctype vec4 tr::Vec4<float32>
+// compile with: ./sokol-shdc -i starry/shader/basic.glsl -o starry/shader/basic.glsl.h -l glsl430
 
 @vs vs
 in vec3 vs_position;
-in vec2 vs_texcoord;
+in vec4 vs_color;
 
-out vec2 fs_texcoord;
+out vec4 fs_color;
 
 layout(binding = 0) uniform vs_params {
 	mat4 u_model;
@@ -46,22 +41,19 @@ layout(binding = 0) uniform vs_params {
 
 void main()
 {
-	gl_Position = u_projection * u_view * u_model * vec4(vs_position, 1.0);
-	fs_texcoord = vs_texcoord;
+	// gl_Position = u_projection * u_view * u_model * vec4(vs_position, 1.0);
+	gl_Position = vec4(vs_position, 1.0);
+	fs_color = vs_color;
 }
 @end
 
 @fs fs
-in vec2 fs_texcoord;
+in vec4 fs_color;
 out vec4 frag_color;
-
-layout(binding = 0) uniform texture2D _u_texture;
-layout(binding = 0) uniform sampler _u_texture_smp;
-#define u_texture sampler2D(_u_texture, _u_texture_smp)
 
 void main()
 {
-	frag_color = texture(u_texture, fs_texcoord);
+	frag_color = fs_color;
 }
 @end
 

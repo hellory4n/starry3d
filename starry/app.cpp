@@ -109,6 +109,9 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	sokol_app.fullscreen = settings.fullscreen;
 	sokol_app.enable_clipboard = true;
 
+	sokol_app.gl_major_version = 4;
+	sokol_app.gl_minor_version = 3;
+
 	sapp_run(sokol_app);
 }
 
@@ -194,7 +197,7 @@ static void st::_on_event(const sapp_event* event)
 // TODO it'll get funky if you have a player controller and a text field
 // pretty sure imgui can handle that tho
 #ifdef ST_IMGUI
-	st::imgui::on_event(event);
+	// st::imgui::on_event(event);
 #endif
 
 	// 'enumeration values not handled in switch'

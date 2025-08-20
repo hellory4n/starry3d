@@ -34,8 +34,7 @@
 #include <trippin/math.h>
 #include <trippin/string.h>
 
-// shit up
-struct sg_sampler_desc;
+typedef unsigned int GLuint;
 
 namespace st {
 
@@ -60,12 +59,23 @@ public:
 	tr::String message() const override;
 };
 
-#define SG_RANGE_TR_ARRAY(Array) {*(Array), (Array).len() * sizeof(decltype(Array)::Type)}
+// yeag
+struct Shader
+{
+	GLuint program = 0;
 
-sg_sampler_desc& sampler_desc();
+	Shader() { }
+	Shader(tr::String vert_src, tr::String frag_src);
+	void free();
 
-// from https://github.com/zeromake/learnopengl-examples/blob/master/libs/sokol/sokol_helper.h
-void sg_image_alloc_smp(int image_idx, int sampler_idx);
+	void bind() const;
+};
+
+struct BasicVertex
+{
+	tr::Vec3<float32> position;
+	tr::Vec4<float32> color;
+};
 
 static inline uint32 pack_texture_id(uint16 texture, uint16 texcoord)
 {
@@ -91,6 +101,14 @@ struct Triangle
 	uint32 v1;
 	uint32 v2;
 	uint32 v3;
+};
+
+struct Mesh
+{
+	GLuint vao;
+	GLuint vbo;
+	GLuint ebo;
+	usize indices;
 };
 
 void _upload_atlas();
