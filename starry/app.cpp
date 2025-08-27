@@ -26,294 +26,274 @@
  *
  */
 
-// it has to go before sokol
-/* clang-format off */
-#include "starry/internal.h"
-/* clang-format on */
-
 #include "starry/app.h"
 
 #include <trippin/common.h>
 #include <trippin/iofs.h>
 #include <trippin/log.h>
 
-#define SOKOL_APP_IMPL
-// :(
-TR_GCC_IGNORE_WARNING(-Wmissing-field-initializers)
-TR_GCC_IGNORE_WARNING(-Wold-style-cast)
-TR_GCC_IGNORE_WARNING(-Wshorten-64-to-32)
-TR_GCC_IGNORE_WARNING(-Wcast-qual)
-TR_GCC_IGNORE_WARNING(-Wconversion)
-TR_GCC_IGNORE_WARNING(-Wunknown-pragmas)
-TR_GCC_IGNORE_WARNING(-Wextra) // this is why clang is better
-#include <sokol/sokol_app.h>
-#define SOKOL_TIME_IMPL
-#include <sokol/sokol_time.h>
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
+#include <glad/gl.h>
+#include <glfw-single-header/glfw.h>
 
-// i fucking love windows
-#ifdef _WIN32
-	#undef DELETE
-	#undef ERROR
-	#undef TRANSPARENT
-	#undef Key
-	#undef MouseButton
-#endif
+#include "starry/internal.h"
 
 #ifdef ST_IMGUI
-	#include "starry/optional/imgui.h"
+// #include "starry/optional/imgui.h"
 #endif
 
 namespace st {
 
-// yeah
-static void _on_event(const sapp_event* event);
+static void _init_window();
+
+static void _pre_input();
+static void _post_input();
+
+static void _free_window();
 
 }
 
 void st::run(st::Application& app, st::ApplicationSettings settings)
 {
-	engine.application = &app;
-	engine.settings = settings;
-	engine.window_size = settings.window_size;
+	_st->application = &app;
+	_st->settings = settings;
+	_st->window_size = settings.window_size;
 
-	// so we can log before sokol setups
-	// TODO this could be a thing in libtrippin
-	for (auto [_, path] : engine.settings.logfiles) {
-		tr::use_log_file(path);
-	}
-	tr::init();
+	st::_preinit();
+	st::_init_window();
+	_st->application->init();
 
-	// hehe
-	stm_setup();
+	while (!st::window_should_close()) {
+		st::_pre_input();
 
-	sapp_desc sokol_app = {};
+		_st->application->update(st::delta_time_sec());
 
-	sokol_app.init_cb = st::_init_engine;
-	sokol_app.frame_cb = st::_update_engine;
-	sokol_app.cleanup_cb = st::_free_engine;
-	sokol_app.event_cb = st::_on_event;
-	sokol_app.logger.func = st::_sokol_log;
-
-	sokol_app.width = static_cast<int32>(settings.window_size.x);
-	sokol_app.height = static_cast<int32>(settings.window_size.y);
-	sokol_app.window_title = settings.name;
-	sokol_app.swap_interval = settings.vsync ? 1 : 0;
-	sokol_app.high_dpi = settings.high_dpi;
-	sokol_app.fullscreen = settings.fullscreen;
-	sokol_app.enable_clipboard = true;
-
-	sokol_app.gl_major_version = 4;
-	sokol_app.gl_minor_version = 3;
-
-	sapp_run(sokol_app);
-}
-
-void st::_update::pre_input()
-{
-	// uh
-	if (!engine.mouse_moved_this_frame) {
-		engine.relative_mouse_position = {};
-	}
-	engine.mouse_moved_this_frame = false;
-}
-
-void st::_update::post_input()
-{
-	// update key states
-	for (auto [_, key] : engine.key_state) {
-		switch (key.state) {
-		case InputState::State::NOT_PRESSED:
-			if (key.pressed) {
-				key.state = InputState::State::JUST_PRESSED;
-			}
-			break;
-
-		case InputState::State::JUST_PRESSED:
-			key.state = key.pressed ? InputState::State::HELD
-						: InputState::State::JUST_RELEASED;
-			break;
-
-		case InputState::State::HELD:
-			if (!key.pressed) {
-				key.state = InputState::State::JUST_RELEASED;
-			}
-			break;
-
-		case InputState::State::JUST_RELEASED:
-			key.state = InputState::State::NOT_PRESSED;
-			break;
-		}
+		st::_post_input();
 	}
 
-	// update mouse states
-	// that's pretty much the same thing as the key states
-	for (auto [_, mouse] : engine.mouse_state) {
-		switch (mouse.state) {
-		case InputState::State::NOT_PRESSED:
-			if (mouse.pressed) {
-				mouse.state = InputState::State::JUST_PRESSED;
-			}
-			break;
-
-		case InputState::State::JUST_PRESSED:
-			mouse.state = mouse.pressed ? InputState::State::HELD
-						    : InputState::State::JUST_RELEASED;
-			break;
-
-		case InputState::State::HELD:
-			if (!mouse.pressed) {
-				mouse.state = InputState::State::JUST_RELEASED;
-			}
-			break;
-
-		case InputState::State::JUST_RELEASED:
-			mouse.state = InputState::State::NOT_PRESSED;
-			break;
-		}
-	}
+	_st->application->free();
+	st::_free_window();
+	st::_postfree();
 }
 
-void st::_init::app()
+static void st::_init_window()
 {
-	// TODO use this
-}
-
-void st::_free::app()
-{
-	// sapp handles this for us
-	// so no `sapp_shutdown()` or whatever
-	// TODO use this
-}
-
-static void st::_on_event(const sapp_event* event)
-{
-// TODO it'll get funky if you have a player controller and a text field
-// pretty sure imgui can handle that tho
-#ifdef ST_IMGUI
-	// st::imgui::on_event(event);
+// renderdoc doesn't work on wayland
+#if defined(__linux__) && defined(DEBUG)
+	glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
 #endif
 
-	// 'enumeration values not handled in switch'
-	// i know you fucking scoundrel
-	TR_GCC_IGNORE_WARNING(-Wswitch)
-	switch (event->type) {
-	case SAPP_EVENTTYPE_KEY_DOWN:
-		engine.key_state[event->key_code].pressed = true;
-		engine.current_modifiers =
-			static_cast<Modifiers>(event->modifiers); // the values are the same
-		break;
+	if (glfwInit() == 0) {
+		tr::panic("couldn't initialize glfw");
+	}
 
-	case SAPP_EVENTTYPE_KEY_UP:
-		engine.key_state[event->key_code].pressed = false;
-		engine.current_modifiers =
-			static_cast<Modifiers>(event->modifiers); // the values are the same
-		break;
+	// TODO opengl 4.3 doesn't work on mac
+	// fuck apple
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, static_cast<int>(_st->settings.resizable));
+#ifdef DEBUG
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
+#endif
 
-	case SAPP_EVENTTYPE_MOUSE_DOWN:
-		engine.mouse_state[event->mouse_button].pressed = true;
-		engine.current_modifiers =
-			static_cast<Modifiers>(event->modifiers); // the values are the same
-		break;
+	_st->window = glfwCreateWindow(
+		static_cast<int>(_st->settings.window_size.x),
+		static_cast<int>(_st->settings.window_size.y), _st->settings.name, nullptr, nullptr
+	);
+	TR_ASSERT_MSG(_st->window != nullptr, "couldn't create window");
+	glfwMakeContextCurrent(_st->window);
 
-	case SAPP_EVENTTYPE_MOUSE_UP:
-		engine.mouse_state[event->mouse_button].pressed = false;
-		engine.current_modifiers =
-			static_cast<Modifiers>(event->modifiers); // the values are the same
-		break;
+	glfwSwapInterval(_st->settings.vsync ? 1 : 0); // TODO is that the only options?
 
-	case SAPP_EVENTTYPE_MOUSE_MOVE:
-		engine.mouse_position = {event->mouse_x, event->mouse_y};
-		engine.relative_mouse_position = {event->mouse_dx, event->mouse_dy};
-		engine.mouse_moved_this_frame = true;
-		engine.current_modifiers =
-			static_cast<Modifiers>(event->modifiers); // the values are the same
-		break;
+	// some callbacks
+	glfwSetFramebufferSizeCallback(_st->window, [](GLFWwindow*, int w, int h) -> void {
+		glViewport(0, 0, w, h);
+		_st->window_size = {static_cast<uint32>(w), static_cast<uint32>(h)};
+	});
 
-	case SAPP_EVENTTYPE_QUIT_REQUESTED:
-		st::on_close.emit();
-		break;
+	glfwSetErrorCallback([](int error_code, const char* description) -> void {
+#ifdef DEBUG
+		tr::panic("GL error %i: %s", error_code, description);
+#else
+		tr::error("GL error %i: %s", error_code, description);
+#endif
+	});
 
-	case SAPP_EVENTTYPE_RESIZED:
-		engine.window_size = {
-			static_cast<uint32>(event->window_width),
-			static_cast<uint32>(event->window_height)
-		};
+	// a bit more annoyment in the logs
+	int32 platform = glfwGetPlatform();
+	tr::String platform_str = "unknown platform";
+	switch (platform) {
+	case GLFW_PLATFORM_WIN32:
+		platform_str = "Win32";
 		break;
-
-	case SAPP_EVENTTYPE_FOCUSED:
-		st::lock_mouse(false);
-		st::set_mouse_visible(true);
+	case GLFW_PLATFORM_X11:
+		platform_str = "X11";
+		break;
+	case GLFW_PLATFORM_WAYLAND:
+		platform_str = "Wayland";
+		break;
+	case GLFW_PLATFORM_COCOA:
+		platform_str = "Cocoa";
 		break;
 	}
-	TR_GCC_RESTORE();
+	tr::info("created window for %s", platform_str.buf());
+
+	if (glfwRawMouseMotionSupported() == 0) {
+		tr::warn("warning: raw mouse motion is not supported");
+	}
+
+	gladLoadGL(glfwGetProcAddress);
+
+	// apparently windows is shit so we have to do this immediately
+	_st->window_size = _st->settings.window_size;
+	glViewport(0, 0, _st->window_size.x, _st->window_size.y);
+
+	tr::info("initialized OpenGL");
+	tr::info("- GL vendor:    %s", glGetString(GL_VENDOR));
+	tr::info("- GL renderer:  %s", glGetString(GL_RENDERER));
+	tr::info("- GL version:   %s", glGetString(GL_VERSION));
+	tr::info("- GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+}
+
+static void st::_free_window()
+{
+	glfwDestroyWindow(_st->window);
+	glfwTerminate();
+	tr::info("destroyed window");
+}
+
+static void st::_pre_input()
+{
+	// uh
+	if (!_st->mouse_moved_this_frame) {
+		_st->relative_mouse_position = {};
+	}
+	_st->mouse_moved_this_frame = false;
+
+	glfwPollEvents();
+}
+
+static void st::_post_input()
+{
+	// handle the extra fancy key/mouse states
+	// it gets mad if you try to check for anything before space
+	for (int32 key = int32(Key::SPACE); key <= int32(Key::LAST); key++) {
+		bool is_down = glfwGetKey(_st->window, key) == GLFW_PRESS;
+
+		// help
+		bool& was_down = _st->key_prev_down[key];
+		if (!was_down && is_down) {
+			_st->key_state[key] = InputState::JUST_PRESSED;
+		}
+		else if (was_down && is_down) {
+			_st->key_state[key] = InputState::HELD;
+		}
+		else if (was_down && !is_down) {
+			_st->key_state[key] = InputState::JUST_RELEASED;
+		}
+		else {
+			_st->key_state[key] = InputState::NOT_PRESSED;
+		}
+
+		was_down = is_down;
+	}
+
+	// christ
+	for (int32 btn = int32(MouseButton::BTN_1); btn <= int32(MouseButton::LAST); btn++) {
+		bool is_down = glfwGetMouseButton(_st->window, btn) == GLFW_PRESS;
+
+		// help
+		bool& was_down = _st->mouse_prev_down[btn];
+		if (!was_down && is_down) {
+			_st->mouse_state[btn] = InputState::JUST_PRESSED;
+		}
+		else if (was_down && is_down) {
+			_st->mouse_state[btn] = InputState::HELD;
+		}
+		else if (was_down && !is_down) {
+			_st->mouse_state[btn] = InputState::JUST_RELEASED;
+		}
+		else {
+			_st->mouse_state[btn] = InputState::NOT_PRESSED;
+		}
+
+		was_down = is_down;
+	}
+
+	// YOU UNDERSTAND MECHANICAL HANDS ARE THE RULER OF EVERYTHING
+	// ah
+	// RULER OF EVERYTHING
+	// ah
+	// IM THE RULER OF EVERYTHING
+	// in the end...
+	_st->current_time = st::time();
+	_st->delta_time = _st->current_time - _st->prev_time;
+	_st->prev_time = _st->current_time;
 }
 
 void st::close_window()
 {
-	sapp_request_quit();
+	glfwSetWindowShouldClose(_st->window, 1);
+}
+
+bool st::window_should_close()
+{
+	return glfwWindowShouldClose(_st->window) != 0;
 }
 
 bool st::is_key_just_pressed(st::Key key)
 {
-	return engine.key_state[static_cast<usize>(key)].state == InputState::State::JUST_PRESSED;
+	return _st->key_state[static_cast<usize>(key)].state == InputState::State::JUST_PRESSED;
 }
 
 bool st::is_key_just_released(st::Key key)
 {
-	return engine.key_state[static_cast<usize>(key)].state == InputState::State::JUST_RELEASED;
+	return _st->key_state[static_cast<usize>(key)].state == InputState::State::JUST_RELEASED;
 }
 
 bool st::is_key_held(st::Key key)
 {
-	return engine.key_state[static_cast<usize>(key)].state != InputState::State::NOT_PRESSED;
+	return _st->key_state[static_cast<usize>(key)].state != InputState::State::NOT_PRESSED;
 }
 
 bool st::is_key_not_pressed(st::Key key)
 {
-	return engine.key_state[static_cast<usize>(key)].state == InputState::State::NOT_PRESSED;
+	return _st->key_state[static_cast<usize>(key)].state == InputState::State::NOT_PRESSED;
 }
 
 bool st::is_mouse_just_pressed(st::MouseButton btn)
 {
-	return engine.mouse_state[static_cast<usize>(btn)].state == InputState::State::JUST_PRESSED;
+	return _st->mouse_state[static_cast<usize>(btn)].state == InputState::State::JUST_PRESSED;
 }
 
 bool st::is_mouse_just_released(st::MouseButton btn)
 {
-	return engine.mouse_state[static_cast<usize>(btn)].state ==
-	       InputState::State::JUST_RELEASED;
+	return _st->mouse_state[static_cast<usize>(btn)].state == InputState::State::JUST_RELEASED;
 }
 
 bool st::is_mouse_held(st::MouseButton btn)
 {
-	return engine.mouse_state[static_cast<usize>(btn)].state != InputState::State::NOT_PRESSED;
+	return _st->mouse_state[static_cast<usize>(btn)].state != InputState::State::NOT_PRESSED;
 }
 
 bool st::is_mouse_not_pressed(st::MouseButton btn)
 {
-	return engine.mouse_state[static_cast<usize>(btn)].state == InputState::State::NOT_PRESSED;
+	return _st->mouse_state[static_cast<usize>(btn)].state == InputState::State::NOT_PRESSED;
 }
 
 tr::Vec2<float32> st::mouse_position()
 {
-	return engine.mouse_position;
+	return _st->mouse_position;
 }
 
 tr::Vec2<float32> st::relative_mouse_position()
 {
-	return engine.relative_mouse_position;
+	return _st->relative_mouse_position;
 }
 
 st::Modifiers st::modifiers()
 {
-	return engine.current_modifiers;
+	return _st->current_modifiers;
 }
 
 void st::set_mouse_visible(bool val)
@@ -358,5 +338,5 @@ float64 st::fps()
 
 tr::Vec2<uint32> st::window_size()
 {
-	return engine.window_size;
+	return _st->window_size;
 }

@@ -29,33 +29,26 @@
 #ifndef _ST_INTERNAL_H
 #define _ST_INTERNAL_H
 
-// sokol config
-#define SOKOL_GLCORE
-#define SOKOL_ASSERT(X) TR_ASSERT(X)
-#define SOKOL_UNREACHABLE TR_UNREACHABLE()
-#define SOKOL_NO_ENTRY
-
 #include <trippin/common.h>
 #include <trippin/memory.h>
 
+#include <glfw-single-header/glfw.h>
+
 #include "starry/app.h"
-#include "starry/asset.h"
-#include "starry/render.h"
-#include "starry/world.h"
 
 namespace st {
 
-struct Starry3D
+struct Starry
 {
 	// i know this order is horrible for alignment, i don't care
 
-	tr::Arena arena = {};
-	tr::Arena asset_arena = {};
+	tr::Arena arena;
+	tr::Arena asset_arena;
 	Application* application = nullptr;
 	ApplicationSettings settings = {};
-	// i wanted it to free on panic using libtrippin's `tr::call_on_quit` it's complicated
-	// TODO this sucks, fix it
-	// bool exiting = false;
+
+	// window
+	GLFWwindow* window;
 
 	// input
 	tr::Array<InputState> key_state = {};
@@ -66,87 +59,27 @@ struct Starry3D
 	bool mouse_moved_this_frame = false;
 	tr::Vec2<uint32> window_size = {};
 
-	// renderer
-	Shader basic_shader = {};
-	Mesh mesh = {};
-	tr::Maybe<TextureAtlas> current_atlas = {};
-	// you can't set uniforms any time you want
-	// so TextureAtlas sets this to true, the renderer looks at it, uploads the atlas, and sets
-	// it back to false
-	// i don't think anyone is gonna be setting the atlas multiple times but i don't care
-	bool pls_upload_the_atlas_to_the_gpu = false;
-
-	// world
-	Camera camera = {};
-
-	// assets
-	tr::HashMap<tr::String, Texture> textures = {};
+	Starry(tr::Arena arena, tr::Arena asset_arena)
+		: arena(arena)
+		, asset_arena(asset_arena)
+	{
+		key_state = tr::Array<InputState>(arena, static_cast<int>(st::Key::LAST) + 1);
+		mouse_state =
+			tr::Array<InputState>(arena, static_cast<int>(st::MouseButton::LAST) + 1);
+	}
 };
 
 // This is where the engine's internal state goes. You probably shouldn't use this directly.
-extern Starry3D engine;
+extern Starry* _st;
 
-// the life of a game engine <3
-// this should be in the order in which they are called
-namespace _init {
-	// inits:
-	// - libtrippin
-	// - the engine's state
-	// - app:// and user:// (as well as checking if they exist)
-	void preinit();
+// inits:
+// - libtrippin
+// - the engine's state
+// - app:// and user:// (as well as checking if they exist)
+void _preinit();
 
-	// implemented in starry/app.cpp
-	void app();
-
-	// implemented in starry/render.cpp
-	void render();
-
-	// implemented in starry/asset.cpp
-	void asset();
-
-	// implemented in starry/world.cpp
-	void world();
-}
-
-void _init_engine();
-
-// of course it has to be deinitialized too
-// this should be in the reverse order as _init
-namespace _free {
-	// implemented in starry/world.cpp
-	void world();
-	// implemented in starry/asset.cpp
-	void asset();
-	// implemented in starry/render.cpp
-	void render();
-	// implemented in starry/app.cpp
-	void app();
-	// stupid name i know
-	void postfree();
-}
-
-void _free_engine();
-
-// update the engine lol
-// this runs every frame
-namespace _update {
-	// implemented in starry/app.cpp
-	void pre_input();
-
-	// implemented in starry/render.cpp
-	void render();
-
-	// implemented in starry/app.cpp
-	void post_input();
-}
-
-void _update_engine();
-
-// Internal function so sokol uses libtrippin's logging functions :)
-void _sokol_log(
-	const char* tag, uint32 level, uint32 item_id, const char* msg_or_null, uint32 line_nr,
-	const char* filename_or_null, void* user_data
-);
+// stupid name i know
+void _postfree();
 
 }
 

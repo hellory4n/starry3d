@@ -30,92 +30,45 @@
 #include <trippin/common.h>
 #include <trippin/iofs.h>
 #include <trippin/log.h>
+#include <trippin/memory.h>
 
 #include "starry/app.h"
-#ifdef ST_IMGUI
-	#include "starry/optional/imgui.h"
-#endif
 
 namespace st {
 
 // it has to live somewhere
-Starry3D engine = {};
-tr::Signal<void> on_close(engine.arena);
+Starry* _st = nullptr;
 
 }
 
-void st::_init_engine()
+void st::_preinit()
 {
-	st::_init::preinit();
-	st::_init::app();
-	st::_init::render();
-#ifdef ST_IMGUI
-	// st::imgui::init();
-#endif
-	st::_init::asset();
-	st::_init::world();
-	engine.application->init().unwrap();
-}
-
-void st::_free_engine()
-{
-	engine.application->free().unwrap();
-	st::_free::world();
-	st::_free::asset();
-#ifdef ST_IMGUI
-	// st::imgui::free();
-#endif
-	st::_free::render();
-	st::_free::app();
-	st::_free::postfree();
-}
-
-void st::_update_engine()
-{
-	// TODO are you sure about this order
-	st::_update::pre_input();
-#ifdef ST_IMGUI
-	// st::imgui::update();
-#endif
-	engine.application->update(st::delta_time_sec()).unwrap();
-	st::_update::render();
-	st::_update::post_input();
-}
-
-void st::_init::preinit()
-{
-	if (engine.settings.user_dir == "") {
-		engine.settings.user_dir = engine.settings.name;
+	// TODO this could be a thing in libtrippin
+	for (auto [_, path] : _st->settings.logfiles) {
+		tr::use_log_file(path);
 	}
-	tr::set_paths(engine.settings.app_dir, engine.settings.user_dir);
+	tr::init();
 
-	tr::call_on_quit([](bool is_panic) {
-		// sokol handles calling st::_free_engine when quitting safely ;)
-		if (!is_panic) {
-			st::_free_engine();
-		}
-	});
+	// init _st
+	tr::Arena arena = {};
+	tr::Arena asset_arena = {};
+	_st = &arena.make<Starry>(arena, asset_arena);
+
+	if (_st->settings.user_dir == "") {
+		_st->settings.user_dir = _st->settings.name;
+	}
+	tr::set_paths(_st->settings.app_dir, _st->settings.user_dir);
 
 	tr::info("starry3d %s", st::VERSION);
 	// some debug info
-	// TODO sokol supports more but i doubt i'll support them any time soon
-#ifdef _WIN32
-	tr::info("windowing backend: Win32");
-#elif defined(__APPLE__)
-	tr::info("windowing backend: Cocoa");
-#else
-	tr::info("windowing backend: X11");
-#endif
-
-#ifdef SOKOL_GLCORE
-	tr::info("graphics backend: OpenGL Core");
-#elif defined(SOKOL_GLES)
-	tr::info("graphics backend: OpenGL ES");
-#elif defined(SOKOL_D3D11)
-	tr::info("graphics bakend: Direct3D 11");
-#elif defined(SOKOL_METAL)
-	tr::info("graphics backend: Metal");
-#endif
+	// TODO glfw has a better way to do this
+	// #ifdef _WIN32
+	// 	tr::info("windowing backend: Win32");
+	// #elif defined(__APPLE__)
+	// 	tr::info("windowing backend: Cocoa");
+	// #else
+	// 	tr::info("windowing backend: X11");
+	// #endif
 
 	tr::info("app:// pointing to %s", *tr::path(tr::scratchpad(), "app://"));
 	tr::info("user:// pointing to %s", *tr::path(tr::scratchpad(), "user://"));
@@ -129,49 +82,14 @@ void st::_init::preinit()
 		"app:// is pointing to an invalid directory, are you sure this is the right path?"
 	);
 
-	engine.key_state = tr::Array<InputState>(engine.arena, static_cast<int>(st::Key::LAST) + 1);
-	engine.mouse_state =
-		tr::Array<InputState>(engine.arena, static_cast<int>(st::MouseButton::LAST) + 1);
-	engine.textures = tr::HashMap<tr::String, Texture>(engine.asset_arena);
-
 	tr::info("preinitialized successfully");
 }
 
-void st::_free::postfree()
+void st::_postfree()
 {
-	engine.arena.free();
-	engine.asset_arena.free();
-}
-
-void st::_sokol_log(
-	const char* tag, uint32 level, uint32 item_id, const char* msg_or_null, uint32 line_nr,
-	const char* filename_or_null, void* user_data
-)
-{
-	// shut up
-	(void)tag;
-	(void)user_data;
-
-	const char* msg = msg_or_null == nullptr ? "unknown message" : msg_or_null;
-	const char* file = filename_or_null == nullptr ? "unknown" : filename_or_null;
-
-	switch (level) {
-	case 0:
-		tr::panic("sokol panic @ %s:%u (item id %u): %s", file, line_nr, item_id, msg);
-		break;
-	case 1:
-// tr::panic is more useful than tr::error when developing the library
-#ifndef DEBUG
-		tr::error("sokol error @ %s:%u (item id %u): %s", file, line_nr, item_id, msg);
-#else
-		tr::panic("sokol error @ %s:%u (item id %u): %s", file, line_nr, item_id, msg);
-#endif
-		break;
-	case 2:
-		tr::warn("sokol warning @ %s:%u (item id %u): %s", file, line_nr, item_id, msg);
-		break;
-	default:
-		tr::info("sokol @ %s:%u (item id %u): %s", file, line_nr, item_id, msg);
-		break;
-	}
+	_st->asset_arena.free();
+	// _st itself is on that arena
+	// TODO this WILL break
+	_st->arena.free();
+	_st = nullptr;
 }

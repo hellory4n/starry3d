@@ -92,10 +92,11 @@ srcsfrfr = {
 
 	-- starry3d
 	starrydir .. "/starry/app.cpp",
-	starrydir .. "/starry/asset.cpp",
+	-- starrydir .. "/starry/asset.cpp",
 	starrydir .. "/starry/internal.cpp",
-	starrydir .. "/starry/render.cpp",
-	starrydir .. "/starry/world.cpp",
+	-- starrydir .. "/starry/render.cpp",
+	starrydir .. "/starry/thirdparty.cpp",
+	-- starrydir .. "/starry/world.cpp",
 }
 
 -- imgui

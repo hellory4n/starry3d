@@ -2,8 +2,8 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * starry/asset.h
- * Manages loading assets
+ * starry/thirdparty.cpp
+ * This is where we define the implementations for single-header libraries
  *
  * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
  *
@@ -25,51 +25,30 @@
  *
  */
 
-#ifndef _ST_ASSET_H
-#define _ST_ASSET_H
+// stb
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>
 
-#include <trippin/common.h>
-#include <trippin/error.h>
-#include <trippin/math.h>
+// glfw + glad
+// idk how much of this is necessary, i just stole it from
+// https://github.com/SasLuca/glfw-single-header/blob/master/example/test.c
 
-#include "trippin/string.h"
-
-namespace st {
-
-// Image on the GPU
-class Texture
-{
-	tr::String _path;
-	uint32 _id = 0;
-	uint32 _width = 0;
-	uint32 _height = 0;
-
-public:
-	Texture();
-
-	// Loads an texture and puts it into a cache thing. If it was already loaded, then it
-	// returns the existing texture.
-	static tr::Result<Texture> load(tr::String path);
-
-	// Probably don't use this, the engine frees the texture for you
-	void free();
-
-	// You'll never guess what this does
-	static void _free_all_textures();
-
-	// Returns the internal texture handle.
-	uint32 handle() const;
-
-	// Returns the texture's size in pixels
-	tr::Vec2<uint32> size() const;
-
-	// Uses the texture :)
-	void bind(int32 slot = 0) const;
-
-	// Returns the path from where the texture came from :)
-	tr::String path() const;
-};
-
-}
-
+#if defined(_MSC_VER)
+	// Make MS math.h define M_PI
+	#define _USE_MATH_DEFINES
 #endif
+
+#ifdef __APPLE__
+	#define _GLFW_COCOA
+#elif _WIN32
+	#define _GLFW_WIN32
+#else
+	#define _GLFW_X11
+	#define _GLFW_WAYLAND
+#endif
+
+#define LSH_GLFW_IMPLEMENTATION
+#define GLFW_INCLUDE_NONE
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
+#include <glfw-single-header/glfw.h>

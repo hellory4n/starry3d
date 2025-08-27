@@ -40,21 +40,21 @@
 // these all use clang so #warning should work
 // TODO support them? it's that shrimple
 #ifdef __APPLE__
-	#warning "Apple OSes are not officially supported"
+	#warning "macOS is not officially supported"
 #endif
 #ifdef __ANDROID__
-	#warning "Android is not officially supported"
+	#warning "Android is not supported"
 #endif
 #ifdef __EMSCRIPTEN__
-	#warning "Emscripten is not officially supported"
+	#warning "macOS is not supported"
 #endif
 
 namespace st {
 
 // Vresionlsdn.
-constexpr const char* VERSION = "v0.5.0";
+constexpr const char* VERSION = "v0.6.0";
 // Vresionlsdn. Format is XYYZZ
-constexpr uint32 VERSION_NUM = 5'00; // can't do 0'05'00 bcuz it would become an octal number
+constexpr uint32 VERSION_NUM = 6'00; // can't do 0'05'00 bcuz it would become an octal number
 
 struct InputState
 {
@@ -68,7 +68,7 @@ struct InputState
 	bool pressed = false;
 };
 
-// The key to success. Note the values are identical to GLFW and Sokol
+// The key to success. Note the values are identical to GLFW
 enum class Key : uint16
 {
 	UNKNOWN = 0,
@@ -243,6 +243,7 @@ struct ApplicationSettings
 	tr::Array<tr::String> logfiles = {};
 
 	tr::Vec2<uint32> window_size = {640, 480};
+	bool resizable = true;
 	bool fullscreen = false;
 	bool vsync = false;
 	bool high_dpi = false;
@@ -251,12 +252,12 @@ struct ApplicationSettings
 // Initializes the crap library.
 void run(Application& app, ApplicationSettings settings);
 
+// If true, the window should close. Duh.
+bool window_should_close();
+
 // Kindly requests the window to be closed. If you want to force quit just use
 // `tr::quit`/`tr::panic`
 void close_window();
-
-// Emitted when the application is closed. This is called before `Application.free()`
-extern tr::Signal<void> on_close;
 
 // Returns the window size. May not be 100% accurate because of high DPI crap (you can enable high
 // DPi from `st::ApplicationSettings`)
