@@ -1,7 +1,6 @@
 #pragma once
 #include <starry/app.h>
-#include <starry/optional/imgui.h>
-#include <starry/world.h>
+// #include <starry/optional/imgui.h>
 
 namespace sbox {
 

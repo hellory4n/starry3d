@@ -2,7 +2,6 @@
 *.h linguist-language=C++
 thirdparty/* linguist-vendored
 # auto-generated files
-# TODO make it part of the build process you distinguished gentleman
 *.glsl.h linguist-vendored
 
 # sane files

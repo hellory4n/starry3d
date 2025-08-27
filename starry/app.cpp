@@ -34,6 +34,7 @@
 
 #include <glad/gl.h>
 #include <glfw-single-header/glfw.h>
+#include <glfw/include/GLFW/glfw3.h>
 
 #include "starry/internal.h"
 
@@ -60,17 +61,17 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 
 	st::_preinit();
 	st::_init_window();
-	_st->application->init();
+	_st->application->init().unwrap();
 
 	while (!st::window_should_close()) {
 		st::_pre_input();
 
-		_st->application->update(st::delta_time_sec());
+		_st->application->update(st::delta_time_sec()).unwrap();
 
 		st::_post_input();
 	}
 
-	_st->application->free();
+	_st->application->free().unwrap();
 	st::_free_window();
 	st::_postfree();
 }
@@ -120,7 +121,7 @@ static void st::_init_window()
 	});
 
 	// a bit more annoyment in the logs
-	int32 platform = glfwGetPlatform();
+	int platform = glfwGetPlatform();
 	tr::String platform_str = "unknown platform";
 	switch (platform) {
 	case GLFW_PLATFORM_WIN32:
@@ -146,7 +147,9 @@ static void st::_init_window()
 
 	// apparently windows is shit so we have to do this immediately
 	_st->window_size = _st->settings.window_size;
-	glViewport(0, 0, _st->window_size.x, _st->window_size.y);
+	glViewport(
+		0, 0, static_cast<int>(_st->window_size.x), static_cast<int>(_st->window_size.y)
+	);
 
 	tr::info("initialized OpenGL");
 	tr::info("- GL vendor:    %s", glGetString(GL_VENDOR));
@@ -164,12 +167,6 @@ static void st::_free_window()
 
 static void st::_pre_input()
 {
-	// uh
-	if (!_st->mouse_moved_this_frame) {
-		_st->relative_mouse_position = {};
-	}
-	_st->mouse_moved_this_frame = false;
-
 	glfwPollEvents();
 }
 
@@ -177,44 +174,45 @@ static void st::_post_input()
 {
 	// handle the extra fancy key/mouse states
 	// it gets mad if you try to check for anything before space
-	for (int32 key = int32(Key::SPACE); key <= int32(Key::LAST); key++) {
-		bool is_down = glfwGetKey(_st->window, key) == GLFW_PRESS;
+	for (unsigned key = unsigned(Key::SPACE); key <= unsigned(Key::LAST); key++) {
+		bool is_down = glfwGetKey(_st->window, static_cast<int>(key)) == GLFW_PRESS;
 
 		// help
-		bool& was_down = _st->key_prev_down[key];
+		bool& was_down = _st->key_state[key].pressed;
 		if (!was_down && is_down) {
-			_st->key_state[key] = InputState::JUST_PRESSED;
+			_st->key_state[key].state = InputState::State::JUST_PRESSED;
 		}
 		else if (was_down && is_down) {
-			_st->key_state[key] = InputState::HELD;
+			_st->key_state[key].state = InputState::State::HELD;
 		}
 		else if (was_down && !is_down) {
-			_st->key_state[key] = InputState::JUST_RELEASED;
+			_st->key_state[key].state = InputState::State::JUST_RELEASED;
 		}
 		else {
-			_st->key_state[key] = InputState::NOT_PRESSED;
+			_st->key_state[key].state = InputState::State::NOT_PRESSED;
 		}
 
 		was_down = is_down;
 	}
 
 	// christ
-	for (int32 btn = int32(MouseButton::BTN_1); btn <= int32(MouseButton::LAST); btn++) {
-		bool is_down = glfwGetMouseButton(_st->window, btn) == GLFW_PRESS;
+	for (unsigned btn = unsigned(MouseButton::BTN_1); btn <= unsigned(MouseButton::LAST);
+	     btn++) {
+		bool is_down = glfwGetMouseButton(_st->window, static_cast<int>(btn)) == GLFW_PRESS;
 
 		// help
-		bool& was_down = _st->mouse_prev_down[btn];
+		bool& was_down = _st->mouse_state[btn].pressed;
 		if (!was_down && is_down) {
-			_st->mouse_state[btn] = InputState::JUST_PRESSED;
+			_st->mouse_state[btn].state = InputState::State::JUST_PRESSED;
 		}
 		else if (was_down && is_down) {
-			_st->mouse_state[btn] = InputState::HELD;
+			_st->mouse_state[btn].state = InputState::State::HELD;
 		}
 		else if (was_down && !is_down) {
-			_st->mouse_state[btn] = InputState::JUST_RELEASED;
+			_st->mouse_state[btn].state = InputState::State::JUST_RELEASED;
 		}
 		else {
-			_st->mouse_state[btn] = InputState::NOT_PRESSED;
+			_st->mouse_state[btn].state = InputState::State::NOT_PRESSED;
 		}
 
 		was_down = is_down;
@@ -226,7 +224,7 @@ static void st::_post_input()
 	// ah
 	// IM THE RULER OF EVERYTHING
 	// in the end...
-	_st->current_time = st::time();
+	_st->current_time = st::time_sec();
 	_st->delta_time = _st->current_time - _st->prev_time;
 	_st->prev_time = _st->current_time;
 }
@@ -281,54 +279,26 @@ bool st::is_mouse_not_pressed(st::MouseButton btn)
 	return _st->mouse_state[static_cast<usize>(btn)].state == InputState::State::NOT_PRESSED;
 }
 
-tr::Vec2<float32> st::mouse_position()
+tr::Vec2<float64> st::mouse_position()
 {
-	return _st->mouse_position;
+	float64 x, y;
+	glfwGetCursorPos(_st->window, &x, &y);
+	return {x, y};
 }
 
-tr::Vec2<float32> st::relative_mouse_position()
+void st::set_mouse_enabled(bool val)
 {
-	return _st->relative_mouse_position;
-}
-
-st::Modifiers st::modifiers()
-{
-	return _st->current_modifiers;
-}
-
-void st::set_mouse_visible(bool val)
-{
-	sapp_show_mouse(val);
-}
-
-bool st::is_mouse_visible()
-{
-	return sapp_mouse_shown();
-}
-
-void st::lock_mouse(bool val)
-{
-	sapp_lock_mouse(val);
-}
-
-bool st::is_mouse_locked()
-{
-	return sapp_mouse_locked();
+	glfwSetInputMode(_st->window, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 }
 
 float64 st::time_sec()
 {
-	return stm_sec(stm_now());
-}
-
-uint64 st::frames()
-{
-	return sapp_frame_count();
+	return glfwGetTime();
 }
 
 float64 st::delta_time_sec()
 {
-	return sapp_frame_duration();
+	return _st->delta_time;
 }
 
 float64 st::fps()

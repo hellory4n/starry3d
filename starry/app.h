@@ -54,7 +54,7 @@ namespace st {
 // Vresionlsdn.
 constexpr const char* VERSION = "v0.6.0";
 // Vresionlsdn. Format is XYYZZ
-constexpr uint32 VERSION_NUM = 6'00; // can't do 0'05'00 bcuz it would become an octal number
+constexpr uint32 VERSION_NUM = 6'00; // can't do 0'06'00 bcuz it would become an octal number
 
 struct InputState
 {
@@ -69,7 +69,7 @@ struct InputState
 };
 
 // The key to success. Note the values are identical to GLFW
-enum class Key : uint16
+enum class Key
 {
 	UNKNOWN = 0,
 	SPACE = 32,
@@ -196,28 +196,21 @@ enum class Key : uint16
 };
 
 // Mouse btutton :)
-enum class MouseButton : uint8
+enum class MouseButton
 {
-	LEFT = 0,
-	RIGHT = 1,
-	MIDDLE = 2,
-	// TODO funky mouse buttons from funky mouses
-	LAST = MIDDLE,
+	BTN_1 = 0,
+	BTN_2 = 1,
+	BTN_3 = 2,
+	BTN_4 = 3,
+	BTN_5 = 4,
+	BTN_6 = 5,
+	BTN_7 = 6,
+	BTN_8 = 7,
+	LAST = BTN_8,
+	LEFT = BTN_1,
+	RIGHT = BTN_2,
+	MIDDLE = BTN_3,
 };
-
-// Bit flags for modifiers when pressing keys/mouse buttons
-enum class Modifiers : uint16
-{
-	NONE = 0x0,
-	SHIFT = 0x1, // left or right shift
-	CTRL = 0x2, // left or right ctrl
-	ALT = 0x4, // left or right alt
-	SUPER = 0x8, // left or right super key (also known as windows/meta)
-	LEFT_MOUSE_BUTTON = 0x100,
-	RIGHT_MOUSE_BUTTON = 0x200,
-	MIDDLE_MOUSE_BUTTON = 0x400,
-};
-TR_BIT_FLAG(Modifiers)
 
 // As the name implies, it's an application.
 class Application
@@ -276,34 +269,15 @@ bool is_mouse_held(MouseButton btn);
 bool is_mouse_not_pressed(MouseButton btn);
 
 // Returns the mouse position in pixels (0, 0 is the top left)
-tr::Vec2<float32> mouse_position();
-
-// Returns the relative mouse position since last frame, in pixels (aligned towards the top left)
-tr::Vec2<float32> relative_mouse_position();
+tr::Vec2<float64> mouse_position();
 
 // TODO mouse_scroll()
 
-// Returns the current modifiers. Only valid if a key or mouse button is pressed, or if the mouse
-// was moved.
-Modifiers modifiers();
-
-// Self-explanatory
-void set_mouse_visible(bool val);
-
-// Self-explanatory
-bool is_mouse_visible();
-
-// Traps the player's mouse in eternal purgatory (the window). Useful for FPS controllers
-void lock_mouse(bool val);
-
-// Yeah.
-bool is_mouse_locked();
+// If false, the mouse gets disabled, which enables raw mouse input.
+void set_mouse_enabled(bool val);
 
 // Gets the time since the window started, in seconds
 float64 time_sec();
-
-// Gets how many frames passed since the window started
-uint64 frames();
 
 // Gets the time between frames, in seconds
 float64 delta_time_sec();

@@ -1,6 +1,6 @@
 #include "world.h"
 
-#include <starry/world.h>
+// #include <starry/world.h>
 
 void sbox::setup_world()
 {

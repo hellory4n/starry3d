@@ -60,16 +60,6 @@ void st::_preinit()
 	tr::set_paths(_st->settings.app_dir, _st->settings.user_dir);
 
 	tr::info("starry3d %s", st::VERSION);
-	// some debug info
-	// TODO glfw has a better way to do this
-	// #ifdef _WIN32
-	// 	tr::info("windowing backend: Win32");
-	// #elif defined(__APPLE__)
-	// 	tr::info("windowing backend: Cocoa");
-	// #else
-	// 	tr::info("windowing backend: X11");
-	// #endif
-
 	tr::info("app:// pointing to %s", *tr::path(tr::scratchpad(), "app://"));
 	tr::info("user:// pointing to %s", *tr::path(tr::scratchpad(), "user://"));
 

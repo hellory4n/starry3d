@@ -32,6 +32,7 @@
 #include <trippin/common.h>
 #include <trippin/memory.h>
 
+#define GLFW_INCLUDE_NONE
 #include <glfw-single-header/glfw.h>
 
 #include "starry/app.h"
@@ -47,17 +48,18 @@ struct Starry
 	Application* application = nullptr;
 	ApplicationSettings settings = {};
 
+	// timing
+	float64 prev_time = 0;
+	float64 current_time = 0;
+	float64 delta_time = 0;
+
 	// window
-	GLFWwindow* window;
+	GLFWwindow* window = nullptr;
+	tr::Vec2<uint32> window_size = {};
 
 	// input
 	tr::Array<InputState> key_state = {};
 	tr::Array<InputState> mouse_state = {};
-	Modifiers current_modifiers = {};
-	tr::Vec2<float32> mouse_position = {};
-	tr::Vec2<float32> relative_mouse_position = {};
-	bool mouse_moved_this_frame = false;
-	tr::Vec2<uint32> window_size = {};
 
 	Starry(tr::Arena arena, tr::Arena asset_arena)
 		: arena(arena)

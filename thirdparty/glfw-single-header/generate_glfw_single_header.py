@@ -10,14 +10,14 @@ win32_defines = [
                  "#ifdef MINGW\n#define UNICODE\n#define WINVER 0x0501\n#endif", ]
 
 src_dir = "../glfw/src"
-win32_sources   = [ "win32_init.c", "win32_joystick.c", "win32_monitor.c", "win32_time.c", "win32_thread.c", "win32_window.c", "wgl_context.c", ]
+win32_sources   = [ "win32_init.c", "win32_joystick.c", "win32_monitor.c", "win32_time.c", "win32_thread.c", "win32_window.c", "wgl_context.c", "win32_module.c" ]
 osmesa_sources  = [ "null_init.c", "null_monitor.c", "null_window.c", "null_joystick.c", ]
 x11_sources     = [ "x11_init.c", "x11_monitor.c", "x11_window.c", "glx_context.c",  ]
 wayland_sources = [ "wl_init.c", "wl_monitor.c", "wl_window.c",  ]
-cocoa_sources   = [ "cocoa_init.m", "nsgl_context.m", "cocoa_joystick.m", "cocoa_monitor.m", "cocoa_window.m", "cocoa_time.c", ]
+cocoa_sources   = [ "cocoa_init.m", "nsgl_context.m", "cocoa_joystick.m", "cocoa_monitor.m", "cocoa_window.m", "cocoa_time.c", "posix_module.c" ]
 time_sources    = [ "posix_time.c", ]
 thread_sources  = [ "posix_thread.c", ]
-linux_sources   = [ "linux_joystick.c", "xkb_unicode.c", ]
+linux_sources   = [ "linux_joystick.c", "xkb_unicode.c", "posix_poll.c", "posix_module.c" ]
 
 headers = list([
 "cocoa_joystick.h",
@@ -32,14 +32,16 @@ headers = list([
 "osmesa_context.h",
 "posix_thread.h",
 "posix_time.h",
+"posix_poll.h",
 "wgl_context.h",
 "win32_joystick.h",
 "win32_platform.h",
 "wl_platform.h",
 "x11_platform.h",
 "xkb_unicode.h",
+"platform.h",
 ])
-shared_sources = [ "internal.h", "osmesa_context.c", "egl_context.c", "context.c", "init.c", "input.c", "monitor.c", "vulkan.c", "window.c", ]
+shared_sources = [ "internal.h", "platform.h", "platform.c", "osmesa_context.c", "egl_context.c", "context.c", "init.c", "input.c", "monitor.c", "vulkan.c", "window.c", ]
 
 # Get the file using this function since it might be cached
 files_cache = {}
@@ -138,6 +140,7 @@ source_result = source_result.replace("#error \"You must not define any header o
 #     source_result = source_result.replace(f"#include \"{it}\"", f"//#include \"{it}\"")
 
 source_result = source_result.replace("#include \"../include/GLFW/glfw3.h\"", "//#include \"../include/GLFW/glfw3.h\"")
+source_result = source_result.replace("#include \"../include/GLFW/glfw3native.h\"", "//#include \"../include/GLFW/glfw3native.h\"")
 source_result = source_result.replace("#include \"internal.h\"", "\n")
 
 # for glad
