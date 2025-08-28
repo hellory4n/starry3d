@@ -117,14 +117,9 @@ end
 -- ldflags
 ldflags = ""
 if platform == "windows" then
-	ldflags = ldflags.." -lkernel32 -luser32 -lshell32 -lgdi32 -ld3d11 -ldxgi -lpthread " ..
-	    "-lstdc++ -static "
+	ldflags = ldflags.." -lopengl32 -lgdi32 -lstdc++ -static"
 else
-	-- TODO sokol says to include -pthread but it works fine without it
-	-- so maybe they fixed the issue but never updated that part?
-	-- i'm not sure
-	ldflags = ldflags.." -lX11 -lXi -lXcursor -lGL -ldl -lm -lstdc++"
-	-- cflags = cflags.." -pthread"
+	ldflags = ldflags.." -lX11 -lGL -lXrandr -lm -lstdc++"
 end
 
 -- man.

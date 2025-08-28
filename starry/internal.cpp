@@ -49,11 +49,6 @@ void st::_preinit()
 	}
 	tr::init();
 
-	// init _st
-	tr::Arena arena = {};
-	tr::Arena asset_arena = {};
-	_st = &arena.make<Starry>(arena, asset_arena);
-
 	if (_st->settings.user_dir == "") {
 		_st->settings.user_dir = _st->settings.name;
 	}

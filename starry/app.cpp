@@ -32,7 +32,9 @@
 #include <trippin/iofs.h>
 #include <trippin/log.h>
 
+#define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
+
 #define RGFW_OPENGL
 #define RGFW_BOOL_DEFINED
 typedef bool RGFW_bool; // cmon
@@ -42,6 +44,7 @@ typedef bool RGFW_bool; // cmon
 #define RGFW_IMPLEMENTATION
 #include <rgfw/RGFW.h>
 #undef RGFW_IMPLEMENTATION
+
 // where the FUCK did RGFW_getTime() go
 #define SOKOL_TIME_IMPL
 #include <sokol/sokol_time.h>
@@ -65,6 +68,10 @@ static void _free_window();
 
 void st::run(st::Application& app, st::ApplicationSettings settings)
 {
+	tr::Arena arena = {};
+	tr::Arena asset_arena = {};
+	_st = &arena.make<Starry>(arena, asset_arena);
+
 	_st->application = &app;
 	_st->settings = settings;
 	_st->window_size = settings.window_size;
@@ -121,8 +128,8 @@ static void st::_init_window()
 	}
 
 	_st->window = RGFW_createWindow(
-		"a window", 0, 0, static_cast<int>(_st->settings.window_size.x),
-		static_cast<int>(_st->settings.window_size.y), flags
+		"a window", 0, 0, int(_st->settings.window_size.x),
+		int(_st->settings.window_size.y), flags
 	);
 	TR_ASSERT(_st->window);
 	RGFW_window_swapInterval_OpenGL(_st->window, _st->settings.vsync ? 1 : 0);
@@ -132,7 +139,7 @@ static void st::_init_window()
 	// TODO does RGFW already handle that?
 	RGFW_setWindowResizedCallback([](RGFW_window*, int32 w, int32 h) {
 		glViewport(0, 0, w, h);
-		_st->window_size = {static_cast<uint32>(w), static_cast<uint32>(h)};
+		_st->window_size = {uint32(w), uint32(h)};
 	});
 
 	RGFW_setDebugCallback([](RGFW_debugType debug_type, RGFW_errorCode error, const char* msg) {
@@ -169,9 +176,7 @@ static void st::_init_window()
 
 	// apparently windows is shit so we have to do this immediately
 	_st->window_size = _st->settings.window_size;
-	glViewport(
-		0, 0, static_cast<int>(_st->window_size.x), static_cast<int>(_st->window_size.y)
-	);
+	glViewport(0, 0, int(_st->window_size.x), int(_st->window_size.y));
 
 	tr::info("initialized OpenGL");
 	tr::info("- GL vendor:    %s", glGetString(GL_VENDOR));
