@@ -209,7 +209,7 @@ enum class MouseButton
 	MISC_3,
 	MISC_4,
 	MISC_5,
-	FINAL, // not sure what this is, it's just stolen from rgfw
+	LAST,
 };
 
 // As the name implies, it's an application.

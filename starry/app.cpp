@@ -42,6 +42,9 @@ typedef bool RGFW_bool; // cmon
 #define RGFW_IMPLEMENTATION
 #include <rgfw/RGFW.h>
 #undef RGFW_IMPLEMENTATION
+// where the FUCK did RGFW_getTime() go
+#define SOKOL_TIME_IMPL
+#include <sokol/sokol_time.h>
 
 #include "starry/internal.h"
 
@@ -150,14 +153,14 @@ static void st::_init_window()
 	});
 
 // a bit more annoyment in the logs
-#ifdef RGFW_X11
-	tr::info("created window for X11");
-#elif RGFW_WAYLAND
-	tr::info("created window for Wayland");
+#if defined(RGFW_X11)
+	tr::info("created window for X11/unix-like");
+#elif defined(RGFW_WAYLAND)
+	tr::info("created window for Wayland/unix-like");
 #elif defined(_WIN32)
-	tr::info("created window for Win32");
+	tr::info("created window for Win32/Windows");
 #elif defined(__APPLE__)
-	tr::info("created window for Cocoa");
+	tr::info("created window for Cocoa/macOS");
 #else
 	tr::info("created window for unknown backend");
 #endif
@@ -175,6 +178,9 @@ static void st::_init_window()
 	tr::info("- GL renderer:  %s", glGetString(GL_RENDERER));
 	tr::info("- GL version:   %s", glGetString(GL_VERSION));
 	tr::info("- GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+	// they see me timin... they hatin...
+	stm_setup();
 }
 
 static void st::_free_window()
@@ -221,7 +227,7 @@ static void st::_post_input()
 	}
 
 	// christ
-	for (uint8 btn = uint8(MouseButton::LEFT); btn <= uint8(MouseButton::FINAL); btn++) {
+	for (uint8 btn = uint8(MouseButton::LEFT); btn <= uint8(MouseButton::LAST); btn++) {
 		bool is_down = RGFW_isMousePressed(btn);
 
 		// help
@@ -324,11 +330,12 @@ void st::set_mouse_enabled(bool val)
 
 float64 st::time_sec()
 {
-	// return RGFW_getTime();
+	return stm_sec(stm_now());
 }
 
 float64 st::delta_time_sec()
 {
+	// it's calculated in st::_post_input()
 	return _st->delta_time;
 }
 
