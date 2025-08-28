@@ -33,8 +33,15 @@
 #include <trippin/log.h>
 
 #include <glad/gl.h>
-#include <glfw-single-header/glfw.h>
-#include <glfw/include/GLFW/glfw3.h>
+#define RGFW_OPENGL
+#define RGFW_BOOL_DEFINED
+typedef bool RGFW_bool; // cmon
+#ifdef DEBUG
+	#define RGFW_DEBUG
+#endif
+#define RGFW_IMPLEMENTATION
+#include <rgfw/RGFW.h>
+#undef RGFW_IMPLEMENTATION
 
 #include "starry/internal.h"
 
@@ -76,74 +83,86 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	st::_postfree();
 }
 
+// TODO a lot of this was written for glfw and i'm not sure how much of it still applies to rgfw
+
 static void st::_init_window()
 {
-// renderdoc doesn't work on wayland
-#if defined(__linux__) && defined(DEBUG)
-	glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
-#endif
-
-	if (glfwInit() == 0) {
-		tr::panic("couldn't initialize glfw");
-	}
-
+	RGFW_glHints* hints = RGFW_getGlobalHints_OpenGL();
 	// TODO opengl 4.3 doesn't work on mac
 	// fuck apple
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_RESIZABLE, static_cast<int>(_st->settings.resizable));
+	// i'm not gonna buy a fucking Mac Mini® for an arm and a leg despite being the cheapest one
+	// bcuz i live in a shithole (brazil) just so i can run Apple Clang™ and develop a custom
+	// backend just for your shit ass Metal© graphics api using the Objective-C++©®™ language
+	// just so i can have a slightly bigger buffer natively for like 4 people who don't want to
+	// make a vm or whatever the fuck mac users do when they need windows-specific software
+	// fuck off
+	// you have a trillion dollars and you can't support the rest of the opengl versions??
+	hints->major = 4;
+	hints->minor = 3;
 #ifdef DEBUG
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
+	hints->debug = true;
 #endif
+	hints->profile = RGFW_glCompatibility; // TODO don't
+	RGFW_setGlobalHints_OpenGL(hints);
 
-	_st->window = glfwCreateWindow(
-		static_cast<int>(_st->settings.window_size.x),
-		static_cast<int>(_st->settings.window_size.y), _st->settings.name, nullptr, nullptr
+	RGFW_windowFlags flags = RGFW_windowCenter;
+	if (_st->settings.resizable) {
+		flags |= RGFW_windowNoResize;
+	}
+	else {
+		flags |= RGFW_windowFloating;
+	}
+
+	if (_st->settings.fullscreen) {
+		flags |= RGFW_windowedFullscreen; // true fullscreen sucks
+	}
+
+	_st->window = RGFW_createWindow(
+		"a window", 0, 0, static_cast<int>(_st->settings.window_size.x),
+		static_cast<int>(_st->settings.window_size.y), flags
 	);
-	TR_ASSERT_MSG(_st->window != nullptr, "couldn't create window");
-	glfwMakeContextCurrent(_st->window);
+	TR_ASSERT(_st->window);
+	RGFW_window_swapInterval_OpenGL(_st->window, _st->settings.vsync ? 1 : 0);
+	RGFW_window_createContext_OpenGL(_st->window, hints);
 
-	glfwSwapInterval(_st->settings.vsync ? 1 : 0); // TODO is that the only options?
-
-	// some callbacks
-	glfwSetFramebufferSizeCallback(_st->window, [](GLFWwindow*, int w, int h) -> void {
+	// callbacks
+	// TODO does RGFW already handle that?
+	RGFW_setWindowResizedCallback([](RGFW_window*, int32 w, int32 h) {
 		glViewport(0, 0, w, h);
 		_st->window_size = {static_cast<uint32>(w), static_cast<uint32>(h)};
 	});
 
-	glfwSetErrorCallback([](int error_code, const char* description) -> void {
-#ifdef DEBUG
-		tr::panic("GL error %i: %s", error_code, description);
-#else
-		tr::error("GL error %i: %s", error_code, description);
-#endif
+	RGFW_setDebugCallback([](RGFW_debugType debug_type, RGFW_errorCode error, const char* msg) {
+		switch (debug_type) {
+		case RGFW_typeError:
+			tr::panic("RGFW error %i: %s", error, msg);
+			break;
+		case RGFW_typeWarning:
+			tr::warn("RGFW warning %i: %s", error, msg);
+			break;
+		case RGFW_typeInfo:
+			tr::info("RGFW info %i: %s", error, msg);
+			break;
+		default:
+			TR_UNREACHABLE();
+			break;
+		}
 	});
 
-	// a bit more annoyment in the logs
-	int platform = glfwGetPlatform();
-	tr::String platform_str = "unknown platform";
-	switch (platform) {
-	case GLFW_PLATFORM_WIN32:
-		platform_str = "Win32";
-		break;
-	case GLFW_PLATFORM_X11:
-		platform_str = "X11";
-		break;
-	case GLFW_PLATFORM_WAYLAND:
-		platform_str = "Wayland";
-		break;
-	case GLFW_PLATFORM_COCOA:
-		platform_str = "Cocoa";
-		break;
-	}
-	tr::info("created window for %s", platform_str.buf());
+// a bit more annoyment in the logs
+#ifdef RGFW_X11
+	tr::info("created window for X11");
+#elif RGFW_WAYLAND
+	tr::info("created window for Wayland");
+#elif defined(_WIN32)
+	tr::info("created window for Win32");
+#elif defined(__APPLE__)
+	tr::info("created window for Cocoa");
+#else
+	tr::info("created window for unknown backend");
+#endif
 
-	if (glfwRawMouseMotionSupported() == 0) {
-		tr::warn("warning: raw mouse motion is not supported");
-	}
-
-	gladLoadGL(glfwGetProcAddress);
+	TR_ASSERT(gladLoadGL(RGFW_getProcAddress_OpenGL));
 
 	// apparently windows is shit so we have to do this immediately
 	_st->window_size = _st->settings.window_size;
@@ -160,24 +179,30 @@ static void st::_init_window()
 
 static void st::_free_window()
 {
-	glfwDestroyWindow(_st->window);
-	glfwTerminate();
+	RGFW_window_close(_st->window);
 	tr::info("destroyed window");
 }
 
 static void st::_pre_input()
 {
-	glfwPollEvents();
+	// funni way to poll event :)
+	RGFW_event event;
+	while (RGFW_window_checkEvent(_st->window, &event)) { }
 }
 
 static void st::_post_input()
 {
 	// handle the extra fancy key/mouse states
-	// it gets mad if you try to check for anything before space
-	for (unsigned key = unsigned(Key::SPACE); key <= unsigned(Key::LAST); key++) {
-		bool is_down = glfwGetKey(_st->window, static_cast<int>(key)) == GLFW_PRESS;
+	// TODO MY BALS!!!!!!!! it gets mad if you try to check for anything before space
+	// why the FUCK isn't a cast from an enum class to it's EXACT UNDERLYING TYPE implicit
+	// what good does that bring to the world
+	// what would dennis ritchie think
+	// TODO using a functional-style cast won't fool the compiler when it gets smarter
+	// (-Wold-style-casts), oh well
+	// TODO shut the FUCK up
+	for (uint8 key = uint8(Key::UNKNOWN); key <= uint8(Key::LAST); key++) {
+		bool is_down = RGFW_isKeyPressed(key);
 
-		// help
 		bool& was_down = _st->key_state[key].pressed;
 		if (!was_down && is_down) {
 			_st->key_state[key].state = InputState::State::JUST_PRESSED;
@@ -196,9 +221,8 @@ static void st::_post_input()
 	}
 
 	// christ
-	for (unsigned btn = unsigned(MouseButton::BTN_1); btn <= unsigned(MouseButton::LAST);
-	     btn++) {
-		bool is_down = glfwGetMouseButton(_st->window, static_cast<int>(btn)) == GLFW_PRESS;
+	for (uint8 btn = uint8(MouseButton::LEFT); btn <= uint8(MouseButton::FINAL); btn++) {
+		bool is_down = RGFW_isMousePressed(btn);
 
 		// help
 		bool& was_down = _st->mouse_state[btn].pressed;
@@ -227,16 +251,18 @@ static void st::_post_input()
 	_st->current_time = st::time_sec();
 	_st->delta_time = _st->current_time - _st->prev_time;
 	_st->prev_time = _st->current_time;
+
+	RGFW_window_swapBuffers_OpenGL(_st->window);
 }
 
 void st::close_window()
 {
-	glfwSetWindowShouldClose(_st->window, 1);
+	RGFW_window_setShouldClose(_st->window, true);
 }
 
 bool st::window_should_close()
 {
-	return glfwWindowShouldClose(_st->window) != 0;
+	return RGFW_window_shouldClose(_st->window);
 }
 
 bool st::is_key_just_pressed(st::Key key)
@@ -279,21 +305,26 @@ bool st::is_mouse_not_pressed(st::MouseButton btn)
 	return _st->mouse_state[static_cast<usize>(btn)].state == InputState::State::NOT_PRESSED;
 }
 
-tr::Vec2<float64> st::mouse_position()
+tr::Vec2<int32> st::mouse_position()
 {
-	float64 x, y;
-	glfwGetCursorPos(_st->window, &x, &y);
+	int32 x, y;
+	RGFW_window_getMouse(_st->window, &x, &y);
 	return {x, y};
 }
 
 void st::set_mouse_enabled(bool val)
 {
-	glfwSetInputMode(_st->window, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+	if (val) {
+		RGFW_window_holdMouse(_st->window);
+	}
+	else {
+		RGFW_window_unholdMouse(_st->window);
+	}
 }
 
 float64 st::time_sec()
 {
-	return glfwGetTime();
+	// return RGFW_getTime();
 }
 
 float64 st::delta_time_sec()

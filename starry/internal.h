@@ -32,8 +32,7 @@
 #include <trippin/common.h>
 #include <trippin/memory.h>
 
-#define GLFW_INCLUDE_NONE
-#include <glfw-single-header/glfw.h>
+#include <rgfw/RGFW.h>
 
 #include "starry/app.h"
 
@@ -54,7 +53,7 @@ struct Starry
 	float64 delta_time = 0;
 
 	// window
-	GLFWwindow* window = nullptr;
+	RGFW_window* window = nullptr;
 	tr::Vec2<uint32> window_size = {};
 
 	// input
