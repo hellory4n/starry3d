@@ -412,6 +412,7 @@ tr::Vec2<float64> st::delta_mouse_position()
 void st::set_mouse_enabled(bool val)
 {
 	glfwSetInputMode(_st->window, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+	tr::warn("seX %s", val ? "true" : "false");
 }
 
 float64 st::time_sec()

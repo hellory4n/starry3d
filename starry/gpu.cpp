@@ -192,26 +192,11 @@ void st::Mesh::free()
 	tr::info("freed mesh (vao %u)", _vao);
 }
 
-void st::Mesh::draw(tr::Matrix4x4 model, tr::Matrix4x4 view, tr::Matrix4x4 projection) const
+void st::Mesh::draw() const
 {
-	// TODO this should be shader-specific, instead of some fancy generic solution
-	// if (_st->current_shader != nullptr) {
-	// 	_st->current_shader->set_uniform("u_model", model);
-	// 	_st->current_shader->set_uniform("u_view", view);
-	// 	_st->current_shader->set_uniform("u_projection", projection);
-	// }
-	// else {
-	// 	tr::warn("rendering before using a shader, nothing is gonna show up");
-	// }
-
 	glBindVertexArray(_vao);
 	glDrawElements(GL_TRIANGLES, _index_count, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
-}
-
-void st::Mesh::draw(tr::Matrix4x4 matrix) const
-{
-	draw(matrix, _st->camera.view_matrix(), _st->camera.projection_matrix());
 }
 
 void st::Shader::_check_compilation(const char* shader_type) const

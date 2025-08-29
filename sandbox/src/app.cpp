@@ -20,7 +20,7 @@ struct Vertex
 tr::Result<void> sbox::Sandbox::init()
 {
 	st::Camera& cam = st::Camera::current();
-	cam.position = {0, 0, -5};
+	cam.position = {0, 0, 1};
 	cam.fov = 90;
 	cam.projection = st::CameraProjection::PERSPECTIVE;
 
@@ -65,15 +65,28 @@ tr::Result<void> sbox::Sandbox::update(float64 dt)
 {
 	sbox::debug_mode();
 
-	// hlep
-	if (st::is_key_just_pressed(st::Key::ESCAPE)) {
-		_ui_enabled = !_ui_enabled;
+	if (st::is_key_just_pressed(st::Key::SPACE)) {
+		tr::warn("just pressed!");
 	}
-	st::set_mouse_enabled(_ui_enabled);
+	if (st::is_key_just_released(st::Key::SPACE)) {
+		tr::warn("just released!");
+	}
+	if (st::is_key_held(st::Key::SPACE)) {
+		tr::warn("holding!");
+	}
+
+	// hlep
+	// if (st::is_key_just_pressed(st::Key::ESCAPE)) {
+	// 	_ui_enabled = !_ui_enabled;
+	// 	st::set_mouse_enabled(_ui_enabled);
+	// }
 
 	player_controller(dt);
 
-	mesh.unwrap().draw(tr::Matrix4x4::identity());
+	st::clear_screen(tr::Color::rgb(0x009ccf));
+	program.unwrap().set_uniform("u_view", st::Camera::current().view_matrix());
+	program.unwrap().set_uniform("u_projection", st::Camera::current().projection_matrix());
+	mesh.unwrap().draw();
 	return {};
 }
 

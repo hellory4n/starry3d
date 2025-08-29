@@ -110,11 +110,9 @@ public:
 
 	void free();
 
-	// Draws the mesh anywhere you want with the MVP matrices.
-	void draw(tr::Matrix4x4 model, tr::Matrix4x4 view, tr::Matrix4x4 projection) const;
-
-	// Draws the mesh using a custom model matrix and the default view/projection matrices.
-	void draw(tr::Matrix4x4 matrix) const;
+	// Draws the mesh. This doesn't handle position, you're gonna have to figure that out
+	// yourself with shader uniforms and shit. Just look at learnopengl.com or some shit.
+	void draw() const;
 
 	// TODO draw_instanced(), update_data()
 };
