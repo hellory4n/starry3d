@@ -195,14 +195,14 @@ void st::Mesh::free()
 void st::Mesh::draw(tr::Matrix4x4 model, tr::Matrix4x4 view, tr::Matrix4x4 projection) const
 {
 	// TODO this should be shader-specific, instead of some fancy generic solution
-	_st->current_shader.match(
-		[&](ShaderProgram& shader) {
-			shader.set_uniform("u_model", model);
-			shader.set_uniform("u_view", view);
-			shader.set_uniform("u_projection", projection);
-		},
-		[]() { tr::warn("rendering before using a shader, nothing is gonna show up"); }
-	);
+	if (_st->current_shader != nullptr) {
+		_st->current_shader->set_uniform("u_model", model);
+		_st->current_shader->set_uniform("u_view", view);
+		_st->current_shader->set_uniform("u_projection", projection);
+	}
+	else {
+		tr::warn("rendering before using a shader, nothing is gonna show up");
+	}
 
 	glBindVertexArray(_vao);
 	glDrawElements(GL_TRIANGLES, _index_count, GL_UNSIGNED_INT, 0);
@@ -296,7 +296,7 @@ void st::ShaderProgram::use()
 {
 	glUseProgram(_program);
 	_st->current_shader = this;
-	tr::warn("mm~");
+	tr::warn("mm");
 }
 
 tr::Result<st::Texture> st::Texture::load(tr::String path)

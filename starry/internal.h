@@ -70,7 +70,7 @@ struct Starry
 	Camera camera;
 
 	// render
-	tr::MaybePtr<ShaderProgram> current_shader = {};
+	ShaderProgram* current_shader = nullptr;
 
 	Starry(tr::Arena arena, tr::Arena asset_arena)
 		: arena(arena)
