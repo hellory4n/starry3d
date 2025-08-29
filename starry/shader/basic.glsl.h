@@ -12,10 +12,8 @@ static const char* ST_BASIC_SHADER_VERTEX =
 	"#version 430 core\n"
 	"layout (location = 0) in vec3 vs_position;\n"
 	"layout (location = 1) in vec4 vs_color;\n"
-	"layout (location = 2) in vec2 vs_uv;\n"
 	"\n"
 	"out vec4 fs_color;\n"
-	"out vec2 fs_uv;\n"
 	"\n"
 	"uniform mat4 u_model;\n"
 	"uniform mat4 u_view;\n"
@@ -25,7 +23,6 @@ static const char* ST_BASIC_SHADER_VERTEX =
 	"{\n"
 	"\tgl_Position = u_projection * u_view * u_model * vec4(vs_position, 1.0);\n"
 	"\tfs_color = vs_color;\n"
-	"\tfs_uv = vs_uv;\n"
 	"}\n"
 	"\n";
 
@@ -36,15 +33,12 @@ static const char* ST_BASIC_SHADER_FRAGMENT =
 #endif
 	"#version 430 core\n"
 	"in vec4 fs_color;\n"
-	"in vec2 fs_uv;\n"
 	"\n"
 	"out vec4 frag_color;\n"
 	"\n"
-	"uniform sampler2D u_texture;\n"
-	"\n"
 	"void main()\n"
 	"{\n"
-	"\tfrag_color = texture(u_texture, fs_uv) * fs_color;\n"
+	"\tfrag_color = fs_color;\n"
 	"}\n";
 
 #endif

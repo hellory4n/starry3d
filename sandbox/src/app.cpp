@@ -15,7 +15,6 @@ struct Vertex
 {
 	tr::Vec3<float32> position;
 	tr::Vec4<float32> color;
-	tr::Vec2<float32> uv;
 };
 
 tr::Result<void> sbox::Sandbox::init()
@@ -35,17 +34,19 @@ tr::Result<void> sbox::Sandbox::init()
 	program.unwrap().attach(frag_shader);
 	program.unwrap().link();
 	program.unwrap().use();
+	program.unwrap().set_uniform("u_model", tr::Matrix4x4::identity());
+	program.unwrap().set_uniform("u_view", tr::Matrix4x4::identity());
+	program.unwrap().set_uniform("u_projection", tr::Matrix4x4::identity());
 
 	tr::Array<st::VertexAttribute> attrs = {
 		{"position", st::VertexAttributeType::VEC3_FLOAT32, offsetof(Vertex, position)},
 		{"color",    st::VertexAttributeType::VEC4_FLOAT32, offsetof(Vertex, color)   },
-		{"uv",       st::VertexAttributeType::VEC2_FLOAT32, offsetof(Vertex, uv)      },
 	};
 
 	tr::Array<Vertex> vertices = {
-		{{-0.5, -0.5, 0.0}, tr::Color::rgb(0xff0000), {-1, -1}},
-		{{0.5, -0.5, 0.0},  tr::Color::rgb(0x00ff00), {1, -1} },
-		{{0.0, 0.5, 0.0},   tr::Color::rgb(0x0000ff), {0.5, 1}},
+		{{-0.5, -0.5, 0.0}, tr::Color::rgb(0xff0000)},
+		{{0.5, -0.5, 0.0},  tr::Color::rgb(0x00ff00)},
+		{{0.0, 0.5, 0.0},   tr::Color::rgb(0x0000ff)},
 	};
 
 	tr::Array<st::Triangle> triangles = {
