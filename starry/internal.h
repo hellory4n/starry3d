@@ -35,6 +35,8 @@
 #include <GLFW/glfw3.h>
 
 #include "starry/app.h"
+#include "starry/gpu.h"
+#include "starry/world.h"
 
 namespace st {
 
@@ -59,6 +61,12 @@ struct Starry
 	// input
 	tr::Array<InputState> key_state = {};
 	tr::Array<InputState> mouse_state = {};
+
+	// world
+	Camera camera;
+
+	// render
+	tr::MaybePtr<ShaderProgram> current_shader;
 
 	Starry(tr::Arena arena, tr::Arena asset_arena)
 		: arena(arena)

@@ -3,8 +3,7 @@ Language: Cpp
 Standard: c++17
 Cpp11BracedListStyle: true
 
-# very controversial for unemployed people
-UseTab: Always
+UseTab: Never
 IndentWidth: 8
 TabWidth: 8
 ContinuationIndentWidth: 8
@@ -24,7 +23,7 @@ BreakAfterAttributes: Always
 AlignOperands: Align
 BreakTemplateDeclarations: Yes
 AlignAfterOpenBracket: BlockIndent
-AlignArrayOfStructures: Right
+AlignArrayOfStructures: Left
 AlignEscapedNewlines: LeftWithLastLine
 EmptyLineBeforeAccessModifier: Always
 PackConstructorInitializers: BinPack
