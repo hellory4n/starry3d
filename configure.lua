@@ -67,7 +67,8 @@ end
 cflags = cflags ..
     " -I"..starrydir ..
     " -I"..starrydir.."/thirdparty" ..
-    " -I"..starrydir.."/thirdparty/libtrippin"
+    " -I"..starrydir.."/thirdparty/libtrippin"..
+    " -I"..starrydir.."/thirdparty/glfw/include"
 
 if imgui_enabled then
 	cflags = cflags.." -I"..starrydir.."/thirdparty/imgui"
@@ -106,6 +107,8 @@ if imgui_enabled then
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_tables.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_draw.cpp")
 	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/imgui_demo.cpp")
+	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/backends/imgui_impl_glfw.cpp")
+	table.insert(srcsfrfr, starrydir.."/thirdparty/imgui/backends/imgui_impl_opengl3.cpp")
 	cflags = cflags.." -DST_IMGUI"
 end
 
@@ -115,11 +118,11 @@ for _, src in ipairs(srcs) do
 end
 
 -- ldflags
-ldflags = ""
+ldflags = "-Lbuild/glfw/src"
 if platform == "windows" then
-	ldflags = ldflags.." -lopengl32 -lgdi32 -lstdc++ -static"
+	ldflags = ldflags.." -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lpthread -lstdc++ -static"
 else
-	ldflags = ldflags.." -lX11 -lGL -lXrandr -lm -lstdc++"
+	ldflags = ldflags.." -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt -lstdc++"
 end
 
 -- man.
@@ -146,6 +149,27 @@ f:write("cxx = "..cxx.."\n")
 f:write("cflags = "..cflags.."\n")
 f:write("ldflags = "..ldflags.."\n")
 
+f:write("\nrule glfw_build\n")
+if platform == "windows" then
+	f:write("  command = "..
+			"mkdir "..builddir.."/glfw -p && "..
+			-- cmake can't find a file that exists :D
+			"cp "..starrydir.."/thirdparty/glfw/CMake/x86_64-w64-mingw32.cmake "..builddir.."/win32.cmake && "..
+			"cmake -S "..starrydir.."/thirdparty/glfw -B "..builddir.."/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE=$$(pwd)/"..builddir.."/win32.cmake && "..
+			"cd "..builddir.."/glfw && "..
+			"make && "..
+			"mv src/libglfw3.a src/glfw3.lib"
+	)
+else
+	f:write("  command = "..
+			"mkdir "..builddir.."/glfw -p && "..
+			"cmake -S "..starrydir.."/thirdparty/glfw -B "..builddir.."/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF && "..
+			"cd "..builddir.."/glfw && "..
+			"make"
+	)
+end
+f:write("\n  description = Compiling GLFW\n")
+
 f:write("\nrule compile\n")
 f:write("  command = $cxx $cflags -c $in -o $out\n")
 f:write("  description = Compiling $in\n")
@@ -155,6 +179,9 @@ f:write("  command = $cxx $in $ldflags -o $out && " ..
 	-- that's to copy assets :)
 	"mkdir "..assetsdst.." -p && cp -r "..assetssrc.."/* "..assetsdst.."\n")
 f:write("  description = Linking $out\n")
+
+-- man
+f:write("\nbuild "..builddir.."/glfw/libglfw3.a: glfw_build\n")
 
 -- build crap :)
 for _, src in ipairs(srcsfrfr) do
@@ -167,6 +194,7 @@ f:write("\nbuild "..builddir.."/bin/"..project..": link ")
 for _, src in ipairs(srcsfrfr) do
 	f:write(builddir.."/obj/"..src:gsub("%.cpp", ".o"):gsub("/", "_").." ")
 end
+f:write("| "..builddir.."/glfw/libglfw3.a\n")
 
 f:write("\ndefault "..builddir.."/bin/"..project.."\n")
 
