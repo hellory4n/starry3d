@@ -271,6 +271,9 @@ bool is_mouse_not_pressed(MouseButton btn);
 // Returns the mouse position in pixels (0, 0 is the top left)
 tr::Vec2<float64> mouse_position();
 
+// Like `st::mouse_position` but only how much it moved since the last frame
+tr::Vec2<float64> delta_mouse_position();
+
 // TODO mouse_scroll()
 
 // If false, the mouse gets disabled, which enables raw mouse input.

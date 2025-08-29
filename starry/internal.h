@@ -30,6 +30,7 @@
 #define _ST_INTERNAL_H
 
 #include <trippin/common.h>
+#include <trippin/math.h>
 #include <trippin/memory.h>
 
 #include <GLFW/glfw3.h>
@@ -61,12 +62,15 @@ struct Starry
 	// input
 	tr::Array<InputState> key_state = {};
 	tr::Array<InputState> mouse_state = {};
+	tr::Vec2<float64> prev_mouse_pos = {};
+	tr::Vec2<float64> current_mouse_pos = {};
+	tr::Vec2<float64> delta_mouse_pos = {};
 
 	// world
 	Camera camera;
 
 	// render
-	tr::MaybePtr<ShaderProgram> current_shader;
+	tr::MaybePtr<ShaderProgram> current_shader = {};
 
 	Starry(tr::Arena arena, tr::Arena asset_arena)
 		: arena(arena)

@@ -3,7 +3,7 @@ Language: Cpp
 Standard: c++17
 Cpp11BracedListStyle: true
 
-UseTab: Never
+UseTab: ForContinuationAndIndentation
 IndentWidth: 8
 TabWidth: 8
 ContinuationIndentWidth: 8

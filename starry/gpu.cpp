@@ -25,12 +25,26 @@
 
 #include "starry/gpu.h"
 
+#include <trippin/common.h>
 #include <trippin/iofs.h>
 #include <trippin/log.h>
 
 #include <glad/gl.h>
+// oh boy !!!
+TR_GCC_IGNORE_WARNING(-Wold-style-cast)
+TR_GCC_IGNORE_WARNING(-Wcast-qual)
+TR_GCC_IGNORE_WARNING(-Wsign-conversion)
+TR_GCC_IGNORE_WARNING(-Wimplicit-int-conversion)
+TR_GCC_IGNORE_WARNING(-Wimplicit-fallthrough)
+TR_GCC_IGNORE_WARNING(-Wshorten-64-to-32)
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
+TR_GCC_RESTORE()
 
 #include "starry/internal.h"
 
@@ -282,6 +296,7 @@ void st::ShaderProgram::use()
 {
 	glUseProgram(_program);
 	_st->current_shader = this;
+	tr::warn("mm~");
 }
 
 tr::Result<st::Texture> st::Texture::load(tr::String path)

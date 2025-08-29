@@ -96,7 +96,9 @@ static void st::_init_window()
 		tr::panic("couldn't initialize glfw");
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	// TODO OpenGL 4.3 doesn't work on macOS
+	// fuck apple
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, int(_st->settings.resizable));
@@ -121,9 +123,9 @@ static void st::_init_window()
 
 	glfwSetErrorCallback([](int error_code, const char* description) -> void {
 #ifdef DEBUG
-		tr::panic("GL error %i: %s", error_code, description);
+		tr::panic("GLFW error %i: %s", error_code, description);
 #else
-		tr::error("GL error %i: %s", error_code, description);
+		tr::error("GLFW error %i: %s", error_code, description);
 #endif
 	});
 
@@ -159,8 +161,103 @@ static void st::_init_window()
 	gladLoadGL(glfwGetProcAddress);
 
 	// apparently windows is shit so we have to do this immediately
-	glViewport(0, 0, _st->settings.window_size.x, _st->settings.window_size.y);
+	glViewport(0, 0, int(_st->settings.window_size.x), int(_st->settings.window_size.y));
 	_st->window_size = _st->settings.window_size;
+
+	// more debug crap
+	int flags;
+	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	if ((flags & GL_CONTEXT_FLAG_DEBUG_BIT) != 0) {
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		// TODO this is ugly as fuck
+		glDebugMessageCallback(
+			[](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+			   const GLchar* msg, const void* data) {
+				(void)data;
+				(void)length;
+				const char* src_str;
+				const char* type_str;
+
+				switch (source) {
+				case GL_DEBUG_SOURCE_API:
+					src_str = "GL_DEBUG_SOURCE_API";
+					break;
+				case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+					src_str = "GL_DEBUG_SOURCE_WINDOW_SYSTEM";
+					break;
+				case GL_DEBUG_SOURCE_SHADER_COMPILER:
+					src_str = "GL_DEBUG_SOURCE_SHADER COMPILER";
+					break;
+				case GL_DEBUG_SOURCE_THIRD_PARTY:
+					src_str = "GL_DEBUG_SOURCE_THIRD PARTY";
+					break;
+				case GL_DEBUG_SOURCE_APPLICATION:
+					src_str = "GL_DEBUG_SOURCE_APPLICATION";
+					break;
+				case GL_DEBUG_SOURCE_OTHER:
+					src_str = "GL_DEBUG_SOURCE_OTHER";
+					break;
+				default:
+					src_str = "unknown";
+					break;
+				}
+
+				switch (type) {
+				case GL_DEBUG_TYPE_ERROR:
+					type_str = "GL_DEBUG_TYPE_ERROR";
+					break;
+				case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+					type_str = "GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR";
+					break;
+				case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+					type_str = "GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR";
+					break;
+				case GL_DEBUG_TYPE_PORTABILITY:
+					type_str = "GL_DEBUG_TYPE_PORTABILITY";
+					break;
+				case GL_DEBUG_TYPE_PERFORMANCE:
+					type_str = "GL_DEBUG_TYPE_PERFORMANCE";
+					break;
+				case GL_DEBUG_TYPE_OTHER:
+					type_str = "GL_DEBUG_TYPE_OTHER";
+					break;
+				case GL_DEBUG_TYPE_MARKER:
+					type_str = "GL_DEBUG_TYPE_MARKER";
+					break;
+				default:
+					type_str = "unknown";
+					break;
+				}
+
+				switch (severity) {
+				case GL_DEBUG_SEVERITY_HIGH:
+					tr::panic(
+						"OpenGL error %i: type: %s, source: %s: %s", id,
+						type_str, src_str, msg
+					);
+					break;
+				case GL_DEBUG_SEVERITY_MEDIUM:
+				case GL_DEBUG_SEVERITY_LOW:
+					tr::warn(
+						"OpenGL error %i: type: %s, source: %s: %s", id,
+						type_str, src_str, msg
+					);
+					break;
+				default:
+					tr::info(
+						"OpenGL error %i: type: %s, source: %s: %s", id,
+						type_str, src_str, msg
+					);
+					break;
+				}
+			},
+			nullptr
+		);
+		glDebugMessageControl(
+			GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE
+		);
+	}
 
 	tr::info("initialized OpenGL");
 	tr::info("- GL vendor:    %s", glGetString(GL_VENDOR));
@@ -241,6 +338,11 @@ static void st::_post_input()
 	_st->delta_time = _st->current_time - _st->prev_time;
 	_st->prev_time = _st->current_time;
 
+	// do something similar for the mouse position :)
+	_st->current_mouse_pos = st::mouse_position();
+	_st->delta_mouse_pos = _st->current_mouse_pos - _st->prev_mouse_pos;
+	_st->prev_time = _st->current_time;
+
 	glfwSwapBuffers(_st->window);
 }
 
@@ -299,6 +401,12 @@ tr::Vec2<float64> st::mouse_position()
 	float64 x, y;
 	glfwGetCursorPos(_st->window, &x, &y);
 	return {x, y};
+}
+
+tr::Vec2<float64> st::delta_mouse_position()
+{
+	// calculated in st::_post_input()
+	return _st->delta_mouse_pos;
 }
 
 void st::set_mouse_enabled(bool val)
