@@ -23,6 +23,7 @@ tr::Result<void> sbox::Sandbox::init()
 	cam.position = {0, 0, 1};
 	cam.fov = 90;
 	cam.projection = st::CameraProjection::PERSPECTIVE;
+	st::set_mouse_enabled(_ui_enabled);
 
 	auto vert_shader = st::VertexShader(ST_BASIC_SHADER_VERTEX);
 	auto frag_shader = st::FragmentShader(ST_BASIC_SHADER_FRAGMENT);
@@ -65,21 +66,12 @@ tr::Result<void> sbox::Sandbox::update(float64 dt)
 {
 	sbox::debug_mode();
 
-	if (st::is_key_just_pressed(st::Key::SPACE)) {
-		tr::warn("just pressed!");
-	}
-	if (st::is_key_just_released(st::Key::SPACE)) {
-		tr::warn("just released!");
-	}
-	if (st::is_key_held(st::Key::SPACE)) {
-		tr::warn("holding!");
-	}
-
 	// hlep
-	// if (st::is_key_just_pressed(st::Key::ESCAPE)) {
-	// 	_ui_enabled = !_ui_enabled;
-	// 	st::set_mouse_enabled(_ui_enabled);
-	// }
+	if (st::is_key_just_pressed(st::Key::T)) {
+		tr::warn("givign sigma doe");
+		_ui_enabled = !_ui_enabled;
+		st::set_mouse_enabled(_ui_enabled);
+	}
 
 	player_controller(dt);
 
@@ -111,6 +103,7 @@ void sbox::Sandbox::player_controller(float64 dt) const
 
 	st::Camera& cam = st::Camera::current();
 	tr::Vec2<float64> delta_mouse_pos = st::delta_mouse_position();
+	tr::log("delta mouse pos: %f, %f", delta_mouse_pos.x, delta_mouse_pos.y);
 
 	cam.rotation.y += float32(delta_mouse_pos.x * MOUSE_SENSITIVITY);
 	cam.rotation.x += float32(delta_mouse_pos.y * MOUSE_SENSITIVITY);

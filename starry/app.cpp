@@ -52,8 +52,8 @@ namespace st {
 
 static void _init_window();
 
-static void _pre_input();
-static void _post_input();
+static void _poll_events();
+static void _end_app_stuff(); // TODO a better name
 
 static void _free_window();
 }
@@ -73,11 +73,11 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	_st->application->init().unwrap();
 
 	while (!st::window_should_close()) {
-		st::_pre_input();
+		st::_poll_events();
 
 		_st->application->update(st::delta_time_sec()).unwrap();
 
-		st::_post_input();
+		st::_end_app_stuff();
 	}
 
 	_st->application->free().unwrap();
@@ -146,13 +146,14 @@ static void st::_init_window()
 		platform_str = "Cocoa";
 		break;
 	case GLFW_PLATFORM_NULL:
-		platform_str = "null";
+		platform_str = "null/headless";
 		break;
 	default:
 		TR_UNREACHABLE();
 		break;
 	}
 	tr::info("created window for %s", platform_str.buf());
+	tr::info("using glfw %s", glfwGetVersionString());
 
 	if (glfwRawMouseMotionSupported() == 0) {
 		tr::warn("warning: raw mouse motion is not supported");
@@ -273,13 +274,10 @@ static void st::_free_window()
 	tr::info("destroyed window");
 }
 
-static void st::_pre_input()
+static void st::_poll_events()
 {
 	glfwPollEvents();
-}
 
-static void st::_post_input()
-{
 	// handle the extra fancy key/mouse states
 	// it gets mad if you try to check for anything before space
 	// also why the FUCK isn't a cast from an enum class to it's EXACT UNDERLYING TYPE implicit
@@ -327,7 +325,10 @@ static void st::_post_input()
 
 		was_down = is_down;
 	}
+}
 
+static void st::_end_app_stuff()
+{
 	// YOU UNDERSTAND MECHANICAL HANDS ARE THE RULER OF EVERYTHING
 	// ah
 	// RULER OF EVERYTHING
@@ -412,7 +413,6 @@ tr::Vec2<float64> st::delta_mouse_position()
 void st::set_mouse_enabled(bool val)
 {
 	glfwSetInputMode(_st->window, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
-	tr::warn("seX %s", val ? "true" : "false");
 }
 
 float64 st::time_sec()

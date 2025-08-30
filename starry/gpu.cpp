@@ -77,7 +77,7 @@ st::Mesh::Mesh(
 
 	// figure out the format :DDDD
 	for (auto [i, attrib] : format) {
-		uint32 size = 0;
+		unsigned size = 0;
 		switch (attrib.type) {
 		case VertexAttributeType::INT32:
 		case VertexAttributeType::UINT32:
@@ -146,17 +146,17 @@ st::Mesh::Mesh(
 
 		if (ipointer) {
 			glVertexAttribIPointer(
-				i, size, type, elem_size,
+				unsigned(i), size, type, unsigned(elem_size),
 				reinterpret_cast<const void*>(attrib.offset)
 			);
 		}
 		else {
 			glVertexAttribPointer(
-				i, size, type, 0u, elem_size,
+				unsigned(i), size, type, 0u, unsigned(elem_size),
 				reinterpret_cast<const void*>(attrib.offset)
 			);
 		}
-		glEnableVertexAttribArray(i);
+		glEnableVertexAttribArray(unsigned(i));
 	}
 
 	// ebo
@@ -195,13 +195,13 @@ void st::Mesh::free()
 void st::Mesh::draw() const
 {
 	glBindVertexArray(_vao);
-	glDrawElements(GL_TRIANGLES, _index_count, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, _index_count, GL_UNSIGNED_INT, nullptr);
 	glBindVertexArray(0);
 }
 
 void st::Shader::_check_compilation(const char* shader_type) const
 {
-	int32 success;
+	int success;
 	glGetShaderiv(_shader, GL_COMPILE_STATUS, &success);
 	if (success == 0) {
 		char info_log[512];
@@ -290,7 +290,7 @@ tr::Result<st::Texture> st::Texture::load(tr::String path)
 	tr::String real_path = tr::path(tr::scratchpad(), path);
 
 	// TODO texture cache
-	int32 width, height, channels;
+	int width, height, channels;
 	uint8* data = stbi_load(real_path, &width, &height, &channels, 4);
 	if (data == nullptr) {
 		return tr::StringError("couldn't load texture from %s", *path);
