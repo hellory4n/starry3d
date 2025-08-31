@@ -3,7 +3,5 @@ CompileFlags:
   # this is important so clang-format can format the headers and stuff
   Add: [-isystem, thirdparty, -isystem, thirdparty/libtrippin, -isystem, thirdparty/imgui]
   # sometimes submodules have their own compile_commands.json/compile_flags.txt
-  # by sometimes i mean just rgfw
-  # only rgfw does that
-  # why
+  # we don't want that :)
   CompilationDatabase: .

@@ -56,6 +56,7 @@ static void _poll_events();
 static void _end_app_stuff(); // TODO a better name
 
 static void _free_window();
+
 }
 
 void st::run(st::Application& app, st::ApplicationSettings settings)
@@ -302,6 +303,10 @@ static void st::_poll_events()
 		}
 
 		was_down = is_down;
+
+		if (key == uint8(Key::ESCAPE)) {
+			tr::warn("BISNAGA!");
+		}
 	}
 
 	// christ
@@ -342,7 +347,7 @@ static void st::_end_app_stuff()
 	// do something similar for the mouse position :)
 	_st->current_mouse_pos = st::mouse_position();
 	_st->delta_mouse_pos = _st->current_mouse_pos - _st->prev_mouse_pos;
-	_st->prev_time = _st->current_time;
+	_st->prev_mouse_pos = _st->current_mouse_pos;
 
 	glfwSwapBuffers(_st->window);
 }

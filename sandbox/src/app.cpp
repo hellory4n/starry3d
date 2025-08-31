@@ -1,5 +1,7 @@
 #include "app.h"
 
+#include <trippin/common.h>
+#include <trippin/log.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
 
@@ -67,7 +69,7 @@ tr::Result<void> sbox::Sandbox::update(float64 dt)
 	sbox::debug_mode();
 
 	// hlep
-	if (st::is_key_just_pressed(st::Key::T)) {
+	if (st::is_key_just_pressed(st::Key::ESCAPE)) {
 		tr::warn("givign sigma doe");
 		_ui_enabled = !_ui_enabled;
 		st::set_mouse_enabled(_ui_enabled);
@@ -102,15 +104,18 @@ void sbox::Sandbox::player_controller(float64 dt) const
 	// (this is stolen from the C starry3d)
 
 	st::Camera& cam = st::Camera::current();
-	tr::Vec2<float64> delta_mouse_pos = st::delta_mouse_position();
-	tr::log("delta mouse pos: %f, %f", delta_mouse_pos.x, delta_mouse_pos.y);
+	tr::Vec2<float64> dmouse = st::delta_mouse_position();
 
-	cam.rotation.y += float32(delta_mouse_pos.x * MOUSE_SENSITIVITY);
-	cam.rotation.x += float32(delta_mouse_pos.y * MOUSE_SENSITIVITY);
-	// don't break your neck
-	cam.rotation.x = tr::clamp(cam.rotation.x, -89.0f, 89.0f);
+	cam.rotation.y += float32(dmouse.x * MOUSE_SENSITIVITY);
+	cam.rotation.x += float32(dmouse.y * MOUSE_SENSITIVITY);
+	if (cam.rotation.x > 89) {
+		cam.rotation.x = 89;
+	}
+	if (cam.rotation.x < -89) {
+		cam.rotation.x = -89;
+	}
 
-	tr::Vec3<float32> in = {};
+	tr::Vec3<float32> in = {0, 0, 0};
 	if (st::is_key_held(st::Key::W)) {
 		in.z += 1;
 	}
@@ -123,7 +128,6 @@ void sbox::Sandbox::player_controller(float64 dt) const
 	if (st::is_key_held(st::Key::D)) {
 		in.x += 1;
 	}
-	// TODO is this ass?
 	if (st::is_key_held(st::Key::SPACE)) {
 		in.y += 1;
 	}
@@ -144,7 +148,10 @@ void sbox::Sandbox::player_controller(float64 dt) const
 	tr::Vec3<float32> move = {
 		right.x * in.x + forward.x * in.z, in.y, right.z * in.x + forward.z * in.z
 	};
-	// TODO did i fuck it?
-	cam.position += -(move * PLAYER_SPEED * float32(dt));
-	cam.rotation.z = 0; // just in case
+
+	cam.position.x += float32(move.x * PLAYER_SPEED * dt);
+	cam.position.y += float32(move.y * PLAYER_SPEED * dt);
+	cam.position.z += float32(move.z * PLAYER_SPEED * dt);
+	// just in case
+	cam.rotation.z = 0;
 }

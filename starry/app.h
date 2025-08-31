@@ -68,7 +68,7 @@ struct InputState
 	bool pressed = false;
 };
 
-// The key to success. Note the values are identical to RGFW
+// The key to success. Note the values are identical to GLFW
 enum class Key
 {
 	UNKNOWN = 0,
@@ -128,10 +128,10 @@ enum class Key
 	BACKSPACE = 259,
 	INSERT = 260,
 	DELETE = 261,
-	RIGHT = 262,
-	LEFT = 263,
-	DOWN = 264,
-	UP = 265,
+	ARROW_RIGHT = 262,
+	ARROW_LEFT = 263,
+	ARROW_DOWN = 264,
+	ARROW_UP = 265,
 	PAGE_UP = 266,
 	PAGE_DOWN = 267,
 	HOME = 268,
@@ -184,11 +184,11 @@ enum class Key
 	KP_ENTER = 335,
 	KP_EQUAL = 336,
 	LEFT_SHIFT = 340,
-	LEFT_CONTROL = 341,
+	LEFT_CTRL = 341,
 	LEFT_ALT = 342,
 	LEFT_SUPER = 343,
 	RIGHT_SHIFT = 344,
-	RIGHT_CONTROL = 345,
+	RIGHT_CTRL = 345,
 	RIGHT_ALT = 346,
 	RIGHT_SUPER = 347,
 	MENU = 348,
