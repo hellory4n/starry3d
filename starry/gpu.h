@@ -35,8 +35,8 @@ namespace st {
 // It clears the screen lmao.
 void clear_screen(tr::Color color);
 
-// It's vertex attribute types lmao. Note this is just the types GLSL supports (no 64 bit ints
-// because GLSL doesn't have them)
+// It's vertex attribute types lmao. Note this is just the types GLSL supports (no int64/uint64
+// because GLSL doesn't have them, blame Mr. OpenGL)
 enum class VertexAttributeType
 {
 	INT32,
@@ -79,18 +79,18 @@ struct VertexAttribute
 // It's a triangle lmao.
 struct Triangle
 {
-	unsigned v1 = 0;
-	unsigned v2 = 0;
-	unsigned v3 = 0;
+	uint32 v1 = 0;
+	uint32 v2 = 0;
+	uint32 v3 = 0;
 };
 
 // Represents a mesh in the GPU.
 class Mesh
 {
-	unsigned _vao = 0;
-	unsigned _vbo = 0;
-	unsigned _ebo = 0;
-	unsigned _index_count = 0;
+	uint32 _vao = 0;
+	uint32 _vbo = 0;
+	uint32 _ebo = 0;
+	uint32 _index_count = 0;
 
 public:
 	Mesh() { }
@@ -103,7 +103,7 @@ public:
 	// not really necessary idc
 	template<typename T>
 	Mesh(tr::Array<VertexAttribute> format, tr::Array<T> vertices, tr::Array<Triangle> indices,
-	     bool readonly)
+	     bool readonly = true)
 		: Mesh(format, vertices.buf(), sizeof(T), vertices.len(), indices, readonly)
 	{
 	}
@@ -112,9 +112,9 @@ public:
 
 	// Draws the mesh. This doesn't handle position, you're gonna have to figure that out
 	// yourself with shader uniforms and shit. Just look at learnopengl.com or some shit.
-	void draw() const;
+	void draw(uint32 instances = 1) const;
 
-	// TODO draw_instanced(), update_data()
+	// TODO update_data()
 };
 
 // A program on the GPU©®¢™¢™¢™©®©®©®™™™©®©®™™™©®©®™™¢®¢™™
@@ -125,7 +125,7 @@ class ShaderProgram;
 class Shader
 {
 protected:
-	unsigned _shader = 0;
+	uint32 _shader = 0;
 	// you stupid piece of shit get away from me and dont come back again until you learn to be
 	// a tougher kind of man whos master of his plan and doesnt need to leech off others sanity
 	// until then i dont ever wanna see your face it makes me sick just thinking of your lack of
@@ -161,7 +161,7 @@ public:
 // A program on the GPU©®¢™¢™¢™©®©®©®™™™©®©®™™™©®©®™™¢®¢™™
 class ShaderProgram
 {
-	unsigned _program = 0;
+	uint32 _program = 0;
 
 public:
 	ShaderProgram();

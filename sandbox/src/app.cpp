@@ -95,6 +95,7 @@ tr::Result<void> sbox::Sandbox::free()
 
 void sbox::Sandbox::player_controller(float64 dt) const
 {
+	(void)dt;
 	// TODO this doesn't work too! :D
 	if (_ui_enabled) {
 		return;
@@ -106,5 +107,4 @@ void sbox::Sandbox::player_controller(float64 dt) const
 	cam.rotation.x += float32(mouse.y * MOUSE_SENSITIVITY);
 	// don't break your neck
 	cam.rotation.x = tr::clamp(cam.rotation.x, -89.0f, 89.0f);
-	tr::log("cam rotiation: %f, %f, %f", cam.rotation.x, cam.rotation.y, cam.rotation.z);
 }

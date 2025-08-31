@@ -60,7 +60,7 @@ st::Mesh::Mesh(
 	tr::Array<st::Triangle> indices, bool readonly
 )
 {
-	_index_count = unsigned(indices.len() * 3);
+	_index_count = uint32(indices.len() * 3);
 
 	// vao
 	glGenVertexArrays(1, &_vao);
@@ -77,7 +77,7 @@ st::Mesh::Mesh(
 
 	// figure out the format :DDDD
 	for (auto [i, attrib] : format) {
-		unsigned size = 0;
+		uint32 size = 0;
 		switch (attrib.type) {
 		case VertexAttributeType::INT32:
 		case VertexAttributeType::UINT32:
@@ -146,17 +146,17 @@ st::Mesh::Mesh(
 
 		if (ipointer) {
 			glVertexAttribIPointer(
-				unsigned(i), size, type, unsigned(elem_size),
+				uint32(i), size, type, uint32(elem_size),
 				reinterpret_cast<const void*>(attrib.offset)
 			);
 		}
 		else {
 			glVertexAttribPointer(
-				unsigned(i), size, type, 0u, unsigned(elem_size),
+				uint32(i), size, type, 0u, uint32(elem_size),
 				reinterpret_cast<const void*>(attrib.offset)
 			);
 		}
-		glEnableVertexAttribArray(unsigned(i));
+		glEnableVertexAttribArray(uint32(i));
 	}
 
 	// ebo
@@ -192,10 +192,10 @@ void st::Mesh::free()
 	tr::info("freed mesh (vao %u)", _vao);
 }
 
-void st::Mesh::draw() const
+void st::Mesh::draw(uint32 instances) const
 {
 	glBindVertexArray(_vao);
-	glDrawElements(GL_TRIANGLES, _index_count, GL_UNSIGNED_INT, nullptr);
+	glDrawElementsInstanced(GL_TRIANGLES, _index_count, GL_UNSIGNED_INT, nullptr, instances);
 	glBindVertexArray(0);
 }
 
