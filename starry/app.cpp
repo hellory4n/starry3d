@@ -42,6 +42,14 @@ TR_GCC_RESTORE()
 TR_GCC_RESTORE()
 #include <GLFW/glfw3.h>
 
+// windows.h being a bitch
+#ifdef _WIN32
+	#undef near
+	#undef far
+	#undef min
+	#undef max
+#endif
+
 #include "starry/internal.h"
 
 #ifdef ST_IMGUI
@@ -53,7 +61,7 @@ namespace st {
 static void _init_window();
 
 static void _poll_events();
-static void _end_app_stuff(); // TODO a better name
+static void _end_window_app_stuff(); // TODO a better name
 
 static void _free_window();
 
@@ -78,7 +86,7 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 
 		_st->application->update(st::delta_time_sec()).unwrap();
 
-		st::_end_app_stuff();
+		st::_end_window_app_stuff();
 	}
 
 	_st->application->free().unwrap();
@@ -88,7 +96,8 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 
 static void st::_init_window()
 {
-	// renderdoc doesn't work on wayland
+// renderdoc doesn't work on wayland
+// TODO this sucks
 #if defined(__linux__) && defined(DEBUG)
 	glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
 #endif
@@ -266,6 +275,9 @@ static void st::_init_window()
 	tr::info("- GL renderer:  %s", glGetString(GL_RENDERER));
 	tr::info("- GL version:   %s", glGetString(GL_VERSION));
 	tr::info("- GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+	// just so st::delta_mouse_pos() doesn't immediately return something massive...
+	_st->delta_mouse_pos = st::mouse_position();
 }
 
 static void st::_free_window()
@@ -285,8 +297,8 @@ static void st::_poll_events()
 	// what good does that bring to the world
 	// what would dennis ritchie think
 	// TODO shut the FUCK up
-	for (uint8 key = uint8(Key::SPACE); key <= uint8(Key::LAST); key++) {
-		bool is_down = glfwGetKey(_st->window, key) == GLFW_PRESS;
+	for (unsigned key = unsigned(Key::SPACE); key <= unsigned(Key::LAST); key++) {
+		bool is_down = glfwGetKey(_st->window, int(key)) == GLFW_PRESS;
 
 		bool& was_down = _st->key_state[key].pressed;
 		if (!was_down && is_down) {
@@ -303,10 +315,6 @@ static void st::_poll_events()
 		}
 
 		was_down = is_down;
-
-		if (key == uint8(Key::ESCAPE)) {
-			tr::warn("BISNAGA!");
-		}
 	}
 
 	// christ
@@ -332,7 +340,7 @@ static void st::_poll_events()
 	}
 }
 
-static void st::_end_app_stuff()
+static void st::_end_window_app_stuff()
 {
 	// YOU UNDERSTAND MECHANICAL HANDS ARE THE RULER OF EVERYTHING
 	// ah
@@ -374,7 +382,8 @@ bool st::is_key_just_released(st::Key key)
 
 bool st::is_key_held(st::Key key)
 {
-	return _st->key_state[usize(key)].state != InputState::State::NOT_PRESSED;
+	return _st->key_state[usize(key)].state == InputState::State::JUST_PRESSED ||
+	       _st->key_state[usize(key)].state == InputState::State::HELD;
 }
 
 bool st::is_key_not_pressed(st::Key key)
@@ -394,7 +403,8 @@ bool st::is_mouse_just_released(st::MouseButton btn)
 
 bool st::is_mouse_held(st::MouseButton btn)
 {
-	return _st->mouse_state[usize(btn)].state != InputState::State::NOT_PRESSED;
+	return _st->mouse_state[usize(btn)].state == InputState::State::JUST_PRESSED ||
+	       _st->mouse_state[usize(btn)].state == InputState::State::HELD;
 }
 
 bool st::is_mouse_not_pressed(st::MouseButton btn)

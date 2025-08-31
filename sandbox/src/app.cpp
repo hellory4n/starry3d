@@ -70,7 +70,6 @@ tr::Result<void> sbox::Sandbox::update(float64 dt)
 
 	// hlep
 	if (st::is_key_just_pressed(st::Key::ESCAPE)) {
-		tr::warn("givign sigma doe");
 		_ui_enabled = !_ui_enabled;
 		st::set_mouse_enabled(_ui_enabled);
 	}
@@ -106,14 +105,10 @@ void sbox::Sandbox::player_controller(float64 dt) const
 	st::Camera& cam = st::Camera::current();
 	tr::Vec2<float64> dmouse = st::delta_mouse_position();
 
-	cam.rotation.y += float32(dmouse.x * MOUSE_SENSITIVITY);
+	cam.rotation.y -= float32(dmouse.x * MOUSE_SENSITIVITY);
 	cam.rotation.x += float32(dmouse.y * MOUSE_SENSITIVITY);
-	if (cam.rotation.x > 89) {
-		cam.rotation.x = 89;
-	}
-	if (cam.rotation.x < -89) {
-		cam.rotation.x = -89;
-	}
+	// don't break your neck
+	// cam.rotation.x = tr::clamp(cam.rotation.x, -89.0f, 89.0f);
 
 	tr::Vec3<float32> in = {0, 0, 0};
 	if (st::is_key_held(st::Key::W)) {
@@ -152,6 +147,4 @@ void sbox::Sandbox::player_controller(float64 dt) const
 	cam.position.x += float32(move.x * PLAYER_SPEED * dt);
 	cam.position.y += float32(move.y * PLAYER_SPEED * dt);
 	cam.position.z += float32(move.z * PLAYER_SPEED * dt);
-	// just in case
-	cam.rotation.z = 0;
 }
