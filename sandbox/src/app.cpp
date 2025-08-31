@@ -23,6 +23,7 @@ tr::Result<void> sbox::Sandbox::init()
 {
 	st::Camera& cam = st::Camera::current();
 	cam.position = {0, 0, 1};
+	cam.rotation = {0, 180, 0};
 	cam.fov = 90;
 	cam.projection = st::CameraProjection::PERSPECTIVE;
 	st::set_mouse_enabled(_ui_enabled);
@@ -94,57 +95,16 @@ tr::Result<void> sbox::Sandbox::free()
 
 void sbox::Sandbox::player_controller(float64 dt) const
 {
+	// TODO this doesn't work too! :D
 	if (_ui_enabled) {
 		return;
 	}
 
-	// TODO we have a whole math library for this shit
-	// so like, use it?
-	// (this is stolen from the C starry3d)
-
 	st::Camera& cam = st::Camera::current();
-	tr::Vec2<float64> dmouse = st::delta_mouse_position();
-
-	cam.rotation.y -= float32(dmouse.x * MOUSE_SENSITIVITY);
-	cam.rotation.x += float32(dmouse.y * MOUSE_SENSITIVITY);
+	tr::Vec2<float64> mouse = st::delta_mouse_position();
+	cam.rotation.y += float32(mouse.x * MOUSE_SENSITIVITY);
+	cam.rotation.x += float32(mouse.y * MOUSE_SENSITIVITY);
 	// don't break your neck
-	// cam.rotation.x = tr::clamp(cam.rotation.x, -89.0f, 89.0f);
-
-	tr::Vec3<float32> in = {0, 0, 0};
-	if (st::is_key_held(st::Key::W)) {
-		in.z += 1;
-	}
-	if (st::is_key_held(st::Key::S)) {
-		in.z -= 1;
-	}
-	if (st::is_key_held(st::Key::A)) {
-		in.x -= 1;
-	}
-	if (st::is_key_held(st::Key::D)) {
-		in.x += 1;
-	}
-	if (st::is_key_held(st::Key::SPACE)) {
-		in.y += 1;
-	}
-	if (st::is_key_held(st::Key::LEFT_SHIFT)) {
-		in.y -= 1;
-	}
-
-	float32 yaw = tr::deg2rad(cam.rotation.y);
-	tr::Vec3<float32> forward = {sinf(yaw), 0, -cosf(yaw)};
-	tr::Vec3<float32> right = {cosf(yaw), 0, sinf(yaw)};
-
-	float32 len_xz = sqrtf(in.x * in.x + in.z * in.z);
-	if (len_xz > 0.0001f) {
-		in.x /= len_xz;
-		in.z /= len_xz;
-	}
-
-	tr::Vec3<float32> move = {
-		right.x * in.x + forward.x * in.z, in.y, right.z * in.x + forward.z * in.z
-	};
-
-	cam.position.x += float32(move.x * PLAYER_SPEED * dt);
-	cam.position.y += float32(move.y * PLAYER_SPEED * dt);
-	cam.position.z += float32(move.z * PLAYER_SPEED * dt);
+	cam.rotation.x = tr::clamp(cam.rotation.x, -89.0f, 89.0f);
+	tr::log("cam rotiation: %f, %f, %f", cam.rotation.x, cam.rotation.y, cam.rotation.z);
 }

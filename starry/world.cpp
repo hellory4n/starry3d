@@ -34,33 +34,32 @@
 
 tr::Matrix4x4 st::Camera::view_matrix() const
 {
-	auto pos = tr::Matrix4x4::translate(-position.x, -position.y, -position.z);
+	tr::Matrix4x4 position_mat = tr::Matrix4x4::translate(position.x, position.y, position.z);
 
-	auto rot = tr::Matrix4x4::identity();
-	rot = rot * rot.rotate_x(tr::deg2rad(rotation.x));
-	rot = rot * rot.rotate_y(tr::deg2rad(rotation.y));
-	rot = rot * rot.rotate_z(tr::deg2rad(rotation.z));
+	tr::Matrix4x4 rotation_mat = tr::Matrix4x4::identity();
+	rotation_mat = rotation_mat.rotate_x(tr::deg2rad(rotation.x));
+	rotation_mat = rotation_mat.rotate_y(tr::deg2rad(rotation.y));
+	rotation_mat = rotation_mat.rotate_z(tr::deg2rad(rotation.z));
 
-	return rot * pos;
+	return rotation_mat * position_mat;
 }
 
 tr::Matrix4x4 st::Camera::projection_matrix() const
 {
-	tr::Vec2<uint32> winsize = st::window_size();
+	tr::Vec2<uint32> window_size = st::window_size();
+	float32 aspect = float32(window_size.x) / float32(window_size.y);
 
 	if (projection == CameraProjection::PERSPECTIVE) {
-		return tr::Matrix4x4::perspective(
-			tr::deg2rad(fov), float32(winsize.x) / float32(winsize.y), near, far
-		);
+		return tr::Matrix4x4::perspective(tr::deg2rad(fov), aspect, near, far);
 	}
 
 	// TODO this may be fucked im not sure
-	float32 left = -zoom / 2.0f;
-	float32 right = zoom / 2.0f;
+	float32 left = -zoom / 2.f;
+	float32 right = zoom / 2.f;
 
-	float32 height = zoom * (float32(winsize.y) / float32(winsize.x));
-	float32 bottom = -height / 2.0f;
-	float32 top = height / 2.0f;
+	float32 height = this->zoom * (float32(window_size.y) / float32(window_size.x));
+	float32 bottom = -height / 2.f;
+	float32 top = height / 2.f;
 
 	return tr::Matrix4x4::orthographic(left, right, bottom, top, near, far);
 }

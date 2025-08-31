@@ -276,7 +276,7 @@ static void st::_init_window()
 	tr::info("- GL version:   %s", glGetString(GL_VERSION));
 	tr::info("- GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-	// just so st::delta_mouse_pos() doesn't immediately return something massive...
+	// just so st::delta_mouse_position() doesn't immediately return something massive...
 	_st->delta_mouse_pos = st::mouse_position();
 }
 
