@@ -51,6 +51,7 @@ TR_GCC_RESTORE()
 #endif
 
 #include "starry/internal.h"
+#include "starry/render.h"
 
 #ifdef ST_IMGUI
 // #include "starry/optional/imgui.h"
@@ -79,6 +80,7 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 
 	st::_preinit();
 	st::_init_window();
+	st::_test_pipeline();
 	_st->application->init().unwrap();
 
 	while (!st::window_should_close()) {

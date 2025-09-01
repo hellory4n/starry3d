@@ -2,7 +2,7 @@
  * starry3d: C++ voxel engine
  * https://github.com/hellory4n/starry3d
  *
- * starry/render.cpp
+ * starry/render.h
  * The renderer's name is Kyler. Be nice to Kyler. Thanks.
  *
  * Copyright (C) 2025 by hellory4n <hellory4n@gmail.com>
@@ -23,25 +23,15 @@
  *
  */
 
-#include "starry/render.h"
+#ifndef _ST_RENDER_H
+#define _ST_RENDER_H
 
-#include <glad/gl.h>
+namespace st {
 
-void st::_test_pipeline()
-{
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+// some functions to set the opengl state
+void _test_pipeline();
+void set_wireframe_mode(bool val);
 
-	// glEnable(GL_CULL_FACE);
-	// glCullFace(GL_BACK);
-	// glFrontFace(GL_CCW);
-
-	glEnable(GL_DEPTH_TEST);
-
-	glLineWidth(2.5);
 }
 
-void st::set_wireframe_mode(bool val)
-{
-	glPolygonMode(GL_FRONT_AND_BACK, val ? GL_LINE : GL_FILL);
-}
+#endif

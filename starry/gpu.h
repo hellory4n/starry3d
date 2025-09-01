@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef _ST_RENDER_H
-#define _ST_RENDER_H
+#ifndef _ST_GPU_H
+#define _ST_GPU_H
 
 #include <trippin/error.h>
 #include <trippin/math.h>
@@ -164,7 +164,7 @@ class ShaderProgram
 	uint32 _program = 0;
 
 public:
-	ShaderProgram();
+	explicit ShaderProgram();
 	void free();
 
 	// Le

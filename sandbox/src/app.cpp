@@ -11,6 +11,7 @@
 #include <starry/world.h>
 
 #include "debug_mode.h"
+#include "starry/render.h"
 #include "world.h"
 
 struct Vertex
@@ -21,6 +22,8 @@ struct Vertex
 
 tr::Result<void> sbox::Sandbox::init()
 {
+	arena = tr::Arena();
+
 	st::Camera& cam = st::Camera::current();
 	cam.position = {0, 0, 1};
 	cam.rotation = {0, 180, 0};
@@ -33,14 +36,14 @@ tr::Result<void> sbox::Sandbox::init()
 	TR_DEFER(vert_shader.free());
 	TR_DEFER(frag_shader.free());
 
-	program = st::ShaderProgram();
-	program.unwrap().attach(vert_shader);
-	program.unwrap().attach(frag_shader);
-	program.unwrap().link();
-	program.unwrap().use();
-	program.unwrap().set_uniform("u_model", tr::Matrix4x4::identity());
-	program.unwrap().set_uniform("u_view", tr::Matrix4x4::identity());
-	program.unwrap().set_uniform("u_projection", tr::Matrix4x4::identity());
+	program = &arena.make<st::ShaderProgram>();
+	program->attach(vert_shader);
+	program->attach(frag_shader);
+	program->link();
+	program->use();
+	program->set_uniform("u_model", tr::Matrix4x4::identity());
+	program->set_uniform("u_view", tr::Matrix4x4::identity());
+	program->set_uniform("u_projection", tr::Matrix4x4::identity());
 
 	tr::Array<st::VertexAttribute> attrs = {
 		{"position", st::VertexAttributeType::VEC3_FLOAT32, offsetof(Vertex, position)},
@@ -54,7 +57,7 @@ tr::Result<void> sbox::Sandbox::init()
 	};
 
 	tr::Array<st::Triangle> triangles = {
-		{0, 1, 2},
+		{2, 1, 0},
 	};
 
 	mesh = st::Mesh(attrs, vertices, triangles, true);
@@ -74,20 +77,24 @@ tr::Result<void> sbox::Sandbox::update(float64 dt)
 		_ui_enabled = !_ui_enabled;
 		st::set_mouse_enabled(_ui_enabled);
 	}
+	if (st::is_key_just_pressed(st::Key::F1)) {
+		st::set_wireframe_mode(true);
+	}
 
 	player_controller(dt);
 
 	st::clear_screen(tr::Color::rgb(0x009ccf));
-	program.unwrap().set_uniform("u_view", st::Camera::current().view_matrix());
-	program.unwrap().set_uniform("u_projection", st::Camera::current().projection_matrix());
-	mesh.unwrap().draw();
+	program->set_uniform("u_view", st::Camera::current().view_matrix());
+	program->set_uniform("u_projection", st::Camera::current().projection_matrix());
+	mesh.draw();
 	return {};
 }
 
 tr::Result<void> sbox::Sandbox::free()
 {
-	program.unwrap().free();
-	mesh.unwrap().free();
+	program->free();
+	mesh.free();
+	arena.free();
 
 	tr::log("freed sandbox :)");
 	return {};
@@ -95,8 +102,6 @@ tr::Result<void> sbox::Sandbox::free()
 
 void sbox::Sandbox::player_controller(float64 dt) const
 {
-	(void)dt;
-	// TODO this doesn't work too! :D
 	if (_ui_enabled) {
 		return;
 	}
@@ -107,4 +112,46 @@ void sbox::Sandbox::player_controller(float64 dt) const
 	cam.rotation.x += float32(mouse.y * MOUSE_SENSITIVITY);
 	// don't break your neck
 	cam.rotation.x = tr::clamp(cam.rotation.x, -89.0f, 89.0f);
+
+	// TODO this is hideous but it works and i don't want to touch it ever in my lifetime ever
+	// again :)
+	// TODO you WILL have to touch it again btw
+	tr::Vec3<float32> move = {};
+	bool moving = false;
+	if (st::is_key_held(st::Key::W)) {
+		move +=
+			{sinf(tr::deg2rad(cam.rotation.y)) * -1, 0,
+			 cosf(tr::deg2rad(cam.rotation.y)) * 1};
+		moving = true;
+	}
+	if (st::is_key_held(st::Key::S)) {
+		move +=
+			{sinf(tr::deg2rad(cam.rotation.y)) * 1, 0,
+			 cosf(tr::deg2rad(cam.rotation.y)) * -1};
+		moving = true;
+	}
+	if (st::is_key_held(st::Key::A)) {
+		move +=
+			{sinf(tr::deg2rad(cam.rotation.y - 90)) * -1, 0,
+			 cosf(tr::deg2rad(cam.rotation.y - 90)) * 1};
+		moving = true;
+	}
+	if (st::is_key_held(st::Key::D)) {
+		move +=
+			{sinf(tr::deg2rad(cam.rotation.y - 90)) * 1, 0,
+			 cosf(tr::deg2rad(cam.rotation.y - 90)) * -1};
+		moving = true;
+	}
+	if (st::is_key_held(st::Key::SPACE)) {
+		move.y -= 1;
+		moving = true;
+	}
+	if (st::is_key_held(st::Key::LEFT_SHIFT)) {
+		move.y += 1;
+		moving = true;
+	}
+
+	if (moving) {
+		cam.position += move.normalize() * PLAYER_SPEED * float32(dt);
+	}
 }

@@ -95,6 +95,7 @@ srcsfrfr = {
 	starrydir.."/starry/app.cpp",
 	starrydir.."/starry/gpu.cpp",
 	starrydir.."/starry/internal.cpp",
+	starrydir.."/starry/render.cpp",
 	starrydir.."/starry/world.cpp",
 }
 
