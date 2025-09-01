@@ -26,7 +26,6 @@ tr::Result<void> sbox::Sandbox::init()
 
 	st::Camera& cam = st::Camera::current();
 	cam.position = {0, 0, 1};
-	cam.rotation = {0, 180, 0};
 	cam.fov = 90;
 	cam.projection = st::CameraProjection::PERSPECTIVE;
 	st::set_mouse_enabled(_ui_enabled);
@@ -113,45 +112,35 @@ void sbox::Sandbox::player_controller(float64 dt) const
 	// don't break your neck
 	cam.rotation.x = tr::clamp(cam.rotation.x, -89.0f, 89.0f);
 
-	// TODO this is hideous but it works and i don't want to touch it ever in my lifetime ever
-	// again :)
-	// TODO you WILL have to touch it again btw
 	tr::Vec3<float32> move = {};
-	bool moving = false;
 	if (st::is_key_held(st::Key::W)) {
-		move +=
-			{sinf(tr::deg2rad(cam.rotation.y)) * -1, 0,
-			 cosf(tr::deg2rad(cam.rotation.y)) * 1};
-		moving = true;
-	}
-	if (st::is_key_held(st::Key::S)) {
 		move +=
 			{sinf(tr::deg2rad(cam.rotation.y)) * 1, 0,
 			 cosf(tr::deg2rad(cam.rotation.y)) * -1};
-		moving = true;
+	}
+	if (st::is_key_held(st::Key::S)) {
+		move +=
+			{sinf(tr::deg2rad(cam.rotation.y)) * -1, 0,
+			 cosf(tr::deg2rad(cam.rotation.y)) * 1};
 	}
 	if (st::is_key_held(st::Key::A)) {
 		move +=
-			{sinf(tr::deg2rad(cam.rotation.y - 90)) * -1, 0,
-			 cosf(tr::deg2rad(cam.rotation.y - 90)) * 1};
-		moving = true;
+			{sinf(tr::deg2rad(cam.rotation.y - 90)) * 1, 0,
+			 cosf(tr::deg2rad(cam.rotation.y - 90)) * -1};
 	}
 	if (st::is_key_held(st::Key::D)) {
 		move +=
-			{sinf(tr::deg2rad(cam.rotation.y - 90)) * 1, 0,
-			 cosf(tr::deg2rad(cam.rotation.y - 90)) * -1};
-		moving = true;
+			{sinf(tr::deg2rad(cam.rotation.y - 90)) * -1, 0,
+			 cosf(tr::deg2rad(cam.rotation.y - 90)) * 1};
 	}
 	if (st::is_key_held(st::Key::SPACE)) {
-		move.y -= 1;
-		moving = true;
+		move.y += 1;
 	}
 	if (st::is_key_held(st::Key::LEFT_SHIFT)) {
-		move.y += 1;
-		moving = true;
+		move.y -= 1;
 	}
 
-	if (moving) {
+	if (move.length() > 0.0f) {
 		cam.position += move.normalize() * PLAYER_SPEED * float32(dt);
 	}
 }

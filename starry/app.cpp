@@ -54,7 +54,7 @@ TR_GCC_RESTORE()
 #include "starry/render.h"
 
 #ifdef ST_IMGUI
-// #include "starry/optional/imgui.h"
+	#include "starry/optional/imgui.h"
 #endif
 
 namespace st {
@@ -81,17 +81,30 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 	st::_preinit();
 	st::_init_window();
 	st::_test_pipeline();
+#ifdef ST_IMGUI
+	st::imgui::init();
+#endif
 	_st->application->init().unwrap();
 
 	while (!st::window_should_close()) {
 		st::_poll_events();
+#ifdef ST_IMGUI
+		st::imgui::new_frame();
+#endif
 
 		_st->application->update(st::delta_time_sec()).unwrap();
 
+// TODO remember to put this AFTER the rest of the rendering
+#ifdef ST_IMGUI
+		st::imgui::render();
+#endif
 		st::_end_window_app_stuff();
 	}
 
 	_st->application->free().unwrap();
+#ifdef ST_IMGUI
+	st::imgui::free();
+#endif
 	st::_free_window();
 	st::_postfree();
 }

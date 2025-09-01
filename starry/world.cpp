@@ -34,7 +34,8 @@
 
 tr::Matrix4x4 st::Camera::view_matrix() const
 {
-	tr::Matrix4x4 position_mat = tr::Matrix4x4::translate(position.x, position.y, position.z);
+	tr::Matrix4x4 position_mat =
+		tr::Matrix4x4::translate(-position.x, -position.y, -position.z);
 
 	tr::Matrix4x4 rotation_mat = tr::Matrix4x4::identity();
 	rotation_mat = rotation_mat.rotate_x(tr::deg2rad(rotation.x));
