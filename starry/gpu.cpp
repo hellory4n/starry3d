@@ -281,7 +281,6 @@ void st::ShaderProgram::use()
 {
 	glUseProgram(_program);
 	_st->current_shader = this;
-	tr::warn("mm");
 }
 
 tr::Result<st::Texture> st::Texture::load(tr::String path)

@@ -54,14 +54,17 @@ end
 
 -- TODO consider not
 cflags = ""
-if (platform == "windows") then
-	cflags = "-std=c++17 -Wall -Wextra -Wpedantic "
+if platform == "windows" or cxx == "g++" then
+	cflags = "-std=c++17 -Wall -Wextra -Wpedantic -Wstrict-aliasing "
 else
 	cflags =
 	    "-std=c++17 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wconversion " ..
 	    "-Wold-style-cast -Wextra-semi -Wmissing-noreturn -Wimplicit-fallthrough " ..
-	    "-Wnull-dereference -Wcast-qual "
+	    "-Wnull-dereference -Wcast-qual"
 end
+
+-- undefined behavior my ass
+cflags = cflags.." -ftrapv -fno-strict-aliasing"
 
 -- includes
 cflags = cflags ..
@@ -127,9 +130,9 @@ end
 
 -- man.
 if compmode == "debug" then
-	cflags = cflags.." -O0 -g -DDEBUG -D_DEBUG"
+	cflags = cflags.." -O0 -g -DDEBUG -D_DEBUG -fno-omit-frame-pointer"
 else
-	cflags = cflags.." -O2 -g"
+	cflags = cflags.." -O3 -g -fno-omit-frame-pointer"
 end
 
 if sanitize ~= "" then
