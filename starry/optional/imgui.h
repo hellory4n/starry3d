@@ -29,7 +29,6 @@
 #ifndef _ST_IMGUI_H
 #define _ST_IMGUI_H
 
-#include <cstdint>
 #ifndef ST_IMGUI
 	#error "ImGui requires defining ST_IMGUI for the whole project"
 #endif

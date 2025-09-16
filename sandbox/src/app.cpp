@@ -35,7 +35,7 @@ tr::Result<void> sbox::Sandbox::init()
 	TR_DEFER(vert_shader.free());
 	TR_DEFER(frag_shader.free());
 
-	program = &arena.make<st::ShaderProgram>();
+	program = arena.make_ptr<st::ShaderProgram>();
 	program->attach(vert_shader);
 	program->attach(frag_shader);
 	program->link();
@@ -44,18 +44,18 @@ tr::Result<void> sbox::Sandbox::init()
 	program->set_uniform("u_view", tr::Matrix4x4::identity());
 	program->set_uniform("u_projection", tr::Matrix4x4::identity());
 
-	tr::Array<st::VertexAttribute> attrs = {
+	tr::Array<const st::VertexAttribute> attrs = {
 		{"position", st::VertexAttributeType::VEC3_FLOAT32, offsetof(Vertex, position)},
 		{"color",    st::VertexAttributeType::VEC4_FLOAT32, offsetof(Vertex, color)   },
 	};
 
-	tr::Array<Vertex> vertices = {
+	tr::Array<const Vertex> vertices = {
 		{{-0.5, -0.5, 0.0}, tr::Color::rgb(0xff0000)},
 		{{0.5, -0.5, 0.0},  tr::Color::rgb(0x00ff00)},
 		{{0.0, 0.5, 0.0},   tr::Color::rgb(0x0000ff)},
 	};
 
-	tr::Array<st::Triangle> triangles = {
+	tr::Array<const st::Triangle> triangles = {
 		{2, 1, 0},
 	};
 

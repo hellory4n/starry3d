@@ -56,8 +56,8 @@ void st::clear_screen(tr::Color color)
 }
 
 st::Mesh::Mesh(
-	tr::Array<VertexAttribute> format, void* buffer, usize elem_size, usize length,
-	tr::Array<st::Triangle> indices, bool readonly
+	tr::Array<const VertexAttribute> format, const void* buffer, usize elem_size, usize length,
+	tr::Array<const st::Triangle> indices, bool readonly
 )
 {
 	_index_count = uint32(indices.len() * 3);

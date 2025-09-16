@@ -97,13 +97,13 @@ public:
 
 	// `elem_size` is the size of the type you're using for vertices. `readonly` allows you to
 	// update the mesh later.
-	Mesh(tr::Array<VertexAttribute> format, void* buffer, usize elem_size, usize length,
-	     tr::Array<Triangle> indices, bool readonly);
+	Mesh(tr::Array<const VertexAttribute> format, const void* buffer, usize elem_size,
+	     usize length, tr::Array<const Triangle> indices, bool readonly);
 
 	// not really necessary idc
 	template<typename T>
-	Mesh(tr::Array<VertexAttribute> format, tr::Array<T> vertices, tr::Array<Triangle> indices,
-	     bool readonly = true)
+	Mesh(tr::Array<const VertexAttribute> format, tr::Array<const T> vertices,
+	     tr::Array<const Triangle> indices, bool readonly = true)
 		: Mesh(format, vertices.buf(), sizeof(T), vertices.len(), indices, readonly)
 	{
 	}

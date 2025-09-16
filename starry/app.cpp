@@ -72,7 +72,7 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 {
 	tr::Arena arena = {};
 	tr::Arena asset_arena = {};
-	_st = &arena.make<Starry>(arena, asset_arena);
+	_st = arena.make_ptr<Starry>(arena, asset_arena);
 
 	_st->application = &app;
 	_st->settings = settings;
