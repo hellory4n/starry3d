@@ -71,7 +71,7 @@ st::Mesh::Mesh(
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 
 	glBufferData(
-		GL_ARRAY_BUFFER, length * elem_size, buffer,
+		GL_ARRAY_BUFFER, GLsizeiptr(length * elem_size), buffer,
 		readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW
 	);
 
@@ -146,13 +146,13 @@ st::Mesh::Mesh(
 
 		if (ipointer) {
 			glVertexAttribIPointer(
-				uint32(i), size, type, uint32(elem_size),
+				uint32(i), GLint(size), type, GLsizei(elem_size),
 				reinterpret_cast<const void*>(attrib.offset)
 			);
 		}
 		else {
 			glVertexAttribPointer(
-				uint32(i), size, type, 0u, uint32(elem_size),
+				uint32(i), GLint(size), type, 0u, GLsizei(elem_size),
 				reinterpret_cast<const void*>(attrib.offset)
 			);
 		}
@@ -163,8 +163,8 @@ st::Mesh::Mesh(
 	glGenBuffers(1, &_ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
 	glBufferData(
-		GL_ELEMENT_ARRAY_BUFFER, indices.len() * sizeof(Triangle), indices.buf(),
-		readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW
+		GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indices.len() * sizeof(Triangle)),
+		indices.buf(), readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW
 	);
 
 	// unbind vao
@@ -195,7 +195,9 @@ void st::Mesh::free()
 void st::Mesh::draw(uint32 instances) const
 {
 	glBindVertexArray(_vao);
-	glDrawElementsInstanced(GL_TRIANGLES, _index_count, GL_UNSIGNED_INT, nullptr, instances);
+	glDrawElementsInstanced(
+		GL_TRIANGLES, GLsizei(_index_count), GL_UNSIGNED_INT, nullptr, GLsizei(instances)
+	);
 	glBindVertexArray(0);
 }
 
