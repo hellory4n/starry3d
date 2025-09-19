@@ -64,7 +64,10 @@ void st::_preinit()
 	TR_ASSERT_MSG(tr::path_exists(userdir), "couldn't create user://");
 	TR_ASSERT_MSG(
 		tr::path_exists(tr::path(tr::scratchpad(), "app://")),
-		"app:// is pointing to an invalid directory, are you sure this is the right path?"
+		"app:// is pointing to an invalid directory, this means either:\n"
+		"- this is not the right path\n"
+		"- the assets directory isn't available (check your build system, it should be "
+		"next to the executable)"
 	);
 
 	tr::info("preinitialized successfully");

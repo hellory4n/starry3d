@@ -1,7 +1,5 @@
 add_rules("mode.debug", "mode.release")
 
--- pls use the local glfw not the one from the internet thanks
--- TODO why though
 package("glfw")
 	add_deps("cmake")
 	set_sourcedir(path.join(os.scriptdir(), "thirdparty/glfw"))
@@ -11,14 +9,14 @@ package("glfw")
 	on_install(function(package)
 		-- for cross compiling
 		if is_plat("windows") and (is_host("linux") or is_host("macosx")) then
-			import("package.tools.cmake").build(package, {
+			import("package.tools.cmake").install(package, {
 				"-D GLFW_LIBRARY_TYPE=STATIC",
 				"-D GLFW_BUILD_EXAMPLES=OFF",
 				"-D GLFW_BUILD_TESTS=OFF",
 				"-DCMAKE_TOOLCHAIN_FILE=$(pwd)/thirdparty/glfw/CMake/x86_64-w64-mingw32.cmake",
 			})
 		else
-			import("package.tools.cmake").build(package, {
+			import("package.tools.cmake").install(package, {
 				"-D GLFW_LIBRARY_TYPE=STATIC",
 				"-D GLFW_BUILD_EXAMPLES=OFF",
 				"-D GLFW_BUILD_TESTS=OFF",
@@ -55,6 +53,11 @@ target("stb")
 	add_headerfiles("thirdparty/stb/stb_*.h")
 target_end()
 
+if is_mode("debug") then
+	add_defines("DEBUG")
+end
+add_defines("ST_IMGUI")
+
 target("trippin")
 	set_kind("static")
 	set_languages("cxx20")
@@ -64,11 +67,6 @@ target("trippin")
 	if is_plat("linux") then
 		add_syslinks("m")
 	end
-
-	if is_mode("debug") then
-		add_defines("DEBUG")
-	end
-	add_defines("ST_IMGUI")
 
 	add_files(
 		"thirdparty/libtrippin/trippin/collection.cpp",
@@ -98,11 +96,6 @@ target("starry3d")
 		add_syslinks("X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt")
 	end
 
-	if is_mode("debug") then
-		add_defines("DEBUG")
-	end
-	add_defines("ST_IMGUI")
-
 	add_packages("glfw")
 	add_deps("trippin", "imgui", "stb")
 
@@ -116,19 +109,26 @@ target("starry3d")
 	)
 target_end()
 
+-- add_installfiles() doesn't work so do it manually
+target("sandbox_assets")
+	on_build(function(target)
+		-- the $(var) thing is weird bcuz you can only touch it from os.* and other build functions
+		-- you can't just get the value and print it
+		-- also no $(exedir)
+		-- why
+		os.mkdir("$(builddir)/$(os)/$(arch)/$(mode)/assets")
+		os.cp("sandbox/assets", "$(builddir)/$(os)/$(arch)/$(mode)/")
+	end)
+target_end()
+
 target("sandbox")
 	set_kind("binary")
 	set_languages("cxx20")
 	set_warnings("allextra") -- -Wall -Wextra
 
-	add_deps("starry3d")
+	add_deps("starry3d", "sandbox_assets")
 
-	if is_mode("debug") then
-		add_defines("DEBUG")
-	end
-	add_defines("ST_IMGUI")
-
-	add_installfiles("assets/*", {prefixdir = "assets"})
+	add_installfiles("sandbox/assets/*", {prefixdir = "assets"})
 	add_includedirs("sandbox/src")
 	add_files(
 		"sandbox/src/main.cpp",
@@ -137,3 +137,8 @@ target("sandbox")
 		"sandbox/src/world.cpp"
 	)
 target_end()
+
+-- TODO clang-format task
+-- TODO clang-tidy task
+-- just because xmake can do that
+-- TODO enable imgui option? (for when you just want starry3d, not sandbox)
