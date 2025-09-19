@@ -1,24 +1,39 @@
 add_rules("mode.debug", "mode.release")
 
--- TODO could manually recreate the project from the cmakelists
--- no wayland support tho bcuz that requires some weird header generation and i don't want to deal with that
+-- pls use the local glfw not the one from the internet thanks
+-- TODO why though
 package("glfw")
 	add_deps("cmake")
-	set_sourcedir("thirdparty/glfw")
+	set_sourcedir(path.join(os.scriptdir(), "thirdparty/glfw"))
+	set_policy("package.install_always", true)
+	set_policy("package.install_locally", true)
 
-	on_install(function(pkg)
-		local configs = {
-			"-DGLFW_LIBRARY_TYPE=STATIC",
-			"-DGLFW_BUILD_EXAMPLES=OFF",
-			"-DGLFW_BUILD_TESTS=OFF"
-		}
-		import("packages.tools.cmake").install(pkg, configs)
+	on_install(function(package)
+		-- for cross compiling
+		if is_plat("windows") and (is_host("linux") or is_host("macosx")) then
+			import("package.tools.cmake").build(package, {
+				"-D GLFW_LIBRARY_TYPE=STATIC",
+				"-D GLFW_BUILD_EXAMPLES=OFF",
+				"-D GLFW_BUILD_TESTS=OFF",
+				"-DCMAKE_TOOLCHAIN_FILE=$(pwd)/thirdparty/glfw/CMake/x86_64-w64-mingw32.cmake",
+			})
+		else
+			import("package.tools.cmake").build(package, {
+				"-D GLFW_LIBRARY_TYPE=STATIC",
+				"-D GLFW_BUILD_EXAMPLES=OFF",
+				"-D GLFW_BUILD_TESTS=OFF",
+			})
+		end
 	end)
 package_end()
+
+add_requires("glfw")
 
 target("imgui")
 	set_kind("static")
 	set_languages("cxx20")
+
+	add_packages("glfw")
 
 	add_includedirs("thirdparty/imgui", {public = true})
 	add_includedirs("thirdparty/imgui/backends", {public = true})
@@ -33,6 +48,11 @@ target("imgui")
 		"thirdparty/imgui/backends/imgui_impl_opengl3.cpp",
 		"thirdparty/imgui/backends/imgui_impl_glfw.cpp"
 	)
+target_end()
+
+target("stb")
+	set_kind("headeronly")
+	add_headerfiles("thirdparty/stb/stb_*.h")
 target_end()
 
 target("trippin")
@@ -62,6 +82,7 @@ target("trippin")
 	)
 target_end()
 
+-- TODO include mrshader here
 target("starry3d")
 	set_kind("static")
 	set_languages("cxx20")
@@ -82,8 +103,8 @@ target("starry3d")
 	end
 	add_defines("ST_IMGUI")
 
-	add_deps("trippin", "imgui")
 	add_packages("glfw")
+	add_deps("trippin", "imgui", "stb")
 
 	add_files(
 		"starry/app.cpp",
