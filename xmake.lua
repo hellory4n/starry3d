@@ -91,9 +91,11 @@ target("starry3d")
 	add_includedirs("thirdparty/glfw/include")
 
 	if is_plat("windows") then
-		add_syslinks("opengl32", "gdi32", "winmm", "comdlg32", "ole32", "pthread")
+		add_links("gdi32", "opengl32")
+	elseif is_plat("macosx") then
+		add_frameworks("OpenGL", "Cocoa", "IOKit")
 	elseif is_plat("linux") then
-		add_syslinks("X11", "Xrandr", "GL", "Xinerama", "m", "pthread", "dl", "rt")
+		add_syslinks("X11", "Xrandr", "Xinerama", "GL", "m", "pthread", "dl", "rt")
 	end
 
 	add_packages("glfw")
@@ -111,6 +113,8 @@ target_end()
 
 -- add_installfiles() doesn't work so do it manually
 target("sandbox_assets")
+	set_kind("object")
+
 	on_build(function(target)
 		-- the $(var) thing is weird bcuz you can only touch it from os.* and other build functions
 		-- you can't just get the value and print it
