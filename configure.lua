@@ -163,7 +163,7 @@ if platform == "windows" then
                 starrydir ..
                 "/thirdparty/glfw -B " ..
                 builddir ..
-                "/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF -DCMAKE_TOOLCHAIN_FILE=$$(pwd)/" ..
+                "/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF -D GLFW_BUILD_DOCS=OFF -DCMAKE_TOOLCHAIN_FILE=$$(pwd)/" ..
                 builddir .. "/win32.cmake && " ..
                 "cd " .. builddir .. "/glfw && " ..
                 "make && " ..
@@ -175,7 +175,7 @@ else
                 "cmake -S " ..
                 starrydir ..
                 "/thirdparty/glfw -B " ..
-                builddir .. "/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF && " ..
+                builddir .. "/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF -D GLFW_BUILD_DOCS=OFF && " ..
                 "cd " .. builddir .. "/glfw && " ..
                 "make"
         )
