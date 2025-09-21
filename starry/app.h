@@ -233,7 +233,7 @@ struct ApplicationSettings
 	// - on Windows: %APPDATA% or C:\Users\user\AppData\Roaming
 	// - on Linux: ~/.local/share
 	tr::String user_dir = "";
-	tr::Array<const tr::String> logfiles = {};
+	tr::Array<const tr::String> log_files = {};
 
 	tr::Vec2<uint32> window_size = {640, 480};
 	bool resizable = true;

@@ -4,11 +4,12 @@
 
 int main()
 {
-	st::ApplicationSettings settings = {};
-	settings.name = "sandbox";
-	settings.app_dir = "assets";
-	settings.logfiles = {"log.txt"};
-	settings.window_size = {800, 600};
+	st::ApplicationSettings settings = {
+		.name = "sandbox",
+		.app_dir = "assets",
+		.log_files = {"log.txt"},
+		.window_size = {800, 600},
+	};
 
 	sbox::Sandbox app = {};
 	st::run(app, settings);

@@ -26,26 +26,30 @@ includes = {
 -------------------------
 io.write("Starry3D auto configurator 3000++\n")
 
-io.write("Compile mode (debug/release): ")
+io.write("- Compile mode (debug/release):\n> ")
 compmode = io.read("*l")
 assert(compmode == "debug" or compmode == "release")
 
-io.write("Target platform (windows/linux, windows requires mingw-w64 gcc and g++): ")
+io.write("- Target platform (windows/linux)\n  windows requires mingw-w64 gcc and g++):\n> ")
 platform = io.read("*l")
 assert(platform == "linux" or platform == "windows")
 
-io.write("Use a sanitizer? (e.g. 'address' for asan, press enter to not use one): ")
+io.write("- Use a sanitizer?\n  maps directly to a -fsanitize flag. you can usually ignore this.\n> ")
 sanitize = io.read("*l")
 
-io.write("Generate compile_commands.json for clangd? (y/n): ")
+io.write("- Generate compile_commands.json for clangd? (Y/n)\n> ")
 compile_commands = io.read("*l")
+if compile_commands == "" then compile_commands = "y" end
 assert(compile_commands == "y" or compile_commands == "n")
 
-io.write("\nGenerating...\n")
+io.write("generating...\n")
 
 ----------------------------------------------------------------
 --- GETTING THE CRAP INFO SO IT CAN ACTUALLY GENERATE FRFRFR ---
 ----------------------------------------------------------------
+
+-- TODO this is messy as fuck
+-- TODO compile starry3d as a staticlib
 
 cxx = "clang++"
 if platform == "windows" then
@@ -54,17 +58,14 @@ end
 
 -- TODO consider not
 cflags = ""
-if platform == "windows" or cxx == "g++" then
-        cflags = "-std=c++20 -Wall -Wextra -Wpedantic -Wstrict-aliasing "
+if compmode == "release" then
+        cflags = "-std=c++20 -Wall -Wextra -Wpedantic "
 else
         cflags =
             "-std=c++20 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wconversion " ..
             "-Wold-style-cast -Wextra-semi -Wmissing-noreturn -Wimplicit-fallthrough " ..
             "-Wnull-dereference -Wcast-qual"
 end
-
--- undefined behavior my ass
-cflags = cflags .. " -ftrapv -fno-strict-aliasing"
 
 -- includes
 cflags = cflags ..
@@ -130,7 +131,7 @@ end
 
 -- man.
 if compmode == "debug" then
-        cflags = cflags .. " -O0 -g -DDEBUG -D_DEBUG -fno-omit-frame-pointer"
+        cflags = cflags .. " -Og -g -DDEBUG -D_DEBUG -fno-omit-frame-pointer"
 else
         cflags = cflags .. " -O3 -g -fno-omit-frame-pointer"
 end
@@ -216,8 +217,7 @@ f:close()
 --- ITS JOEVER ---
 ------------------
 
-io.write("Generated build.ninja; run `ninja` to compile\n")
-
 if compile_commands == "y" then
         os.execute("ninja -t compdb > compile_commands.json")
 end
+io.write("ok\n")

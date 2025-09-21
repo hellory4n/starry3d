@@ -126,17 +126,6 @@ class Shader
 {
 protected:
 	uint32 _shader = 0;
-	// you stupid piece of shit get away from me and dont come back again until you learn to be
-	// a tougher kind of man whos master of his plan and doesnt need to leech off others sanity
-	// until then i dont ever wanna see your face it makes me sick just thinking of your lack of
-	// grace whenever you demand that someone hold your hand your weakest bet is just to put
-	// your fight in place so thats right right yeah the kind of games you play are for a five
-	// year old who doesnt wanna do the things that shes been told at first he wont submit and
-	// then he throws a fit and screams at all the world that it it wrong to scold a sweet and
-	// innocent bystander of a man is rising up to meet the challenges at hand and doesnt have
-	// the time to listen to him whine or change his diapie when hes crapped himself again thats
-	// right right yeah youre such a sad pathetic fool ive caught you playing with your stool
-	// TODO wtf is this comment
 	friend class ShaderProgram;
 
 	void _check_compilation(const char* shader_type) const;

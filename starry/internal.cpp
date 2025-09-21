@@ -44,7 +44,7 @@ Starry* _st = nullptr;
 void st::_preinit()
 {
 	// TODO this could be a thing in libtrippin
-	for (auto [_, path] : _st->settings.logfiles) {
+	for (auto [_, path] : _st->settings.log_files) {
 		tr::use_log_file(path);
 	}
 	tr::init();
