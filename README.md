@@ -1,9 +1,6 @@
 # starry3d
 
-> [!WARNING]
-> This is in active development. It may be janky, or worse, busted.
-
-3D renderer for voxel graphics and other fancy crapfrick.
+3D game engine for voxel graphics and other fancy crapfrick.
 
 ## Features
 
@@ -17,8 +14,9 @@
 
 ## Limitations
 
-- 2D support is nearly non-existent
+- Only does the 3D voxel graphics for now, everything else is nearly non-existent
 - Currently only Windows and Linux supported (macOS might work, maybe)
+- Experimental software, will definitely change and break
 
 ## Documentation
 
