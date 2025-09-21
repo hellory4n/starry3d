@@ -1,5 +1,8 @@
 # starry3d
 
+> [!WARNING]
+> This is the development branch, as in actively being developed. It may be janky, or worse, busted. (even more janky/busted than the regular branch)
+
 3D game engine for voxel graphics and other fancy crapfrick.
 
 ## Features
