@@ -1,6 +1,6 @@
 BasedOnStyle: WebKit
 Language: Cpp
-Standard: c++17
+Standard: c++20
 Cpp11BracedListStyle: true
 
 UseTab: ForContinuationAndIndentation
@@ -32,6 +32,8 @@ SpaceAfterTemplateKeyword: false
 BreakBeforeBinaryOperators: None
 SpaceBeforeCpp11BracedList: false
 SpaceInEmptyBlock: false
+IndentRequiresClause: false
+RequiresClausePosition: OwnLine
 
 # slightly modified K&R style
 BreakBeforeBraces: Custom

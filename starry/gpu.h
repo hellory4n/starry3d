@@ -201,7 +201,7 @@ struct TextureSettings
 class Texture
 {
 	uint32 _id = 0;
-	tr::Vec2<uint32> _size;
+	tr::Vec2<uint32> _size = {};
 
 public:
 	static tr::Result<Texture> load(tr::String path, TextureSettings settings = {});

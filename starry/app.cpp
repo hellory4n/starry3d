@@ -68,13 +68,14 @@ static void _free_window();
 
 }
 
-void st::run(st::Application& app, st::ApplicationSettings settings)
+void st::_run(
+	std::function<st::Application*(tr::Arena& arena)> make_app, st::ApplicationSettings settings
+)
 {
 	tr::Arena arena = {};
 	tr::Arena asset_arena = {};
 	_st = arena.make_ptr<Starry>(arena, asset_arena);
 
-	_st->application = &app;
 	_st->settings = settings;
 	_st->window_size = settings.window_size;
 
@@ -84,7 +85,8 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 #ifdef ST_IMGUI
 	st::imgui::init();
 #endif
-	_st->application->init().unwrap();
+
+	_st->application = make_app(_st->arena);
 
 	while (!st::window_should_close()) {
 		st::_poll_events();

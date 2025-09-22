@@ -30,21 +30,8 @@
 #include <trippin/log.h>
 
 #include <glad/gl.h>
-// oh boy !!!
-TR_GCC_IGNORE_WARNING(-Wold-style-cast)
-TR_GCC_IGNORE_WARNING(-Wcast-qual)
-TR_GCC_IGNORE_WARNING(-Wsign-conversion)
-TR_GCC_IGNORE_WARNING(-Wimplicit-int-conversion)
-TR_GCC_IGNORE_WARNING(-Wimplicit-fallthrough)
-TR_GCC_IGNORE_WARNING(-Wshorten-64-to-32)
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
 
 #include "starry/internal.h"
 
@@ -341,6 +328,7 @@ tr::Result<st::Texture> st::Texture::load(tr::String path, TextureSettings setti
 	Texture texture = {};
 
 	// TODO texture cache
+	// TODO st::Texture::from_memory()
 	int width, height, channels;
 	uint8* data = stbi_load(tr::path(tr::scratchpad(), path), &width, &height, &channels, 4);
 	if (data == nullptr) {
@@ -385,7 +373,7 @@ tr::Result<st::Texture> st::Texture::load(tr::String path, TextureSettings setti
 	// actually make the texture
 	glGenTextures(1, &texture._id);
 	glBindTexture(GL_TEXTURE_2D, texture._id);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 	if (settings.mipmaps) {
 		glGenerateMipmap(GL_TEXTURE_2D);

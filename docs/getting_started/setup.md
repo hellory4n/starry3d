@@ -79,7 +79,8 @@ Put this in your `main.cpp` to check if it worked:
 // you'd usually put this on its own file
 class Game : public st::Application
 {
-        tr::Result<void> init() override
+public:
+        Game()
         {
                 tr::log("initialized game");
                 return {};
@@ -105,8 +106,7 @@ int main()
                 .log_files = {"log.txt"},
                 .window_size = {800, 600},
         };
-        Game game{};
-        st::run(game, settings);
+        st::run<Game>(settings);
         return 0;
 }
 ```

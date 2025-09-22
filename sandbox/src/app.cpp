@@ -20,7 +20,7 @@ struct Vertex
 	tr::Vec2<float32> texcoords;
 };
 
-tr::Result<void> sbox::Sandbox::init()
+sbox::Sandbox::Sandbox()
 {
 	st::Camera& cam = st::Camera::current();
 	cam.position = {0, 0, 1};
@@ -65,7 +65,6 @@ tr::Result<void> sbox::Sandbox::init()
 	sbox::setup_world();
 
 	tr::log("initialized sandbox :)");
-	return {};
 }
 
 tr::Result<void> sbox::Sandbox::update(float64 dt)

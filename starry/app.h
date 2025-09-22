@@ -29,6 +29,8 @@
 #ifndef _ST_COMMON_H
 #define _ST_COMMON_H
 
+#include <type_traits>
+
 #include <trippin/collection.h>
 #include <trippin/common.h>
 #include <trippin/error.h>
@@ -216,10 +218,8 @@ enum class MouseButton
 class Application
 {
 public:
-	virtual tr::Result<void> init()
-	{
-		return {};
-	}
+	// pls use free() i just put this here to silence the warning
+	virtual ~Application() = default;
 
 	// dt is delta time. You could just use update for everything but I think it's nicer to have
 	// separate functions
@@ -265,8 +265,18 @@ struct ApplicationSettings
 	bool high_dpi = false;
 };
 
+// the funny lambda stuff is so the app is initialized *after* the engine, without the whole
+// thing needing to be a template
+// cursed i know
+void _run(std::function<Application*(tr::Arena& arena)> make_app, ApplicationSettings settings);
+
 // Initializes the crap library.
-void run(Application& app, ApplicationSettings settings);
+template<typename App>
+requires std::is_base_of_v<Application, App>
+void run(ApplicationSettings settings)
+{
+	st::_run([](tr::Arena& arena) { return arena.make_ptr<App>(); }, settings);
+}
 
 // If true, the window should close. Duh.
 bool window_should_close();
