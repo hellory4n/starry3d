@@ -79,29 +79,23 @@ Put this in your `main.cpp` to check if it worked:
 // you'd usually put this on its own file
 class Game : public st::Application
 {
-        tr::Result<void> init() override;
-        tr::Result<void> update(float64 dt) override;
-        tr::Result<void> free() override;
+        tr::Result<void> init() override
+        {
+                tr::log("initialized game");
+                return {};
+        }
+
+        tr::Result<void> free() override
+        {
+                tr::log("deinitialized game");
+                return {};
+        }
+
+        tr::Result<void> update(float64 dt) override {}
+        tr::Result<void> draw() override {}
+        // put imgui calls here
+        tr::Result<void> gui() override {}
 };
-
-tr::Result<void> Game::init()
-{
-        tr::log("initialized game");
-        return {};
-}
-
-tr::Result<void> Game::update(float64 dt)
-{
-        // you can put imgui calls here too
-        // just include <starry/optional/imgui.h> first
-        return {};
-}
-
-tr::Result<void> Game::free()
-{
-        tr::log("deinitialized game");
-        return {};
-}
 
 int main()
 {
@@ -110,8 +104,8 @@ int main()
                 .app_dir = "assets",
                 .log_files = {"log.txt"},
                 .window_size = {800, 600},
-        }
-        Game game = {};
+        };
+        Game game{};
         st::run(game, settings);
         return 0;
 }

@@ -216,10 +216,33 @@ enum class MouseButton
 class Application
 {
 public:
-	virtual tr::Result<void> init() = 0;
-	// dt is delta time :)
-	virtual tr::Result<void> update(float64 dt) = 0;
-	virtual tr::Result<void> free() = 0;
+	virtual tr::Result<void> init()
+	{
+		return {};
+	}
+
+	// dt is delta time. You could just use update for everything but I think it's nicer to have
+	// separate functions
+	virtual tr::Result<void> update(float64 dt)
+	{
+		(void)dt;
+		return {};
+	}
+
+	virtual tr::Result<void> draw()
+	{
+		return {};
+	}
+
+	virtual tr::Result<void> gui()
+	{
+		return {};
+	}
+
+	virtual tr::Result<void> free()
+	{
+		return {};
+	}
 };
 
 struct ApplicationSettings

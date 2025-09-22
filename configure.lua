@@ -11,14 +11,14 @@ assetsdst = "build/bin/assets"
 imgui_enabled = true
 
 srcs = {
-        "sandbox/src/main.cpp",
-        "sandbox/src/app.cpp",
-        "sandbox/src/debug_mode.cpp",
-        "sandbox/src/world.cpp",
+	"sandbox/src/main.cpp",
+	"sandbox/src/app.cpp",
+	"sandbox/src/debug_mode.cpp",
+	"sandbox/src/world.cpp",
 }
 
 includes = {
-        "sandbox/src"
+	"sandbox/src"
 }
 
 -------------------------
@@ -30,11 +30,11 @@ io.write("- Compile mode (debug/release):\n> ")
 compmode = io.read("*l")
 assert(compmode == "debug" or compmode == "release")
 
-io.write("- Target platform (windows/linux)\n  windows requires mingw-w64 gcc and g++):\n> ")
+io.write("- Target platform (windows/linux)\n    windows requires mingw-w64 gcc and g++:\n> ")
 platform = io.read("*l")
 assert(platform == "linux" or platform == "windows")
 
-io.write("- Use a sanitizer?\n  maps directly to a -fsanitize flag. you can usually ignore this.\n> ")
+io.write("- Use a sanitizer?\n    maps directly to a -fsanitize flag. you can usually ignore this.\n> ")
 sanitize = io.read("*l")
 
 io.write("- Generate compile_commands.json for clangd? (Y/n)\n> ")
@@ -53,92 +53,83 @@ io.write("generating...\n")
 
 cxx = "clang++"
 if platform == "windows" then
-        cxx = "x86_64-w64-mingw32-g++"
+	cxx = "x86_64-w64-mingw32-g++"
 end
 
--- TODO consider not
-cflags = ""
-if compmode == "release" then
-        cflags = "-std=c++20 -Wall -Wextra -Wpedantic "
-else
-        cflags =
-            "-std=c++20 -Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wconversion " ..
-            "-Wold-style-cast -Wextra-semi -Wmissing-noreturn -Wimplicit-fallthrough " ..
-            "-Wnull-dereference -Wcast-qual"
-end
+cflags = "-std=c++20 -Wall -Wextra -Wpedantic "
 
 -- includes
 cflags = cflags ..
-    " -I" .. starrydir ..
-    " -I" .. starrydir .. "/thirdparty" ..
-    " -I" .. starrydir .. "/thirdparty/libtrippin" ..
-    " -I" .. starrydir .. "/thirdparty/glfw/include"
+	" -I" .. starrydir ..
+	" -I" .. starrydir .. "/thirdparty" ..
+	" -I" .. starrydir .. "/thirdparty/libtrippin" ..
+	" -I" .. starrydir .. "/thirdparty/glfw/include"
 
 if imgui_enabled then
-        cflags = cflags .. " -I" .. starrydir .. "/thirdparty/imgui"
+	cflags = cflags .. " -I" .. starrydir .. "/thirdparty/imgui"
 end
 
 -- custom includes
 for _, include in ipairs(includes) do
-        cflags = cflags .. " -I" .. include
+	cflags = cflags .. " -I" .. include
 end
 
 -- source files
 srcsfrfr = {
-        -- libtrippin
-        starrydir .. "/thirdparty/libtrippin/trippin/collection.cpp",
-        starrydir .. "/thirdparty/libtrippin/trippin/common.cpp",
-        starrydir .. "/thirdparty/libtrippin/trippin/iofs.cpp",
-        starrydir .. "/thirdparty/libtrippin/trippin/log.cpp",
-        starrydir .. "/thirdparty/libtrippin/trippin/math.cpp",
-        starrydir .. "/thirdparty/libtrippin/trippin/memory.cpp",
-        starrydir .. "/thirdparty/libtrippin/trippin/string.cpp",
-        starrydir .. "/thirdparty/libtrippin/trippin/error.cpp",
+	-- libtrippin
+	starrydir .. "/thirdparty/libtrippin/trippin/collection.cpp",
+	starrydir .. "/thirdparty/libtrippin/trippin/common.cpp",
+	starrydir .. "/thirdparty/libtrippin/trippin/iofs.cpp",
+	starrydir .. "/thirdparty/libtrippin/trippin/log.cpp",
+	starrydir .. "/thirdparty/libtrippin/trippin/math.cpp",
+	starrydir .. "/thirdparty/libtrippin/trippin/memory.cpp",
+	starrydir .. "/thirdparty/libtrippin/trippin/string.cpp",
+	starrydir .. "/thirdparty/libtrippin/trippin/error.cpp",
 
-        -- starry3d
-        starrydir .. "/starry/app.cpp",
-        starrydir .. "/starry/gpu.cpp",
-        starrydir .. "/starry/internal.cpp",
-        starrydir .. "/starry/render.cpp",
-        starrydir .. "/starry/world.cpp",
+	-- starry3d
+	starrydir .. "/starry/app.cpp",
+	starrydir .. "/starry/gpu.cpp",
+	starrydir .. "/starry/internal.cpp",
+	starrydir .. "/starry/render.cpp",
+	starrydir .. "/starry/world.cpp",
 }
 
 -- imgui
 if imgui_enabled then
-        table.insert(srcsfrfr, starrydir .. "/starry/optional/imgui.cpp")
-        table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/imgui.cpp")
-        table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/imgui_widgets.cpp")
-        table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/imgui_tables.cpp")
-        table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/imgui_draw.cpp")
-        table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/imgui_demo.cpp")
-        table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/backends/imgui_impl_glfw.cpp")
-        table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/backends/imgui_impl_opengl3.cpp")
-        cflags = cflags .. " -DST_IMGUI"
+	table.insert(srcsfrfr, starrydir .. "/starry/optional/imgui.cpp")
+	table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/imgui.cpp")
+	table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/imgui_widgets.cpp")
+	table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/imgui_tables.cpp")
+	table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/imgui_draw.cpp")
+	table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/imgui_demo.cpp")
+	table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/backends/imgui_impl_glfw.cpp")
+	table.insert(srcsfrfr, starrydir .. "/thirdparty/imgui/backends/imgui_impl_opengl3.cpp")
+	cflags = cflags .. " -DST_IMGUI"
 end
 
 -- custom sources
 for _, src in ipairs(srcs) do
-        table.insert(srcsfrfr, src)
+	table.insert(srcsfrfr, src)
 end
 
 -- ldflags
 ldflags = "-Lbuild/glfw/src"
 if platform == "windows" then
-        ldflags = ldflags .. " -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lpthread -lstdc++ -static"
+	ldflags = ldflags .. " -lglfw3 -lopengl32 -lgdi32 -lwinmm -lcomdlg32 -lole32 -lpthread -lstdc++ -static"
 else
-        ldflags = ldflags .. " -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt -lstdc++"
+	ldflags = ldflags .. " -lglfw3 -lX11 -lXrandr -lGL -lXinerama -lm -lpthread -ldl -lrt -lstdc++"
 end
 
 -- man.
 if compmode == "debug" then
-        cflags = cflags .. " -Og -g -DDEBUG -D_DEBUG -fno-omit-frame-pointer"
+	cflags = cflags .. " -Og -g -DDEBUG -D_DEBUG -fno-omit-frame-pointer"
 else
-        cflags = cflags .. " -O3 -g -fno-omit-frame-pointer"
+	cflags = cflags .. " -O3 -g -fno-omit-frame-pointer"
 end
 
 if sanitize ~= "" then
-        cflags = cflags .. " -fsanitize=" .. sanitize
-        ldflags = ldflags .. " -fsanitize=" .. sanitize
+	cflags = cflags .. " -fsanitize=" .. sanitize
+	ldflags = ldflags .. " -fsanitize=" .. sanitize
 end
 
 --------------------------------------------------
@@ -155,30 +146,30 @@ f:write("ldflags = " .. ldflags .. "\n")
 
 f:write("\nrule glfw_build\n")
 if platform == "windows" then
-        f:write("  command = " ..
-                "mkdir " .. builddir .. "/glfw -p && " ..
-                -- cmake can't find a file that exists :D
-                "cp " .. starrydir .. "/thirdparty/glfw/CMake/x86_64-w64-mingw32.cmake " ..
-                builddir .. "/win32.cmake && " ..
-                "cmake -S " ..
-                starrydir ..
-                "/thirdparty/glfw -B " ..
-                builddir ..
-                "/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF -D GLFW_BUILD_DOCS=OFF -DCMAKE_TOOLCHAIN_FILE=$$(pwd)/" ..
-                builddir .. "/win32.cmake && " ..
-                "cd " .. builddir .. "/glfw && " ..
-                "make && " ..
-                "mv src/libglfw3.a src/glfw3.lib"
-        )
+	f:write("  command = " ..
+		"mkdir " .. builddir .. "/glfw -p && " ..
+		-- cmake can't find a file that exists :D
+		"cp " .. starrydir .. "/thirdparty/glfw/CMake/x86_64-w64-mingw32.cmake " ..
+		builddir .. "/win32.cmake && " ..
+		"cmake -S " ..
+		starrydir ..
+		"/thirdparty/glfw -B " ..
+		builddir ..
+		"/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF -D GLFW_BUILD_DOCS=OFF -DCMAKE_TOOLCHAIN_FILE=$$(pwd)/" ..
+		builddir .. "/win32.cmake && " ..
+		"cd " .. builddir .. "/glfw && " ..
+		"make && " ..
+		"mv src/libglfw3.a src/glfw3.lib"
+	)
 else
-        f:write("  command = " ..
-                "mkdir " .. builddir .. "/glfw -p && " ..
-                "cmake -S " ..
-                starrydir ..
-                "/thirdparty/glfw -B " ..
-                builddir .. "/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF -D GLFW_BUILD_DOCS=OFF && " ..
-                "cd " .. builddir .. "/glfw && " ..
-                "make"
+	f:write("  command = " ..
+		"mkdir " .. builddir .. "/glfw -p && " ..
+		"cmake -S " ..
+		starrydir ..
+		"/thirdparty/glfw -B " ..
+		builddir .. "/glfw -D GLFW_LIBRARY_TYPE=STATIC -D GLFW_BUILD_EXAMPLES=OFF -D GLFW_BUILD_TESTS=OFF -D GLFW_BUILD_DOCS=OFF && " ..
+		"cd " .. builddir .. "/glfw && " ..
+		"make"
         )
 end
 f:write("\n  description = Compiling GLFW\n")
@@ -189,8 +180,8 @@ f:write("  description = Compiling $in\n")
 
 f:write("\nrule link\n")
 f:write("  command = $cxx $in $ldflags -o $out && " ..
-        -- that's to copy assets :)
-        "mkdir " .. assetsdst .. " -p && cp -r " .. assetssrc .. "/* " .. assetsdst .. "\n")
+	-- that's to copy assets :)
+	"mkdir " .. assetsdst .. " -p && cp -r " .. assetssrc .. "/* " .. assetsdst .. "\n")
 f:write("  description = Linking $out\n")
 
 -- man
@@ -198,14 +189,14 @@ f:write("\nbuild " .. builddir .. "/glfw/libglfw3.a: glfw_build\n")
 
 -- build crap :)
 for _, src in ipairs(srcsfrfr) do
-        f:write("build " .. builddir .. "/obj/" .. src:gsub("%.cpp", ".o"):gsub("/", "_") ..
-                ": compile " .. src .. "\n")
+	f:write("build " .. builddir .. "/obj/" .. src:gsub("%.cpp", ".o"):gsub("/", "_") ..
+		": compile " .. src .. "\n")
 end
 
 -- link crap :)
 f:write("\nbuild " .. builddir .. "/bin/" .. project .. ": link ")
 for _, src in ipairs(srcsfrfr) do
-        f:write(builddir .. "/obj/" .. src:gsub("%.cpp", ".o"):gsub("/", "_") .. " ")
+	f:write(builddir .. "/obj/" .. src:gsub("%.cpp", ".o"):gsub("/", "_") .. " ")
 end
 f:write("| " .. builddir .. "/glfw/libglfw3.a\n")
 
@@ -218,6 +209,6 @@ f:close()
 ------------------
 
 if compile_commands == "y" then
-        os.execute("ninja -t compdb > compile_commands.json")
+	os.execute("ninja -t compdb > compile_commands.json")
 end
 io.write("ok\n")

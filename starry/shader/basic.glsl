@@ -31,9 +31,9 @@
 
 #pragma mrshader vertex
 layout (location = 0) in vec3 vs_position;
-layout (location = 1) in vec4 vs_color;
+layout (location = 1) in vec2 vs_texcoords;
 
-out vec4 fs_color;
+out vec2 fs_texcoords;
 
 uniform mat4 u_model;
 uniform mat4 u_view;
@@ -42,15 +42,17 @@ uniform mat4 u_projection;
 void main()
 {
 	gl_Position = u_projection * u_view * u_model * vec4(vs_position, 1.0);
-	fs_color = vs_color;
+	fs_texcoords = vs_texcoords;
 }
 
 #pragma mrshader fragment
-in vec4 fs_color;
+in vec2 fs_texcoords;
 
 out vec4 frag_color;
 
+uniform sampler2D u_texture;
+
 void main()
 {
-	frag_color = fs_color;
+	frag_color = texture(u_texture, fs_texcoords);
 }

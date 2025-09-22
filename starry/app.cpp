@@ -93,8 +93,9 @@ void st::run(st::Application& app, st::ApplicationSettings settings)
 #endif
 
 		_st->application->update(st::delta_time_sec()).unwrap();
+		_st->application->draw().unwrap();
+		_st->application->gui().unwrap();
 
-// TODO remember to put this AFTER the rest of the rendering
 #ifdef ST_IMGUI
 		st::imgui::render();
 #endif

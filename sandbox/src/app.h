@@ -16,14 +16,17 @@ class Sandbox : public st::Application
 
 	tr::Arena arena = {};
 
-	st::ShaderProgram* program = nullptr;
+	st::ShaderProgram program = {};
 	st::Mesh mesh = {};
+	st::Texture texture = {};
 
 	void player_controller(float64 dt) const;
 
 public:
 	tr::Result<void> init() override;
 	tr::Result<void> update(float64 dt) override;
+	tr::Result<void> draw() override;
+	tr::Result<void> gui() override;
 	tr::Result<void> free() override;
 };
 

@@ -17,13 +17,11 @@
 struct Vertex
 {
 	tr::Vec3<float32> position;
-	tr::Vec4<float32> color;
+	tr::Vec2<float32> texcoords;
 };
 
 tr::Result<void> sbox::Sandbox::init()
 {
-	arena = tr::Arena();
-
 	st::Camera& cam = st::Camera::current();
 	cam.position = {0, 0, 1};
 	cam.fov = 90;
@@ -35,31 +33,34 @@ tr::Result<void> sbox::Sandbox::init()
 	TR_DEFER(vert_shader.free());
 	TR_DEFER(frag_shader.free());
 
-	program = arena.make_ptr<st::ShaderProgram>();
-	program->attach(vert_shader);
-	program->attach(frag_shader);
-	program->link();
-	program->use();
-	program->set_uniform("u_model", tr::Matrix4x4::identity());
-	program->set_uniform("u_view", tr::Matrix4x4::identity());
-	program->set_uniform("u_projection", tr::Matrix4x4::identity());
+	program = st::ShaderProgram();
+	program.attach(vert_shader);
+	program.attach(frag_shader);
+	program.link();
+	program.use();
+	program.set_uniform("u_model", tr::Matrix4x4::identity());
+	program.set_uniform("u_view", tr::Matrix4x4::identity());
+	program.set_uniform("u_projection", tr::Matrix4x4::identity());
 
-	tr::Array<const st::VertexAttribute> attrs = {
-		{"position", st::VertexAttributeType::VEC3_FLOAT32, offsetof(Vertex, position)},
-		{"color",    st::VertexAttributeType::VEC4_FLOAT32, offsetof(Vertex, color)   },
+	tr::Array<st::VertexAttribute> attrs = {
+		{"position",  st::VertexAttributeType::VEC3_FLOAT32, offsetof(Vertex, position) },
+		{"texcoords", st::VertexAttributeType::VEC2_FLOAT32, offsetof(Vertex, texcoords)},
 	};
 
-	tr::Array<const Vertex> vertices = {
-		{{-0.5, -0.5, 0.0}, tr::Color::rgb(0xff0000)},
-		{{0.5, -0.5, 0.0},  tr::Color::rgb(0x00ff00)},
-		{{0.0, 0.5, 0.0},   tr::Color::rgb(0x0000ff)},
+	tr::Array<Vertex> vertices = {
+		{{-0.5, -0.5, 0.0}, {0.5, 0.0}},
+		{{0.5, -0.5, 0.0},  {1, 1}    },
+		{{0.0, 0.5, 0.0},   {0, 1}    },
 	};
 
-	tr::Array<const st::Triangle> triangles = {
+	tr::Array<st::Triangle> triangles = {
 		{2, 1, 0},
 	};
 
 	mesh = st::Mesh(attrs, vertices, triangles, true);
+
+	st::Texture texture = st::Texture::load("app://enough_fckery.jpg").unwrap();
+	texture.use();
 
 	sbox::setup_world();
 
@@ -69,8 +70,6 @@ tr::Result<void> sbox::Sandbox::init()
 
 tr::Result<void> sbox::Sandbox::update(float64 dt)
 {
-	sbox::debug_mode();
-
 	// hlep
 	if (st::is_key_just_pressed(st::Key::ESCAPE)) {
 		_ui_enabled = !_ui_enabled;
@@ -82,16 +81,27 @@ tr::Result<void> sbox::Sandbox::update(float64 dt)
 
 	player_controller(dt);
 
+	return {};
+}
+
+tr::Result<void> sbox::Sandbox::draw()
+{
 	st::clear_screen(tr::Color::rgb(0x009ccf));
-	program->set_uniform("u_view", st::Camera::current().view_matrix());
-	program->set_uniform("u_projection", st::Camera::current().projection_matrix());
+	program.set_uniform("u_view", st::Camera::current().view_matrix());
+	program.set_uniform("u_projection", st::Camera::current().projection_matrix());
 	mesh.draw();
+	return {};
+}
+
+tr::Result<void> sbox::Sandbox::gui()
+{
+	sbox::debug_mode();
 	return {};
 }
 
 tr::Result<void> sbox::Sandbox::free()
 {
-	program->free();
+	program.free();
 	mesh.free();
 	arena.free();
 

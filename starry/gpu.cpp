@@ -285,38 +285,6 @@ void st::ShaderProgram::use()
 	_st->current_shader = this;
 }
 
-tr::Result<st::Texture> st::Texture::load(tr::String path)
-{
-	Texture texture = {};
-	tr::String real_path = tr::path(tr::scratchpad(), path);
-
-	// TODO texture cache
-	int width, height, channels;
-	uint8* data = stbi_load(real_path, &width, &height, &channels, 4);
-	if (data == nullptr) {
-		return tr::StringError("couldn't load texture from %s", *path);
-	}
-	TR_DEFER(stbi_image_free(data));
-
-	// help
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	texture._size = {uint32(width), uint32(height)};
-
-	// actually make the texture
-	glGenTextures(1, &texture._id);
-	glBindTexture(GL_TEXTURE_2D, texture._id);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-	// TODO there should be a setting for this probably
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	tr::info("loaded texture from %s (id %u)", *path, texture._id);
-	return texture;
-}
-
 void st::Texture::free()
 {
 	glDeleteTextures(1, &_id);
@@ -366,4 +334,63 @@ void st::ShaderProgram::set_uniform(tr::String name, tr::Matrix4x4 value) const
 	glUniformMatrix4fv(
 		glGetUniformLocation(_program, name), 1, 0u, reinterpret_cast<float32*>(&value)
 	);
+}
+
+tr::Result<st::Texture> st::Texture::load(tr::String path, TextureSettings settings)
+{
+	Texture texture = {};
+
+	// TODO texture cache
+	int width, height, channels;
+	uint8* data = stbi_load(tr::path(tr::scratchpad(), path), &width, &height, &channels, 4);
+	if (data == nullptr) {
+		return tr::StringError("couldn't load texture from %s", *path);
+	}
+	TR_DEFER(stbi_image_free(data));
+
+	// help
+	switch (settings.wrap) {
+	case TextureWrap::TILE:
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		break;
+	case TextureWrap::MIRRORED_TILE:
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+		break;
+	case TextureWrap::CLAMP_TO_EDGE:
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		break;
+	case TextureWrap::CLAMP_TO_BORDER:
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+		break;
+	}
+
+	// TODO you're probably doing this wrong
+	switch (settings.filter) {
+	case TextureFilter::NEAREST_NEIGHBOR:
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		break;
+	case TextureFilter::BILINEAR_FILTER:
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		break;
+	}
+
+	texture._size = {uint32(width), uint32(height)};
+
+	// actually make the texture
+	glGenTextures(1, &texture._id);
+	glBindTexture(GL_TEXTURE_2D, texture._id);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	if (settings.mipmaps) {
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+
+	tr::info("loaded texture from %s (id %u)", *path, texture._id);
+	return texture;
 }

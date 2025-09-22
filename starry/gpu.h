@@ -35,8 +35,8 @@ namespace st {
 // It clears the screen lmao.
 void clear_screen(tr::Color color);
 
-// It's vertex attribute types lmao. Note this is just the types GLSL supports (no int64/uint64
-// because GLSL doesn't have them, blame Mr. OpenGL)
+// It's vertex attribute types lmao. Note this is just the types GLSL supports
+// (no int64/uint64 because GLSL doesn't have them, blame Mr. OpenGL)
 enum class VertexAttributeType
 {
 	INT32,
@@ -60,8 +60,8 @@ enum class VertexAttributeType
 // Represents the vertex layout in memory.
 struct VertexAttribute
 {
-	// Name. This isn't actually used for anything, but it just makes things a bit clearer, and
-	// I may use it later too
+	// Name. This isn't actually used for anything, but it just makes things a bit
+	// clearer, and I may use it later too
 	tr::String name;
 	// Type.
 	VertexAttributeType type;
@@ -93,16 +93,16 @@ class Mesh
 	uint32 _index_count = 0;
 
 public:
-	Mesh() { }
+	Mesh() {}
 
-	// `elem_size` is the size of the type you're using for vertices. `readonly` allows you to
-	// update the mesh later.
+	// `elem_size` is the size of the type you're using for vertices. `readonly`
+	// allows you to update the mesh later.
 	Mesh(tr::Array<const VertexAttribute> format, const void* buffer, usize elem_size,
 	     usize length, tr::Array<const Triangle> indices, bool readonly);
 
-	// not really necessary idc
+	// not really necessary but it's nice to have
 	template<typename T>
-	Mesh(tr::Array<const VertexAttribute> format, tr::Array<const T> vertices,
+	Mesh(tr::Array<const VertexAttribute> format, tr::Array<T> vertices,
 	     tr::Array<const Triangle> indices, bool readonly = true)
 		: Mesh(format, vertices.buf(), sizeof(T), vertices.len(), indices, readonly)
 	{
@@ -110,8 +110,9 @@ public:
 
 	void free();
 
-	// Draws the mesh. This doesn't handle position, you're gonna have to figure that out
-	// yourself with shader uniforms and shit. Just look at learnopengl.com or some shit.
+	// Draws the mesh. This doesn't handle position, you're gonna have to figure
+	// that out yourself with shader uniforms and shit. Just look at
+	// learnopengl.com or some shit.
 	void draw(uint32 instances = 1) const;
 
 	// TODO update_data()
@@ -120,8 +121,8 @@ public:
 // A program on the GPU©®¢™¢™¢™©®©®©®™™™©®©®™™™©®©®™™¢®¢™™
 class ShaderProgram;
 
-// Shader. There's different shader classes just in case I decide to add compute shaders for some
-// fucking reason.
+// Shader. There's different shader classes just in case I decide to add compute
+// shaders for some fucking reason.
 class Shader
 {
 protected:
@@ -153,7 +154,7 @@ class ShaderProgram
 	uint32 _program = 0;
 
 public:
-	explicit ShaderProgram();
+	ShaderProgram();
 	void free();
 
 	// Le
@@ -172,6 +173,30 @@ public:
 	void set_uniform(tr::String name, tr::Matrix4x4 value) const;
 };
 
+// What should happen when texture coordinates go beyond 0-1. See [this
+// image](https://learnopengl.com/img/getting-started/texture_wrapping.png) for
+// a visual example
+enum class TextureWrap
+{
+	TILE,
+	MIRRORED_TILE,
+	CLAMP_TO_EDGE,
+	CLAMP_TO_BORDER,
+};
+
+enum class TextureFilter
+{
+	NEAREST_NEIGHBOR,
+	BILINEAR_FILTER,
+};
+
+struct TextureSettings
+{
+	TextureWrap wrap = TextureWrap::TILE;
+	TextureFilter filter = TextureFilter::NEAREST_NEIGHBOR;
+	bool mipmaps = false;
+};
+
 // It's an image on the GPU :)
 class Texture
 {
@@ -179,7 +204,7 @@ class Texture
 	tr::Vec2<uint32> _size;
 
 public:
-	static tr::Result<Texture> load(tr::String path);
+	static tr::Result<Texture> load(tr::String path, TextureSettings settings = {});
 	void free();
 
 	// It sets the texture to be the current texture texturing all over the place.
@@ -188,6 +213,6 @@ public:
 
 // TODO ShaderStorageBuffer (SSBOs)
 
-}
+} // namespace st
 
 #endif
