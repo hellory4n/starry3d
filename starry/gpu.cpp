@@ -181,6 +181,7 @@ void st::Mesh::free()
 
 void st::Mesh::draw(uint32 instances) const
 {
+	TR_ASSERT_MSG(_vao != 0, "you doofus initialize the mesh");
 	glBindVertexArray(_vao);
 	glDrawElementsInstanced(
 		GL_TRIANGLES, GLsizei(_index_count), GL_UNSIGNED_INT, nullptr, GLsizei(instances)
@@ -219,7 +220,7 @@ void st::VertexShader::free()
 st::FragmentShader::FragmentShader(tr::String src)
 {
 	_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	char* whythefuck = src.buf();
+	const char* whythefuck = src.buf();
 	glShaderSource(_shader, 1, &whythefuck, nullptr);
 	glCompileShader(_shader);
 
@@ -270,19 +271,6 @@ void st::ShaderProgram::use()
 {
 	glUseProgram(_program);
 	_st->current_shader = this;
-}
-
-void st::Texture::free()
-{
-	glDeleteTextures(1, &_id);
-	_id = 0;
-	tr::info("deleted texture (id %u)", _id);
-}
-
-void st::Texture::use() const
-{
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, _id);
 }
 
 void st::ShaderProgram::set_uniform(tr::String name, bool value) const
@@ -336,6 +324,9 @@ tr::Result<st::Texture> st::Texture::load(tr::String path, TextureSettings setti
 	}
 	TR_DEFER(stbi_image_free(data));
 
+	glGenTextures(1, &texture._id);
+	glBindTexture(GL_TEXTURE_2D, texture._id);
+
 	// help
 	switch (settings.wrap) {
 	case TextureWrap::TILE:
@@ -354,26 +345,26 @@ tr::Result<st::Texture> st::Texture::load(tr::String path, TextureSettings setti
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		break;
+	default:
+		TR_UNREACHABLE();
 	}
 
 	// TODO you're probably doing this wrong
 	switch (settings.filter) {
 	case TextureFilter::NEAREST_NEIGHBOR:
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		break;
 	case TextureFilter::BILINEAR_FILTER:
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		break;
+	default:
+		TR_UNREACHABLE();
 	}
 
 	texture._size = {uint32(width), uint32(height)};
-
-	// actually make the texture
-	glGenTextures(1, &texture._id);
-	glBindTexture(GL_TEXTURE_2D, texture._id);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
 	if (settings.mipmaps) {
 		glGenerateMipmap(GL_TEXTURE_2D);
@@ -381,4 +372,18 @@ tr::Result<st::Texture> st::Texture::load(tr::String path, TextureSettings setti
 
 	tr::info("loaded texture from %s (id %u)", *path, texture._id);
 	return texture;
+}
+
+void st::Texture::free()
+{
+	glDeleteTextures(1, &_id);
+	tr::info("deleted texture (id %u)", _id);
+	_id = 0;
+}
+
+void st::Texture::use() const
+{
+	TR_ASSERT_MSG(_id != 0, "you doofus initialize the texture")
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, _id);
 }

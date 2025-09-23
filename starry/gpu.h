@@ -194,7 +194,7 @@ struct TextureSettings
 {
 	TextureWrap wrap = TextureWrap::TILE;
 	TextureFilter filter = TextureFilter::NEAREST_NEIGHBOR;
-	bool mipmaps = false;
+	bool mipmaps = true;
 };
 
 // It's an image on the GPU :)

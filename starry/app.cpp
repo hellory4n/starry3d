@@ -115,7 +115,7 @@ void st::_run(
 static void st::_init_window()
 {
 // renderdoc doesn't work on wayland
-// TODO this sucks
+// TODO this should be an option like --force-x11
 #if defined(__linux__) && defined(DEBUG)
 	glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
 #endif

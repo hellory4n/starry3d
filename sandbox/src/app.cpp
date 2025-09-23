@@ -48,9 +48,9 @@ sbox::Sandbox::Sandbox()
 	};
 
 	tr::Array<Vertex> vertices = {
-		{{-0.5, -0.5, 0.0}, {0.5, 0.0}},
-		{{0.5, -0.5, 0.0},  {1, 1}    },
-		{{0.0, 0.5, 0.0},   {0, 1}    },
+		{{-0.5, -0.5, 0.0}, {0.0, 1.0}},
+		{{0.5, -0.5, 0.0},  {1.0, 1.0}},
+		{{0.0, 0.5, 0.0},   {0.5, 0.0}},
 	};
 
 	tr::Array<st::Triangle> triangles = {
@@ -59,8 +59,7 @@ sbox::Sandbox::Sandbox()
 
 	mesh = st::Mesh(attrs, vertices, triangles, true);
 
-	st::Texture texture = st::Texture::load("app://enough_fckery.jpg").unwrap();
-	texture.use();
+	texture = st::Texture::load("app://enough_fckery.jpg").unwrap();
 
 	sbox::setup_world();
 
@@ -86,6 +85,7 @@ tr::Result<void> sbox::Sandbox::update(float64 dt)
 tr::Result<void> sbox::Sandbox::draw()
 {
 	st::clear_screen(tr::Color::rgb(0x009ccf));
+	texture.use();
 	program.set_uniform("u_view", st::Camera::current().view_matrix());
 	program.set_uniform("u_projection", st::Camera::current().projection_matrix());
 	mesh.draw();
@@ -102,6 +102,7 @@ tr::Result<void> sbox::Sandbox::free()
 {
 	program.free();
 	mesh.free();
+	texture.free();
 	arena.free();
 
 	tr::log("freed sandbox :)");
