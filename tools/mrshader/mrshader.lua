@@ -14,8 +14,10 @@ local function get_shader_srcs(shader_src)
 
 	local lines = shader_file:lines()
 	local current_source = "" -- "vert" or "frag"
+	local shader_name = ""
 	local vert_src = {}
 	local frag_src = {}
+	local defines = {}
 
 	for line in lines do
 		if startswith(line, "#version") then
@@ -27,6 +29,14 @@ local function get_shader_srcs(shader_src)
 			current_source = "vert"
 		elseif line == "#pragma mrshader fragment" then
 			current_source = "frag"
+		elseif startswith(line, "#pragma mrshader name ") then
+			shader_name = line:sub(#"#pragma mrshader name "+1)
+		elseif startswith(line, "#pragma mrshader define ") then
+			local define = line:sub(#"#pragma mrshader define "+1)
+			local name, val = define:match("^%s*(%S+)%s*(.*)$")
+			assert(name)
+			assert(val)
+			defines[name] = val
 		else
 			if current_source == "vert" then table.insert(vert_src, line)
 			elseif current_source == "frag" then table.insert(frag_src, line)
@@ -36,13 +46,17 @@ local function get_shader_srcs(shader_src)
 
 	io.close(shader_file)
 
+	assert(shader_name ~= "", "dumbass you forgot '#pragma mrshader name WHATEVER_THE_FUCK_YOU_WANT'")
+
 	return {
 		vert = vert_src,
-		frag = frag_src
+		frag = frag_src,
+		shader_name = shader_name,
+		defines = defines,
 	}
 end
 
-local function make_header(vertlines, fraglines, dest, strname)
+local function make_header(vertlines, fraglines, dest, strname, defines)
 	local headerf = io.open(dest, "w")
 	if headerf == nil then
 		error("couldn't open file " .. dest, 1)
@@ -82,7 +96,12 @@ local function make_header(vertlines, fraglines, dest, strname)
 
 		headerf:write("\n\t\"" .. line .. "\\n\"")
 	end
-	headerf:write(";\n")
+	headerf:write(";\n\n")
+
+	-- defines
+	for name, val in pairs(defines) do
+		headerf:write("#define "..strname.."_"..name.." "..val.."\n")
+	end
 
 	-- more usual header stuff
 	headerf:write("\n#endif\n")
@@ -90,12 +109,12 @@ local function make_header(vertlines, fraglines, dest, strname)
 	io.close(headerf)
 end
 
-if #arg < 3 then
-	print("Usage: [shader] [header] [string name]")
+if #arg ~= 2 then
+	print("Usage: [shader] [header]")
+	print("Example: ./mrshader.lua shadingit.glsl shadingit.glsl.h")
 else
 	local shader = arg[1]
 	local header = arg[2]
-	local strname = arg[3]
 	local srcs = get_shader_srcs(shader)
-	make_header(srcs.vert, srcs.frag, header, strname)
+	make_header(srcs.vert, srcs.frag, header, srcs.shader_name, srcs.defines)
 end

@@ -43,4 +43,8 @@ static const char* ST_BASIC_SHADER_FRAGMENT =
 	"\tfrag_color = texture(u_texture, fs_texcoords);\n"
 	"}\n";
 
+#define ST_BASIC_SHADER_U_VIEW "u_view"
+#define ST_BASIC_SHADER_U_MODEL "u_model"
+#define ST_BASIC_SHADER_U_PROJECTION "u_projection"
+
 #endif

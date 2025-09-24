@@ -57,6 +57,9 @@ namespace st {
 constexpr const char* VERSION = "v0.6.0";
 // Vresionlsdn. Format is XYYZZ
 constexpr uint32 VERSION_NUM = 6'00; // can't do 0'06'00 bcuz it would become an octal number
+constexpr uint32 VERSION_MAJOR = 0;
+constexpr uint32 VERSION_MINOR = 6;
+constexpr uint32 VERSION_PATCH = 0;
 
 struct InputState
 {

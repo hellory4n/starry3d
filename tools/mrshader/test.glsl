@@ -1,6 +1,8 @@
 #version 330 core
+#pragma mrshader name ST_SHADER_TEST
 
 #pragma mrshader vertex
+#pragma mrshader define BALLS "pelotas"
 layout(location = 0) in vec3 vs_pos;
 layout(location = 1) in vec3 vs_color;
 

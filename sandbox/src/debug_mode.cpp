@@ -1,5 +1,7 @@
 #include "debug_mode.h"
 
+#include <trippin/common.h>
+
 #include <imgui.h>
 #include <starry/app.h>
 #include <starry/optional/imgui.h>
@@ -17,10 +19,10 @@ void sbox::debug_mode()
 
 	ImGui::Text("FPS: %.1f", st::fps());
 
-// just so you remember :)
-#ifdef DEBUG
-	ImGui::TextColored(st::imgui::rgb(0xf9c440), "Running in debug mode (slow D:)");
-#endif
+	// just so you remember :)
+	if (tr::is_debug()) {
+		ImGui::TextColored(st::imgui::rgb(0xf9c440), "Running in debug mode (slow D:)");
+	}
 
 	st::Camera& cam = st::Camera::current();
 	ImGui::Text(

@@ -66,143 +66,11 @@ static void _end_window_app_stuff(); // TODO a better name
 
 static void _free_window();
 
-}
-
-void st::_run(
-	std::function<st::Application*(tr::Arena& arena)> make_app, st::ApplicationSettings settings
-)
-{
-	tr::Arena arena = {};
-	tr::Arena asset_arena = {};
-	_st = arena.make_ptr<Starry>(arena, asset_arena);
-
-	_st->settings = settings;
-	_st->window_size = settings.window_size;
-
-	st::_preinit();
-	st::_init_window();
-	st::_test_pipeline();
-#ifdef ST_IMGUI
-	st::imgui::init();
-#endif
-
-	_st->application = make_app(_st->arena);
-
-	while (!st::window_should_close()) {
-		st::_poll_events();
-#ifdef ST_IMGUI
-		st::imgui::new_frame();
-#endif
-
-		_st->application->update(st::delta_time_sec());
-		_st->application->draw();
-		_st->application->gui();
-
-#ifdef ST_IMGUI
-		st::imgui::render();
-#endif
-		st::_end_window_app_stuff();
-	}
-
-	_st->application->free();
-#ifdef ST_IMGUI
-	st::imgui::free();
-#endif
-	st::_free_window();
-	st::_postfree();
-}
-
-static void st::_init_window()
-{
-// renderdoc doesn't work on wayland
-// TODO this should be an option like --force-x11
-#if defined(__linux__) && defined(DEBUG)
-	glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
-#endif
-
-	if (glfwInit() == 0) {
-		tr::panic("couldn't initialize glfw");
-	}
-
-	// TODO OpenGL 4.3 doesn't work on macOS
-	// fuck apple
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_RESIZABLE, int(_st->settings.resizable));
-#ifdef DEBUG
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
-#endif
-
-	_st->window = glfwCreateWindow(
-		int(_st->settings.window_size.x), int(_st->settings.window_size.y),
-		_st->settings.name, nullptr, nullptr
-	);
-	TR_ASSERT_MSG(_st->window != nullptr, "couldn't create window");
-	glfwMakeContextCurrent(_st->window);
-
-	glfwSwapInterval(_st->settings.vsync ? 1 : 0); // TODO is that the only options?
-
-	// some callbacks
-	glfwSetFramebufferSizeCallback(_st->window, [](GLFWwindow*, int w, int h) -> void {
-		glViewport(0, 0, w, h);
-		_st->window_size = {uint32(w), uint32(h)};
-	});
-
-	glfwSetErrorCallback([](int error_code, const char* description) -> void {
-#ifdef DEBUG
-		tr::panic("GLFW error %i: %s", error_code, description);
-#else
-		tr::error("GLFW error %i: %s", error_code, description);
-#endif
-	});
-
-	// a bit more annoyment in the logs
-	int platform = glfwGetPlatform();
-	tr::String platform_str;
-	switch (platform) {
-	case GLFW_PLATFORM_WIN32:
-		platform_str = "Win32";
-		break;
-	case GLFW_PLATFORM_X11:
-		platform_str = "X11";
-		break;
-	case GLFW_PLATFORM_WAYLAND:
-		platform_str = "Wayland";
-		break;
-	case GLFW_PLATFORM_COCOA:
-		platform_str = "Cocoa";
-		break;
-	case GLFW_PLATFORM_NULL:
-		platform_str = "null/headless";
-		break;
-	default:
-		TR_UNREACHABLE();
-		break;
-	}
-	tr::info("created window for %s", platform_str.buf());
-	tr::info("using glfw %s", glfwGetVersionString());
-
-	if (glfwRawMouseMotionSupported() == 0) {
-		tr::warn("warning: raw mouse motion is not supported");
-	}
-
-	gladLoadGL(glfwGetProcAddress);
-
-	// apparently windows is shit so we have to do this immediately
-	glViewport(0, 0, int(_st->settings.window_size.x), int(_st->settings.window_size.y));
-	_st->window_size = _st->settings.window_size;
-
-	// more debug crap
-	int flags;
-	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-	if ((flags & GL_CONTEXT_FLAG_DEBUG_BIT) != 0) {
-		glEnable(GL_DEBUG_OUTPUT);
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		// TODO this is ugly as fuck
-		glDebugMessageCallback(
-			[](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
-			   const GLchar* msg, const void* data) {
+static void _gl_error_callback(
+	GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* msg,
+	const void* data
+);
+/*[] {
 				(void)data;
 				(void)length;
 				const char* src_str;
@@ -280,9 +148,141 @@ static void st::_init_window()
 					);
 					break;
 				}
-			},
-			nullptr
-		);
+			} */
+
+}
+
+void st::_run(
+	std::function<st::Application*(tr::Arena& arena)> make_app, st::ApplicationSettings settings
+)
+{
+	tr::Arena arena = {};
+	tr::Arena asset_arena = {};
+	_st = arena.make_ptr<Starry>(arena, asset_arena);
+
+	_st->settings = settings;
+	_st->window_size = settings.window_size;
+
+	st::_preinit();
+	st::_init_window();
+	st::_test_pipeline();
+#ifdef ST_IMGUI
+	st::imgui::init();
+#endif
+
+	_st->application = make_app(_st->arena);
+
+	while (!st::window_should_close()) {
+		st::_poll_events();
+#ifdef ST_IMGUI
+		st::imgui::new_frame();
+#endif
+
+		_st->application->update(st::delta_time_sec());
+		_st->application->draw();
+		_st->application->gui();
+
+#ifdef ST_IMGUI
+		st::imgui::render();
+#endif
+		st::_end_window_app_stuff();
+	}
+
+	_st->application->free();
+#ifdef ST_IMGUI
+	st::imgui::free();
+#endif
+	st::_free_window();
+	st::_postfree();
+}
+
+static void st::_init_window()
+{
+// renderdoc doesn't work on wayland
+// TODO this should be an option like --force-x11
+#if defined(__linux__) && defined(DEBUG)
+	glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+#endif
+
+	if (glfwInit() == 0) {
+		tr::panic("couldn't initialize glfw");
+	}
+
+	// TODO OpenGL 4.3 doesn't work on macOS
+	// fuck apple
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_RESIZABLE, int(_st->settings.resizable));
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, int(tr::is_debug()));
+
+	_st->window = glfwCreateWindow(
+		int(_st->settings.window_size.x), int(_st->settings.window_size.y),
+		_st->settings.name, nullptr, nullptr
+	);
+	TR_ASSERT_MSG(_st->window != nullptr, "couldn't create window");
+	glfwMakeContextCurrent(_st->window);
+
+	glfwSwapInterval(_st->settings.vsync ? 1 : 0); // TODO is that the only options?
+
+	// some callbacks
+	glfwSetFramebufferSizeCallback(_st->window, [](GLFWwindow*, int w, int h) -> void {
+		glViewport(0, 0, w, h);
+		_st->window_size = {uint32(w), uint32(h)};
+	});
+
+	glfwSetErrorCallback([](int error_code, const char* description) -> void {
+		if (tr::is_debug()) {
+			tr::panic("GLFW error %i: %s", error_code, description);
+		}
+		else {
+			tr::error("GLFW error %i: %s", error_code, description);
+		}
+	});
+
+	// a bit more annoyment in the logs
+	int platform = glfwGetPlatform();
+	tr::String platform_str;
+	switch (platform) {
+	case GLFW_PLATFORM_WIN32:
+		platform_str = "Win32";
+		break;
+	case GLFW_PLATFORM_X11:
+		platform_str = "X11";
+		break;
+	case GLFW_PLATFORM_WAYLAND:
+		platform_str = "Wayland";
+		break;
+	case GLFW_PLATFORM_COCOA:
+		platform_str = "Cocoa";
+		break;
+	case GLFW_PLATFORM_NULL:
+		platform_str = "null/headless";
+		break;
+	default:
+		TR_UNREACHABLE();
+		break;
+	}
+	tr::info("created window for %s", platform_str.buf());
+	tr::info("using glfw %s", glfwGetVersionString());
+
+	if (glfwRawMouseMotionSupported() == 0) {
+		tr::warn("warning: raw mouse motion is not supported");
+	}
+
+	gladLoadGL(glfwGetProcAddress);
+
+	// apparently windows is shit so we have to do this immediately
+	glViewport(0, 0, int(_st->settings.window_size.x), int(_st->settings.window_size.y));
+	_st->window_size = _st->settings.window_size;
+
+	// more debug crap
+	int flags;
+	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	if ((flags & GL_CONTEXT_FLAG_DEBUG_BIT) != 0) {
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(st::_gl_error_callback, nullptr);
 		glDebugMessageControl(
 			GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE
 		);
@@ -296,6 +296,92 @@ static void st::_init_window()
 
 	// just so st::delta_mouse_position() doesn't immediately return something massive...
 	_st->delta_mouse_pos = st::mouse_position();
+}
+
+static void st::_gl_error_callback(
+	GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* msg,
+	const void* data
+)
+{
+	(void)data;
+	(void)length;
+	const char* src_str;
+	const char* type_str;
+
+	switch (source) {
+	case GL_DEBUG_SOURCE_API:
+		src_str = "GL_DEBUG_SOURCE_API";
+		break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		src_str = "GL_DEBUG_SOURCE_WINDOW_SYSTEM";
+		break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		src_str = "GL_DEBUG_SOURCE_SHADER COMPILER";
+		break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:
+		src_str = "GL_DEBUG_SOURCE_THIRD PARTY";
+		break;
+	case GL_DEBUG_SOURCE_APPLICATION:
+		src_str = "GL_DEBUG_SOURCE_APPLICATION";
+		break;
+	case GL_DEBUG_SOURCE_OTHER:
+		src_str = "GL_DEBUG_SOURCE_OTHER";
+		break;
+	default:
+		src_str = "unknown";
+		break;
+	}
+
+	switch (type) {
+	case GL_DEBUG_TYPE_ERROR:
+		type_str = "GL_DEBUG_TYPE_ERROR";
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		type_str = "GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR";
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		type_str = "GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR";
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY:
+		type_str = "GL_DEBUG_TYPE_PORTABILITY";
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		type_str = "GL_DEBUG_TYPE_PERFORMANCE";
+		break;
+	case GL_DEBUG_TYPE_OTHER:
+		type_str = "GL_DEBUG_TYPE_OTHER";
+		break;
+	case GL_DEBUG_TYPE_MARKER:
+		type_str = "GL_DEBUG_TYPE_MARKER";
+		break;
+	default:
+		type_str = "unknown";
+		break;
+	}
+
+	switch (severity) {
+	case GL_DEBUG_SEVERITY_HIGH:
+		tr::panic(
+			"OpenGL high severity %i: type: %s, source: %s: %s", id, type_str, src_str,
+			msg
+		);
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		tr::warn(
+			"OpenGL medium severity %i: type: %s, source: %s: %s", id, type_str,
+			src_str, msg
+		);
+		break;
+	case GL_DEBUG_SEVERITY_LOW:
+		tr::warn(
+			"OpenGL low severity %i: type: %s, source: %s: %s", id, type_str, src_str,
+			msg
+		);
+		break;
+	default:
+		tr::info("OpenGL error %i: type: %s, source: %s: %s", id, type_str, src_str, msg);
+		break;
+	}
 }
 
 static void st::_free_window()

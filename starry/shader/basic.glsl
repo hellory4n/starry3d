@@ -26,8 +26,9 @@
  */
 
 // compile with:
-// ./tools/mrshader/mrshader.lua starry/shader/basic.glsl starry/shader/basic.glsl.h ST_BASIC_SHADER
+// ./tools/mrshader/mrshader.lua starry/shader/basic.glsl starry/shader/basic.glsl.h
 #version 430 core
+#pragma mrshader name ST_BASIC_SHADER
 
 #pragma mrshader vertex
 layout (location = 0) in vec3 vs_position;
@@ -35,8 +36,11 @@ layout (location = 1) in vec2 vs_texcoords;
 
 out vec2 fs_texcoords;
 
+#pragma mrshader define U_MODEL "u_model"
 uniform mat4 u_model;
+#pragma mrshader define U_VIEW "u_view"
 uniform mat4 u_view;
+#pragma mrshader define U_PROJECTION "u_projection"
 uniform mat4 u_projection;
 
 void main()

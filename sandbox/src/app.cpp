@@ -38,9 +38,9 @@ sbox::Sandbox::Sandbox()
 	program.attach(frag_shader);
 	program.link();
 	program.use();
-	program.set_uniform("u_model", tr::Matrix4x4::identity());
-	program.set_uniform("u_view", tr::Matrix4x4::identity());
-	program.set_uniform("u_projection", tr::Matrix4x4::identity());
+	program.set_uniform(ST_BASIC_SHADER_U_MODEL, tr::Matrix4x4::identity());
+	program.set_uniform(ST_BASIC_SHADER_U_VIEW, tr::Matrix4x4::identity());
+	program.set_uniform(ST_BASIC_SHADER_U_PROJECTION, tr::Matrix4x4::identity());
 
 	tr::Array<st::VertexAttribute> attrs = {
 		{"position",  st::VertexAttributeType::VEC3_FLOAT32, offsetof(Vertex, position) },
@@ -84,8 +84,10 @@ void sbox::Sandbox::draw()
 {
 	st::clear_screen(tr::Color::rgb(0x009ccf));
 	texture.use();
-	program.set_uniform("u_view", st::Camera::current().view_matrix());
-	program.set_uniform("u_projection", st::Camera::current().projection_matrix());
+	program.set_uniform(ST_BASIC_SHADER_U_VIEW, st::Camera::current().view_matrix());
+	program.set_uniform(
+		ST_BASIC_SHADER_U_PROJECTION, st::Camera::current().projection_matrix()
+	);
 	mesh.draw();
 }
 
