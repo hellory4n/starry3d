@@ -223,26 +223,13 @@ public:
 
 	// dt is delta time. You could just use update for everything but I think it's nicer to have
 	// separate functions
-	virtual tr::Result<void> update(float64 dt)
+	virtual void update(float64 dt)
 	{
 		(void)dt;
-		return {};
 	}
-
-	virtual tr::Result<void> draw()
-	{
-		return {};
-	}
-
-	virtual tr::Result<void> gui()
-	{
-		return {};
-	}
-
-	virtual tr::Result<void> free()
-	{
-		return {};
-	}
+	virtual void draw() {}
+	virtual void gui() {}
+	virtual void free() {}
 };
 
 struct ApplicationSettings

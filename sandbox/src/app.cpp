@@ -66,7 +66,7 @@ sbox::Sandbox::Sandbox()
 	tr::log("initialized sandbox :)");
 }
 
-tr::Result<void> sbox::Sandbox::update(float64 dt)
+void sbox::Sandbox::update(float64 dt)
 {
 	// hlep
 	if (st::is_key_just_pressed(st::Key::ESCAPE)) {
@@ -78,27 +78,23 @@ tr::Result<void> sbox::Sandbox::update(float64 dt)
 	}
 
 	player_controller(dt);
-
-	return {};
 }
 
-tr::Result<void> sbox::Sandbox::draw()
+void sbox::Sandbox::draw()
 {
 	st::clear_screen(tr::Color::rgb(0x009ccf));
 	texture.use();
 	program.set_uniform("u_view", st::Camera::current().view_matrix());
 	program.set_uniform("u_projection", st::Camera::current().projection_matrix());
 	mesh.draw();
-	return {};
 }
 
-tr::Result<void> sbox::Sandbox::gui()
+void sbox::Sandbox::gui()
 {
 	sbox::debug_mode();
-	return {};
 }
 
-tr::Result<void> sbox::Sandbox::free()
+void sbox::Sandbox::free()
 {
 	program.free();
 	mesh.free();
@@ -106,7 +102,6 @@ tr::Result<void> sbox::Sandbox::free()
 	arena.free();
 
 	tr::log("freed sandbox :)");
-	return {};
 }
 
 void sbox::Sandbox::player_controller(float64 dt) const

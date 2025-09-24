@@ -83,19 +83,17 @@ public:
         Game()
         {
                 tr::log("initialized game");
-                return {};
         }
 
-        tr::Result<void> free() override
+        void free() override
         {
                 tr::log("deinitialized game");
-                return {};
         }
 
-        tr::Result<void> update(float64 dt) override {}
-        tr::Result<void> draw() override {}
+        void update(float64 dt) override {}
+        void draw() override {}
         // put imgui calls here
-        tr::Result<void> gui() override {}
+        void gui() override {}
 };
 
 int main()

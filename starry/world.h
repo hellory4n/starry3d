@@ -29,7 +29,12 @@
 #define _ST_WORLD_H
 
 #include <trippin/common.h>
+#include <trippin/error.h>
 #include <trippin/math.h>
+#include <trippin/memory.h>
+#include <trippin/string.h>
+
+#include "starry/gpu.h"
 
 namespace st {
 
@@ -67,6 +72,192 @@ struct Camera
 	// Returns the current camera :)
 	static Camera& current();
 };
+
+using TextureId = uint16;
+
+// Wrapper for putting multiple textures on the same texture, whch makes it faster, and stuff.
+class TextureAtlas
+{
+public:
+	// Loads a texture atlas from an image file.
+	static tr::Result<TextureAtlas&> load(tr::String path);
+
+	// The engine calls this for you :)))))))))))))))))))
+	void free();
+
+	// Adds a texture to the atlas
+	void add(TextureId id, tr::Rect<uint32> coords);
+
+	// It's the one and only Mr. Atlas himself
+	void set_current() const;
+};
+
+// You know how in pixel art you usually have a grid size and everything snaps to that? This is just
+// that but in 3D.
+void set_grid_size(tr::Vec3<uint8> size);
+
+// A cube in a model. Revolutionary.
+struct ModelCube
+{
+	tr::Vec3<uint8> position = {};
+	tr::Vec3<uint8> size = {};
+	struct
+	{
+		Texture forward = {};
+		Texture back = {};
+		Texture left = {};
+		Texture right = {};
+		Texture up = {};
+		Texture down = {};
+	} texture;
+	// If true, the cube ignores lighting and becomes pure color
+	bool illuminated = true;
+};
+
+// A plane in a model. Revolutionary.
+struct ModelPlane
+{
+	tr::Vec3<uint8> from = {};
+	tr::Vec3<uint8> to = {};
+	Texture texture = {};
+	// If true, the plane ignores lighting and becomes pure color
+	bool illuminated = true;
+	// If true, the plane always faces the camera which is kinda cool sometimes
+	bool billboard = false;
+};
+
+enum class ModelMeshType
+{
+	// shut up <3
+	UNINITIALIZED,
+	CUBE,
+	PLANE,
+};
+
+// you could use inheritance too but idc
+struct ModelMesh
+{
+	ModelMeshType type = ModelMeshType::UNINITIALIZED;
+	union {
+		ModelCube cube;
+		ModelPlane plane;
+	};
+};
+
+// A handle to the real model (`st::ModelSpec`)
+struct Model
+{
+	uint16 id;
+
+	constexpr Model(uint16 id)
+		: id(id)
+	{
+	}
+
+	operator uint16() const
+	{
+		return id;
+	}
+};
+
+// There is simply nothing. There is simply nothing. There is simply nothing. There is simply
+// nothing. There is simply nothing. There is simply nothing. There is simply nothing. There is
+// simply nothing.
+constexpr Model MODEL_AIR = 0;
+
+// A list of meshes which may either be a cube or plane because real voxels are too slow unless you
+// do evil fuckery which I would rather not do at the moment. A fascinating endeavour.
+struct ModelSpec
+{
+	tr::Array<ModelMesh> meshes = {};
+
+	// Registers the model so that now you can use it with that ID and stuff HOW COOL IS THAT
+	ModelSpec(Model id, tr::Array<ModelMesh> meshes);
+};
+
+enum class BlockType : uint8
+{
+	AIR,
+	TERRAIN,
+	STATIC,
+	DYNAMIC,
+};
+
+// Probably a static block except this represents dynamic blocks sometimes too. Note this struct
+// isn't actually used by the renderer this is just the public API :)))))))))))))))))) hepl
+struct Block;
+
+// This dynamic-ed my block.
+struct DynamicBlock
+{
+	tr::Vec3<float32> position = {};
+	// In radians
+	tr::Vec3<float32> rotation = {};
+	// Multiplier (:
+	tr::Vec3<float32> scale = {1.0, 1.0, 1.0};
+	tr::Color tint = tr::palette::WHITE;
+
+	// Yeah.
+	operator Block() const;
+};
+
+// Probably a static block except this represents dynamic blocks sometimes too. Note this struct
+// isn't actually used by the renderer this is just the public API :)))))))))))))))))) hepl
+struct Block
+{
+	// If it's a dynamic block then the position gets rounded
+	const tr::Vec3<int32> position = {};
+	const Model model = 0;
+	const BlockType type;
+
+	// If the block is dynamic, returns a `st::DynamicBlock&`. Else, returns null.
+	tr::Maybe<DynamicBlock&> to_dynamic_block() const;
+
+	// Annihilates the block there
+	void destroy();
+
+	bool exists() const
+	{
+		return model != 0;
+	}
+
+private:
+	Block(tr::Vec3<int32> position, Model model, BlockType type)
+		: position(position)
+		, model(model)
+		, type(type)
+	{
+	}
+
+	// TODO add the renderer as a friend
+};
+
+// Returns the static block in that position. Note that not all blocks have a position, to
+// check that use the `st::Block.exists()` function
+Block& get_static_block(tr::Vec3<int32> pos);
+
+// Places a static block somewhere, and returns the placed block.
+Block& place_static_block(tr::Vec3<int32> pos, Model model);
+
+// util functions, just to make things shorter/easier to read
+static inline bool block_exists_at(tr::Vec3<int32> pos)
+{
+	return st::get_static_block(pos).exists();
+}
+
+static inline Model get_model_from_pos(tr::Vec3<int32> pos)
+{
+	return st::get_static_block(pos).model;
+}
+
+// Removes a static/terrain block somewhere.
+static inline void break_static_block(tr::Vec3<int32> pos)
+{
+	st::get_static_block(pos).destroy();
+}
+
+// Places a dynamic block somewhere, and returns the placed dynamic block.
+DynamicBlock& place_dynamic_block(Model model);
 
 }
 

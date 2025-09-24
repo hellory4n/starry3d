@@ -94,9 +94,9 @@ void st::_run(
 		st::imgui::new_frame();
 #endif
 
-		_st->application->update(st::delta_time_sec()).unwrap();
-		_st->application->draw().unwrap();
-		_st->application->gui().unwrap();
+		_st->application->update(st::delta_time_sec());
+		_st->application->draw();
+		_st->application->gui();
 
 #ifdef ST_IMGUI
 		st::imgui::render();
@@ -104,7 +104,7 @@ void st::_run(
 		st::_end_window_app_stuff();
 	}
 
-	_st->application->free().unwrap();
+	_st->application->free();
 #ifdef ST_IMGUI
 	st::imgui::free();
 #endif

@@ -204,6 +204,9 @@ class Texture
 	tr::Vec2<uint32> _size = {};
 
 public:
+	// Loads a texture duh. Supported formats are .png, .jpeg, .gif (no animation) .bmp, .tga,
+	// .psd (composited view only), .hdr (radiance rgbE format), .pic (Softimage pic), and
+	// .ppm/.pgm binary
 	static tr::Result<Texture> load(tr::String path, TextureSettings settings = {});
 	void free();
 

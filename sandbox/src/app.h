@@ -24,10 +24,10 @@ class Sandbox : public st::Application
 
 public:
 	Sandbox();
-	tr::Result<void> update(float64 dt) override;
-	tr::Result<void> draw() override;
-	tr::Result<void> gui() override;
-	tr::Result<void> free() override;
+	void update(float64 dt) override;
+	void draw() override;
+	void gui() override;
+	void free() override;
 };
 
 }
