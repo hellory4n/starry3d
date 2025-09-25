@@ -45,3 +45,33 @@ void st::set_wireframe_mode(bool val)
 {
 	glPolygonMode(GL_FRONT_AND_BACK, val ? GL_LINE : GL_FILL);
 }
+
+st::PackedModelVertex::PackedModelVertex(ModelVertex src)
+{
+	// TODO this probably (definitely) only works in little endian who gives a shit
+	// the format is helpfully documented in the header (so read that if you're confused)
+	uint64 bits = 0;
+
+	bits |= uint64(src.position.x & 0xFF) << 0;
+	bits |= uint64(src.position.y & 0xFF) << 8;
+	bits |= uint64(src.position.z & 0xFF) << 16;
+
+	bits |= uint64(int(src.normal) & 0xF) << 24;
+	bits |= uint64(int(src.corner) & 0x3) << 28;
+	bits |= uint64(int(src.shaded) & 0x1) << 30;
+	bits |= uint64(int(src.using_texture) & 0x1) << 31;
+
+	// unioning all over the plcae
+	if (src.using_texture) {
+		bits |= uint64(src.texture_id & 0x3FFF) << 32;
+	}
+	else {
+		bits |= uint64(src.color.r & 0xFF) << 32;
+		bits |= uint64(src.color.g & 0xFF) << 40;
+		bits |= uint64(src.color.b & 0xFF) << 48;
+		bits |= uint64(src.color.a & 0xFF) << 56;
+	}
+
+	x = uint32(bits & 0xFFFFFFFFu);
+	y = uint32((bits >> 32) & 0xFFFFFFFFu);
+}

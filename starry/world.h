@@ -123,8 +123,8 @@ struct ModelCube
 		TextureId up = 0;
 		TextureId down = 0;
 	} texture;
-	// If true, the cube ignores lighting and becomes pure color
-	bool illuminated = true;
+	// If false, the cube ignores lighting and becomes pure color
+	bool shaded = true;
 };
 
 // A plane in a model. Revolutionary.
@@ -133,8 +133,8 @@ struct ModelPlane
 	tr::Vec3<uint8> from = {};
 	tr::Vec3<uint8> to = {};
 	TextureId texture = 0;
-	// If true, the plane ignores lighting and becomes pure color
-	bool illuminated = true;
+	// If false, the plane ignores lighting and becomes pure color
+	bool shaded = true;
 	// If true, the plane always faces the camera which is kinda cool sometimes
 	bool billboard = false;
 };

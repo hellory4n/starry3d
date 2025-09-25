@@ -9,7 +9,7 @@ namespace sbox {
 namespace Texture {
 	constexpr st::TextureId GRASS_SIDE = 1;
 	constexpr st::TextureId GRASS_TOP = 2;
-	constexpr st::TextureId GRASS_BOTTOM = 3;
+	constexpr st::TextureId DIRT = 3;
 	constexpr st::TextureId THE_J = 4;
 	constexpr st::TextureId KIRBY_RIPOFF = 5;
 }
