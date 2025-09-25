@@ -2,15 +2,17 @@
 
 #include <trippin/common.h>
 
+#include <starry/world.h>
+
 namespace sbox {
 
-enum class Textures : uint16
-{
-	GREEN_GOOBER,
-	IM_TEAL,
-	MYSTERIOUS_BLUE_OBJECT,
-	ORANGE,
-};
+namespace Texture {
+	constexpr st::TextureId GRASS_SIDE = 1;
+	constexpr st::TextureId GRASS_TOP = 2;
+	constexpr st::TextureId GRASS_BOTTOM = 3;
+	constexpr st::TextureId THE_J = 4;
+	constexpr st::TextureId KIRBY_RIPOFF = 5;
+}
 
 void setup_world();
 

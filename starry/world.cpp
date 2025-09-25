@@ -27,9 +27,13 @@
 
 #include "starry/world.h"
 
+#include <trippin/collection.h>
+#include <trippin/error.h>
+#include <trippin/log.h>
 #include <trippin/math.h>
 
 #include "starry/app.h"
+#include "starry/gpu.h"
 #include "starry/internal.h"
 
 tr::Matrix4x4 st::Camera::view_matrix() const
@@ -68,4 +72,42 @@ tr::Matrix4x4 st::Camera::projection_matrix() const
 st::Camera& st::Camera::current()
 {
 	return _st->camera;
+}
+
+tr::Result<st::TextureAtlas&> st::TextureAtlas::load(tr::String path)
+{
+	TextureAtlas atlas = {};
+	TR_TRY_ASSIGN(atlas._source, Texture::load(path));
+	atlas._textures = tr::HashMap<TextureId, tr::Rect<float32>>(_st->asset_arena);
+	return atlas;
+}
+
+void st::TextureAtlas::free()
+{
+	_source.free();
+}
+
+void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint32> coords)
+{
+	TR_ASSERT(coords.position < size())
+	TR_ASSERT_MSG(
+		id < MAX_ATLAS_TEXTURES, "texture id %i must be below %i", id, MAX_ATLAS_TEXTURES
+	);
+
+	if (_textures.contains(id)) {
+		tr::warn("texture atlas already has id %i; overwriting original texture", id);
+	}
+
+	// i am remapping it i am remapping it i am remapping it you need to remap mark
+	_textures[id] = tr::Rect<float32>{
+		tr::remap<float32>(coords.position.x, 0, size().x, 0.0, 1.0),
+		tr::remap<float32>(coords.position.y, 0, size().y, 0.0, 1.0),
+		tr::remap<float32>(coords.size.x, 0, size().x, 0.0, 1.0),
+		tr::remap<float32>(coords.size.y, 0, size().y, 0.0, 1.0),
+	};
+}
+
+void st::TextureAtlas::set_current() const
+{
+	_st->atlas = *this;
 }

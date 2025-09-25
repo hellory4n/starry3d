@@ -28,6 +28,7 @@
 #ifndef _ST_WORLD_H
 #define _ST_WORLD_H
 
+#include <trippin/collection.h>
 #include <trippin/common.h>
 #include <trippin/error.h>
 #include <trippin/math.h>
@@ -73,11 +74,17 @@ struct Camera
 	static Camera& current();
 };
 
+// Refers to a texture on a texture atlas
 using TextureId = uint16;
+constexpr TextureId MAX_ATLAS_TEXTURES = 1 << 14; // 16384
 
-// Wrapper for putting multiple textures on the same texture, whch makes it faster, and stuff.
+// Wrapper for putting multiple textures on the same texture, whch makes it faster, and
+// stuff.
 class TextureAtlas
 {
+	Texture _source = {};
+	tr::HashMap<TextureId, tr::Rect<float32>> _textures = {};
+
 public:
 	// Loads a texture atlas from an image file.
 	static tr::Result<TextureAtlas&> load(tr::String path);
@@ -90,6 +97,12 @@ public:
 
 	// It's the one and only Mr. Atlas himself
 	void set_current() const;
+
+	// In pixels
+	tr::Vec2<uint32> size() const
+	{
+		return _source.size();
+	}
 };
 
 // You know how in pixel art you usually have a grid size and everything snaps to that? This is just
@@ -103,12 +116,12 @@ struct ModelCube
 	tr::Vec3<uint8> size = {};
 	struct
 	{
-		Texture forward = {};
-		Texture back = {};
-		Texture left = {};
-		Texture right = {};
-		Texture up = {};
-		Texture down = {};
+		TextureId forward = 0;
+		TextureId back = 0;
+		TextureId left = 0;
+		TextureId right = 0;
+		TextureId up = 0;
+		TextureId down = 0;
 	} texture;
 	// If true, the cube ignores lighting and becomes pure color
 	bool illuminated = true;
@@ -119,7 +132,7 @@ struct ModelPlane
 {
 	tr::Vec3<uint8> from = {};
 	tr::Vec3<uint8> to = {};
-	Texture texture = {};
+	TextureId texture = 0;
 	// If true, the plane ignores lighting and becomes pure color
 	bool illuminated = true;
 	// If true, the plane always faces the camera which is kinda cool sometimes

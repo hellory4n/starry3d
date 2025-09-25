@@ -1,13 +1,19 @@
 #include "world.h"
 
-// #include <starry/world.h>
+#include <starry/world.h>
 
 void sbox::setup_world()
 {
-	// st::TextureAtlas atlas = st::TextureAtlas::load("app://atlas.png").unwrap();
-	// atlas.add(uint16(Textures::GREEN_GOOBER), {16 * 0, 16 * 0, 16, 16});
-	// atlas.add(uint16(Textures::IM_TEAL), {16 * 1, 16 * 0, 16, 16});
-	// atlas.add(uint16(Textures::MYSTERIOUS_BLUE_OBJECT), {16 * 2, 16 * 0, 16, 16});
-	// atlas.add(uint16(Textures::ORANGE), {16 * 3, 16 * 0, 16, 16});
-	// atlas.set_current();
+	st::TextureAtlas atlas = st::TextureAtlas::load("app://atlas.png").unwrap();
+
+// texture is last so it aligns nicely
+#define SBOX_ADD_TEXTURE(X, Y, T) atlas.add(Texture::T, {16 * (X), 16 * (Y), 16, 16});
+
+	SBOX_ADD_TEXTURE(0, 0, GRASS_SIDE)
+	SBOX_ADD_TEXTURE(1, 0, GRASS_TOP)
+	SBOX_ADD_TEXTURE(2, 0, GRASS_BOTTOM)
+	SBOX_ADD_TEXTURE(3, 0, THE_J)
+	SBOX_ADD_TEXTURE(4, 0, KIRBY_RIPOFF)
+
+	atlas.set_current();
 }

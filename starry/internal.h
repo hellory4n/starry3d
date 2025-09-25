@@ -67,7 +67,8 @@ struct Starry
 	tr::Vec2<float64> delta_mouse_pos = {};
 
 	// world
-	Camera camera;
+	Camera camera = {};
+	tr::Maybe<TextureAtlas> atlas = {};
 
 	// render
 	ShaderProgram* current_shader = nullptr;

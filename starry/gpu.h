@@ -212,6 +212,12 @@ public:
 
 	// It sets the texture to be the current texture texturing all over the place.
 	void use() const;
+
+	// In pixels
+	tr::Vec2<uint32> size() const
+	{
+		return _size;
+	}
 };
 
 // TODO ShaderStorageBuffer (SSBOs)
