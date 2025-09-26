@@ -26,19 +26,16 @@
  */
 
 // compile with:
-// ./tools/mrshader/mrshader.lua starry/shader/basic.glsl starry/shader/basic.glsl.h
+// ./tools/mrshader/mrshader.lua starry/shader/terrain.glsl starry/shader/terrain.glsl.h
 #version 430 core
 #pragma mrshader name ST_TERRAIN_SHADER
 
 #pragma mrshader vertex
-// vertices are hyper optimized to safe space
-layout (location = 0) in uvec2 vs_packed;
-
 // TODO add includes to mrshader
 struct Vertex {
 	uvec3 position;
 	uint normal;
-	uint quad;
+	uint quad_corner;
 	bool shaded;
 	bool using_texture;
 	uint texture_id;
@@ -68,7 +65,7 @@ Vertex unpack_vertex(uvec2 packed)
 	v.position.z = (low >> 16) & 0xFFu;
 
 	v.normal = (low >> 24) & 0xFu;
-	v.quad = (low >> 28) & 0x3u;
+	v.quad_corner = (low >> 28) & 0x3u;
 	v.shaded = ((low >> 30) & 0x1u) != 0u;
 	v.using_texture = ((low >> 31) & 0x1u) != 0u;
 
@@ -87,7 +84,20 @@ Vertex unpack_vertex(uvec2 packed)
 	return v;
 }
 
+struct Rect {
+	uint x;
+	uint y;
+	uint width;
+	uint height;
+}
+
+// vertices are hyper optimized to safe space
+layout (location = 0) in uvec2 vs_packed;
+
 out vec2 fs_texcoords;
+out vec4 fs_color;
+flat out bool fs_using_texture;
+flat out bool fs_shaded;
 
 #pragma mrshader define U_MODEL "u_model"
 uniform mat4 u_model;
@@ -96,14 +106,66 @@ uniform mat4 u_view;
 #pragma mrshader define U_PROJECTION "u_projection"
 uniform mat4 u_projection;
 
+#define CHUNK_SIZE 32
+uniform ivec3 u_chunk;
+uniform ivec2 u_atlas_size;
+
+#pragma mrshader define SSBO_ATLAS 0
+layout(binding = 0, std430) readonly buffer atlas {
+	// storing the whole 16k rects is faster than implementing hashmaps on the gpu
+	Rect u_atlas_textures[];
+}
+
+// get texcoords (it's faster to calculate it in the vertex shader since it runs less times)
+vec2 get_texcoords(Vertex v)
+{
+	vec2 texcoords;
+	Rect texture_rect = u_atlas_texture[v.texture_id];
+
+	switch (v.quad_corner) {
+	case QUAD_CORNER_TOP_LEFT:
+		texcoords = vec2(float(texture_rect.x), float(texture_rect.y));
+		break;
+	case QUAD_CORNER_TOP_RIGHT:
+		texcoords = vec2(float(texture_rect.x + texture_rect.width), float(texture_rect.y));
+		break;
+	case QUAD_CORNER_BOTTOM_LEFT:
+		texcoords = vec2(float(texture_rect.x), float(texture_rect.y + texture_rect.height));
+		break;
+	case QUAD_CORNER_BOTTOM_RIGHT:
+		texcoords = vec2(float(texture_rect.x + texture_rect.width),
+			float(texture_rect.y + texture_rect.height)
+		);
+		break;
+	}
+
+	return texcoords / vec2(u_atlas_size);
+}
+
 void main()
 {
-	gl_Position = u_projection * u_view * u_model * vec4(vs_position, 1.0);
-	fs_texcoords = vs_texcoords;
+	Vertex v = unpack_vertex(vs_packed);
+
+	vec3 position = vec3(v.position) * vec3(u_chunk);
+	gl_Position = u_projection * u_view * u_model * vec4(position, 1.0);
+
+	if (v.using_texture) {
+		fs_texcoords = get_texcoords(v);
+		fs_color = vec4(1, 1, 1, 1);
+	}
+	else {
+		fs_texcoords = vec2(0, 0);
+		fs_color = vec4(v.color) / 255;
+	}
+	fs_using_texture = v.using_texture;
+	fs_shaded = v.shaded;
 }
 
 #pragma mrshader fragment
 in vec2 fs_texcoords;
+in vec4 fs_color;
+flat in bool fs_using_texture;
+flat in bool fs_shaded;
 
 out vec4 frag_color;
 
@@ -111,5 +173,11 @@ uniform sampler2D u_texture;
 
 void main()
 {
-	frag_color = texture(u_texture, fs_texcoords);
+	// TODO lighting
+	if (fs_using_texture) {
+		frag_color = texture(u_texture, fs_texcoords);
+	}
+	else {
+		frag_color = fs_color;
+	}
 }
