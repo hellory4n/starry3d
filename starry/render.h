@@ -92,6 +92,7 @@ struct PackedModelVertex
 
 // some functions to set the opengl state
 void _test_pipeline();
+
 void set_wireframe_mode(bool val);
 
 }

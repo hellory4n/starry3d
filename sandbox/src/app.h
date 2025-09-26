@@ -18,7 +18,6 @@ class Sandbox : public st::Application
 
 	st::ShaderProgram program;
 	st::Mesh mesh;
-	st::Texture texture;
 
 	void player_controller(float64 dt) const;
 

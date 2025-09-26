@@ -103,6 +103,12 @@ public:
 	{
 		return _source.size();
 	}
+
+	// Literally just returns the internal texture
+	Texture texture() const
+	{
+		return _source;
+	}
 };
 
 // You know how in pixel art you usually have a grid size and everything snaps to that? This is just

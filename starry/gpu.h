@@ -159,18 +159,25 @@ public:
 
 	// Le
 	// TODO wtf is le
-	void attach(const Shader& shader) const;
-	void link() const;
+	void attach(const Shader& shader);
+	void link();
 	// Uses the program for rendering crap.
 	void use();
 
-	void set_uniform(tr::String name, bool value) const;
-	void set_uniform(tr::String name, int32 value) const;
-	void set_uniform(tr::String name, float32 value) const;
-	void set_uniform(tr::String name, tr::Vec2<float32> value) const;
-	void set_uniform(tr::String name, tr::Vec3<float32> value) const;
-	void set_uniform(tr::String name, tr::Vec4<float32> value) const;
-	void set_uniform(tr::String name, tr::Matrix4x4 value) const;
+	void set_uniform(tr::String name, bool value);
+	void set_uniform(tr::String name, int32 value);
+	void set_uniform(tr::String name, uint32 value);
+	void set_uniform(tr::String name, float32 value);
+	void set_uniform(tr::String name, tr::Vec2<float32> value);
+	void set_uniform(tr::String name, tr::Vec3<float32> value);
+	void set_uniform(tr::String name, tr::Vec4<float32> value);
+	void set_uniform(tr::String name, tr::Vec2<int32> value);
+	void set_uniform(tr::String name, tr::Vec3<int32> value);
+	void set_uniform(tr::String name, tr::Vec4<int32> value);
+	void set_uniform(tr::String name, tr::Vec2<uint32> value);
+	void set_uniform(tr::String name, tr::Vec3<uint32> value);
+	void set_uniform(tr::String name, tr::Vec4<uint32> value);
+	void set_uniform(tr::String name, tr::Matrix4x4 value);
 };
 
 // What should happen when texture coordinates go beyond 0-1. See [this

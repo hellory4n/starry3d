@@ -247,12 +247,15 @@ void st::ShaderProgram::free()
 	tr::info("deleted shader program (id %u)", _program);
 }
 
-void st::ShaderProgram::attach(const st::Shader& shader) const
+// 'Method can be made const'
+// nuh uh they are, in fact, changing state
+// NOLINTBEGIN(readability-make-member-function-const)
+void st::ShaderProgram::attach(const st::Shader& shader)
 {
 	glAttachShader(_program, shader._shader);
 }
 
-void st::ShaderProgram::link() const
+void st::ShaderProgram::link()
 {
 	glLinkProgram(_program);
 
@@ -273,43 +276,93 @@ void st::ShaderProgram::use()
 	_st->current_shader = this;
 }
 
-void st::ShaderProgram::set_uniform(tr::String name, bool value) const
+void st::ShaderProgram::set_uniform(tr::String name, bool value)
 {
+	use();
 	glUniform1i(glGetUniformLocation(_program, name), int(value));
 }
 
-void st::ShaderProgram::set_uniform(tr::String name, int32 value) const
+void st::ShaderProgram::set_uniform(tr::String name, int32 value)
 {
+	use();
 	glUniform1i(glGetUniformLocation(_program, name), value);
 }
 
-void st::ShaderProgram::set_uniform(tr::String name, float32 value) const
+void st::ShaderProgram::set_uniform(tr::String name, uint32 value)
 {
+	use();
+	glUniform1ui(glGetUniformLocation(_program, name), value);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, float32 value)
+{
+	use();
 	glUniform1f(glGetUniformLocation(_program, name), value);
 }
 
-void st::ShaderProgram::set_uniform(tr::String name, tr::Vec2<float32> value) const
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec2<float32> value)
 {
+	use();
 	glUniform2f(glGetUniformLocation(_program, name), value.x, value.y);
 }
 
-void st::ShaderProgram::set_uniform(tr::String name, tr::Vec3<float32> value) const
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec3<float32> value)
 {
+	use();
 	glUniform3f(glGetUniformLocation(_program, name), value.x, value.y, value.z);
 }
 
-void st::ShaderProgram::set_uniform(tr::String name, tr::Vec4<float32> value) const
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec4<float32> value)
 {
+	use();
 	glUniform4f(glGetUniformLocation(_program, name), value.x, value.y, value.z, value.w);
 }
 
-void st::ShaderProgram::set_uniform(tr::String name, tr::Matrix4x4 value) const
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec2<int32> value)
 {
+	use();
+	glUniform2i(glGetUniformLocation(_program, name), value.x, value.y);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec3<int32> value)
+{
+	use();
+	glUniform3i(glGetUniformLocation(_program, name), value.x, value.y, value.z);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec4<int32> value)
+{
+	use();
+	glUniform4i(glGetUniformLocation(_program, name), value.x, value.y, value.z, value.w);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec2<uint32> value)
+{
+	use();
+	glUniform2ui(glGetUniformLocation(_program, name), value.x, value.y);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec3<uint32> value)
+{
+	use();
+	glUniform3ui(glGetUniformLocation(_program, name), value.x, value.y, value.z);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, tr::Vec4<uint32> value)
+{
+	use();
+	glUniform4ui(glGetUniformLocation(_program, name), value.x, value.y, value.z, value.w);
+}
+
+void st::ShaderProgram::set_uniform(tr::String name, tr::Matrix4x4 value)
+{
+	use();
 	// man
 	glUniformMatrix4fv(
 		glGetUniformLocation(_program, name), 1, 0u, reinterpret_cast<float32*>(&value)
 	);
 }
+// NOLINTEND(readability-make-member-function-const)
 
 tr::Result<st::Texture> st::Texture::load(tr::String path, TextureSettings settings)
 {

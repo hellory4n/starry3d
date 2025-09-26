@@ -7,7 +7,7 @@
 
 #include <starry/app.h>
 #include <starry/gpu.h>
-#include <starry/shader/basic.glsl.h>
+#include <starry/shader/terrain.glsl.h>
 #include <starry/world.h>
 
 #include "debug_mode.h"
@@ -16,8 +16,7 @@
 
 struct Vertex
 {
-	tr::Vec3<float32> position;
-	tr::Vec2<float32> texcoords;
+	st::PackedModelVertex packed;
 };
 
 sbox::Sandbox::Sandbox()
@@ -28,8 +27,8 @@ sbox::Sandbox::Sandbox()
 	cam.projection = st::CameraProjection::PERSPECTIVE;
 	st::set_mouse_enabled(_ui_enabled);
 
-	auto vert_shader = st::VertexShader(ST_BASIC_SHADER_VERTEX);
-	auto frag_shader = st::FragmentShader(ST_BASIC_SHADER_FRAGMENT);
+	auto vert_shader = st::VertexShader(ST_TERRAIN_SHADER_VERTEX);
+	auto frag_shader = st::FragmentShader(ST_TERRAIN_SHADER_FRAGMENT);
 	TR_DEFER(vert_shader.free());
 	TR_DEFER(frag_shader.free());
 
@@ -38,19 +37,30 @@ sbox::Sandbox::Sandbox()
 	program.attach(frag_shader);
 	program.link();
 	program.use();
-	program.set_uniform(ST_BASIC_SHADER_U_MODEL, tr::Matrix4x4::identity());
-	program.set_uniform(ST_BASIC_SHADER_U_VIEW, tr::Matrix4x4::identity());
-	program.set_uniform(ST_BASIC_SHADER_U_PROJECTION, tr::Matrix4x4::identity());
+	program.set_uniform(ST_TERRAIN_SHADER_U_MODEL, tr::Matrix4x4::identity());
+	program.set_uniform(ST_TERRAIN_SHADER_U_VIEW, tr::Matrix4x4::identity());
+	program.set_uniform(ST_TERRAIN_SHADER_U_PROJECTION, tr::Matrix4x4::identity());
 
 	tr::Array<st::VertexAttribute> attrs = {
-		{"position",  st::VertexAttributeType::VEC3_FLOAT32, offsetof(Vertex, position) },
-		{"texcoords", st::VertexAttributeType::VEC2_FLOAT32, offsetof(Vertex, texcoords)},
+		{"packed", st::VertexAttributeType::VEC2_UINT32, offsetof(Vertex, packed)},
 	};
 
 	tr::Array<Vertex> vertices = {
-		{{-0.5, -0.5, 0.0}, {0.0, 1.0}},
-		{{0.5, -0.5, 0.0},  {1.0, 1.0}},
-		{{0.0, 0.5, 0.0},   {0.5, 0.0}},
+		{st::PackedModelVertex{st::ModelVertex{
+			.position = {3, 1, 0},
+			.using_texture = true,
+			.texture_id = Texture::GRASS_SIDE,
+		}}},
+		{st::PackedModelVertex{st::ModelVertex{
+			.position = {1, 1, 0},
+			.using_texture = true,
+			.texture_id = Texture::GRASS_SIDE,
+		}}},
+		{st::PackedModelVertex{st::ModelVertex{
+			.position = {2, 3, 0},
+			.using_texture = true,
+			.texture_id = Texture::GRASS_SIDE,
+		}}},
 	};
 
 	tr::Array<st::Triangle> triangles = {
@@ -59,9 +69,9 @@ sbox::Sandbox::Sandbox()
 
 	mesh = st::Mesh(attrs, vertices, triangles, true);
 
-	texture = st::Texture::load("app://enough_fckery.jpg").unwrap();
-
-	sbox::setup_world();
+	st::Texture atlasma = sbox::setup_world();
+	program.set_uniform(ST_TERRAIN_SHADER_U_ATLAS_SIZE, atlasma.size());
+	program.set_uniform(ST_TERRAIN_SHADER_U_CHUNK, tr::Vec2<uint32>{});
 
 	tr::log("initialized sandbox :)");
 }
@@ -82,11 +92,10 @@ void sbox::Sandbox::update(float64 dt)
 
 void sbox::Sandbox::draw()
 {
-	st::clear_screen(tr::Color::rgb(0x009ccf));
-	texture.use();
-	program.set_uniform(ST_BASIC_SHADER_U_VIEW, st::Camera::current().view_matrix());
+	st::clear_screen(tr::Color::rgb(0x009ccf)); // weezer blue
+	program.set_uniform(ST_TERRAIN_SHADER_U_VIEW, st::Camera::current().view_matrix());
 	program.set_uniform(
-		ST_BASIC_SHADER_U_PROJECTION, st::Camera::current().projection_matrix()
+		ST_TERRAIN_SHADER_U_PROJECTION, st::Camera::current().projection_matrix()
 	);
 	mesh.draw();
 }
@@ -100,7 +109,6 @@ void sbox::Sandbox::free()
 {
 	program.free();
 	mesh.free();
-	texture.free();
 	arena.free();
 
 	tr::log("freed sandbox :)");

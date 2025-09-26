@@ -83,8 +83,8 @@ static const char* ST_TERRAIN_SHADER_VERTEX =
 	"uniform mat4 u_projection;\n"
 	"\n"
 	"#define CHUNK_SIZE 32\n"
-	"uniform ivec3 u_chunk;\n"
-	"uniform ivec2 u_atlas_size;\n"
+	"uniform uvec3 u_chunk;\n"
+	"uniform uvec2 u_atlas_size;\n"
 	"\n"
 	"layout(binding = 0, std430) readonly buffer atlas {\n"
 	"\t// storing the whole 16k rects is faster than implementing hashmaps on the gpu\n"
@@ -163,9 +163,11 @@ static const char* ST_TERRAIN_SHADER_FRAGMENT =
 	"\t}\n"
 	"}\n";
 
+#define ST_TERRAIN_SHADER_U_ATLAS_SIZE "u_atlas_size"
+#define ST_TERRAIN_SHADER_U_MODEL "u_model"
 #define ST_TERRAIN_SHADER_SSBO_ATLAS 0
 #define ST_TERRAIN_SHADER_U_PROJECTION "u_projection"
-#define ST_TERRAIN_SHADER_U_MODEL "u_model"
 #define ST_TERRAIN_SHADER_U_VIEW "u_view"
+#define ST_TERRAIN_SHADER_U_CHUNK "u_chunk"
 
 #endif

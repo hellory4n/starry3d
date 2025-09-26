@@ -107,8 +107,10 @@ uniform mat4 u_view;
 uniform mat4 u_projection;
 
 #define CHUNK_SIZE 32
-uniform ivec3 u_chunk;
-uniform ivec2 u_atlas_size;
+#pragma mrshader define U_CHUNK "u_chunk"
+uniform uvec3 u_chunk;
+#pragma mrshader define U_ATLAS_SIZE "u_atlas_size"
+uniform uvec2 u_atlas_size;
 
 #pragma mrshader define SSBO_ATLAS 0
 layout(binding = 0, std430) readonly buffer atlas {
