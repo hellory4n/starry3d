@@ -28,6 +28,7 @@
 #include <trippin/common.h>
 #include <trippin/iofs.h>
 #include <trippin/log.h>
+#include <trippin/memory.h>
 
 #include <glad/gl.h>
 #define STB_IMAGE_IMPLEMENTATION
@@ -439,4 +440,35 @@ void st::Texture::use() const
 	TR_ASSERT_MSG(_id != 0, "you doofus initialize the texture")
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, _id);
+}
+
+st::StorageBuffer::StorageBuffer(uint32 binding)
+{
+	uint32 ssbo = 0;
+	glGenBuffers(1, &ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, ssbo);
+	_buffer = ssbo;
+}
+
+void st::StorageBuffer::free()
+{
+	glDeleteBuffers(1, &_buffer);
+	_buffer = 0;
+}
+
+// 'Method can be made const'
+// nuh uh they are, in fact, changing state
+// NOLINTBEGIN(readability-make-member-function-const)
+void st::StorageBuffer::partial_update(usize offset, const void* data, usize len)
+{
+	TR_ASSERT_MSG(_buffer != 0, "you doofus initialize the storage buffer")
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, _buffer);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, len, data);
+}
+// NOLINTEND(readability-make-member-function-const)
+
+void st::StorageBuffer::update(const void* data, usize len)
+{
+	partial_update(0, data, len);
 }

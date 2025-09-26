@@ -28,6 +28,7 @@
 
 #include <trippin/error.h>
 #include <trippin/math.h>
+#include <trippin/memory.h>
 #include <trippin/string.h>
 
 namespace st {
@@ -164,6 +165,7 @@ public:
 	// Uses the program for rendering crap.
 	void use();
 
+	// TODO string names are slower
 	void set_uniform(tr::String name, bool value);
 	void set_uniform(tr::String name, int32 value);
 	void set_uniform(tr::String name, uint32 value);
@@ -227,7 +229,22 @@ public:
 	}
 };
 
-// TODO ShaderStorageBuffer (SSBOs)
+// Wrapper for an OpenGL SSBO, useful for sending metric buttloads of data to shaders.
+class StorageBuffer
+{
+	uint32 _buffer = 0;
+
+public:
+	StorageBuffer();
+	StorageBuffer(uint32 binding);
+	void free();
+
+	// Updates the data :)))))))
+	void update(const void* data, usize len);
+
+	// Only updates *some* of the data
+	void partial_update(usize offset, const void* data, usize len);
+};
 
 } // namespace st
 

@@ -78,7 +78,7 @@ tr::Result<st::TextureAtlas&> st::TextureAtlas::load(tr::String path)
 {
 	TextureAtlas atlas = {};
 	TR_TRY_ASSIGN(atlas._source, Texture::load(path));
-	atlas._textures = tr::HashMap<TextureId, tr::Rect<float32>>(_st->asset_arena);
+	atlas._textures = tr::HashMap<TextureId, tr::Rect<uint32>>(_st->asset_arena);
 	return atlas;
 }
 
@@ -98,13 +98,7 @@ void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint32> coords)
 		tr::warn("texture atlas already has id %i; overwriting original texture", id);
 	}
 
-	// i am remapping it i am remapping it i am remapping it you need to remap mark
-	_textures[id] = tr::Rect<float32>{
-		tr::remap<float32>(coords.position.x, 0, size().x, 0.0, 1.0),
-		tr::remap<float32>(coords.position.y, 0, size().y, 0.0, 1.0),
-		tr::remap<float32>(coords.size.x, 0, size().x, 0.0, 1.0),
-		tr::remap<float32>(coords.size.y, 0, size().y, 0.0, 1.0),
-	};
+	_textures[id] = coords;
 }
 
 void st::TextureAtlas::set_current() const

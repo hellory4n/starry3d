@@ -14,6 +14,6 @@ namespace Texture {
 	constexpr st::TextureId KIRBY_RIPOFF = 5;
 }
 
-st::Texture setup_world();
+st::TextureAtlas setup_world();
 
 }

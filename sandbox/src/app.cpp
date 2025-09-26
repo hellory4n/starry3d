@@ -69,9 +69,16 @@ sbox::Sandbox::Sandbox()
 
 	mesh = st::Mesh(attrs, vertices, triangles, true);
 
-	st::Texture atlasma = sbox::setup_world();
+	st::TextureAtlas atlasma = sbox::setup_world();
 	program.set_uniform(ST_TERRAIN_SHADER_U_ATLAS_SIZE, atlasma.size());
 	program.set_uniform(ST_TERRAIN_SHADER_U_CHUNK, tr::Vec2<uint32>{});
+
+	ssbo = st::StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
+	tr::Array<tr::Rect<uint32>> ssbo_data{arena, st::MAX_ATLAS_TEXTURES};
+	for (auto [id, rect] : atlasma._textures) {
+		ssbo_data[id] = rect;
+	}
+	ssbo.update(*ssbo_data, ssbo_data.len() * sizeof(tr::Rect<uint32>));
 
 	tr::log("initialized sandbox :)");
 }
@@ -109,6 +116,7 @@ void sbox::Sandbox::free()
 {
 	program.free();
 	mesh.free();
+	ssbo.free();
 	arena.free();
 
 	tr::log("freed sandbox :)");

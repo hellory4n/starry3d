@@ -18,6 +18,7 @@ class Sandbox : public st::Application
 
 	st::ShaderProgram program;
 	st::Mesh mesh;
+	st::StorageBuffer ssbo;
 
 	void player_controller(float64 dt) const;
 

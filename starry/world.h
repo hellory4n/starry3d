@@ -82,8 +82,9 @@ constexpr TextureId MAX_ATLAS_TEXTURES = 1 << 14; // 16384
 // stuff.
 class TextureAtlas
 {
+public: // TODO don't
 	Texture _source = {};
-	tr::HashMap<TextureId, tr::Rect<float32>> _textures = {};
+	tr::HashMap<TextureId, tr::Rect<uint32>> _textures = {};
 
 public:
 	// Loads a texture atlas from an image file.
