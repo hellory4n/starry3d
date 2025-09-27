@@ -89,7 +89,10 @@ void st::TextureAtlas::free()
 
 void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint32> coords)
 {
-	TR_ASSERT(coords.position < size())
+	TR_ASSERT_MSG(
+		coords.position < size(), "position is %u, %u; size is %u, %u", coords.position.x,
+		coords.position.y, size().x, size().y
+	)
 	TR_ASSERT_MSG(
 		id < MAX_ATLAS_TEXTURES, "texture id %i must be below %i", id, MAX_ATLAS_TEXTURES
 	);

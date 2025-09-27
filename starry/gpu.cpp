@@ -26,6 +26,7 @@
 #include "starry/gpu.h"
 
 #include <trippin/common.h>
+#include <trippin/error.h>
 #include <trippin/iofs.h>
 #include <trippin/log.h>
 #include <trippin/memory.h>
@@ -369,14 +370,26 @@ tr::Result<st::Texture> st::Texture::load(tr::String path, TextureSettings setti
 {
 	Texture texture = {};
 
+	TR_TRY_ASSIGN(
+		tr::File& file, tr::File::open(
+					_st->asset_arena, tr::path(_st->asset_arena, path),
+					tr::FileMode::READ_BINARY
+				)
+	);
+	TR_DEFER(file.close());
+	TR_TRY_ASSIGN(tr::Array<uint8> bytes, file.read_all_bytes(_st->asset_arena));
+
 	// TODO texture cache
 	// TODO st::Texture::from_memory()
-	int width, height, channels;
-	uint8* data = stbi_load(tr::path(tr::scratchpad(), path), &width, &height, &channels, 4);
+	int width = 0;
+	int height = 0;
+	int channels = 0;
+	uint8* data = stbi_load_from_memory(*bytes, bytes.len(), &width, &height, &channels, 4);
 	if (data == nullptr) {
 		return tr::StringError("couldn't load texture from %s", *path);
 	}
 	TR_DEFER(stbi_image_free(data));
+	TR_ASSERT(width > 0 && height > 0 && channels > 0);
 
 	glGenTextures(1, &texture._id);
 	glBindTexture(GL_TEXTURE_2D, texture._id);

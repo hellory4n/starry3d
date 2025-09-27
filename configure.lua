@@ -124,7 +124,7 @@ end
 if compmode == "debug" then
 	cflags = cflags .. " -Og -g -DDEBUG -D_DEBUG -fno-omit-frame-pointer"
 else
-	cflags = cflags .. " -O3 -g -fno-omit-frame-pointer"
+	cflags = cflags .. " -O2 -g -fno-omit-frame-pointer"
 end
 
 if sanitize ~= "" then
