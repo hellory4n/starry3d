@@ -235,7 +235,7 @@ static const char* ST_TERRAIN_SHADER_VERTEX =
 	"#line 151\n"
 	"\n"
 	"#line 152\n"
-	"\tvec3 position = vec3(v.position) * (vec3(u_chunk) * CHUNK_SIZE);\n"
+	"\tvec3 position = vec3(v.position) * vec3(u_chunk + uvec3(1, 1, 1)) * CHUNK_SIZE;\n"
 	"#line 153\n"
 	"\tgl_Position = u_projection * u_view * u_model * vec4(position, 1.0);\n"
 	"#line 154\n"
@@ -310,11 +310,11 @@ static const char* ST_TERRAIN_SHADER_FRAGMENT =
 	"#line 186\n"
 	"}\n";
 
-#define ST_TERRAIN_SHADER_U_PROJECTION "u_projection"
-#define ST_TERRAIN_SHADER_U_ATLAS_SIZE "u_atlas_size"
-#define ST_TERRAIN_SHADER_U_VIEW "u_view"
-#define ST_TERRAIN_SHADER_U_MODEL "u_model"
 #define ST_TERRAIN_SHADER_SSBO_ATLAS 0
+#define ST_TERRAIN_SHADER_U_PROJECTION "u_projection"
+#define ST_TERRAIN_SHADER_U_MODEL "u_model"
 #define ST_TERRAIN_SHADER_U_CHUNK "u_chunk"
+#define ST_TERRAIN_SHADER_U_VIEW "u_view"
+#define ST_TERRAIN_SHADER_U_ATLAS_SIZE "u_atlas_size"
 
 #endif

@@ -149,7 +149,7 @@ void main()
 {
 	Vertex v = unpack_vertex(vs_packed);
 
-	vec3 position = vec3(v.position) * (vec3(u_chunk) * CHUNK_SIZE);
+	vec3 position = vec3(v.position) * vec3(u_chunk + uvec3(1, 1, 1)) * CHUNK_SIZE;
 	gl_Position = u_projection * u_view * u_model * vec4(position, 1.0);
 
 	if (v.using_texture) {
