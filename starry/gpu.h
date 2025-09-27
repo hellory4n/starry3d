@@ -235,7 +235,7 @@ class StorageBuffer
 	uint32 _buffer = 0;
 
 public:
-	StorageBuffer();
+	StorageBuffer() {}
 	StorageBuffer(uint32 binding);
 	void free();
 

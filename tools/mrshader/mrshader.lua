@@ -19,7 +19,9 @@ local function get_shader_srcs(shader_src)
 	local frag_src = {}
 	local defines = {}
 
+	local i = 0
 	for line in lines do
+		i = i + 1
 		if startswith(line, "#version") then
 			table.insert(vert_src, line)
 			table.insert(frag_src, line)
@@ -38,9 +40,15 @@ local function get_shader_srcs(shader_src)
 			assert(val)
 			defines[name] = val
 		else
-			if current_source == "vert" then table.insert(vert_src, line)
-			elseif current_source == "frag" then table.insert(frag_src, line)
-			else warn("line not in a vertex or fragment shader") end
+			if current_source == "vert" then
+				table.insert(vert_src, "#line "..i)
+				table.insert(vert_src, line)
+			elseif current_source == "frag" then
+				table.insert(frag_src, "#line "..i)
+				table.insert(frag_src, line)
+			else
+				warn("line not in a vertex or fragment shader")
+			end
 		end
 	end
 

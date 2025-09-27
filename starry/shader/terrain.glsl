@@ -54,10 +54,10 @@ struct Vertex {
 #define QUAD_CORNER_BOTTOM_LEFT 2u
 #define QUAD_CORNER_BOTTOM_RIGHT 3u
 
-Vertex unpack_vertex(uvec2 packed)
+Vertex unpack_vertex(uvec2 src)
 {
-	uint low = packed.x;
-	uint high = packed.y;
+	uint low = src.x;
+	uint high = src.y;
 	Vertex v;
 
 	v.position.x = low & 0xFFu;
@@ -89,15 +89,16 @@ struct Rect {
 	uint y;
 	uint width;
 	uint height;
-}
+};
 
 // vertices are hyper optimized to safe space
 layout (location = 0) in uvec2 vs_packed;
 
 out vec2 fs_texcoords;
 out vec4 fs_color;
-flat out bool fs_using_texture;
-flat out bool fs_shaded;
+// you can't pass a bool here :DDDDD
+flat out int fs_using_texture;
+flat out int fs_shaded;
 
 #pragma mrshader define U_MODEL "u_model"
 uniform mat4 u_model;
@@ -116,13 +117,13 @@ uniform uvec2 u_atlas_size;
 layout(binding = 0, std430) readonly buffer atlas {
 	// storing the whole 16k rects is faster than implementing hashmaps on the gpu
 	Rect u_atlas_textures[];
-}
+};
 
 // get texcoords (it's faster to calculate it in the vertex shader since it runs less times)
 vec2 get_texcoords(Vertex v)
 {
 	vec2 texcoords;
-	Rect texture_rect = u_atlas_texture[v.texture_id];
+	Rect texture_rect = u_atlas_textures[v.texture_id];
 
 	switch (v.quad_corner) {
 	case QUAD_CORNER_TOP_LEFT:
@@ -148,7 +149,7 @@ void main()
 {
 	Vertex v = unpack_vertex(vs_packed);
 
-	vec3 position = vec3(v.position) * vec3(u_chunk);
+	vec3 position = vec3(v.position) * (vec3(u_chunk) * CHUNK_SIZE);
 	gl_Position = u_projection * u_view * u_model * vec4(position, 1.0);
 
 	if (v.using_texture) {
@@ -159,15 +160,15 @@ void main()
 		fs_texcoords = vec2(0, 0);
 		fs_color = vec4(v.color) / 255;
 	}
-	fs_using_texture = v.using_texture;
-	fs_shaded = v.shaded;
+	fs_using_texture = int(v.using_texture);
+	fs_shaded = int(v.shaded);
 }
 
 #pragma mrshader fragment
 in vec2 fs_texcoords;
 in vec4 fs_color;
-flat in bool fs_using_texture;
-flat in bool fs_shaded;
+flat in int fs_using_texture;
+flat in int fs_shaded;
 
 out vec4 frag_color;
 
@@ -176,7 +177,7 @@ uniform sampler2D u_texture;
 void main()
 {
 	// TODO lighting
-	if (fs_using_texture) {
+	if (bool(fs_using_texture)) {
 		frag_color = texture(u_texture, fs_texcoords);
 	}
 	else {

@@ -460,6 +460,13 @@ void st::StorageBuffer::free()
 // 'Method can be made const'
 // nuh uh they are, in fact, changing state
 // NOLINTBEGIN(readability-make-member-function-const)
+void st::StorageBuffer::update(const void* data, usize len)
+{
+	TR_ASSERT_MSG(_buffer != 0, "you doofus initialize the storage buffer")
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, _buffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, len, data, GL_DYNAMIC_DRAW);
+}
+
 void st::StorageBuffer::partial_update(usize offset, const void* data, usize len)
 {
 	TR_ASSERT_MSG(_buffer != 0, "you doofus initialize the storage buffer")
@@ -467,8 +474,3 @@ void st::StorageBuffer::partial_update(usize offset, const void* data, usize len
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, len, data);
 }
 // NOLINTEND(readability-make-member-function-const)
-
-void st::StorageBuffer::update(const void* data, usize len)
-{
-	partial_update(0, data, len);
-}

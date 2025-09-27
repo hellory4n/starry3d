@@ -47,17 +47,26 @@ sbox::Sandbox::Sandbox()
 
 	tr::Array<Vertex> vertices = {
 		{st::PackedModelVertex{st::ModelVertex{
-			.position = {3, 1, 0},
+			.position = {0, 0, 0},
+			.corner = st::ModelVertex::QuadCorner::BOTTOM_LEFT,
 			.using_texture = true,
 			.texture_id = Texture::GRASS_SIDE,
 		}}},
 		{st::PackedModelVertex{st::ModelVertex{
-			.position = {1, 1, 0},
+			.position = {2, 0, 0},
+			.corner = st::ModelVertex::QuadCorner::BOTTOM_RIGHT,
 			.using_texture = true,
 			.texture_id = Texture::GRASS_SIDE,
 		}}},
 		{st::PackedModelVertex{st::ModelVertex{
-			.position = {2, 3, 0},
+			.position = {0, 2, 0},
+			.corner = st::ModelVertex::QuadCorner::TOP_LEFT,
+			.using_texture = true,
+			.texture_id = Texture::GRASS_SIDE,
+		}}},
+		{st::PackedModelVertex{st::ModelVertex{
+			.position = {2, 2, 0},
+			.corner = st::ModelVertex::QuadCorner::TOP_RIGHT,
 			.using_texture = true,
 			.texture_id = Texture::GRASS_SIDE,
 		}}},
@@ -65,13 +74,14 @@ sbox::Sandbox::Sandbox()
 
 	tr::Array<st::Triangle> triangles = {
 		{2, 1, 0},
+		{2, 3, 1},
 	};
 
 	mesh = st::Mesh(attrs, vertices, triangles, true);
 
 	st::TextureAtlas atlasma = sbox::setup_world();
 	program.set_uniform(ST_TERRAIN_SHADER_U_ATLAS_SIZE, atlasma.size());
-	program.set_uniform(ST_TERRAIN_SHADER_U_CHUNK, tr::Vec2<uint32>{});
+	program.set_uniform(ST_TERRAIN_SHADER_U_CHUNK, tr::Vec3<uint32>{});
 
 	ssbo = st::StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
 	tr::Array<tr::Rect<uint32>> ssbo_data{arena, st::MAX_ATLAS_TEXTURES};
