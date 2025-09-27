@@ -90,6 +90,8 @@ sbox::Sandbox::Sandbox()
 	}
 	ssbo.update(*ssbo_data, ssbo_data.len() * sizeof(tr::Rect<uint32>));
 
+	sbox::imgui_theme();
+
 	tr::log("initialized sandbox :)");
 }
 

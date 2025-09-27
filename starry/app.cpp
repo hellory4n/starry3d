@@ -70,85 +70,6 @@ static void _gl_error_callback(
 	GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* msg,
 	const void* data
 );
-/*[] {
-				(void)data;
-				(void)length;
-				const char* src_str;
-				const char* type_str;
-
-				switch (source) {
-				case GL_DEBUG_SOURCE_API:
-					src_str = "GL_DEBUG_SOURCE_API";
-					break;
-				case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-					src_str = "GL_DEBUG_SOURCE_WINDOW_SYSTEM";
-					break;
-				case GL_DEBUG_SOURCE_SHADER_COMPILER:
-					src_str = "GL_DEBUG_SOURCE_SHADER COMPILER";
-					break;
-				case GL_DEBUG_SOURCE_THIRD_PARTY:
-					src_str = "GL_DEBUG_SOURCE_THIRD PARTY";
-					break;
-				case GL_DEBUG_SOURCE_APPLICATION:
-					src_str = "GL_DEBUG_SOURCE_APPLICATION";
-					break;
-				case GL_DEBUG_SOURCE_OTHER:
-					src_str = "GL_DEBUG_SOURCE_OTHER";
-					break;
-				default:
-					src_str = "unknown";
-					break;
-				}
-
-				switch (type) {
-				case GL_DEBUG_TYPE_ERROR:
-					type_str = "GL_DEBUG_TYPE_ERROR";
-					break;
-				case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-					type_str = "GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR";
-					break;
-				case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-					type_str = "GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR";
-					break;
-				case GL_DEBUG_TYPE_PORTABILITY:
-					type_str = "GL_DEBUG_TYPE_PORTABILITY";
-					break;
-				case GL_DEBUG_TYPE_PERFORMANCE:
-					type_str = "GL_DEBUG_TYPE_PERFORMANCE";
-					break;
-				case GL_DEBUG_TYPE_OTHER:
-					type_str = "GL_DEBUG_TYPE_OTHER";
-					break;
-				case GL_DEBUG_TYPE_MARKER:
-					type_str = "GL_DEBUG_TYPE_MARKER";
-					break;
-				default:
-					type_str = "unknown";
-					break;
-				}
-
-				switch (severity) {
-				case GL_DEBUG_SEVERITY_HIGH:
-					tr::panic(
-						"OpenGL error %i: type: %s, source: %s: %s", id,
-						type_str, src_str, msg
-					);
-					break;
-				case GL_DEBUG_SEVERITY_MEDIUM:
-				case GL_DEBUG_SEVERITY_LOW:
-					tr::warn(
-						"OpenGL error %i: type: %s, source: %s: %s", id,
-						type_str, src_str, msg
-					);
-					break;
-				default:
-					tr::info(
-						"OpenGL error %i: type: %s, source: %s: %s", id,
-						type_str, src_str, msg
-					);
-					break;
-				}
-			} */
 
 }
 
@@ -553,4 +474,34 @@ float64 st::fps()
 tr::Vec2<uint32> st::window_size()
 {
 	return _st->window_size;
+}
+
+st::Platform st::platform()
+{
+#ifdef _WIN32
+	return Platform::WINDOWS;
+#elif defined(__APPLE__)
+	return Platform::MACOSX;
+#elif defined(__linux__)
+	return Platform::LINUX;
+#else
+	return Platform::UNKNOWN_UNIX;
+#endif
+}
+
+st::WindowSystem st::window_system()
+{
+	int platform = glfwGetPlatform();
+	switch (platform) {
+	case GLFW_PLATFORM_WIN32:
+		return WindowSystem::WIN32;
+	case GLFW_PLATFORM_COCOA:
+		return WindowSystem::COCOA;
+	case GLFW_PLATFORM_X11:
+		return WindowSystem::X11;
+	case GLFW_PLATFORM_WAYLAND:
+		return WindowSystem::WAYLAND;
+	default:
+		return WindowSystem::NULL_PLATFORM;
+	}
 }

@@ -4,6 +4,7 @@
 
 namespace sbox {
 
+void imgui_theme();
 void debug_mode();
 
 }

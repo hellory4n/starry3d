@@ -311,6 +311,35 @@ float64 delta_time_sec();
 // Gets the amount of frames per second.
 float64 fps();
 
+enum class Platform
+{
+	UNKNOWN_UNIX,
+	LINUX,
+	MACOSX,
+	WINDOWS,
+};
+
+enum class WindowSystem
+{
+	NULL_PLATFORM,
+	X11,
+	WAYLAND,
+	WIN32,
+	COCOA,
+};
+
+// Returns the platform duh.
+Platform platform();
+
+// Literally only ever useful for when you need to distinguish between X11 and Wayland (rare)
+WindowSystem window_system();
+
+// fuck windows
+inline bool is_unixlike()
+{
+	return st::platform() != Platform::WINDOWS;
+}
+
 }
 
 #endif
