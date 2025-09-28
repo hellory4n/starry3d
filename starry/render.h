@@ -61,6 +61,7 @@ struct ModelVertex
 	QuadCorner corner = QuadCorner::TOP_LEFT;
 	bool shaded = true;
 	bool using_texture = false;
+	bool billboard = false;
 	union {
 		TextureId texture_id;
 		tr::Color color = tr::palette::WHITE;
@@ -72,10 +73,11 @@ struct ModelVertex
 // ```cpp
 // struct ModelVertex {
 //	tr::Vec3<uint8> position;
-//	uint4 side;
+//	uint3 normal;
 //	uint2 quad;
 //	uint1 shaded;
 //	uint1 using_texture;
+//	uint1 billboard;
 //	union {
 //		uint14 texture_id;
 //		tr::Color color;

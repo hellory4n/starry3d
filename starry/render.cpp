@@ -57,9 +57,10 @@ st::PackedModelVertex::PackedModelVertex(ModelVertex src)
 	bits |= uint64(src.position.z & 0xFF) << 16;
 
 	bits |= uint64(int(src.normal) & 0xF) << 24;
-	bits |= uint64(int(src.corner) & 0x3) << 28;
-	bits |= uint64(int(src.shaded) & 0x1) << 30;
-	bits |= uint64(int(src.using_texture) & 0x1) << 31;
+	bits |= uint64(int(src.corner) & 0x3) << 27;
+	bits |= uint64(int(src.shaded) & 0x1) << 29;
+	bits |= uint64(int(src.using_texture) & 0x1) << 30;
+	bits |= uint64(int(src.billboard) & 0x1) << 31;
 
 	// unioning all over the plcae
 	if (src.using_texture) {

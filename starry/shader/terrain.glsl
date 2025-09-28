@@ -38,6 +38,7 @@ struct Vertex {
 	uint quad_corner;
 	bool shaded;
 	bool using_texture;
+	bool billboard;
 	uint texture_id;
 	uvec4 color;
 };
@@ -65,9 +66,10 @@ Vertex unpack_vertex(uvec2 src)
 	v.position.z = (low >> 16) & 0xFFu;
 
 	v.normal = (low >> 24) & 0xFu;
-	v.quad_corner = (low >> 28) & 0x3u;
-	v.shaded = ((low >> 30) & 0x1u) != 0u;
-	v.using_texture = ((low >> 31) & 0x1u) != 0u;
+	v.quad_corner = (low >> 27) & 0x3u;
+	v.shaded = ((low >> 29) & 0x1u) != 0u;
+	v.using_texture = ((low >> 30) & 0x1u) != 0u;
+	v.billboard = ((low >> 31) & 0x1u) != 0u;
 
 	if (v.using_texture) {
 		v.texture_id = high & 0x3FFFu;

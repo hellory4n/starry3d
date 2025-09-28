@@ -116,20 +116,39 @@ public:
 // that but in 3D.
 void set_grid_size(tr::Vec3<uint8> size);
 
+// you'll never guess what this is
+struct TextureOrColor
+{
+	bool using_texture = false;
+	union {
+		TextureId texture = 0;
+		tr::Color color;
+	};
+
+	TextureOrColor() {}
+	TextureOrColor(TextureId texture)
+		: using_texture(true)
+		, texture(texture)
+	{
+	}
+	TextureOrColor(tr::Color color)
+		: using_texture(false)
+		, color(color)
+	{
+	}
+};
+
 // A cube in a model. Revolutionary.
 struct ModelCube
 {
 	tr::Vec3<uint8> position = {};
 	tr::Vec3<uint8> size = {};
-	struct
-	{
-		TextureId forward = 0;
-		TextureId back = 0;
-		TextureId left = 0;
-		TextureId right = 0;
-		TextureId up = 0;
-		TextureId down = 0;
-	} texture;
+	TextureOrColor forward = {};
+	TextureOrColor back = {};
+	TextureOrColor left = {};
+	TextureOrColor right = {};
+	TextureOrColor up = {};
+	TextureOrColor down = {};
 	// If false, the cube ignores lighting and becomes pure color
 	bool shaded = true;
 };
@@ -137,9 +156,11 @@ struct ModelCube
 // A plane in a model. Revolutionary.
 struct ModelPlane
 {
-	tr::Vec3<uint8> from = {};
-	tr::Vec3<uint8> to = {};
-	TextureId texture = 0;
+	tr::Vec3<uint8> top_left = {};
+	tr::Vec3<uint8> top_right = {};
+	tr::Vec3<uint8> bottom_left = {};
+	tr::Vec3<uint8> bottom_right = {};
+	TextureOrColor texture_or_color = {};
 	// If false, the plane ignores lighting and becomes pure color
 	bool shaded = true;
 	// If true, the plane always faces the camera which is kinda cool sometimes
@@ -190,9 +211,13 @@ constexpr Model MODEL_AIR = 0;
 struct ModelSpec
 {
 	tr::Array<ModelMesh> meshes = {};
+	Mesh gpu_mesh = {};
 
 	// Registers the model so that now you can use it with that ID and stuff HOW COOL IS THAT
 	ModelSpec(Model id, tr::Array<ModelMesh> meshes);
+
+	// Terrain blocks are rendered differently :))))))))))))))))
+	bool is_terrain() const;
 };
 
 enum class BlockType : uint8

@@ -29,6 +29,7 @@
 #ifndef _ST_INTERNAL_H
 #define _ST_INTERNAL_H
 
+#include <trippin/collection.h>
 #include <trippin/common.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
@@ -68,7 +69,9 @@ struct Starry
 
 	// world
 	Camera camera = {};
+	tr::Vec3<uint8> grid_size = {8, 8, 8};
 	tr::Maybe<TextureAtlas> atlas = {};
+	tr::HashMap<Model, ModelSpec> models = {};
 
 	// render
 	ShaderProgram* current_shader = nullptr;
@@ -80,6 +83,7 @@ struct Starry
 		key_state = tr::Array<InputState>(arena, static_cast<int>(st::Key::LAST) + 1);
 		mouse_state =
 			tr::Array<InputState>(arena, static_cast<int>(st::MouseButton::LAST) + 1);
+		models = tr::HashMap<Model, ModelSpec>(asset_arena);
 	}
 };
 
