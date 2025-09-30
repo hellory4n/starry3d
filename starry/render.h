@@ -40,12 +40,12 @@ struct ModelVertex
 	// Using a Vec3<float32> would take up too much space
 	enum class Normal : uint8
 	{
-		FORWARD = 0,
+		FRONT = 0,
 		BACK = 1,
 		LEFT = 2,
 		RIGHT = 3,
-		UP = 4,
-		DOWN = 5,
+		TOP = 4,
+		BOTTOM = 5,
 	};
 
 	enum class QuadCorner : uint8
@@ -57,7 +57,7 @@ struct ModelVertex
 	};
 
 	tr::Vec3<uint8> position = {};
-	Normal normal = Normal::FORWARD;
+	Normal normal = Normal::FRONT;
 	QuadCorner corner = QuadCorner::TOP_LEFT;
 	bool shaded = true;
 	bool using_texture = false;

@@ -33,6 +33,6 @@ No fuck off.
 Voxel rendering can be quite the pickle, so I think it's easier and better to just do the whole thing
 from scratch. Also why not also the suffering is endless
 
-### Why C++? Can't you be a normal human being and use Rust Go Zig Odin Nim Sip Cliff Swig Beef (this one is real) Swag S'mores?
+### Why C++? Can't you be a normal human being and use Rust Go Zig Odin Nim Sip Cliff Swig Beef Jai Swag S'mores?
 
 No fuck off.

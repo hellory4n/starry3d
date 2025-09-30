@@ -143,12 +143,12 @@ struct ModelCube
 {
 	tr::Vec3<uint8> position = {};
 	tr::Vec3<uint8> size = {};
-	TextureOrColor forward = {};
+	TextureOrColor front = {};
 	TextureOrColor back = {};
 	TextureOrColor left = {};
 	TextureOrColor right = {};
-	TextureOrColor up = {};
-	TextureOrColor down = {};
+	TextureOrColor top = {};
+	TextureOrColor bottom = {};
 	// If false, the cube ignores lighting and becomes pure color
 	bool shaded = true;
 };
@@ -186,6 +186,7 @@ struct ModelMesh
 };
 
 // A handle to the real model (`st::ModelSpec`)
+// TODO why isn't this a typedef again?
 struct Model
 {
 	uint16 id;
@@ -195,7 +196,7 @@ struct Model
 	{
 	}
 
-	operator uint16() const
+	constexpr operator uint16() const
 	{
 		return id;
 	}

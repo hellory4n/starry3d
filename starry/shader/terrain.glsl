@@ -43,12 +43,12 @@ struct Vertex {
 	uvec4 color;
 };
 
-#define NORMAL_FORWARD 0u
+#define NORMAL_FRONT 0u
 #define NORMAL_BACK 1u
 #define NORMAL_LEFT 2u
 #define NORMAL_RIGHT 3u
-#define NORMAL_UP 4u
-#define NORMAL_DOWN 5u
+#define NORMAL_TOP 4u
+#define NORMAL_BOTTOM 5u
 
 #define QUAD_CORNER_TOP_LEFT 0u
 #define QUAD_CORNER_TOP_RIGHT 1u

@@ -5,7 +5,7 @@
  * starry/world.cpp
  * The API for the voxel world and stuff.
  *
- * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
+ * CoPYright (c) 2025 hellory4n <hellory4n@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -134,8 +134,7 @@ void st::set_grid_size(tr::Vec3<uint8> size)
 st::ModelSpec::ModelSpec(st::Model id, tr::Array<st::ModelMesh> meshes)
 	: meshes(meshes)
 {
-	// shit it's not constexpr
-	static const tr::Array<VertexAttribute> attrs = {
+	const tr::Array<VertexAttribute> attrs = {
 		{"packed", VertexAttributeType::VEC2_UINT32, 0},
 	};
 
@@ -157,6 +156,8 @@ st::ModelSpec::ModelSpec(st::Model id, tr::Array<st::ModelMesh> meshes)
 
 	gpu_mesh = Mesh(attrs, vertices, indices);
 	_st->models[id] = *this;
+	// TODO number ids to string names
+	tr::info("registed model with id %u", uint16(id));
 }
 
 static st::ModelVertex::Normal
@@ -179,10 +180,10 @@ st::_get_plane_normal(tr::Vec3<uint8> p0, tr::Vec3<uint8> p1, tr::Vec3<uint8> p2
 		return (n.x > 0.0f) ? ModelVertex::Normal::RIGHT : ModelVertex::Normal::LEFT;
 	}
 	else if (ay >= ax && ay >= az) {
-		return (n.y > 0.0f) ? ModelVertex::Normal::UP : ModelVertex::Normal::DOWN;
+		return (n.y > 0.0f) ? ModelVertex::Normal::TOP : ModelVertex::Normal::BOTTOM;
 	}
 	else {
-		return (n.z > 0.0f) ? ModelVertex::Normal::BACK : ModelVertex::Normal::FORWARD;
+		return (n.z > 0.0f) ? ModelVertex::Normal::BACK : ModelVertex::Normal::FRONT;
 	}
 }
 
@@ -237,7 +238,141 @@ static void st::_gen_mesh_for_cube(
 	tr::Array<st::Triangle>& indices, uint32& vert_count
 )
 {
-	TR_TODO();
+	// TODO culling at the model level
+	// this could just be optimized a lot more
+
+	// struct thing so that we can use designated initializers :money_mouth:
+	struct CubeFace // NOLINT(cppcoreguidelines-pro-type-member-init)
+	{
+		ModelVertex::Normal normal;
+		TextureOrColor texture_or_color;
+		tr::Vec3<uint8> top_left;
+		tr::Vec3<uint8> top_right;
+		tr::Vec3<uint8> bottom_left;
+		tr::Vec3<uint8> bottom_right;
+	};
+
+	const auto planeificator = [&](CubeFace f) {
+		ModelVertex base_vert = {
+			.normal = f.normal, .shaded = cube.shaded, .texture_id = 0
+		};
+
+		if (f.texture_or_color.using_texture) {
+			base_vert.texture_id = f.texture_or_color.texture;
+			base_vert.using_texture = true;
+		}
+		else {
+			base_vert.color = f.texture_or_color.color;
+			base_vert.using_texture = true;
+		}
+
+		ModelVertex tl = base_vert;
+		tl.position = f.top_left;
+		tl.corner = ModelVertex::QuadCorner::TOP_LEFT;
+		vertices.add(tl);
+
+		ModelVertex tr = base_vert;
+		tr.position = f.top_right;
+		tr.corner = ModelVertex::QuadCorner::TOP_RIGHT;
+		vertices.add(tr);
+
+		ModelVertex bl = base_vert;
+		bl.position = f.bottom_left;
+		bl.corner = ModelVertex::QuadCorner::BOTTOM_LEFT;
+		vertices.add(bl);
+
+		ModelVertex br = base_vert;
+		br.position = f.bottom_right;
+		br.corner = ModelVertex::QuadCorner::BOTTOM_RIGHT;
+		vertices.add(br);
+
+		indices.add({vert_count + 2, vert_count + 1, vert_count});
+		indices.add({vert_count + 2, vert_count + 3, vert_count + 1});
+		vert_count += 4;
+	};
+
+// c++ police arrest this man
+#define PX cube.position.x
+#define PY cube.position.y
+#define PZ cube.position.z
+#define SX cube.size.x
+#define SY cube.size.y
+#define SZ cube.size.z
+#define V0 {PX, PY, PZ}
+#define V1 {uint8(tr::clamp(PX + SX, 0, 255)), PY, PZ}
+#define V2 {uint8(tr::clamp(PX + SX, 0, 255)), uint8(tr::clamp(PY + SY, 0, 255)), PZ}
+#define V3 {PX, uint8(tr::clamp(PY + SY, 0, 255)), PZ}
+#define V4 {PX, PY, uint8(tr::clamp(PZ + SZ, 0, 255))}
+#define V5 {uint8(tr::clamp(PX + SX, 0, 255)), PY, uint8(tr::clamp(PZ + SZ, 0, 255))}
+#define V6                                                                     \
+	{uint8(tr::clamp(PX + SX, 0, 255)), uint8(tr::clamp(PY + SY, 0, 255)), \
+	 uint8(tr::clamp(PZ + SZ, 0, 255))}
+#define V7 {PX, uint8(tr::clamp(PY + SY, 0, 255)), uint8(tr::clamp(PZ + SZ, 0, 255))}
+
+	planeificator({
+		.normal = ModelVertex::Normal::FRONT,
+		.texture_or_color = cube.front,
+		.top_left = V3,
+		.top_right = V2,
+		.bottom_left = V0,
+		.bottom_right = V1,
+	});
+	planeificator({
+		.normal = ModelVertex::Normal::BACK,
+		.texture_or_color = cube.back,
+		.top_left = V6,
+		.top_right = V7,
+		.bottom_left = V5,
+		.bottom_right = V4,
+	});
+	planeificator({
+		.normal = ModelVertex::Normal::LEFT,
+		.texture_or_color = cube.left,
+		.top_left = V7,
+		.top_right = V3,
+		.bottom_left = V4,
+		.bottom_right = V0,
+	});
+	planeificator({
+		.normal = ModelVertex::Normal::RIGHT,
+		.texture_or_color = cube.right,
+		.top_left = V2,
+		.top_right = V6,
+		.bottom_left = V1,
+		.bottom_right = V5,
+	});
+	planeificator({
+		.normal = ModelVertex::Normal::TOP,
+		.texture_or_color = cube.top,
+		.top_left = V7,
+		.top_right = V6,
+		.bottom_left = V3,
+		.bottom_right = V2,
+	});
+	planeificator({
+		.normal = ModelVertex::Normal::BOTTOM,
+		.texture_or_color = cube.bottom,
+		.top_left = V0,
+		.top_right = V1,
+		.bottom_left = V4,
+		.bottom_right = V5,
+	});
+
+// undoing my crimes
+#undef PX
+#undef PY
+#undef PZ
+#undef SX
+#undef SY
+#undef SZ
+#undef V0
+#undef V1
+#undef V2
+#undef V3
+#undef V4
+#undef V5
+#undef V6
+#undef V7
 }
 
 bool st::ModelSpec::is_terrain() const
