@@ -25,9 +25,55 @@
 
 #include "starry/render.h"
 
+#include <trippin/memory.h>
+
 #include <glad/gl.h>
 
-void st::_test_pipeline()
+#include "starry/internal.h"
+#include "starry/shader/terrain.glsl.h"
+
+void st::_init_renderer()
+{
+	auto terrain_vert = VertexShader(ST_TERRAIN_SHADER_VERTEX);
+	auto terrain_frag = FragmentShader(ST_TERRAIN_SHADER_FRAGMENT);
+	TR_DEFER(terrain_vert.free());
+	TR_DEFER(terrain_frag.free());
+
+	_st->terrain_shader = _st->arena.make_ptr<ShaderProgram>();
+	_st->terrain_shader->attach(terrain_vert);
+	_st->terrain_shader->attach(terrain_frag);
+	_st->terrain_shader->link();
+	_st->terrain_shader->use();
+
+	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_MODEL, tr::Matrix4x4::identity());
+	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_VIEW, tr::Matrix4x4::identity());
+	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_PROJECTION, tr::Matrix4x4::identity());
+	// TODO
+	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_CHUNK, tr::Vec3<uint32>{});
+
+	_st->atlas_ssbo = st::StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
+
+	tr::info("renderer initialized");
+}
+
+void st::_free_renderer()
+{
+	_st->terrain_shader->free();
+	_st->atlas_ssbo.free();
+	tr::info("renderer deinitialized");
+}
+
+void st::_upload_atlas(st::TextureAtlas atlas)
+{
+	// it's faster to just copy everything (256 kb) than it is to do hashing on the gpu
+	tr::Array<tr::Rect<uint32>> ssbo_data{tr::scratchpad(), MAX_ATLAS_TEXTURES};
+	for (auto [id, rect] : atlas._textures) {
+		ssbo_data[id] = rect;
+	}
+	_st->atlas_ssbo.update(*ssbo_data, ssbo_data.len() * sizeof(tr::Rect<uint32>));
+}
+
+void st::_base_pipeline()
 {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -39,6 +85,32 @@ void st::_test_pipeline()
 	glEnable(GL_DEPTH_TEST);
 
 	glLineWidth(2.5);
+}
+
+void st::_terrain_pipeline()
+{
+	st::_base_pipeline();
+	_st->terrain_shader->use();
+}
+
+void st::_render()
+{
+	st::_terrain_pipeline();
+	// TODO st::Environment/st::Skybox/whatever
+	st::clear_screen(tr::Color::rgb(0x009ccf)); // weezer blue
+
+	// straight up setting uniforms
+	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_VIEW, Camera::current().view_matrix());
+	_st->terrain_shader->set_uniform(
+		ST_TERRAIN_SHADER_U_PROJECTION, Camera::current().projection_matrix()
+	);
+
+	st::_render_terrain();
+}
+
+void st::_render_terrain()
+{
+	// TODO
 }
 
 void st::set_wireframe_mode(bool val)

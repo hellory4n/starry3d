@@ -125,6 +125,7 @@ void st::TextureAtlas::add(st::TextureId id, tr::Rect<uint32> coords)
 void st::TextureAtlas::set_current() const
 {
 	_st->atlas = *this;
+	st::_upload_atlas(*this);
 }
 
 void st::set_grid_size(tr::Vec3<uint8> size)

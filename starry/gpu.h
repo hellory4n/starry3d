@@ -33,6 +33,9 @@
 
 namespace st {
 
+// TODO figure out how to make opengl work multithreaded (maybe the renderer is in its own thread?)
+// TODO this whole API is questionable at best
+
 // It clears the screen lmao.
 void clear_screen(tr::Color color);
 

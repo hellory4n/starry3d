@@ -31,67 +31,9 @@
 #pragma mrshader name ST_TERRAIN_SHADER
 
 #pragma mrshader vertex
-// TODO add includes to mrshader
-struct Vertex {
-	uvec3 position;
-	uint normal;
-	uint quad_corner;
-	bool shaded;
-	bool using_texture;
-	bool billboard;
-	uint texture_id;
-	uvec4 color;
-};
 
-#define NORMAL_FRONT 0u
-#define NORMAL_BACK 1u
-#define NORMAL_LEFT 2u
-#define NORMAL_RIGHT 3u
-#define NORMAL_TOP 4u
-#define NORMAL_BOTTOM 5u
-
-#define QUAD_CORNER_TOP_LEFT 0u
-#define QUAD_CORNER_TOP_RIGHT 1u
-#define QUAD_CORNER_BOTTOM_LEFT 2u
-#define QUAD_CORNER_BOTTOM_RIGHT 3u
-
-Vertex unpack_vertex(uvec2 src)
-{
-	uint low = src.x;
-	uint high = src.y;
-	Vertex v;
-
-	v.position.x = low & 0xFFu;
-	v.position.y = (low >> 8)  & 0xFFu;
-	v.position.z = (low >> 16) & 0xFFu;
-
-	v.normal = (low >> 24) & 0xFu;
-	v.quad_corner = (low >> 27) & 0x3u;
-	v.shaded = ((low >> 29) & 0x1u) != 0u;
-	v.using_texture = ((low >> 30) & 0x1u) != 0u;
-	v.billboard = ((low >> 31) & 0x1u) != 0u;
-
-	if (v.using_texture) {
-		v.texture_id = high & 0x3FFFu;
-		v.color = uvec4(0);
-	}
-	else {
-		v.color.r = (high >> 0) & 0xFFu;
-		v.color.g = (high >> 8) & 0xFFu;
-		v.color.b = (high >> 16) & 0xFFu;
-		v.color.a = (high >> 24) & 0xFFu;
-		v.texture_id = 0u;
-	}
-
-	return v;
-}
-
-struct Rect {
-	uint x;
-	uint y;
-	uint width;
-	uint height;
-};
+#pragma mrshader include starry/shader/vertex.glsl
+#pragma mrshader include starry/shader/atlas.glsl
 
 // vertices are hyper optimized to safe space
 layout (location = 0) in uvec2 vs_packed;
@@ -101,51 +43,6 @@ out vec4 fs_color;
 // you can't pass a bool here :DDDDD
 flat out int fs_using_texture;
 flat out int fs_shaded;
-
-#pragma mrshader define U_MODEL "u_model"
-uniform mat4 u_model;
-#pragma mrshader define U_VIEW "u_view"
-uniform mat4 u_view;
-#pragma mrshader define U_PROJECTION "u_projection"
-uniform mat4 u_projection;
-
-#define CHUNK_SIZE 32
-#pragma mrshader define U_CHUNK "u_chunk"
-uniform uvec3 u_chunk;
-#pragma mrshader define U_ATLAS_SIZE "u_atlas_size"
-uniform uvec2 u_atlas_size;
-
-#pragma mrshader define SSBO_ATLAS 0
-layout(binding = 0, std430) readonly buffer atlas {
-	// storing the whole 16k rects is faster than implementing hashmaps on the gpu
-	Rect u_atlas_textures[];
-};
-
-// get texcoords (it's faster to calculate it in the vertex shader since it runs less times)
-vec2 get_texcoords(Vertex v)
-{
-	vec2 texcoords;
-	Rect texture_rect = u_atlas_textures[v.texture_id];
-
-	switch (v.quad_corner) {
-	case QUAD_CORNER_TOP_LEFT:
-		texcoords = vec2(float(texture_rect.x), float(texture_rect.y));
-		break;
-	case QUAD_CORNER_TOP_RIGHT:
-		texcoords = vec2(float(texture_rect.x + texture_rect.width), float(texture_rect.y));
-		break;
-	case QUAD_CORNER_BOTTOM_LEFT:
-		texcoords = vec2(float(texture_rect.x), float(texture_rect.y + texture_rect.height));
-		break;
-	case QUAD_CORNER_BOTTOM_RIGHT:
-		texcoords = vec2(float(texture_rect.x + texture_rect.width),
-			float(texture_rect.y + texture_rect.height)
-		);
-		break;
-	}
-
-	return texcoords / vec2(u_atlas_size);
-}
 
 void main()
 {

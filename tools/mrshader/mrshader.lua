@@ -41,28 +41,44 @@ local function get_shader_srcs(shader_src)
 			assert(val)
 			defines[name] = val
 		elseif startswith(line, "#pragma mrshader include ") then
+			-- TODO you can't put a comment at the end of the line lmao
+			-- TODO relative paths don't work
+			-- TODO please just rewrite mrshader eventually
 			local path = line:sub(#"#pragma mrshader include "+1)
-			local include = io.open(path, "r")
-			if include == nil then
-				error("couldn't include file " .. path, 1)
-			end
 
-			for include_line in include:lines() do
-				-- TODO just support them smh
-				if startswith(include_line, "#pragma mrshader include ") then
-					error("recursive includes are not supported yet")
+			local function include(incpath)
+				local incfile = io.open(incpath, "r")
+				if incfile == nil then
+					error("couldn't include file " .. incpath, 1)
 				end
 
-				-- TODO debugging headers will be obnoxious like this
-				-- though i don't think glsl supports anything better
-				if current_source == "vert" then
-					table.insert(vert_src, "#line "..i)
-					table.insert(vert_src, include_line)
-				elseif current_source == "frag" then
-					table.insert(frag_src, "#line "..i)
-					table.insert(frag_src, include_line)
+				for include_line in incfile:lines() do
+					if startswith(include_line, "#pragma mrshader define ") then
+						local define = include_line:sub(#"#pragma mrshader define "+1)
+						local name, val = define:match("^%s*(%S+)%s*(.*)$")
+						assert(name)
+						assert(val)
+						defines[name] = val
+					end
+
+					if startswith(include_line, "#pragma mrshader include ") then
+						local incincpath =
+							include_line:sub(#"#pragma mrshader include "+1)
+						include(incincpath)
+					end
+
+					-- TODO debugging headers will be obnoxious like this
+					-- though i don't think glsl supports anything better
+					if current_source == "vert" then
+						table.insert(vert_src, "#line "..i)
+						table.insert(vert_src, include_line)
+					elseif current_source == "frag" then
+						table.insert(frag_src, "#line "..i)
+						table.insert(frag_src, include_line)
+					end
 				end
 			end
+			include(path)
 		-- not a pragma balls
 		else
 			if current_source == "vert" then

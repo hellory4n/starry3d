@@ -16,11 +16,7 @@ class Sandbox : public st::Application
 
 	tr::Arena arena;
 
-	st::ShaderProgram program;
-	st::Mesh mesh;
-	st::StorageBuffer ssbo;
-
-	void player_controller(float64 dt) const;
+	void _player_controller(float64 dt) const;
 
 public:
 	Sandbox();

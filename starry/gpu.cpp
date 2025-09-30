@@ -275,7 +275,6 @@ void st::ShaderProgram::link()
 void st::ShaderProgram::use()
 {
 	glUseProgram(_program);
-	_st->current_shader = this;
 }
 
 void st::ShaderProgram::set_uniform(tr::String name, bool value)

@@ -2,7 +2,7 @@
 
 #include <starry/world.h>
 
-st::TextureAtlas sbox::setup_world()
+void sbox::setup_world()
 {
 	st::TextureAtlas atlas = st::TextureAtlas::load("app://atlas.png").unwrap();
 
@@ -16,5 +16,4 @@ st::TextureAtlas sbox::setup_world()
 	SBOX_ADD_TEXTURE(4, 0, KIRBY_RIPOFF)
 
 	atlas.set_current();
-	return atlas;
 }

@@ -82,9 +82,10 @@ constexpr TextureId MAX_ATLAS_TEXTURES = 1 << 14; // 16384
 // stuff.
 class TextureAtlas
 {
-public: // TODO don't
 	Texture _source = {};
 	tr::HashMap<TextureId, tr::Rect<uint32>> _textures = {};
+
+	friend void _upload_atlas(TextureAtlas atlas);
 
 public:
 	// Loads a texture atlas from an image file.
@@ -220,6 +221,9 @@ struct ModelSpec
 	tr::Array<ModelMesh> meshes = {};
 	Mesh gpu_mesh = {};
 
+	// shutu p
+	ModelSpec() {}
+
 	// Registers the model so that now you can use it with that ID and stuff HOW COOL IS THAT
 	ModelSpec(Model id, tr::Array<ModelMesh> meshes);
 
@@ -291,6 +295,11 @@ private:
 	Model _model = MODEL_AIR;
 	BlockType _type;
 
+	Block()
+		: _type(BlockType::TERRAIN)
+	{
+	}
+
 	Block(tr::Vec3<int32> position, Model model, BlockType type)
 		: _position(position)
 		, _model(model)
@@ -298,9 +307,12 @@ private:
 	{
 	}
 
+	// blocks have lots of friends
+	// all of them can touch block's private parts
 	friend DynamicBlock;
 	friend tr::Maybe<Block&> get_static_block(tr::Vec3<int32> pos);
 	friend Block& place_static_block(tr::Vec3<int32> pos, Model model);
+	friend tr::HashMap<tr::Vec3<int32>, Block>; // ???????
 };
 
 // Returns the static block in that position. Note that not all blocks have a position, to

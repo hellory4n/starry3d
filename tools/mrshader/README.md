@@ -1,6 +1,6 @@
 # MrShader
 
-Simple tool for turning shaders into C/C++ headers.
+Janky shader preprocessor. Turns your GLSL shaders into C/C++ headers (and other things too)
 
 ## Requirements
 

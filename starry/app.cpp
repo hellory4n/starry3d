@@ -88,7 +88,7 @@ void st::_run(
 
 	st::_preinit();
 	st::_init_window();
-	st::_test_pipeline();
+	st::_init_renderer();
 #ifdef ST_IMGUI
 	st::imgui::init();
 #endif
@@ -105,6 +105,7 @@ void st::_run(
 		_st->application->draw();
 		_st->application->gui();
 
+		st::_render();
 #ifdef ST_IMGUI
 		st::imgui::render();
 #endif
@@ -115,6 +116,7 @@ void st::_run(
 #ifdef ST_IMGUI
 	st::imgui::free();
 #endif
+	st::_free_renderer();
 	st::_free_window();
 	st::_postfree();
 }

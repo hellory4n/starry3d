@@ -69,7 +69,8 @@ struct Starry
 	tr::Vec2<float64> delta_mouse_pos = {};
 
 	// rendering
-	ShaderProgram* current_shader = nullptr;
+	ShaderProgram* terrain_shader = nullptr;
+	StorageBuffer atlas_ssbo;
 
 	// assets
 	tr::Maybe<TextureAtlas> atlas = {};

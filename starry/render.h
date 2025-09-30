@@ -92,8 +92,19 @@ struct PackedModelVertex
 	PackedModelVertex(ModelVertex src);
 };
 
-// some functions to set the opengl state
-void _test_pipeline();
+void _init_renderer();
+void _free_renderer();
+void _render();
+
+// a lot of private functions
+// please do not touch unless you're a friend
+// (did you get the reference, do you need any pointers)
+void _base_pipeline();
+void _terrain_pipeline();
+
+void _render_terrain();
+
+void _upload_atlas(TextureAtlas atlas);
 
 void set_wireframe_mode(bool val);
 
