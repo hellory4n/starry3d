@@ -8,6 +8,8 @@ layout(location = 1) in vec3 vs_color;
 
 out vec3 fs_color;
 
+#pragma mrshader include header.glsl
+
 void main()
 {
 	gl_Position = vec4(vs_pos, 1.0);

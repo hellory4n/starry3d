@@ -27,6 +27,7 @@ local function get_shader_srcs(shader_src)
 			table.insert(frag_src, line)
 		end
 
+		-- pragma balls
 		if line == "#pragma mrshader vertex" then
 			current_source = "vert"
 		elseif line == "#pragma mrshader fragment" then
@@ -39,6 +40,30 @@ local function get_shader_srcs(shader_src)
 			assert(name)
 			assert(val)
 			defines[name] = val
+		elseif startswith(line, "#pragma mrshader include ") then
+			local path = line:sub(#"#pragma mrshader include "+1)
+			local include = io.open(path, "r")
+			if include == nil then
+				error("couldn't include file " .. path, 1)
+			end
+
+			for include_line in include:lines() do
+				-- TODO just support them smh
+				if startswith(include_line, "#pragma mrshader include ") then
+					error("recursive includes are not supported yet")
+				end
+
+				-- TODO debugging headers will be obnoxious like this
+				-- though i don't think glsl supports anything better
+				if current_source == "vert" then
+					table.insert(vert_src, "#line "..i)
+					table.insert(vert_src, include_line)
+				elseif current_source == "frag" then
+					table.insert(frag_src, "#line "..i)
+					table.insert(frag_src, include_line)
+				end
+			end
+		-- not a pragma balls
 		else
 			if current_source == "vert" then
 				table.insert(vert_src, "#line "..i)

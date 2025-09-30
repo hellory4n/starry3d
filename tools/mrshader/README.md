@@ -34,8 +34,16 @@ layout(location = 0) in vec3 vs_pos;
 #define SOME_SHADER_VS_POS 0
 ```
 
-A full example would be:
+And you can even include other GLSL files:
+```glsl
+#pragma mrshader include other_file.glsl
 
+// you still need include guards tho
+#ifndef _OTHER_FILE_H
+#define _OTHER_FILE_H
+// ...
+#endif
+```
 
 The command is `./mrshader.lua [shader] [header] [string name]`
 

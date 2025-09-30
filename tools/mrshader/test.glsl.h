@@ -10,16 +10,33 @@ constexpr const char* ST_SHADER_TEST_VERTEX =
 static const char* ST_SHADER_TEST_VERTEX = 
 #endif
 	"#version 330 core\n"
+	"#line 6\n"
 	"layout(location = 0) in vec3 vs_pos;\n"
+	"#line 7\n"
 	"layout(location = 1) in vec3 vs_color;\n"
+	"#line 8\n"
 	"\n"
+	"#line 9\n"
 	"out vec3 fs_color;\n"
+	"#line 10\n"
 	"\n"
+	"#line 11\n"
+	"// richard\n"
+	"#line 11\n"
+	"uniform mat4 u_mvp;\n"
+	"#line 12\n"
+	"\n"
+	"#line 13\n"
 	"void main()\n"
+	"#line 14\n"
 	"{\n"
+	"#line 15\n"
 	"\tgl_Position = vec4(vs_pos, 1.0);\n"
+	"#line 16\n"
 	"\tfs_color = vs_color;\n"
+	"#line 17\n"
 	"}\n"
+	"#line 18\n"
 	"\n";
 
 #ifdef __cplusplus
@@ -28,12 +45,19 @@ constexpr const char* ST_SHADER_TEST_FRAGMENT =
 static const char* ST_SHADER_TEST_FRAGMENT = 
 #endif
 	"#version 330 core\n"
+	"#line 20\n"
 	"out vec4 frag_color;\n"
+	"#line 21\n"
 	"in vec3 fs_color;\n"
+	"#line 22\n"
 	"\n"
+	"#line 23\n"
 	"void main()\n"
+	"#line 24\n"
 	"{\n"
+	"#line 25\n"
 	"\tfrag_color = vec4(fs_color, 1.0);\n"
+	"#line 26\n"
 	"}\n";
 
 #define ST_SHADER_TEST_BALLS "pelotas"
