@@ -32,6 +32,7 @@
 #include <trippin/iofs.h>
 #include <trippin/log.h>
 #include <trippin/math.h>
+#include <trippin/memory.h>
 
 // fun!
 TR_GCC_IGNORE_WARNING(-Wold-style-cast)
@@ -79,7 +80,8 @@ void st::_run(
 {
 	tr::Arena arena = {};
 	tr::Arena asset_arena = {};
-	_st = arena.make_ptr<Starry>(arena, asset_arena);
+	tr::Arena world_arena = {};
+	_st = arena.make_ptr<Starry>(arena, asset_arena, world_arena);
 
 	_st->settings = settings;
 	_st->window_size = settings.window_size;

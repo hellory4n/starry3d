@@ -5,7 +5,7 @@
  * starry/world.cpp
  * The API for the voxel world and stuff.
  *
- * CoPYright (c) 2025 hellory4n <hellory4n@gmail.com>
+ * Copyright (c) 2025 hellory4n <hellory4n@gmail.com>
  *
  * This software is provided 'as-is', without any express or implied
  * warranty. In no event will the authors be held liable for any damages
@@ -28,6 +28,7 @@
 #include "starry/world.h"
 
 #include <trippin/collection.h>
+#include <trippin/common.h>
 #include <trippin/error.h>
 #include <trippin/log.h>
 #include <trippin/math.h>
@@ -129,6 +130,11 @@ void st::TextureAtlas::set_current() const
 void st::set_grid_size(tr::Vec3<uint8> size)
 {
 	_st->grid_size = size;
+}
+
+const st::ModelSpec& st::Model::model_spec() const
+{
+	return _st->models[id];
 }
 
 st::ModelSpec::ModelSpec(st::Model id, tr::Array<st::ModelMesh> meshes)
@@ -394,4 +400,55 @@ bool st::ModelSpec::is_terrain() const
 	}
 
 	return true;
+}
+
+tr::Maybe<st::Block&> st::get_static_block(tr::Vec3<int32> pos)
+{
+	if (_st->static_blocks.contains(pos)) {
+		return _st->static_blocks[pos];
+	}
+	else if (_st->terrain_blocks.contains(pos)) {
+		return _st->terrain_blocks[pos];
+	}
+	return {};
+}
+
+st::Block& st::place_static_block(tr::Vec3<int32> pos, st::Model model)
+{
+	bool is_terrain = model.model_spec().is_terrain();
+	Block& block = is_terrain ? _st->terrain_blocks[pos] : _st->static_blocks[pos];
+	block._model = model;
+	block._position = pos;
+	block._type = is_terrain ? BlockType::TERRAIN : BlockType::STATIC;
+	return block;
+}
+
+st::DynamicBlock::operator Block() const
+{
+	tr::Vec3<int32> rounded_position = {
+		int32(roundf(position.x)), int32(roundf(position.y)), int32(roundf(position.z))
+	};
+	return Block{rounded_position, model(), BlockType::DYNAMIC};
+}
+
+tr::Maybe<st::DynamicBlock&> st::Block::to_dynamic_block() const // NOLINT
+{
+	TR_TODO();
+}
+
+void st::Block::destroy()
+{
+	if (model().model_spec().is_terrain()) {
+		_st->terrain_blocks.remove(_position);
+	}
+	else {
+		_st->static_blocks.remove(_position);
+	}
+	_model = MODEL_AIR;
+}
+
+st::DynamicBlock& st::place_dynamic_block(st::Model model)
+{
+	(void)model;
+	TR_TODO();
 }

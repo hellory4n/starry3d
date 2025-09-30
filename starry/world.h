@@ -185,8 +185,11 @@ struct ModelMesh
 	};
 };
 
+// A list of meshes which may either be a cube or plane because real voxels are too slow unless you
+// do evil fuckery which I would rather not do at the moment. A fascinating endeavour.
+struct ModelSpec;
+
 // A handle to the real model (`st::ModelSpec`)
-// TODO why isn't this a typedef again?
 struct Model
 {
 	uint16 id;
@@ -200,6 +203,9 @@ struct Model
 	{
 		return id;
 	}
+
+	// Returns the `st::ModelSpec` from which this piece of crap originates from.
+	const ModelSpec& model_spec() const;
 };
 
 // There is simply nothing. There is simply nothing. There is simply nothing. There is simply
@@ -223,7 +229,6 @@ struct ModelSpec
 
 enum class BlockType : uint8
 {
-	AIR,
 	TERRAIN,
 	STATIC,
 	DYNAMIC,
@@ -243,8 +248,16 @@ struct DynamicBlock
 	tr::Vec3<float32> scale = {1.0, 1.0, 1.0};
 	tr::Color tint = tr::palette::WHITE;
 
+	Model model() const
+	{
+		return _model;
+	}
+
 	// Yeah.
 	operator Block() const;
+
+private:
+	Model _model = MODEL_AIR;
 };
 
 // Probably a static block except this represents dynamic blocks sometimes too. Note this struct
@@ -252,9 +265,20 @@ struct DynamicBlock
 struct Block
 {
 	// If it's a dynamic block then the position gets rounded
-	const tr::Vec3<int32> position = {};
-	const Model model = 0;
-	const BlockType type;
+	tr::Vec3<int32> position() const
+	{
+		return _position;
+	}
+
+	Model model() const
+	{
+		return _model;
+	}
+
+	BlockType type() const
+	{
+		return _type;
+	}
 
 	// If the block is dynamic, returns a `st::DynamicBlock&`. Else, returns null.
 	tr::Maybe<DynamicBlock&> to_dynamic_block() const;
@@ -262,25 +286,26 @@ struct Block
 	// Annihilates the block there
 	void destroy();
 
-	bool exists() const
-	{
-		return model != 0;
-	}
-
 private:
+	tr::Vec3<int32> _position = {};
+	Model _model = MODEL_AIR;
+	BlockType _type;
+
 	Block(tr::Vec3<int32> position, Model model, BlockType type)
-		: position(position)
-		, model(model)
-		, type(type)
+		: _position(position)
+		, _model(model)
+		, _type(type)
 	{
 	}
 
-	// TODO add the renderer as a friend
+	friend DynamicBlock;
+	friend tr::Maybe<Block&> get_static_block(tr::Vec3<int32> pos);
+	friend Block& place_static_block(tr::Vec3<int32> pos, Model model);
 };
 
 // Returns the static block in that position. Note that not all blocks have a position, to
 // check that use the `st::Block.exists()` function
-Block& get_static_block(tr::Vec3<int32> pos);
+tr::Maybe<Block&> get_static_block(tr::Vec3<int32> pos);
 
 // Places a static block somewhere, and returns the placed block.
 Block& place_static_block(tr::Vec3<int32> pos, Model model);
@@ -288,18 +313,27 @@ Block& place_static_block(tr::Vec3<int32> pos, Model model);
 // util functions, just to make things shorter/easier to read
 static inline bool block_exists_at(tr::Vec3<int32> pos)
 {
-	return st::get_static_block(pos).exists();
+	return st::get_static_block(pos).is_valid();
 }
 
-static inline Model get_model_from_pos(tr::Vec3<int32> pos)
+static inline tr::Maybe<Model> get_model_from_pos(tr::Vec3<int32> pos)
 {
-	return st::get_static_block(pos).model;
+	tr::Maybe<Block&> block = st::get_static_block(pos);
+	if (block.is_valid()) {
+		return block.unwrap().model();
+	}
+	return {};
 }
 
-// Removes a static/terrain block somewhere.
-static inline void break_static_block(tr::Vec3<int32> pos)
+// Removes a static/terrain block somewhere, and returns true if the original block existed.
+static inline bool break_static_block(tr::Vec3<int32> pos)
 {
-	st::get_static_block(pos).destroy();
+	tr::Maybe<Block&> block = st::get_static_block(pos);
+	if (block.is_valid()) {
+		block.unwrap().destroy();
+		return true;
+	}
+	return false;
 }
 
 // Places a dynamic block somewhere, and returns the placed dynamic block.

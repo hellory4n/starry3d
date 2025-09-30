@@ -48,6 +48,7 @@ struct Starry
 
 	tr::Arena arena;
 	tr::Arena asset_arena;
+	tr::Arena world_arena;
 	Application* application = nullptr;
 	ApplicationSettings settings = {};
 
@@ -67,23 +68,30 @@ struct Starry
 	tr::Vec2<float64> current_mouse_pos = {};
 	tr::Vec2<float64> delta_mouse_pos = {};
 
-	// world
-	Camera camera = {};
-	tr::Vec3<uint8> grid_size = {8, 8, 8};
+	// rendering
+	ShaderProgram* current_shader = nullptr;
+
+	// assets
 	tr::Maybe<TextureAtlas> atlas = {};
 	tr::HashMap<Model, ModelSpec> models = {};
 
-	// render
-	ShaderProgram* current_shader = nullptr;
+	// world
+	Camera camera = {};
+	tr::Vec3<uint8> grid_size = {8, 8, 8};
+	tr::HashMap<tr::Vec3<int32>, Block> terrain_blocks;
+	tr::HashMap<tr::Vec3<int32>, Block> static_blocks;
+	// TODO how tf do you store the dynamic blocks
 
-	Starry(tr::Arena arena, tr::Arena asset_arena)
+	Starry(tr::Arena arena, tr::Arena asset_arena, tr::Arena world_arena)
 		: arena(arena)
 		, asset_arena(asset_arena)
+		, world_arena(world_arena)
 	{
-		key_state = tr::Array<InputState>(arena, static_cast<int>(st::Key::LAST) + 1);
-		mouse_state =
-			tr::Array<InputState>(arena, static_cast<int>(st::MouseButton::LAST) + 1);
+		key_state = tr::Array<InputState>(arena, int(st::Key::LAST) + 1);
+		mouse_state = tr::Array<InputState>(arena, int(st::MouseButton::LAST) + 1);
 		models = tr::HashMap<Model, ModelSpec>(asset_arena);
+		terrain_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
+		static_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
 	}
 };
 
@@ -98,7 +106,6 @@ void _preinit();
 
 // stupid name i know
 void _postfree();
-
 }
 
 #endif
