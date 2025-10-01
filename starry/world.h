@@ -184,6 +184,18 @@ struct ModelMesh
 		ModelCube cube;
 		ModelPlane plane;
 	};
+
+	ModelMesh() {}
+	ModelMesh(ModelCube cube)
+		: type(ModelMeshType::CUBE)
+		, cube(cube)
+	{
+	}
+	ModelMesh(ModelPlane plane)
+		: type(ModelMeshType::PLANE)
+		, plane(plane)
+	{
+	}
 };
 
 // A list of meshes which may either be a cube or plane because real voxels are too slow unless you
@@ -230,6 +242,16 @@ struct ModelSpec
 	// Terrain blocks are rendered differently :))))))))))))))))
 	bool is_terrain() const;
 };
+
+// using a constructor for that is kinda weird lmao
+// TODO this is stupid
+
+// Registers the model so that now you can use it with that ID and stuff HOW COOL IS THAT
+inline void register_model_spec(Model id, tr::Array<ModelMesh> meshes)
+{
+	[[maybe_unused]]
+	ModelSpec man = ModelSpec(id, meshes);
+}
 
 enum class BlockType : uint8
 {
@@ -323,12 +345,12 @@ tr::Maybe<Block&> get_static_block(tr::Vec3<int32> pos);
 Block& place_static_block(tr::Vec3<int32> pos, Model model);
 
 // util functions, just to make things shorter/easier to read
-static inline bool block_exists_at(tr::Vec3<int32> pos)
+inline bool block_exists_at(tr::Vec3<int32> pos)
 {
 	return st::get_static_block(pos).is_valid();
 }
 
-static inline tr::Maybe<Model> get_model_from_pos(tr::Vec3<int32> pos)
+inline tr::Maybe<Model> get_model_from_pos(tr::Vec3<int32> pos)
 {
 	tr::Maybe<Block&> block = st::get_static_block(pos);
 	if (block.is_valid()) {
@@ -338,7 +360,7 @@ static inline tr::Maybe<Model> get_model_from_pos(tr::Vec3<int32> pos)
 }
 
 // Removes a static/terrain block somewhere, and returns true if the original block existed.
-static inline bool break_static_block(tr::Vec3<int32> pos)
+inline bool break_static_block(tr::Vec3<int32> pos)
 {
 	tr::Maybe<Block&> block = st::get_static_block(pos);
 	if (block.is_valid()) {

@@ -14,6 +14,13 @@ namespace Texture {
 	constexpr st::TextureId KIRBY_RIPOFF = 5;
 }
 
+namespace Model {
+	constexpr st::Model GRASS = 1;
+	constexpr st::Model DIRT = 2;
+	constexpr st::Model THE_J = 3;
+	constexpr st::Model KIRBY_RIPOFF = 4;
+};
+
 void setup_world();
 
 }
