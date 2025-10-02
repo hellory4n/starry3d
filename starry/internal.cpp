@@ -76,6 +76,8 @@ void st::_preinit()
 void st::_postfree()
 {
 	_st->asset_arena.free();
+	_st->world_arena.free();
+	_st->render_arena.free();
 	// _st itself is on that arena
 	// TODO this WILL break
 	_st->arena.free();

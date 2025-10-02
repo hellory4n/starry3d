@@ -27,7 +27,9 @@
 #define _ST_RENDER_H
 
 #include <trippin/math.h>
+#include <trippin/memory.h>
 
+#include "starry/gpu.h"
 #include "starry/world.h"
 
 namespace st {
@@ -92,19 +94,41 @@ struct PackedModelVertex
 	PackedModelVertex(ModelVertex src);
 };
 
-void _init_renderer();
-void _free_renderer();
-void _render();
+// circular depdenccny :(
+struct ModelMeshData
+{
+	tr::Array<PackedModelVertex> vertices;
+	tr::Array<Triangle> triangles;
+};
+
+// Di?h
+struct Chunk
+{
+	Mesh mesh = {};
+	// regenerating the mesh for every chunk every frame is really wasteful
+	bool new_this_frame = false;
+};
 
 // a lot of private functions
 // please do not touch unless you're a friend
 // (did you get the reference, do you need any pointers)
+
+// renderer lifecycle
+void _init_renderer();
+void _free_renderer();
+void _render();
+
+// pipelines (setting the opengl state)
 void _base_pipeline();
 void _terrain_pipeline();
 
+// actual rendering stuff
+void _regen_chunk_mesh(tr::Vec3<int32> pos);
 void _render_terrain();
 
+// housekeeping / interop with the rest of the engine
 void _upload_atlas(TextureAtlas atlas);
+void _refresh_chunk_state();
 
 void set_wireframe_mode(bool val);
 

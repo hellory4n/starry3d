@@ -38,6 +38,7 @@
 
 #include "starry/app.h"
 #include "starry/gpu.h"
+#include "starry/render.h"
 #include "starry/world.h"
 
 namespace st {
@@ -71,20 +72,19 @@ struct Starry
 
 	// rendering
 	ShaderProgram* terrain_shader = nullptr;
-	StorageBuffer atlas_ssbo;
-	// regenerating the mesh for every chunk every frame is really wasteful
-	tr::HashMap<tr::Vec3<int32>, Mesh> chunk_meshes;
-	tr::HashMap<tr::Vec3<int32>, bool> chunk_updated_this_frame;
+	StorageBuffer atlas_ssbo = {};
+	tr::HashMap<tr::Vec3<int32>, Chunk> chunks = {};
 
 	// assets
 	tr::Maybe<TextureAtlas> atlas = {};
 	tr::HashMap<Model, ModelSpec> models = {};
+	tr::HashMap<Model, ModelMeshData> model_mesh_data = {};
 
 	// world
 	Camera camera = {};
 	tr::Vec3<uint8> grid_size = {8, 8, 8};
-	tr::HashMap<tr::Vec3<int32>, Block> terrain_blocks;
-	tr::HashMap<tr::Vec3<int32>, Block> static_blocks;
+	tr::HashMap<tr::Vec3<int32>, Block> terrain_blocks = {};
+	tr::HashMap<tr::Vec3<int32>, Block> static_blocks = {};
 	// TODO how tf do you store the dynamic blocks
 
 	Starry(tr::Arena arena, tr::Arena asset_arena, tr::Arena world_arena,
@@ -97,8 +97,10 @@ struct Starry
 		key_state = tr::Array<InputState>(arena, int(st::Key::LAST) + 1);
 		mouse_state = tr::Array<InputState>(arena, int(st::MouseButton::LAST) + 1);
 		models = tr::HashMap<Model, ModelSpec>(asset_arena);
+		model_mesh_data = tr::HashMap<Model, ModelMeshData>(asset_arena);
 		terrain_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
 		static_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
+		chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(render_arena);
 	}
 };
 

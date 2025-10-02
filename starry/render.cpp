@@ -25,12 +25,16 @@
 
 #include "starry/render.h"
 
+#include <trippin/common.h>
+#include <trippin/math.h>
 #include <trippin/memory.h>
 
 #include <glad/gl.h>
 
+#include "starry/gpu.h"
 #include "starry/internal.h"
 #include "starry/shader/terrain.glsl.h"
+#include "starry/world.h"
 
 void st::_init_renderer()
 {
@@ -73,6 +77,18 @@ void st::_upload_atlas(st::TextureAtlas atlas)
 	_st->atlas_ssbo.update(*ssbo_data, ssbo_data.len() * sizeof(tr::Rect<uint32>));
 }
 
+void st::_refresh_chunk_state()
+{
+	// TODO make this location-based
+	// no need to regen a chunk mesh in the middle of nowhere
+	for (auto [pos, chunk] : _st->chunks) {
+		if (chunk.new_this_frame) {
+			st::_regen_chunk_mesh(pos);
+		}
+		chunk.new_this_frame = false;
+	}
+}
+
 void st::_base_pipeline()
 {
 	glEnable(GL_BLEND);
@@ -105,7 +121,58 @@ void st::_render()
 		ST_TERRAIN_SHADER_U_PROJECTION, Camera::current().projection_matrix()
 	);
 
+	st::_refresh_chunk_state();
 	st::_render_terrain();
+}
+
+void st::_regen_chunk_mesh(tr::Vec3<int32> pos)
+{
+	tr::Vec3<int32> start = pos * st::CHUNK_SIZE;
+	tr::Vec3<int32> end = start + st::CHUNK_SIZE_VEC;
+	// TODO this is a memory leak
+	// memory usage will only increase while the old data isn't used
+	tr::Array<PackedModelVertex> vertices{_st->render_arena};
+	tr::Array<Triangle> triangles{_st->render_arena};
+
+	// :(
+	for (auto x : tr::range<int32>(start.x, end.x)) {
+		for (auto y : tr::range<int32>(start.y, end.y)) {
+			for (auto z : tr::range<int32>(start.z, end.z)) {
+				tr::Maybe<Model> model = st::get_model_from_pos({x, y, z});
+				if (!model.is_valid()) {
+					continue;
+				}
+
+				if (model.unwrap().id == MODEL_AIR) {
+					tr::warn(
+						"why is block %i, %i, %i air?? that's not how you "
+						"destroy blocks",
+						x, y, z
+					);
+					continue;
+				}
+
+				ModelMeshData mesh = _st->model_mesh_data[model.unwrap()];
+				// TODO tr::Array<T>::concat(Array<T> other)
+				for (auto [_, vert] : mesh.vertices) {
+					vertices.add(vert);
+				}
+				for (auto [_, tri] : mesh.triangles) {
+					triangles.add(tri);
+				}
+			}
+		}
+	}
+
+	if (_st->chunks[pos].mesh.is_valid()) {
+		_st->chunks[pos].mesh.update_data(vertices, triangles);
+	}
+	else {
+		const tr::Array<VertexAttribute> attrs = {
+			{"packed", VertexAttributeType::VEC2_UINT32, 0},
+		};
+		_st->chunks[pos].mesh = Mesh(attrs, vertices, triangles, MeshUsage::MUTABLE);
+	}
 }
 
 void st::_render_terrain()

@@ -9,6 +9,7 @@
 #include <starry/render.h>
 
 #include "debug_mode.h"
+#include "starry/world.h"
 #include "world.h"
 
 sbox::Sandbox::Sandbox()
@@ -21,6 +22,12 @@ sbox::Sandbox::Sandbox()
 
 	sbox::setup_world();
 	sbox::imgui_theme();
+
+	for (auto x : tr::range<int32>(0, 50)) {
+		for (auto z : tr::range<int32>(0, 50)) {
+			st::place_static_block({x, 0, z}, Model::GRASS);
+		}
+	}
 
 	tr::log("initialized sandbox :)");
 }

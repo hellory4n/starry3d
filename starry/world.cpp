@@ -44,12 +44,12 @@ static ModelVertex::Normal
 _get_plane_normal(tr::Vec3<uint8> p0, tr::Vec3<uint8> p1, tr::Vec3<uint8> p2);
 
 static void _gen_mesh_for_plane(
-	ModelPlane plane, tr::Array<PackedModelVertex>& vertices, tr::Array<Triangle>& indices,
+	ModelPlane plane, tr::Array<PackedModelVertex>& vertices, tr::Array<Triangle>& triangles,
 	uint32& vert_count
 );
 
 static void _gen_mesh_for_cube(
-	ModelCube cube, tr::Array<PackedModelVertex>& vertices, tr::Array<Triangle>& indices,
+	ModelCube cube, tr::Array<PackedModelVertex>& vertices, tr::Array<Triangle>& triangles,
 	uint32& vert_count
 );
 }
@@ -141,27 +141,23 @@ const st::ModelSpec& st::Model::model_spec() const
 st::ModelSpec::ModelSpec(st::Model id, tr::Array<st::ModelMesh> meshes)
 	: meshes(meshes)
 {
-	const tr::Array<VertexAttribute> attrs = {
-		{"packed", VertexAttributeType::VEC2_UINT32, 0},
-	};
-
 	tr::Array<PackedModelVertex> vertices{_st->asset_arena};
-	tr::Array<Triangle> indices{_st->asset_arena};
+	tr::Array<Triangle> triangles{_st->asset_arena};
 	uint32 vert_count = 0;
 
 	for (auto [_, mesh] : meshes) {
 		if (mesh.type == ModelMeshType::CUBE) {
-			st::_gen_mesh_for_cube(mesh.cube, vertices, indices, vert_count);
+			st::_gen_mesh_for_cube(mesh.cube, vertices, triangles, vert_count);
 		}
 		else if (mesh.type == ModelMeshType::PLANE) {
-			st::_gen_mesh_for_plane(mesh.plane, vertices, indices, vert_count);
+			st::_gen_mesh_for_plane(mesh.plane, vertices, triangles, vert_count);
 		}
 		else {
 			tr::panic("the fuck?");
 		}
 	}
 
-	gpu_mesh = Mesh(attrs, vertices, indices);
+	_st->model_mesh_data[id] = {.vertices = vertices, .triangles = triangles};
 	_st->models[id] = *this;
 	// TODO number ids to string names
 	tr::info("registed model with id %u", uint16(id));
@@ -196,7 +192,7 @@ st::_get_plane_normal(tr::Vec3<uint8> p0, tr::Vec3<uint8> p1, tr::Vec3<uint8> p2
 
 static void st::_gen_mesh_for_plane(
 	st::ModelPlane plane, tr::Array<st::PackedModelVertex>& vertices,
-	tr::Array<st::Triangle>& indices, uint32& vert_count
+	tr::Array<st::Triangle>& triangles, uint32& vert_count
 )
 {
 	st::ModelVertex::Normal normal =
@@ -235,14 +231,14 @@ static void st::_gen_mesh_for_plane(
 	bottom_right.corner = ModelVertex::QuadCorner::BOTTOM_RIGHT;
 	vertices.add(bottom_right);
 
-	indices.add({vert_count + 2, vert_count + 1, vert_count});
-	indices.add({vert_count + 2, vert_count + 3, vert_count + 1});
+	triangles.add({vert_count + 2, vert_count + 1, vert_count});
+	triangles.add({vert_count + 2, vert_count + 3, vert_count + 1});
 	vert_count += 4;
 }
 
 static void st::_gen_mesh_for_cube(
 	st::ModelCube cube, tr::Array<st::PackedModelVertex>& vertices,
-	tr::Array<st::Triangle>& indices, uint32& vert_count
+	tr::Array<st::Triangle>& triangles, uint32& vert_count
 )
 {
 	// TODO culling at the model level
@@ -293,8 +289,8 @@ static void st::_gen_mesh_for_cube(
 		br.corner = ModelVertex::QuadCorner::BOTTOM_RIGHT;
 		vertices.add(br);
 
-		indices.add({vert_count + 2, vert_count + 1, vert_count});
-		indices.add({vert_count + 2, vert_count + 3, vert_count + 1});
+		triangles.add({vert_count + 2, vert_count + 1, vert_count});
+		triangles.add({vert_count + 2, vert_count + 3, vert_count + 1});
 		vert_count += 4;
 	};
 
@@ -421,6 +417,8 @@ st::Block& st::place_static_block(tr::Vec3<int32> pos, st::Model model)
 	block._model = model;
 	block._position = pos;
 	block._type = is_terrain ? BlockType::TERRAIN : BlockType::STATIC;
+
+	_st->chunks[st::block_to_chunk_pos(pos)].new_this_frame = true;
 	return block;
 }
 
@@ -446,6 +444,8 @@ void st::Block::destroy()
 		_st->static_blocks.remove(_position);
 	}
 	_model = MODEL_AIR;
+
+	_st->chunks[st::block_to_chunk_pos(position())].new_this_frame = true;
 }
 
 st::DynamicBlock& st::place_dynamic_block(st::Model model)

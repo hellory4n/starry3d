@@ -142,6 +142,12 @@ public:
 
 	void free();
 
+	// man
+	bool is_valid() const
+	{
+		return _vao != 0 && _vbo != 0 && _ebo != 0 && _index_count != 0;
+	}
+
 	// Draws the mesh. This doesn't handle position, you're gonna have to figure
 	// that out yourself with shader uniforms and shit. Just look at
 	// learnopengl.com or some shit.

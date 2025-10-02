@@ -231,7 +231,6 @@ constexpr Model MODEL_AIR = 0;
 struct ModelSpec
 {
 	tr::Array<ModelMesh> meshes = {};
-	Mesh gpu_mesh = {};
 
 	// shutu p
 	ModelSpec() {}
@@ -254,7 +253,7 @@ inline void register_model_spec(Model id, tr::Array<ModelMesh> meshes)
 }
 
 constexpr int32 CHUNK_SIZE = 32;
-// constexpr tr::Vec3<int32> CHUNK_SIZE_VEC = {32, 32, 32}; // makes some math cleaner
+constexpr tr::Vec3<int32> CHUNK_SIZE_VEC = {32, 32, 32}; // makes some math cleaner
 
 // You'll never guess what this does
 constexpr tr::Vec3<int32> block_to_chunk_pos(tr::Vec3<int32> block_pos)
