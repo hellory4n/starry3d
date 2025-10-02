@@ -45,11 +45,12 @@ void st::clear_screen(tr::Color color)
 }
 
 st::Mesh::Mesh(
-	tr::Array<const VertexAttribute> format, const void* buffer, usize elem_size, usize length,
-	tr::Array<const st::Triangle> indices, bool readonly
+	tr::Array<const st::VertexAttribute> format, const void* buffer, usize length,
+	const st::Triangle* indices, usize triangle_count, st::MeshUsage usage
 )
 {
-	_index_count = uint32(indices.len() * 3);
+	_index_count = uint32(triangle_count * 3);
+	_usage = usage;
 
 	// vao
 	glGenVertexArrays(1, &_vao);
@@ -59,12 +60,78 @@ st::Mesh::Mesh(
 	glGenBuffers(1, &_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 
-	glBufferData(
-		GL_ARRAY_BUFFER, GLsizeiptr(length * elem_size), buffer,
-		readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW
-	);
+	GLenum glusage;
+	switch (usage) {
+	case MeshUsage::READONLY:
+		glusage = GL_STATIC_DRAW;
+		break;
+	case MeshUsage::MUTABLE:
+		glusage = GL_DYNAMIC_DRAW;
+		break;
+	case MeshUsage::STREAMED:
+		glusage = GL_STREAM_DRAW;
+		break;
+	};
+	glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(length), buffer, glusage);
 
 	// figure out the format :DDDD
+	// vertex size
+	// TODO will padding completely ruin this?
+	usize sizeof_vert = 0; // in bytes
+	for (auto [_, attrib] : format) {
+		switch (attrib.type) {
+		case VertexAttributeType::INT32:
+			sizeof_vert += sizeof(int32);
+			break;
+		case VertexAttributeType::UINT32:
+			sizeof_vert += sizeof(uint32);
+			break;
+		case VertexAttributeType::FLOAT32:
+			sizeof_vert += sizeof(float32);
+			break;
+		case VertexAttributeType::FLOAT64:
+			sizeof_vert += sizeof(float64);
+			break;
+		case VertexAttributeType::VEC2_INT32:
+			sizeof_vert += sizeof(int32) * 2;
+			break;
+		case VertexAttributeType::VEC2_UINT32:
+			sizeof_vert += sizeof(uint32) * 2;
+			break;
+		case VertexAttributeType::VEC2_FLOAT32:
+			sizeof_vert += sizeof(float32) * 2;
+			break;
+		case VertexAttributeType::VEC2_FLOAT64:
+			sizeof_vert += sizeof(float64) * 2;
+			break;
+		case VertexAttributeType::VEC3_INT32:
+			sizeof_vert += sizeof(int32) * 3;
+			break;
+		case VertexAttributeType::VEC3_UINT32:
+			sizeof_vert += sizeof(uint32) * 3;
+			break;
+		case VertexAttributeType::VEC3_FLOAT32:
+			sizeof_vert += sizeof(float32) * 3;
+			break;
+		case VertexAttributeType::VEC3_FLOAT64:
+			sizeof_vert += sizeof(float64) * 3;
+			break;
+		case VertexAttributeType::VEC4_INT32:
+			sizeof_vert += sizeof(int32) * 4;
+			break;
+		case VertexAttributeType::VEC4_UINT32:
+			sizeof_vert += sizeof(uint32) * 4;
+			break;
+		case VertexAttributeType::VEC4_FLOAT32:
+			sizeof_vert += sizeof(float32) * 4;
+			break;
+		case VertexAttributeType::VEC4_FLOAT64:
+			sizeof_vert += sizeof(float64) * 4;
+			break;
+		};
+	}
+
+	// vertex attribs
 	for (auto [i, attrib] : format) {
 		uint32 size = 0;
 		switch (attrib.type) {
@@ -135,13 +202,13 @@ st::Mesh::Mesh(
 
 		if (ipointer) {
 			glVertexAttribIPointer(
-				uint32(i), GLint(size), type, GLsizei(elem_size),
+				uint32(i), GLint(size), type, GLsizei(sizeof_vert),
 				reinterpret_cast<const void*>(attrib.offset)
 			);
 		}
 		else {
 			glVertexAttribPointer(
-				uint32(i), GLint(size), type, 0u, GLsizei(elem_size),
+				uint32(i), GLint(size), type, 0u, GLsizei(sizeof_vert),
 				reinterpret_cast<const void*>(attrib.offset)
 			);
 		}
@@ -152,8 +219,8 @@ st::Mesh::Mesh(
 	glGenBuffers(1, &_ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
 	glBufferData(
-		GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(indices.len() * sizeof(Triangle)),
-		indices.buf(), readonly ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW
+		GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(triangle_count * sizeof(Triangle)), indices,
+		glusage
 	);
 
 	// unbind vao
@@ -161,11 +228,6 @@ st::Mesh::Mesh(
 
 	// TODO this might get too noisy
 	tr::info("uploaded mesh (vao %u, vbo %u, ebo %u)", _vao, _vbo, _ebo);
-	tr::info("- vertices:  %zu (%zu KB)", length, tr::bytes_to_kb(length * elem_size));
-	tr::info(
-		"- triangles: %zu (%zu KB)", indices.len(),
-		tr::bytes_to_kb(indices.len() * sizeof(st::Triangle))
-	);
 }
 
 void st::Mesh::free()
@@ -189,6 +251,34 @@ void st::Mesh::draw(uint32 instances) const
 		GL_TRIANGLES, GLsizei(_index_count), GL_UNSIGNED_INT, nullptr, GLsizei(instances)
 	);
 	glBindVertexArray(0);
+}
+
+void st::Mesh::update_data(
+	const void* buffer, usize length, const Triangle* indices, usize triangle_count
+)
+{
+	if (_usage == MeshUsage::READONLY) {
+		tr::panic("trying to update readonly mesh. do you know what readonly means?");
+	}
+
+	GLenum glusage;
+	switch (_usage) {
+	case MeshUsage::READONLY:
+		glusage = GL_STATIC_DRAW;
+		break;
+	case MeshUsage::MUTABLE:
+		glusage = GL_DYNAMIC_DRAW;
+		break;
+	case MeshUsage::STREAMED:
+		glusage = GL_STREAM_DRAW;
+		break;
+	};
+
+	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+	glBufferData(GL_ARRAY_BUFFER, GLsizeiptr(length), buffer, glusage);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, GLsizeiptr(triangle_count * 3), indices, glusage);
 }
 
 void st::Shader::_check_compilation(const char* shader_type) const

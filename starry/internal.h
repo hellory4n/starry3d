@@ -49,6 +49,7 @@ struct Starry
 	tr::Arena arena;
 	tr::Arena asset_arena;
 	tr::Arena world_arena;
+	tr::Arena render_arena;
 	Application* application = nullptr;
 	ApplicationSettings settings = {};
 
@@ -71,6 +72,9 @@ struct Starry
 	// rendering
 	ShaderProgram* terrain_shader = nullptr;
 	StorageBuffer atlas_ssbo;
+	// regenerating the mesh for every chunk every frame is really wasteful
+	tr::HashMap<tr::Vec3<int32>, Mesh> chunk_meshes;
+	tr::HashMap<tr::Vec3<int32>, bool> chunk_updated_this_frame;
 
 	// assets
 	tr::Maybe<TextureAtlas> atlas = {};
@@ -83,10 +87,12 @@ struct Starry
 	tr::HashMap<tr::Vec3<int32>, Block> static_blocks;
 	// TODO how tf do you store the dynamic blocks
 
-	Starry(tr::Arena arena, tr::Arena asset_arena, tr::Arena world_arena)
+	Starry(tr::Arena arena, tr::Arena asset_arena, tr::Arena world_arena,
+	       tr::Arena render_arena)
 		: arena(arena)
 		, asset_arena(asset_arena)
 		, world_arena(world_arena)
+		, render_arena(render_arena)
 	{
 		key_state = tr::Array<InputState>(arena, int(st::Key::LAST) + 1);
 		mouse_state = tr::Array<InputState>(arena, int(st::MouseButton::LAST) + 1);

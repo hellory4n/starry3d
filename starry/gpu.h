@@ -26,6 +26,7 @@
 #ifndef _ST_GPU_H
 #define _ST_GPU_H
 
+#include <trippin/common.h>
 #include <trippin/error.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
@@ -88,6 +89,17 @@ struct Triangle
 	uint32 v3 = 0;
 };
 
+enum class MeshUsage : uint8
+{
+	// Set once, used many times. The default option. Equivalent to `GL_STATIC_DRAW`
+	READONLY,
+	// Modified several times and used many times. Equivalent to `GL_DYNAMIC_DRAW`
+	MUTABLE,
+	// Modified very often and not used many times (because it's being modified often).
+	// Equivalent to `GL_STREAM_DRAW`
+	STREAMED,
+};
+
 // Represents a mesh in the GPU.
 class Mesh
 {
@@ -95,21 +107,37 @@ class Mesh
 	uint32 _vbo = 0;
 	uint32 _ebo = 0;
 	uint32 _index_count = 0;
+	MeshUsage _usage = MeshUsage::READONLY;
 
 public:
 	Mesh() {}
 
 	// `elem_size` is the size of the type you're using for vertices. `readonly`
-	// allows you to update the mesh later.
-	Mesh(tr::Array<const VertexAttribute> format, const void* buffer, usize elem_size,
-	     usize length, tr::Array<const Triangle> indices, bool readonly);
+	// allows you to update the mesh later. You can also use null for the pointers so that it's
+	// just reserving data on VRAM for future use. You should probably use the other
+	// constructors (pointer scary! arrays are nicer)
+	Mesh(tr::Array<const VertexAttribute> format, const void* buffer, usize length,
+	     const Triangle* indices, usize triangle_count, MeshUsage usage);
 
-	// not really necessary but it's nice to have
+	// Creates a mesh duh
 	template<typename T>
 	Mesh(tr::Array<const VertexAttribute> format, tr::Array<T> vertices,
-	     tr::Array<const Triangle> indices, bool readonly = true)
-		: Mesh(format, vertices.buf(), sizeof(T), vertices.len(), indices, readonly)
+	     tr::Array<const Triangle> indices, MeshUsage usage = MeshUsage::READONLY)
+		: Mesh(format, *vertices, sizeof(T) * vertices.len(), *indices, indices.len(),
+		       usage)
 	{
+	}
+
+	// Reserves space in VRAM so that you can put stuff in it later
+	Mesh(tr::Array<const VertexAttribute> format, MeshUsage usage)
+		: Mesh(format, nullptr, 0, nullptr, 0, usage)
+	{
+		if (tr::is_debug() && usage == MeshUsage::READONLY) {
+			tr::warn(
+				"creating readonly mesh without uploading data first. do you know "
+				"what 'readonly' means?"
+			);
+		}
 	}
 
 	void free();
@@ -119,7 +147,19 @@ public:
 	// learnopengl.com or some shit.
 	void draw(uint32 instances = 1) const;
 
-	// TODO update_data()
+	// Updates the data :) (requires mesh usage to NOT be readonly)
+	void update_data(
+		const void* buffer, usize length, const Triangle* indices, usize triangle_count
+	);
+
+	// Updates the data :) (requires mesh usage to NOT be readonly)
+	template<typename T>
+	void update_data(tr::Array<T> vertices, tr::Array<Triangle> indices)
+	{
+		update_data(*vertices, vertices.len() * sizeof(T), *indices, indices.len());
+	}
+
+	// TODO partially_update_data()
 };
 
 // A program on the GPU©®¢™¢™¢™©®©®©®™™™©®©®™™™©®©®™™¢®¢™™

@@ -81,7 +81,8 @@ void st::_run(
 	tr::Arena arena = {};
 	tr::Arena asset_arena = {};
 	tr::Arena world_arena = {};
-	_st = arena.make_ptr<Starry>(arena, asset_arena, world_arena);
+	tr::Arena render_arena = {};
+	_st = arena.make_ptr<Starry>(arena, asset_arena, world_arena, render_arena);
 
 	_st->settings = settings;
 	_st->window_size = settings.window_size;

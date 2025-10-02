@@ -253,6 +253,31 @@ inline void register_model_spec(Model id, tr::Array<ModelMesh> meshes)
 	ModelSpec man = ModelSpec(id, meshes);
 }
 
+constexpr int32 CHUNK_SIZE = 32;
+// constexpr tr::Vec3<int32> CHUNK_SIZE_VEC = {32, 32, 32}; // makes some math cleaner
+
+// You'll never guess what this does
+constexpr tr::Vec3<int32> block_to_chunk_pos(tr::Vec3<int32> block_pos)
+{
+	tr::Vec3<float32> fpos = {float32(block_pos.x), float32(block_pos.y), float32(block_pos.z)};
+	tr::Vec3<float32> fchunk = fpos / float32(CHUNK_SIZE);
+	return {int32(roundf(fchunk.x)), int32(roundf(fchunk.y)), int32(roundf(fchunk.z))};
+}
+
+// You'll never guess what this does
+constexpr tr::Vec3<int32> block_to_chunk_pos(tr::Vec3<float32> block_pos)
+{
+	tr::Vec3<float32> fchunk = block_pos / float32(CHUNK_SIZE);
+	return {int32(roundf(fchunk.x)), int32(roundf(fchunk.y)), int32(roundf(fchunk.z))};
+}
+
+// As the name implies, it returns the current chunk, as in whatever chunk the player's currently
+// at.
+inline tr::Vec3<int32> current_chunk()
+{
+	return st::block_to_chunk_pos(Camera::current().position);
+}
+
 enum class BlockType : uint8
 {
 	TERRAIN,
