@@ -47,10 +47,10 @@ struct Starry
 {
 	// i know this order is horrible for alignment, i don't care
 
-	tr::Arena arena;
-	tr::Arena asset_arena;
-	tr::Arena world_arena;
-	tr::Arena render_arena;
+	tr::Arena& arena;
+	tr::Arena& asset_arena;
+	tr::Arena& world_arena;
+	tr::Arena& render_arena;
 	Application* application = nullptr;
 	ApplicationSettings settings = {};
 
@@ -87,8 +87,8 @@ struct Starry
 	tr::HashMap<tr::Vec3<int32>, Block> static_blocks;
 	// TODO how tf do you store the dynamic blocks
 
-	Starry(tr::Arena arena, tr::Arena asset_arena, tr::Arena world_arena,
-	       tr::Arena render_arena)
+	Starry(tr::Arena& arena, tr::Arena& asset_arena, tr::Arena& world_arena,
+	       tr::Arena& render_arena)
 		: arena(arena)
 		, asset_arena(asset_arena)
 		, world_arena(world_arena)
