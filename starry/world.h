@@ -296,7 +296,7 @@ struct DynamicBlock
 	tr::Vec3<float32> rotation = {};
 	// Multiplier (:
 	tr::Vec3<float32> scale = {1.0, 1.0, 1.0};
-	tr::Color tint = tr::palette::WHITE;
+	tr::Color tint = tr::COLOR_WHITE;
 
 	Model model() const
 	{

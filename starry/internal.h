@@ -64,8 +64,8 @@ struct Starry
 	tr::Vec2<uint32> window_size = {};
 
 	// input
-	tr::Array<InputState> key_state = {};
-	tr::Array<InputState> mouse_state = {};
+	tr::Array<InputState> key_state;
+	tr::Array<InputState> mouse_state;
 	tr::Vec2<float64> prev_mouse_pos = {};
 	tr::Vec2<float64> current_mouse_pos = {};
 	tr::Vec2<float64> delta_mouse_pos = {};
@@ -73,18 +73,18 @@ struct Starry
 	// rendering
 	ShaderProgram* terrain_shader = nullptr;
 	StorageBuffer atlas_ssbo = {};
-	tr::HashMap<tr::Vec3<int32>, Chunk> chunks = {};
+	tr::HashMap<tr::Vec3<int32>, Chunk> chunks;
 
 	// assets
 	tr::Maybe<TextureAtlas> atlas = {};
-	tr::HashMap<Model, ModelSpec> models = {};
-	tr::HashMap<Model, ModelMeshData> model_mesh_data = {};
+	tr::HashMap<Model, ModelSpec> models;
+	tr::HashMap<Model, ModelMeshData> model_mesh_data;
 
 	// world
 	Camera camera = {};
 	tr::Vec3<uint8> grid_size = {8, 8, 8};
-	tr::HashMap<tr::Vec3<int32>, Block> terrain_blocks = {};
-	tr::HashMap<tr::Vec3<int32>, Block> static_blocks = {};
+	tr::HashMap<tr::Vec3<int32>, Block> terrain_blocks;
+	tr::HashMap<tr::Vec3<int32>, Block> static_blocks;
 	// TODO how tf do you store the dynamic blocks
 
 	Starry(tr::Arena arena, tr::Arena asset_arena, tr::Arena world_arena,

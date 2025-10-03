@@ -66,7 +66,7 @@ struct ModelVertex
 	bool billboard = false;
 	union {
 		TextureId texture_id;
-		tr::Color color = tr::palette::WHITE;
+		tr::Color color = tr::COLOR_WHITE;
 	};
 };
 
