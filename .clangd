@@ -1,7 +1,31 @@
 CompileFlags:
-  # so it includes those as <...> instead of "..."
-  # this is important so clang-format can format the headers and stuff
-  Add: [-isystem, thirdparty, -isystem, thirdparty/libtrippin, -isystem, thirdparty/imgui]
+  Add:
+    # so it includes those as <...> instead of "..."
+    # this is important so clang-format can format the headers and stuff
+    - -isystem
+    - thirdparty
+    - -isystem
+    - thirdparty/libtrippin
+    - -isystem
+    - thirdparty/imgui
+
+    # more warnings
+    - -Wuninitialized
+    - -Wshadow
+    - -Wconversion
+    - -Wold-style-cast
+    - -Wextra-semi
+    - -Wmissing-noreturn
+    - -Wimplicit-fallthrough
+    - -Wnull-dereference
+    - -Wcast-qual
+
   # sometimes submodules have their own compile_commands.json/compile_flags.txt
   # we don't want that :)
   CompilationDatabase: .
+
+# suppress all thirdparty warnings
+If:
+  PathMatch: thirdparty/.*
+Diagnostics:
+  Suppress: "*"

@@ -35,6 +35,7 @@
 #include "starry/internal.h"
 #include "starry/shader/terrain.glsl.h"
 #include "starry/world.h"
+#include "trippin/log.h"
 
 void st::_init_renderer()
 {
@@ -127,8 +128,8 @@ void st::_render()
 
 void st::_regen_chunk_mesh(tr::Vec3<int32> pos)
 {
-	tr::Vec3<int32> start = pos * st::CHUNK_SIZE;
-	tr::Vec3<int32> end = start + st::CHUNK_SIZE_VEC;
+	tr::Vec3<int32> start = pos * CHUNK_SIZE;
+	tr::Vec3<int32> end = start + CHUNK_SIZE_VEC;
 	// TODO this is a memory leak
 	// memory usage will only increase while the old data isn't used
 	tr::Array<PackedModelVertex> vertices{_st->render_arena};
@@ -164,6 +165,10 @@ void st::_regen_chunk_mesh(tr::Vec3<int32> pos)
 		}
 	}
 
+	if (vertices.len() == 0) {
+		return;
+	}
+
 	if (_st->chunks[pos].mesh.is_valid()) {
 		_st->chunks[pos].mesh.update_data(vertices, triangles);
 	}
@@ -172,12 +177,31 @@ void st::_regen_chunk_mesh(tr::Vec3<int32> pos)
 			{"packed", VertexAttributeType::VEC2_UINT32, 0},
 		};
 		_st->chunks[pos].mesh = Mesh(attrs, vertices, triangles, MeshUsage::MUTABLE);
+		tr::info(
+			"new chunk at %i, %i, %i (chunk pos %i, %i, %i)", pos.x * CHUNK_SIZE,
+			pos.y * CHUNK_SIZE, pos.z * CHUNK_SIZE, pos.x, pos.y, pos.z
+		);
 	}
 }
 
 void st::_render_terrain()
 {
-	// TODO
+	// TODO setting the render distance
+	constexpr tr::Vec3<int32> RENDER_DISTANCE{16};
+	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE / 2);
+	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE / 2);
+
+	// :(
+	for (auto x : tr::range<int32>(start.x, end.x)) {
+		for (auto y : tr::range<int32>(start.y, end.y)) {
+			for (auto z : tr::range<int32>(start.z, end.z)) {
+				if (!_st->chunks[{x, y, z}].mesh.is_valid()) {
+					continue;
+				}
+				_st->chunks[{x, y, z}].mesh.draw();
+			}
+		}
+	}
 }
 
 void st::set_wireframe_mode(bool val)

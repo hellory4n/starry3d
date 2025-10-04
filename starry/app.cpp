@@ -34,14 +34,10 @@
 #include <trippin/math.h>
 #include <trippin/memory.h>
 
-// fun!
-TR_GCC_IGNORE_WARNING(-Wold-style-cast)
-TR_GCC_IGNORE_WARNING(-Wsign-conversion)
 #define GLAD_GL_IMPLEMENTATION
-#include <glad/gl.h>
-TR_GCC_RESTORE()
-TR_GCC_RESTORE()
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <glad/gl.h>
 
 // windows.h being a bitch
 #ifdef _WIN32
