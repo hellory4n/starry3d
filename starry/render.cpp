@@ -36,6 +36,7 @@
 #include "starry/shader/terrain.glsl.h"
 #include "starry/world.h"
 #include "trippin/log.h"
+#include "trippin/util.h"
 
 void st::_init_renderer()
 {

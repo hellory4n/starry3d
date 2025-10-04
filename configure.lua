@@ -77,14 +77,14 @@ end
 -- source files
 srcsfrfr = {
 	-- libtrippin
-	starrydir .. "/thirdparty/libtrippin/trippin/collection.cpp",
 	starrydir .. "/thirdparty/libtrippin/trippin/common.cpp",
+	starrydir .. "/thirdparty/libtrippin/trippin/error.cpp",
 	starrydir .. "/thirdparty/libtrippin/trippin/iofs.cpp",
 	starrydir .. "/thirdparty/libtrippin/trippin/log.cpp",
 	starrydir .. "/thirdparty/libtrippin/trippin/math.cpp",
 	starrydir .. "/thirdparty/libtrippin/trippin/memory.cpp",
 	starrydir .. "/thirdparty/libtrippin/trippin/string.cpp",
-	starrydir .. "/thirdparty/libtrippin/trippin/error.cpp",
+	starrydir .. "/thirdparty/libtrippin/trippin/util.cpp",
 
 	-- starry3d
 	starrydir .. "/starry/app.cpp",

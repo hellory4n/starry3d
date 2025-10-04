@@ -31,12 +31,12 @@
 
 #include <type_traits>
 
-#include <trippin/collection.h>
 #include <trippin/common.h>
 #include <trippin/error.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
 #include <trippin/string.h>
+#include <trippin/util.h>
 
 // sokol supports them, but we don't
 // these all use clang so #warning should work

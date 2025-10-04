@@ -29,10 +29,10 @@
 #ifndef _ST_INTERNAL_H
 #define _ST_INTERNAL_H
 
-#include <trippin/collection.h>
 #include <trippin/common.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
+#include <trippin/util.h>
 
 #include <GLFW/glfw3.h>
 

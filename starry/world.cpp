@@ -27,12 +27,12 @@
 
 #include "starry/world.h"
 
-#include <trippin/collection.h>
 #include <trippin/common.h>
 #include <trippin/error.h>
 #include <trippin/log.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
+#include <trippin/util.h>
 
 #include "starry/app.h"
 #include "starry/gpu.h"

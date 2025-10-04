@@ -28,12 +28,12 @@
 #ifndef _ST_WORLD_H
 #define _ST_WORLD_H
 
-#include <trippin/collection.h>
 #include <trippin/common.h>
 #include <trippin/error.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
 #include <trippin/string.h>
+#include <trippin/util.h>
 
 #include "starry/gpu.h"
 
