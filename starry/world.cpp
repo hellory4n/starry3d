@@ -44,20 +44,29 @@ static ModelVertex::Normal
 _get_plane_normal(tr::Vec3<uint8> p0, tr::Vec3<uint8> p1, tr::Vec3<uint8> p2);
 
 static void _gen_mesh_for_plane(
-	ModelPlane plane, tr::Array<PackedModelVertex>& vertices, tr::Array<Triangle>& triangles,
+	ModelPlane plane, tr::Array<ModelVertex>& vertices, tr::Array<Triangle>& triangles,
 	uint32& vert_count
 );
 
 static void _gen_mesh_for_cube(
-	ModelCube cube, tr::Array<PackedModelVertex>& vertices, tr::Array<Triangle>& triangles,
+	ModelCube cube, tr::Array<ModelVertex>& vertices, tr::Array<Triangle>& triangles,
 	uint32& vert_count
 );
 }
 
 tr::Matrix4x4 st::Camera::view_matrix() const
 {
+	// we have to do this otherwise everything looks massive
+	// and making everything smaller is more expensive probably
+	// TODO i might be wrong
+	tr::Vec3<float32> real_position =
+		-(position * tr::Vec3<float32>{
+				     float32(_st->grid_size.x), float32(_st->grid_size.y),
+				     float32(_st->grid_size.z)
+			     });
+
 	tr::Matrix4x4 position_mat =
-		tr::Matrix4x4::translate(-position.x, -position.y, -position.z);
+		tr::Matrix4x4::translate(real_position.x, real_position.y, real_position.z);
 
 	tr::Matrix4x4 rotation_mat = tr::Matrix4x4::identity();
 	rotation_mat = rotation_mat.rotate_x(tr::deg2rad(rotation.x));
@@ -141,7 +150,7 @@ const st::ModelSpec& st::Model::model_spec() const
 st::ModelSpec::ModelSpec(st::Model id, tr::Array<st::ModelMesh> meshes)
 	: meshes(meshes)
 {
-	tr::Array<PackedModelVertex> vertices{_st->asset_arena};
+	tr::Array<ModelVertex> vertices{_st->asset_arena};
 	tr::Array<Triangle> triangles{_st->asset_arena};
 	uint32 vert_count = 0;
 
@@ -191,7 +200,7 @@ st::_get_plane_normal(tr::Vec3<uint8> p0, tr::Vec3<uint8> p1, tr::Vec3<uint8> p2
 }
 
 static void st::_gen_mesh_for_plane(
-	st::ModelPlane plane, tr::Array<st::PackedModelVertex>& vertices,
+	st::ModelPlane plane, tr::Array<st::ModelVertex>& vertices,
 	tr::Array<st::Triangle>& triangles, uint32& vert_count
 )
 {
@@ -237,7 +246,7 @@ static void st::_gen_mesh_for_plane(
 }
 
 static void st::_gen_mesh_for_cube(
-	st::ModelCube cube, tr::Array<st::PackedModelVertex>& vertices,
+	st::ModelCube cube, tr::Array<st::ModelVertex>& vertices,
 	tr::Array<st::Triangle>& triangles, uint32& vert_count
 )
 {

@@ -9,6 +9,9 @@
 #include <starry/optional/imgui.h>
 #include <starry/world.h>
 
+#include "starry/internal.h"
+#include "trippin/memory.h"
+
 static void _dock_space()
 {
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
@@ -131,6 +134,20 @@ static void _debug_mode()
 	ImGui::BulletText(
 		"%s: %f", cam.projection == st::CameraProjection::PERSPECTIVE ? "FOV" : "Zoom",
 		cam.fov // it's a union, the value is the same but with different names
+	);
+
+	// i love hacking my own engine
+	ImGui::Text("Memory usage:");
+	ImGui::BulletText("tr::scratchpad: %zu KiB", tr::bytes_to_kb(tr::scratchpad().allocated()));
+	ImGui::BulletText("_st->arena: %zu KiB", tr::bytes_to_kb(st::_st->arena.allocated()));
+	ImGui::BulletText(
+		"_st->asset_arena: %zu KiB", tr::bytes_to_kb(st::_st->asset_arena.allocated())
+	);
+	ImGui::BulletText(
+		"_st->render_arena: %zu KiB", tr::bytes_to_kb(st::_st->render_arena.allocated())
+	);
+	ImGui::BulletText(
+		"_st->world_arena: %zu KiB", tr::bytes_to_kb(st::_st->world_arena.allocated())
 	);
 }
 

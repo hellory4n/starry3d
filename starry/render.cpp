@@ -133,6 +133,7 @@ void st::_regen_chunk_mesh(tr::Vec3<int32> pos)
 	tr::Vec3<int32> end = start + CHUNK_SIZE_VEC;
 	// TODO this is a memory leak
 	// memory usage will only increase while the old data isn't used
+	// maybe poke with the buffer directly? (glMapBuffer)
 	tr::Array<PackedModelVertex> vertices{_st->render_arena};
 	tr::Array<Triangle> triangles{_st->render_arena};
 

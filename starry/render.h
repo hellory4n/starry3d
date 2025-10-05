@@ -97,7 +97,7 @@ struct PackedModelVertex
 // circular depdenccny :(
 struct ModelMeshData
 {
-	tr::Array<PackedModelVertex> vertices;
+	tr::Array<ModelVertex> vertices;
 	tr::Array<Triangle> triangles;
 };
 
