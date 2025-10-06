@@ -1,3 +1,5 @@
+!["can't innovate my ass" - phil schiller](./docs/logo.png)
+
 # starry3d
 
 3D game engine for voxel graphics and other fancy crapfrick.
