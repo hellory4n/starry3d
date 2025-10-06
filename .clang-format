@@ -21,6 +21,7 @@ IndentAccessModifiers: false
 AccessModifierOffset: -8
 BreakAfterAttributes: Always
 AlignOperands: Align
+PointerAlignment: Left
 BreakTemplateDeclarations: Yes
 AlignAfterOpenBracket: BlockIndent
 AlignArrayOfStructures: Left
@@ -48,7 +49,6 @@ BraceWrapping:
   AfterControlStatement: false
   IndentBraces: false
 
-# alternative single line styles
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
@@ -70,7 +70,6 @@ IncludeCategories:
     Priority: 4
 
 # misc
-PointerAlignment: Left
 ColumnLimit: 100
 AlignConsecutiveMacros: false
 InsertBraces: true

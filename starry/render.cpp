@@ -86,6 +86,7 @@ void st::_refresh_chunk_state()
 {
 	// TODO make this location-based
 	// no need to regen a chunk mesh in the middle of nowhere
+	// TODO this can be parallelized
 	for (auto [pos, chunk] : _st->chunks) {
 		if (chunk.new_this_frame) {
 			st::_regen_chunk_mesh(pos);
@@ -133,55 +134,15 @@ void st::_render()
 void st::_regen_chunk_mesh(tr::Vec3<int32> pos)
 {
 	tr::Vec3<int32> start = pos * CHUNK_SIZE;
+	[[maybe_unused]]
 	tr::Vec3<int32> end = start + CHUNK_SIZE_VEC;
-	// TODO this is a memory leak
-	// memory usage will only increase while the old data isn't used
-	// maybe poke with the buffer directly? (glMapBuffer)
-	tr::Array<PackedModelVertex> vertices{_st->render_arena};
-	tr::Array<Triangle> triangles{_st->render_arena};
 
-	// :(
-	for (auto x : tr::range<int32>(start.x, end.x)) {
-		for (auto y : tr::range<int32>(start.y, end.y)) {
-			for (auto z : tr::range<int32>(start.z, end.z)) {
-				tr::Maybe<Model> model = st::get_model_from_pos({x, y, z});
-				if (!model.is_valid()) {
-					continue;
-				}
-
-				if (model.unwrap().id == MODEL_AIR) {
-					tr::warn(
-						"why is block %i, %i, %i air?? that's not how you "
-						"destroy blocks",
-						x, y, z
-					);
-					continue;
-				}
-
-				ModelMeshData mesh = _st->model_mesh_data[model.unwrap()];
-				// TODO tr::Array<T>::concat(Array<T> other)
-				for (auto [_, vert] : mesh.vertices) {
-					vertices.add(vert);
-				}
-				for (auto [_, tri] : mesh.triangles) {
-					triangles.add(tri);
-				}
-			}
-		}
-	}
-
-	if (vertices.len() == 0) {
-		return;
-	}
+	// TODO
 
 	if (_st->chunks[pos].mesh.is_valid()) {
-		_st->chunks[pos].mesh.update_data(vertices, triangles);
+		// TODO
 	}
 	else {
-		const tr::Array<VertexAttribute> attrs = {
-			{"packed", VertexAttributeType::VEC2_UINT32, 0},
-		};
-		_st->chunks[pos].mesh = Mesh(attrs, vertices, triangles, MeshUsage::MUTABLE);
 		tr::info(
 			"new chunk at %i, %i, %i (chunk pos %i, %i, %i)", pos.x * CHUNK_SIZE,
 			pos.y * CHUNK_SIZE, pos.z * CHUNK_SIZE, pos.x, pos.y, pos.z
@@ -203,7 +164,8 @@ void st::_render_terrain()
 				if (!_st->chunks[{x, y, z}].mesh.is_valid()) {
 					continue;
 				}
-				_st->chunks[{x, y, z}].mesh.draw();
+				//_st->chunks[{x, y, z}].mesh.draw();
+				// TODO
 			}
 		}
 	}
