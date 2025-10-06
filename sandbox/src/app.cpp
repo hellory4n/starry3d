@@ -23,8 +23,8 @@ sbox::Sandbox::Sandbox()
 	sbox::setup_world();
 	sbox::imgui_theme();
 
-	for (auto x : tr::range<int32>(0, 50)) {
-		for (auto z : tr::range<int32>(0, 50)) {
+	for (int32 x = 0; x < 50; x++) {
+		for (int32 z = 0; z < 50; z++) {
 			st::place_static_block({x, 0, z}, Model::GRASS);
 		}
 	}

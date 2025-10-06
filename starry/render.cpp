@@ -29,8 +29,10 @@
 #include "starry/render.h"
 
 #include <trippin/common.h>
+#include <trippin/log.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
+#include <trippin/util.h>
 
 #include <glad/gl.h>
 
@@ -38,8 +40,6 @@
 #include "starry/internal.h"
 #include "starry/shader/terrain.glsl.h"
 #include "starry/world.h"
-#include "trippin/log.h"
-#include "trippin/util.h"
 
 void st::_init_renderer()
 {
@@ -57,7 +57,6 @@ void st::_init_renderer()
 	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_MODEL, tr::Matrix4x4::identity());
 	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_VIEW, tr::Matrix4x4::identity());
 	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_PROJECTION, tr::Matrix4x4::identity());
-	// TODO
 	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_CHUNK, tr::Vec3<uint32>{});
 
 	_st->atlas_ssbo = st::StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
@@ -80,19 +79,6 @@ void st::_upload_atlas(st::TextureAtlas atlas)
 		ssbo_data[id] = rect;
 	}
 	_st->atlas_ssbo.update(*ssbo_data, ssbo_data.len() * sizeof(tr::Rect<uint32>));
-}
-
-void st::_refresh_chunk_state()
-{
-	// TODO make this location-based
-	// no need to regen a chunk mesh in the middle of nowhere
-	// TODO this can be parallelized
-	for (auto [pos, chunk] : _st->chunks) {
-		if (chunk.new_this_frame) {
-			st::_regen_chunk_mesh(pos);
-		}
-		chunk.new_this_frame = false;
-	}
 }
 
 void st::_base_pipeline()
@@ -127,45 +113,48 @@ void st::_render()
 		ST_TERRAIN_SHADER_U_PROJECTION, Camera::current().projection_matrix()
 	);
 
-	st::_refresh_chunk_state();
 	st::_render_terrain();
 }
 
-void st::_regen_chunk_mesh(tr::Vec3<int32> pos)
+inline void st::_refresh_chunk(st::Chunk& chunk, tr::Vec3<int32> pos)
 {
+	if (!chunk.new_this_frame) {
+		return;
+	}
+
 	tr::Vec3<int32> start = pos * CHUNK_SIZE;
 	[[maybe_unused]]
 	tr::Vec3<int32> end = start + CHUNK_SIZE_VEC;
 
 	// TODO
+}
 
-	if (_st->chunks[pos].mesh.is_valid()) {
-		// TODO
-	}
-	else {
-		tr::info(
-			"new chunk at %i, %i, %i (chunk pos %i, %i, %i)", pos.x * CHUNK_SIZE,
-			pos.y * CHUNK_SIZE, pos.z * CHUNK_SIZE, pos.x, pos.y, pos.z
-		);
-	}
+inline void st::_render_chunk(st::Chunk& chunk, tr::Vec3<int32> pos)
+{
+	(void)chunk;
+	(void)pos;
+	// TODO
 }
 
 void st::_render_terrain()
 {
-	// TODO setting the render distance
-	constexpr tr::Vec3<int32> RENDER_DISTANCE{16};
 	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE / 2);
 	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE / 2);
 
 	// :(
-	for (auto x : tr::range<int32>(start.x, end.x)) {
-		for (auto y : tr::range<int32>(start.y, end.y)) {
-			for (auto z : tr::range<int32>(start.z, end.z)) {
-				if (!_st->chunks[{x, y, z}].mesh.is_valid()) {
+	for (int32 x = start.x; x < end.x; x++) {
+		for (int32 y = start.y; y < end.y; y++) {
+			for (int32 z = start.z; z < end.z; z++) {
+				tr::Maybe<Chunk&> chunk = _st->chunks.try_get({x, y, z});
+				if (!chunk.is_valid()) {
 					continue;
 				}
-				//_st->chunks[{x, y, z}].mesh.draw();
-				// TODO
+				Chunk& chunk_but_unwrapped = chunk.unwrap();
+
+				st::_refresh_chunk(chunk_but_unwrapped, {x, y, z});
+				st::_render_chunk(chunk_but_unwrapped, {x, y, z});
+
+				chunk_but_unwrapped.new_this_frame = false;
 			}
 		}
 	}

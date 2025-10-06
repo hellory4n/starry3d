@@ -9,3 +9,4 @@ This isn't finished because the library isn't stable yet duh. For now just read 
 ## Developing/contributing/technical details
 
 1. [Building](./developing/building.md)
+2. [Conventions](./developing/conventions.md)

@@ -109,6 +109,9 @@ struct Chunk
 	bool new_this_frame = false;
 };
 
+// TODO setting the render distance
+constexpr tr::Vec3<int32> RENDER_DISTANCE{16};
+
 // a lot of private functions
 // please do not touch unless you're a friend
 // (did you get the reference, do you need any pointers)
@@ -123,12 +126,12 @@ void _base_pipeline();
 void _terrain_pipeline();
 
 // actual rendering stuff
-void _regen_chunk_mesh(tr::Vec3<int32> pos);
 void _render_terrain();
+void _render_chunk(Chunk& chunk, tr::Vec3<int32> pos);
 
 // housekeeping / interop with the rest of the engine
 void _upload_atlas(TextureAtlas atlas);
-void _refresh_chunk_state();
+void _refresh_chunk(Chunk& chunk, tr::Vec3<int32> pos);
 
 void set_wireframe_mode(bool val);
 
