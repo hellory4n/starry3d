@@ -29,7 +29,6 @@
 #include <trippin/math.h>
 #include <trippin/memory.h>
 
-#include "starry/gpu.h"
 #include "starry/world.h"
 
 namespace st {
@@ -97,7 +96,6 @@ static_assert(sizeof(PackedTerrainVertex) == 8, "too bad");
 // Di?h
 struct Chunk
 {
-	Mesh mesh = {};
 	// regenerating the mesh for every chunk every frame is really wasteful
 	bool new_this_frame = false;
 };
@@ -121,11 +119,9 @@ void _terrain_pipeline();
 // actual rendering stuff
 void _render_terrain();
 void _update_terrain_vertex_ssbo();
-void _render_chunk(Chunk& chunk, tr::Vec3<int32> pos);
 
 // housekeeping / interop with the rest of the engine
 void _upload_atlas(TextureAtlas atlas);
-void _refresh_chunk(Chunk& chunk, tr::Vec3<int32> pos);
 
 void set_wireframe_mode(bool val);
 

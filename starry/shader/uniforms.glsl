@@ -33,13 +33,11 @@
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
-uniform uvec3 u_chunk;
 uniform uvec2 u_atlas_size;
 
 #pragma mrshader define U_MODEL "u_model"
 #pragma mrshader define U_VIEW "u_view"
 #pragma mrshader define U_PROJECTION "u_projection"
-#pragma mrshader define U_CHUNK "u_chunk"
 #pragma mrshader define U_ATLAS_SIZE "u_atlas_size"
 
 #pragma mrshader define SSBO_ATLAS 0
@@ -60,6 +58,11 @@ layout(binding = 1, std430) readonly buffer vertices {
 	// - = 3 mb
 	// jesus christ
 	PackedTerrainVertex u_vertices[];
+};
+
+#pragma mrshader define SSBO_CHUNK_POSITIONS 1
+layout(binding = 2, std430) readonly buffer chunk_positions {
+	uvec3 u_chunk_positions[];
 };
 
 #endif // _ST_UNIFORMS_H

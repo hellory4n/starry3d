@@ -36,8 +36,7 @@
 #pragma mrshader include starry/shader/atlas.glsl
 #pragma mrshader include starry/shader/uniforms.glsl
 
-// vertices are hyper optimized to safe space
-layout (location = 0) in uvec2 vs_packed;
+layout (location = 0) in vec3 vs_position;
 
 out vec2 fs_texcoords;
 out vec4 fs_color;
@@ -47,13 +46,14 @@ flat out int fs_shaded;
 
 void main()
 {
-	TerrainVertex v = unpack_vertex(u_vertices[gl_VertexID / 4]);
+	TerrainVertex v = unpack_vertex(u_vertices[gl_InstanceID / 4]);
 
-	vec3 position = vec3(v.position) * vec3(u_chunk + uvec3(1, 1, 1)) * CHUNK_SIZE;
+	uvec3 chunk = u_chunk_positions[gl_InstanceID / (6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE)];
+	vec3 position = (vec3(v.position) + vs_position) * vec3(chunk + uvec3(1, 1, 1)) * CHUNK_SIZE;
 
 	// we only send 1 vertex per quad
 	// FIXME figure out rotating the base plane
-	switch (gl_VertexID % 4) {
+	switch (gl_VertexID) {
 	case QUAD_CORNER_TOP_LEFT:
 		position.z++;
 		break;

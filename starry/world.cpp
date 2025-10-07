@@ -202,7 +202,14 @@ st::Block& st::place_static_block(tr::Vec3<int32> pos, st::Model model)
 	block._position = pos;
 	block._type = is_terrain ? BlockType::TERRAIN : BlockType::STATIC;
 
-	_st->chunks[st::block_to_chunk_pos(pos)].new_this_frame = true;
+	// we don't want to update everything just because a block in the middle of fuckign nowhere
+	// changed what am i saying anymore the horror has become too great for anyo ne mind t o
+	// bare
+	float64 distance = pos.distance(st::current_chunk());
+	if (distance < CHUNK_SIZE * RENDER_DISTANCE.x) {
+		_st->chunk_updates_in_your_area = true;
+	}
+
 	return block;
 }
 
@@ -229,7 +236,10 @@ void st::Block::destroy()
 	}
 	_model = MODEL_AIR;
 
-	_st->chunks[st::block_to_chunk_pos(position())].new_this_frame = true;
+	float64 distance = _position.distance(st::current_chunk());
+	if (distance < CHUNK_SIZE * RENDER_DISTANCE.x) {
+		_st->chunk_updates_in_your_area = true;
+	}
 }
 
 st::DynamicBlock& st::place_dynamic_block(st::Model model)
