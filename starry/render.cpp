@@ -165,33 +165,31 @@ void st::set_wireframe_mode(bool val)
 	glPolygonMode(GL_FRONT_AND_BACK, val ? GL_LINE : GL_FILL);
 }
 
-st::PackedModelVertex::PackedModelVertex(ModelVertex src)
+st::PackedTerrainVertex::PackedTerrainVertex(TerrainVertex src)
 {
-	// TODO this probably (definitely) only works in little endian who gives a shit
-	// the format is helpfully documented in the header (so read that if you're confused)
-	uint64 bits = 0;
-
-	bits |= uint64(src.position.x & 0xFF) << 0;
-	bits |= uint64(src.position.y & 0xFF) << 8;
-	bits |= uint64(src.position.z & 0xFF) << 16;
-
-	bits |= uint64(int(src.normal) & 0xF) << 24;
-	bits |= uint64(int(src.corner) & 0x3) << 27;
-	bits |= uint64(int(src.shaded) & 0x1) << 29;
-	bits |= uint64(int(src.using_texture) & 0x1) << 30;
-	bits |= uint64(int(src.billboard) & 0x1) << 31;
-
-	// unioning all over the plcae
+	x = src.position.x;
+	y = src.position.y;
+	z = src.position.z;
+	normal = static_cast<uint8>(src.normal);
+	using_texture = src.using_texture;
+	billboard = src.billboard;
+	shaded = src.shaded;
 	if (src.using_texture) {
-		bits |= uint64(src.texture_id & 0x3FFF) << 32;
+		texture_id = src.texture_id;
 	}
 	else {
-		bits |= uint64(src.color.r & 0xFF) << 32;
-		bits |= uint64(src.color.g & 0xFF) << 40;
-		bits |= uint64(src.color.b & 0xFF) << 48;
-		bits |= uint64(src.color.a & 0xFF) << 56;
+		color = src.color;
 	}
 
-	x = uint32(bits & 0xFFFFFFFFu);
-	y = uint32((bits >> 32) & 0xFFFFFFFFu);
+	// to make clang-tidy happy
+	_reserved = 0;
+}
+
+st::PackedTerrainVertex::operator tr::Vec2<uint32>() const
+{
+	// FIXME this probably (definitely) only works on little endian who gives a shit
+	// FIXME this is definitely undefined behavior
+	uint64 bits = *reinterpret_cast<const uint64*>(this);
+	return {static_cast<uint32>(bits & 0xFFFFFFFFu),
+		static_cast<uint32>((bits >> 32) & 0xFFFFFFFFu)};
 }

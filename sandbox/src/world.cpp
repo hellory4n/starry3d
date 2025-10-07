@@ -33,7 +33,7 @@ void sbox::setup_world()
 			      .bottom = Texture::DIRT,
 			      },
 	};
-	st::register_model_spec(Model::GRASS, mesh_grass);
+	st::register_model_spec(Model::GRASS, "sandbox::grass", mesh_grass);
 
 	tr::Array<st::ModelMesh> mesh_dirt = {
 		st::ModelCube{
@@ -47,7 +47,7 @@ void sbox::setup_world()
 			      .bottom = Texture::DIRT,
 			      },
 	};
-	st::register_model_spec(Model::DIRT, mesh_grass);
+	st::register_model_spec(Model::DIRT, "sandbox::dirt", mesh_dirt);
 
 	tr::Array<st::ModelMesh> mesh_the_j = {
 		st::ModelCube{
@@ -71,7 +71,7 @@ void sbox::setup_world()
 			      .bottom = Texture::THE_J,
 			      },
 	};
-	st::register_model_spec(Model::THE_J, mesh_the_j);
+	st::register_model_spec(Model::THE_J, "sandbox::the_j", mesh_the_j);
 
 	tr::Array<st::ModelMesh> mesh_kirby = {
 		st::ModelPlane{
@@ -83,7 +83,7 @@ void sbox::setup_world()
 			       .billboard = true,
 			       },
 	};
-	st::register_model_spec(Model::KIRBY_RIPOFF, mesh_kirby);
+	st::register_model_spec(Model::KIRBY_RIPOFF, "sandbox::kirby_ripoff", mesh_kirby);
 
 	atlas.set_current();
 }

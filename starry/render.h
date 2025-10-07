@@ -34,10 +34,11 @@
 
 namespace st {
 
-// As the name implies, it's the vertex for models. Note this is actually not the real vertex format
-// though, the real format is `st::PackedModelVertex` which puts everything together into an
-// `uint64` (as a normal struct would have padding and waste space)
-struct ModelVertex
+// As the name implies, it's the vertex for terrain. Note this is actually not the real vertex
+// format though, the real format is `st::PackedModelVertex` which puts everything together into an
+// `uint64` (as a normal struct would have padding and waste space, it'd also be incompatible with
+// glsl which only has 32-bit ints)
+struct TerrainVertex
 {
 	// Using a Vec3<float32> would take up too much space
 	enum class Normal : uint8
@@ -50,17 +51,8 @@ struct ModelVertex
 		BOTTOM = 5,
 	};
 
-	enum class QuadCorner : uint8
-	{
-		TOP_LEFT = 0,
-		TOP_RIGHT = 1,
-		BOTTOM_LEFT = 2,
-		BOTTOM_RIGHT = 3,
-	};
-
 	tr::Vec3<uint8> position = {};
 	Normal normal = Normal::FRONT;
-	QuadCorner corner = QuadCorner::TOP_LEFT;
 	bool shaded = true;
 	bool using_texture = false;
 	bool billboard = false;
@@ -70,36 +62,37 @@ struct ModelVertex
 	};
 };
 
-// Like a PackedModelVertex, but more efficient.
-// The format is: (roughly)
-// ```cpp
-// struct ModelVertex {
-//	tr::Vec3<uint8> position;
-//	uint3 normal;
-//	uint2 quad;
-//	uint1 shaded;
-//	uint1 using_texture;
-//	uint1 billboard;
-//	union {
-//		uint14 texture_id;
-//		tr::Color color;
-//	};
-// };
-// ```
-struct PackedModelVertex
+// #pragma pack is supported by gcc, clang, and msvc :)
+#pragma pack(push, 1)
+// Like a TerrainVertex, but more packed (uses less space (blazingly fast (money mouth emoji)))
+struct PackedTerrainVertex
 {
-	uint32 x;
-	uint32 y;
+	uint8 x : 5, y : 5, z : 5;
+	uint8 normal : 3;
+	// flags
+	uint8 using_texture : 1;
+	uint8 billboard : 1;
+	uint8 shaded : 1;
 
-	PackedModelVertex(ModelVertex src);
-};
+private:
+	// TODO use it
+	// we could use 5+5 bits for lengths when we add greedy meshing
+	// +1 extra flag
+	uint32 _reserved : 11;
 
-// circular depdenccny :(
-struct ModelMeshData
-{
-	tr::Array<ModelVertex> vertices;
-	tr::Array<Triangle> triangles;
+public:
+	union {
+		TextureId texture_id = 0;
+		tr::Color color;
+	};
+
+	PackedTerrainVertex(TerrainVertex src);
+	operator tr::Vec2<uint32>() const;
 };
+#pragma pack(pop)
+
+// just in case
+static_assert(sizeof(PackedTerrainVertex) == 8, "uh oh");
 
 // Di?h
 struct Chunk

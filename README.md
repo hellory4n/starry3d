@@ -1,4 +1,4 @@
-!["can't innovate my ass" - phil schiller](./docs/logo.png)
+<img src="./docs/logo.png" alt="&quot;can't innovate anymore my ass&quot; - phil schiller" width="200">
 
 # starry3d
 

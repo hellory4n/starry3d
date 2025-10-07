@@ -78,7 +78,6 @@ struct Starry
 	// assets
 	tr::Maybe<TextureAtlas> atlas = {};
 	tr::HashMap<Model, ModelSpec> models;
-	tr::HashMap<Model, ModelMeshData> model_mesh_data;
 
 	// world
 	Camera camera = {};
@@ -97,7 +96,6 @@ struct Starry
 		key_state = tr::Array<InputState>(arena, int(st::Key::LAST) + 1);
 		mouse_state = tr::Array<InputState>(arena, int(st::MouseButton::LAST) + 1);
 		models = tr::HashMap<Model, ModelSpec>(asset_arena);
-		model_mesh_data = tr::HashMap<Model, ModelMeshData>(asset_arena);
 		terrain_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
 		static_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
 		chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(render_arena);

@@ -76,7 +76,7 @@ struct Camera
 
 // Refers to a texture on a texture atlas
 using TextureId = uint16;
-constexpr TextureId MAX_ATLAS_TEXTURES = 1 << 14; // 16384
+constexpr TextureId MAX_ATLAS_TEXTURES = UINT16_MAX;
 
 // Wrapper for putting multiple textures on the same texture, whch makes it faster, and
 // stuff.
@@ -217,8 +217,12 @@ struct Model
 		return id;
 	}
 
-	// Returns the `st::ModelSpec` from which this piece of crap originates from.
-	const ModelSpec& model_spec() const;
+	// Returns the `st::ModelSpec` from which this piece of crap originates from, or null if the
+	// id is invalid
+	tr::Maybe<const ModelSpec&> model_spec() const;
+
+	// The model name duh (or null if it doesn't exist)
+	tr::Maybe<tr::String> name() const;
 };
 
 // There is simply nothing. There is simply nothing. There is simply nothing. There is simply
@@ -230,13 +234,14 @@ constexpr Model MODEL_AIR = 0;
 // do evil fuckery which I would rather not do at the moment. A fascinating endeavour.
 struct ModelSpec
 {
+	tr::String name = "";
 	tr::Array<ModelMesh> meshes = {};
 
 	// shutu p
 	ModelSpec() {}
 
 	// Registers the model so that now you can use it with that ID and stuff HOW COOL IS THAT
-	ModelSpec(Model id, tr::Array<ModelMesh> meshes);
+	ModelSpec(Model id, tr::String name, tr::Array<ModelMesh> meshes);
 
 	// Terrain blocks are rendered differently :))))))))))))))))
 	bool is_terrain() const;
@@ -246,10 +251,10 @@ struct ModelSpec
 // TODO this is stupid
 
 // Registers the model so that now you can use it with that ID and stuff HOW COOL IS THAT
-inline void register_model_spec(Model id, tr::Array<ModelMesh> meshes)
+inline void register_model_spec(Model id, tr::String name, tr::Array<ModelMesh> meshes)
 {
 	[[maybe_unused]]
-	ModelSpec man = ModelSpec(id, meshes);
+	ModelSpec man = ModelSpec(id, name, meshes);
 }
 
 constexpr int32 CHUNK_SIZE = 32;

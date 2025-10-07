@@ -38,6 +38,7 @@
 #include "starry/gpu.h"
 #include "starry/internal.h"
 #include "starry/render.h"
+#include "trippin/string.h"
 
 tr::Matrix4x4 st::Camera::view_matrix() const
 {
@@ -127,22 +128,37 @@ void st::set_grid_size(tr::Vec3<uint8> size)
 	_st->grid_size = size;
 }
 
-const st::ModelSpec& st::Model::model_spec() const
+tr::Maybe<const st::ModelSpec&> st::Model::model_spec() const
 {
-	return _st->models[id];
+	// i could just do return _st->models.try_get(id); but it doesn't want to convert to const
+	tr::Maybe<ModelSpec&> model_specma = _st->models.try_get(id);
+	if (model_specma.is_valid()) {
+		return model_specma.unwrap();
+	}
+	else {
+		return {};
+	}
 }
 
-st::ModelSpec::ModelSpec(st::Model id, tr::Array<st::ModelMesh> meshes)
-	: meshes(meshes)
+tr::Maybe<tr::String> st::Model::name() const
 {
-	tr::Array<ModelVertex> vertices{_st->asset_arena};
-	tr::Array<Triangle> triangles{_st->asset_arena};
+	tr::Maybe<ModelSpec&> model_specma = _st->models.try_get(id);
+	if (model_specma.is_valid()) {
+		return model_specma.unwrap().name;
+	}
+	else {
+		return {};
+	}
+}
+
+st::ModelSpec::ModelSpec(st::Model id, tr::String name, tr::Array<st::ModelMesh> meshes)
+	: name(name)
+	, meshes(meshes)
+{
 	// TODO
 
-	_st->model_mesh_data[id] = {.vertices = vertices, .triangles = triangles};
 	_st->models[id] = *this;
-	// TODO number ids to string names
-	tr::info("registed model with id %u", uint16(id));
+	tr::info("registed model '%s' (id %u)", *name, uint16(id));
 }
 
 bool st::ModelSpec::is_terrain() const
@@ -179,7 +195,8 @@ tr::Maybe<st::Block&> st::get_static_block(tr::Vec3<int32> pos)
 
 st::Block& st::place_static_block(tr::Vec3<int32> pos, st::Model model)
 {
-	bool is_terrain = model.model_spec().is_terrain();
+	TR_ASSERT(model.model_spec().is_valid());
+	bool is_terrain = model.model_spec().unwrap().is_terrain();
 	Block& block = is_terrain ? _st->terrain_blocks[pos] : _st->static_blocks[pos];
 	block._model = model;
 	block._position = pos;
@@ -204,7 +221,7 @@ tr::Maybe<st::DynamicBlock&> st::Block::to_dynamic_block() const // NOLINT
 
 void st::Block::destroy()
 {
-	if (model().model_spec().is_terrain()) {
+	if (model().model_spec().unwrap().is_terrain()) {
 		_st->terrain_blocks.remove(_position);
 	}
 	else {
