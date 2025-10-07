@@ -73,7 +73,9 @@ struct Starry
 	// rendering
 	ShaderProgram* terrain_shader = nullptr;
 	StorageBuffer atlas_ssbo = {};
+	StorageBuffer terrain_vertex_ssbo = {};
 	tr::HashMap<tr::Vec3<int32>, Chunk> chunks;
+	tr::Vec3<int32> prev_chunk;
 
 	// assets
 	tr::Maybe<TextureAtlas> atlas = {};

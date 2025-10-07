@@ -278,6 +278,13 @@ public:
 	}
 };
 
+enum class MapBufferAccess
+{
+	READ,
+	WRITE,
+	READ_WRITE,
+};
+
 // Wrapper for an OpenGL SSBO, useful for sending metric buttloads of data to shaders.
 class StorageBuffer
 {
@@ -293,6 +300,13 @@ public:
 
 	// Only updates *some* of the data
 	void partial_update(usize offset, const void* data, usize len);
+
+	// Literally just `glMapBuffer` (no intermediate buffer required, just directly poke the
+	// pointer that opengl gives you)
+	void* map_buffer(MapBufferAccess access);
+
+	// Literally just `glUnmapBuffer`
+	void unmap_buffer();
 };
 
 } // namespace st

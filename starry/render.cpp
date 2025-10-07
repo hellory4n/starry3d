@@ -59,7 +59,14 @@ void st::_init_renderer()
 	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_PROJECTION, tr::Matrix4x4::identity());
 	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_CHUNK, tr::Vec3<uint32>{});
 
-	_st->atlas_ssbo = st::StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
+	_st->atlas_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
+	_st->terrain_vertex_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_VERTICES);
+	// this calculation is explained in uniforms.glsl
+	// and i dont wanna duplicate that comment
+	_st->terrain_vertex_ssbo.update(
+		nullptr, sizeof(PackedTerrainVertex) * 6 * CHUNK_SIZE * RENDER_DISTANCE.x *
+				 RENDER_DISTANCE.x * RENDER_DISTANCE.x / 2
+	);
 
 	tr::info("renderer initialized");
 }
@@ -68,6 +75,7 @@ void st::_free_renderer()
 {
 	_st->terrain_shader->free();
 	_st->atlas_ssbo.free();
+	_st->terrain_vertex_ssbo.free();
 	tr::info("renderer deinitialized");
 }
 
@@ -118,15 +126,79 @@ void st::_render()
 
 inline void st::_refresh_chunk(st::Chunk& chunk, tr::Vec3<int32> pos)
 {
+	(void)pos;
 	if (!chunk.new_this_frame) {
 		return;
 	}
+	// TODO use this probably
+	chunk.new_this_frame = false;
+}
 
-	tr::Vec3<int32> start = pos * CHUNK_SIZE;
-	[[maybe_unused]]
-	tr::Vec3<int32> end = start + CHUNK_SIZE_VEC;
+inline void st::_update_terrain_vertex_ssbo()
+{
+	// RUST DEVELOPERS CRY OVER THIS BEAUTIFUL POINTER FUCKING
+	// TOUCHING MEMORY IN PLACES IT COULDN'T EVEN IMAGINE
+	// not funny
+	void* ptr = _st->terrain_vertex_ssbo.map_buffer(MapBufferAccess::WRITE);
+	TR_DEFER(_st->terrain_vertex_ssbo.unmap_buffer());
 
-	// TODO
+	auto* ssbo = static_cast<PackedTerrainVertex*>(ptr);
+
+	tr::Vec3<int32> start = (st::current_chunk() - (RENDER_DISTANCE / 2)) * CHUNK_SIZE_VEC;
+	tr::Vec3<int32> end = (st::current_chunk() + (RENDER_DISTANCE / 2)) * CHUNK_SIZE_VEC;
+
+	for (int32 x = start.x; x < end.x; x++) {
+		for (int32 y = start.y; y < end.y; y++) {
+			for (int32 z = start.z; z < end.z; z++) {
+				tr::Maybe<Block&> block = _st->terrain_blocks.try_get({x, y, z});
+				if (!block.is_valid()) {
+					continue;
+				}
+
+				// hmmm
+				ModelSpec model_spec = block.unwrap().model().model_spec().unwrap();
+				ModelCube cube = model_spec.meshes[0].cube;
+				tr::Vec3<int32> local_pos_32 =
+					tr::Vec3<int32>{x, y, z} -
+					st::block_to_chunk_pos(tr::Vec3<int32>{x, y, z});
+				tr::Vec3<uint8> local_pos = {
+					static_cast<uint8>(local_pos_32.x),
+					static_cast<uint8>(local_pos_32.y),
+					static_cast<uint8>(local_pos_32.z),
+				};
+
+				// TODO culling
+				TerrainVertex base_vertex = {
+					.position = local_pos,
+					.shaded = model_spec.meshes[0].cube.shaded,
+					.billboard = false,
+					.texture_id = 0, // clang-tidy shut up
+				};
+
+// yea
+#define CUBE_FACE(Face, FaceEnum)                      \
+	TerrainVertex Face = base_vertex;              \
+	(Face).normal = FaceEnum;                      \
+	if (cube.Face.using_texture) {                 \
+		(Face).texture_id = cube.Face.texture; \
+	}                                              \
+	else {                                         \
+		(Face).color = cube.Face.color;        \
+	}                                              \
+	*(ssbo++) = (Face);
+
+				CUBE_FACE(front, TerrainVertex::Normal::FRONT);
+				CUBE_FACE(back, TerrainVertex::Normal::BACK);
+				CUBE_FACE(left, TerrainVertex::Normal::LEFT);
+				CUBE_FACE(right, TerrainVertex::Normal::RIGHT);
+				CUBE_FACE(top, TerrainVertex::Normal::TOP);
+				CUBE_FACE(bottom, TerrainVertex::Normal::BOTTOM);
+
+// yea²
+#undef VERTEX
+			}
+		}
+	}
 }
 
 inline void st::_render_chunk(st::Chunk& chunk, tr::Vec3<int32> pos)
@@ -134,12 +206,19 @@ inline void st::_render_chunk(st::Chunk& chunk, tr::Vec3<int32> pos)
 	(void)chunk;
 	(void)pos;
 	// TODO
+	// note: chunks have to be individually rendered even tho the shader has 16*16*16 chunks at
+	// the same time
+	// this is so u_chunk can be set between draw calls
 }
 
 void st::_render_terrain()
 {
 	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE / 2);
 	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE / 2);
+
+	if (st::current_chunk() != _st->prev_chunk) {
+		st::_update_terrain_vertex_ssbo();
+	}
 
 	// :(
 	for (int32 x = start.x; x < end.x; x++) {
@@ -158,6 +237,8 @@ void st::_render_terrain()
 			}
 		}
 	}
+
+	_st->prev_chunk = st::current_chunk();
 }
 
 void st::set_wireframe_mode(bool val)

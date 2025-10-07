@@ -92,7 +92,7 @@ public:
 #pragma pack(pop)
 
 // just in case
-static_assert(sizeof(PackedTerrainVertex) == 8, "uh oh");
+static_assert(sizeof(PackedTerrainVertex) == 8, "too bad");
 
 // Di?h
 struct Chunk
@@ -120,6 +120,7 @@ void _terrain_pipeline();
 
 // actual rendering stuff
 void _render_terrain();
+void _update_terrain_vertex_ssbo();
 void _render_chunk(Chunk& chunk, tr::Vec3<int32> pos);
 
 // housekeeping / interop with the rest of the engine

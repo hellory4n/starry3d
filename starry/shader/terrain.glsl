@@ -50,6 +50,22 @@ void main()
 	TerrainVertex v = unpack_vertex(u_vertices[gl_VertexID / 4]);
 
 	vec3 position = vec3(v.position) * vec3(u_chunk + uvec3(1, 1, 1)) * CHUNK_SIZE;
+
+	// we only send 1 vertex per quad
+	// FIXME figure out rotating the base plane
+	switch (gl_VertexID % 4) {
+	case QUAD_CORNER_TOP_LEFT:
+		position.z++;
+		break;
+	case QUAD_CORNER_BOTTOM_RIGHT:
+		position.x++;
+		break;
+	case QUAD_CORNER_TOP_RIGHT:
+		position.x++;
+		position.z++;
+		break;
+	}
+
 	gl_Position = u_projection * u_view * u_model * vec4(position, 1.0);
 
 	if (v.using_texture) {

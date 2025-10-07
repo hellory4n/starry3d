@@ -575,4 +575,28 @@ void st::StorageBuffer::partial_update(usize offset, const void* data, usize len
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, _buffer);
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset, len, data);
 }
+
+void* st::StorageBuffer::map_buffer(st::MapBufferAccess access)
+{
+	GLenum glaccess = 0;
+	switch (access) {
+	case MapBufferAccess::READ:
+		glaccess = GL_READ_ONLY;
+		break;
+	case MapBufferAccess::WRITE:
+		glaccess = GL_WRITE_ONLY;
+		break;
+	case MapBufferAccess::READ_WRITE:
+		glaccess = GL_READ_WRITE;
+		break;
+	}
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, _buffer);
+	return glMapBuffer(GL_SHADER_STORAGE_BUFFER, glaccess);
+}
+
+void st::StorageBuffer::unmap_buffer()
+{
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, _buffer);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+}
 // NOLINTEND(readability-make-member-function-const)
