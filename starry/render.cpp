@@ -63,8 +63,9 @@ void st::_init_renderer()
 	// this calculation is explained in uniforms.glsl
 	// and i dont wanna duplicate that comment
 	_st->terrain_vertex_ssbo.update(
-		nullptr, sizeof(PackedTerrainVertex) * 6 * CHUNK_SIZE * RENDER_DISTANCE *
-				 RENDER_DISTANCE * RENDER_DISTANCE * 2
+		nullptr,
+		(sizeof(PackedTerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE /* / 2 */) *
+			RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE
 	);
 	_st->chunk_positions_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_CHUNK_POSITIONS); // catchy
 	_st->chunk_positions_ssbo.update(
@@ -152,15 +153,16 @@ inline void st::_update_terrain_vertex_ssbo()
 	// RUST DEVELOPERS CRY OVER THIS BEAUTIFUL POINTER FUCKING
 	// TOUCHING MEMORY IN PLACES IT COULDN'T EVEN IMAGINE
 	// not funny
+	// FIXME partially update the ssbo so that high render distances are usable
 	void* ptr = _st->terrain_vertex_ssbo.map_buffer(MapBufferAccess::WRITE);
 	TR_DEFER(_st->terrain_vertex_ssbo.unmap_buffer());
 
 	auto* ssbo = static_cast<PackedTerrainVertex*>(ptr);
 
-	// tr::Vec3<int32> start = (st::current_chunk() - (RENDER_DISTANCE / 2)) * CHUNK_SIZE_VEC;
-	// tr::Vec3<int32> end = (st::current_chunk() + (RENDER_DISTANCE / 2)) * CHUNK_SIZE_VEC;
-	tr::Vec3<int32> start = st::current_chunk() - CHUNK_SIZE_VEC;
-	tr::Vec3<int32> end = st::current_chunk() + CHUNK_SIZE_VEC;
+	tr::Vec3<int32> start = (st::current_chunk() - (RENDER_DISTANCE_VEC / 2)) * CHUNK_SIZE_VEC;
+	tr::Vec3<int32> end = (st::current_chunk() + (RENDER_DISTANCE_VEC / 2)) * CHUNK_SIZE_VEC;
+	// tr::Vec3<int32> start = st::current_chunk() - CHUNK_SIZE_VEC;
+	// tr::Vec3<int32> end = st::current_chunk() + CHUNK_SIZE_VEC;
 
 	for (int32 x = start.x; x < end.x; x++) {
 		for (int32 y = start.y; y < end.y; y++) {
@@ -214,7 +216,7 @@ inline void st::_update_terrain_vertex_ssbo()
 				CUBE_FACE(bottom, TerrainVertex::Normal::BOTTOM);
 
 // yea²
-#undef VERTEX
+#undef CUBE_FACE
 			}
 		}
 	}
