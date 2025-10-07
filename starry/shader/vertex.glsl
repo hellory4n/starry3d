@@ -30,7 +30,7 @@
 
 #pragma mrshader include starry/shader/defs.glsl
 
-TerrainVertex unpack_vertex(uvec2 src)
+TerrainVertex unpack_vertex(PackedTerrainVertex data)
 {
 	TerrainVertex v;
 

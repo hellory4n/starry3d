@@ -59,7 +59,7 @@ layout(binding = 1, std430) readonly buffer vertices {
 	// - divided by 2 because that's the max you can fit while avoiding culling
 	// - = 3 mb
 	// jesus christ
-	TerrainVertex u_vertices[];
+	PackedTerrainVertex u_vertices[];
 };
 
 #endif // _ST_UNIFORMS_H

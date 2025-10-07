@@ -59,4 +59,9 @@ struct Rect {
 	uint height;
 };
 
+struct PackedTerrainVertex {
+	uint x;
+	uint y;
+};
+
 #endif // _ST_DEFS_H
