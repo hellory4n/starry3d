@@ -31,12 +31,12 @@
 #pragma mrshader include starry/shader/defs.glsl
 #pragma mrshader include starry/shader/uniforms.glsl
 
-vec2 get_texcoords(Vertex v)
+vec2 get_texcoords(TerrainVertex v, int vertex_id)
 {
-	vec2 texcoords;
+	vec2 texcoords = vec2(0, 0);
 	Rect texture_rect = u_atlas_textures[v.texture_id];
 
-	switch (v.quad_corner) {
+	switch (vertex_id % 4) {
 	case QUAD_CORNER_TOP_LEFT:
 		texcoords = vec2(float(texture_rect.x), float(texture_rect.y));
 		break;

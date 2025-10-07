@@ -30,32 +30,30 @@
 
 #pragma mrshader include starry/shader/defs.glsl
 
-Vertex unpack_vertex(uvec2 src)
+TerrainVertex unpack_vertex(uvec2 src)
 {
-	uint low = src.x;
-	uint high = src.y;
-	Vertex v;
+	TerrainVertex v;
 
-	v.position.x = low & 0xFFu;
-	v.position.y = (low >> 8)  & 0xFFu;
-	v.position.z = (low >> 16) & 0xFFu;
-
-	v.normal = (low >> 24) & 0xFu;
-	v.quad_corner = (low >> 27) & 0x3u;
-	v.shaded = ((low >> 29) & 0x1u) != 0u;
-	v.using_texture = ((low >> 30) & 0x1u) != 0u;
-	v.billboard = ((low >> 31) & 0x1u) != 0u;
+	v.position.x = (data.x >> 0) & 0x1Fu;
+	v.position.y = (data.x >> 5) & 0x1Fu;
+	v.position.z = (data.x >> 10) & 0x1Fu;
+	v.normal = (data.x >> 15) & 0x7u;
+	v.using_texture = ((data.x >> 18) & 1u) != 0u;
+	v.billboard = ((data.x >> 19) & 1u) != 0u;
+	v.shaded = ((data.x >> 20) & 1u) != 0u;
 
 	if (v.using_texture) {
-		v.texture_id = high & 0x3FFFu;
-		v.color = uvec4(0);
+		v.texture_id = data.y & 0xFFFFu;
+		v.color = uvec4(255, 255, 255, 255);
 	}
 	else {
-		v.color.r = (high >> 0) & 0xFFu;
-		v.color.g = (high >> 8) & 0xFFu;
-		v.color.b = (high >> 16) & 0xFFu;
-		v.color.a = (high >> 24) & 0xFFu;
-		v.texture_id = 0u;
+		v.color = uvec4(
+			(data.y >> 0) & 0xFFu,
+			(data.y >> 8) & 0xFFu,
+			(data.y >> 16) & 0xFFu,
+			(data.y >> 24) & 0xFFu
+		);
+		v.texture_id = 0;
 	}
 
 	return v;

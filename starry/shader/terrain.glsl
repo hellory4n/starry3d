@@ -34,6 +34,7 @@
 
 #pragma mrshader include starry/shader/vertex.glsl
 #pragma mrshader include starry/shader/atlas.glsl
+#pragma mrshader include starry/shader/uniforms.glsl
 
 // vertices are hyper optimized to safe space
 layout (location = 0) in uvec2 vs_packed;
@@ -46,13 +47,13 @@ flat out int fs_shaded;
 
 void main()
 {
-	Vertex v = unpack_vertex(vs_packed);
+	TerrainVertex v = unpack_vertex(u_vertices[gl_VertexID / 4]);
 
 	vec3 position = vec3(v.position) * vec3(u_chunk + uvec3(1, 1, 1)) * CHUNK_SIZE;
 	gl_Position = u_projection * u_view * u_model * vec4(position, 1.0);
 
 	if (v.using_texture) {
-		fs_texcoords = get_texcoords(v);
+		fs_texcoords = get_texcoords(v, gl_VertexID);
 		fs_color = vec4(1, 1, 1, 1);
 	}
 	else {

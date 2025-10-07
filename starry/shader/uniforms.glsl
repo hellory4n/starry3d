@@ -48,4 +48,18 @@ layout(binding = 0, std430) readonly buffer atlas {
 	Rect u_atlas_textures[];
 };
 
+#pragma mrshader define SSBO_VERTICES 1
+layout(binding = 1, std430) readonly buffer vertices {
+	// max size is 8*6*32*16*16*16/2
+	// so:
+	// - 8 bytes for the vertex
+	// - 6 quads for a cube
+	// - 32 is the chunk size
+	// - 16*16*16 for the render distance
+	// - divided by 2 because that's the max you can fit while avoiding culling
+	// - = 3 mb
+	// jesus christ
+	TerrainVertex u_vertices[];
+};
+
 #endif // _ST_UNIFORMS_H

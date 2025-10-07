@@ -28,10 +28,9 @@
 #ifndef _ST_DEFS_H
 #define _ST_DEFS_H
 
-struct Vertex {
+struct TerrainVertex {
 	uvec3 position;
 	uint normal;
-	uint quad_corner;
 	bool shaded;
 	bool using_texture;
 	bool billboard;
