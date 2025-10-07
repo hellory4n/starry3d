@@ -60,7 +60,7 @@ layout(binding = 1, std430) readonly buffer vertices {
 	PackedTerrainVertex u_vertices[];
 };
 
-#pragma mrshader define SSBO_CHUNK_POSITIONS 1
+#pragma mrshader define SSBO_CHUNK_POSITIONS 2
 layout(binding = 2, std430) readonly buffer chunk_positions {
 	uvec3 u_chunk_positions[];
 };

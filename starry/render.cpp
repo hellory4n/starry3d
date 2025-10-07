@@ -201,7 +201,8 @@ inline void st::_update_terrain_vertex_ssbo()
 	else {                                         \
 		(Face).color = cube.Face.color;        \
 	}                                              \
-	*(ssbo++) = (Face);
+	*ssbo = (Face);                                \
+	ssbo++;
 
 				CUBE_FACE(front, TerrainVertex::Normal::FRONT);
 				CUBE_FACE(back, TerrainVertex::Normal::BACK);
@@ -219,7 +220,7 @@ inline void st::_update_terrain_vertex_ssbo()
 
 void st::_render_terrain()
 {
-	if (st::current_chunk() != _st->prev_chunk) {
+	if (st::current_chunk() != _st->prev_chunk || _st->chunk_updates_in_your_area) {
 		st::_update_terrain_vertex_ssbo();
 	}
 
@@ -244,8 +245,10 @@ void st::_render_terrain()
 		6 * CHUNK_SIZE * RENDER_DISTANCE.x * RENDER_DISTANCE.x * RENDER_DISTANCE.x;
 	_st->base_plane.draw(instances);
 
+	// reset this frame's state
 	_st->prev_chunk = st::current_chunk();
 	_st->chunk_position_ssbo_offset = 0;
+	_st->chunk_updates_in_your_area = false;
 }
 
 void st::set_wireframe_mode(bool val)
