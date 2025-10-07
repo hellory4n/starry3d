@@ -257,8 +257,8 @@ inline void register_model_spec(Model id, tr::String name, tr::Array<ModelMesh> 
 	ModelSpec man = ModelSpec(id, name, meshes);
 }
 
-constexpr int32 CHUNK_SIZE = 32;
-constexpr tr::Vec3<int32> CHUNK_SIZE_VEC = {32, 32, 32}; // makes some math cleaner
+constexpr int32 CHUNK_SIZE = 16;
+constexpr tr::Vec3<int32> CHUNK_SIZE_VEC{CHUNK_SIZE}; // makes some math cleaner
 
 // You'll never guess what this does
 constexpr tr::Vec3<int32> block_to_chunk_pos(tr::Vec3<int32> block_pos)

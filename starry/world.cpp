@@ -206,7 +206,7 @@ st::Block& st::place_static_block(tr::Vec3<int32> pos, st::Model model)
 	// changed what am i saying anymore the horror has become too great for anyo ne mind t o
 	// bare
 	float64 distance = pos.distance(st::current_chunk());
-	if (distance < CHUNK_SIZE * RENDER_DISTANCE.x) {
+	if (distance < CHUNK_SIZE * RENDER_DISTANCE) {
 		_st->chunk_updates_in_your_area = true;
 	}
 
@@ -237,7 +237,7 @@ void st::Block::destroy()
 	_model = MODEL_AIR;
 
 	float64 distance = _position.distance(st::current_chunk());
-	if (distance < CHUNK_SIZE * RENDER_DISTANCE.x) {
+	if (distance < CHUNK_SIZE * RENDER_DISTANCE) {
 		_st->chunk_updates_in_your_area = true;
 	}
 }

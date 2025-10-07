@@ -50,7 +50,7 @@ struct TerrainVertex {
 #define QUAD_CORNER_BOTTOM_LEFT 2u
 #define QUAD_CORNER_BOTTOM_RIGHT 3u
 
-#define CHUNK_SIZE 32
+#define CHUNK_SIZE 16
 
 struct Rect {
 	uint x;

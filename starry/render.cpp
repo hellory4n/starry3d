@@ -63,13 +63,13 @@ void st::_init_renderer()
 	// this calculation is explained in uniforms.glsl
 	// and i dont wanna duplicate that comment
 	_st->terrain_vertex_ssbo.update(
-		nullptr, sizeof(PackedTerrainVertex) * 6 * CHUNK_SIZE * RENDER_DISTANCE.x *
-				 RENDER_DISTANCE.x * RENDER_DISTANCE.x / 2
+		nullptr, sizeof(PackedTerrainVertex) * 6 * CHUNK_SIZE * RENDER_DISTANCE *
+				 RENDER_DISTANCE * RENDER_DISTANCE * 2
 	);
 	_st->chunk_positions_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_CHUNK_POSITIONS); // catchy
 	_st->chunk_positions_ssbo.update(
 		nullptr,
-		sizeof(tr::Vec3<int32>) * RENDER_DISTANCE.x * RENDER_DISTANCE.x * RENDER_DISTANCE.x
+		sizeof(tr::Vec3<int32>) * RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE
 	);
 
 	const tr::Array<const VertexAttribute> attrs = {
@@ -83,7 +83,7 @@ void st::_init_renderer()
 		{0, 0, 1}, // bottom right
 	};
 	const tr::Array<const Triangle> tris = {
-		// FIXME this will definitely probably make backfacing culling mad
+		// FIXME this will definitely probably make backface culling mad
 		{0, 1, 2},
 		{1, 2, 3},
 	};
@@ -157,8 +157,10 @@ inline void st::_update_terrain_vertex_ssbo()
 
 	auto* ssbo = static_cast<PackedTerrainVertex*>(ptr);
 
-	tr::Vec3<int32> start = (st::current_chunk() - (RENDER_DISTANCE / 2)) * CHUNK_SIZE_VEC;
-	tr::Vec3<int32> end = (st::current_chunk() + (RENDER_DISTANCE / 2)) * CHUNK_SIZE_VEC;
+	// tr::Vec3<int32> start = (st::current_chunk() - (RENDER_DISTANCE / 2)) * CHUNK_SIZE_VEC;
+	// tr::Vec3<int32> end = (st::current_chunk() + (RENDER_DISTANCE / 2)) * CHUNK_SIZE_VEC;
+	tr::Vec3<int32> start = st::current_chunk() - CHUNK_SIZE_VEC;
+	tr::Vec3<int32> end = st::current_chunk() + CHUNK_SIZE_VEC;
 
 	for (int32 x = start.x; x < end.x; x++) {
 		for (int32 y = start.y; y < end.y; y++) {
@@ -222,28 +224,27 @@ void st::_render_terrain()
 {
 	if (st::current_chunk() != _st->prev_chunk || _st->chunk_updates_in_your_area) {
 		st::_update_terrain_vertex_ssbo();
-	}
 
-	// :(
-	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE / 2);
-	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE / 2);
-	for (int32 x = start.x; x < end.x; x++) {
-		for (int32 y = start.y; y < end.y; y++) {
-			for (int32 z = start.z; z < end.z; z++) {
-				// funny chunk position fuckery
-				// TODO this is messy as fuck
-				tr::Vec3<int32> pos = {x, y, z};
-				_st->chunk_positions_ssbo.partial_update(
-					_st->chunk_position_ssbo_offset, &pos, sizeof(pos)
-				);
-				_st->chunk_position_ssbo_offset += sizeof(pos);
+		// update the chunk positions ssbo
+		tr::Vec3<int32>* positions = static_cast<tr::Vec3<int32>*>(
+			_st->chunk_positions_ssbo.map_buffer(MapBufferAccess::WRITE)
+		);
+		TR_DEFER(_st->chunk_positions_ssbo.unmap_buffer());
+
+		tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
+		tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE_VEC / 2);
+		for (int32 x = start.x; x < end.x; x++) {
+			for (int32 y = start.y; y < end.y; y++) {
+				for (int32 z = start.z; z < end.z; z++) {
+					*positions = {x, y, z};
+					positions++;
+				}
 			}
 		}
 	}
 
-	uint32 instances =
-		6 * CHUNK_SIZE * RENDER_DISTANCE.x * RENDER_DISTANCE.x * RENDER_DISTANCE.x;
-	_st->base_plane.draw(instances);
+	constexpr uint32 INSTANCES = 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
+	_st->base_plane.draw(INSTANCES);
 
 	// reset this frame's state
 	_st->prev_chunk = st::current_chunk();

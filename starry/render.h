@@ -101,7 +101,8 @@ struct Chunk
 };
 
 // TODO setting the render distance
-constexpr tr::Vec3<int32> RENDER_DISTANCE{16};
+constexpr int32 RENDER_DISTANCE = 8;
+constexpr tr::Vec3<int32> RENDER_DISTANCE_VEC{RENDER_DISTANCE};
 
 // a lot of private functions
 // please do not touch unless you're a friend
