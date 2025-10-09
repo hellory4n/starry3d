@@ -54,10 +54,6 @@ void st::_init_renderer()
 	_st->terrain_shader->link();
 	_st->terrain_shader->use();
 
-	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_MODEL, tr::Matrix4x4::identity());
-	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_VIEW, tr::Matrix4x4::identity());
-	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_PROJECTION, tr::Matrix4x4::identity());
-
 	_st->atlas_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
 	_st->terrain_vertex_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_VERTICES);
 	// this calculation is explained in uniforms.glsl
@@ -73,20 +69,14 @@ void st::_init_renderer()
 		sizeof(tr::Vec3<int32>) * RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE
 	);
 
+	// the actual data is calculated in the vertex shader
 	const tr::Array<const VertexAttribute> attrs = {
-		{"position", VertexAttributeType::VEC3_FLOAT32, 0},
+		{"filler", VertexAttributeType::VEC3_INT32, 0},
 	};
-	const tr::Array<const tr::Vec3<float32>> verts = {
-		// pls keep it in this order it's for the shader
-		{0, 0, 1}, // top left
-		{1, 0, 1}, // top right
-		{0, 0, 0}, // bottom left
-		{0, 0, 1}, // bottom right
-	};
+	const tr::Array<const int32> verts = {0, 0, 0, 0, 0, 0};
 	const tr::Array<const Triangle> tris = {
-		// FIXME this will definitely probably make backface culling mad
 		{0, 1, 2},
-		{1, 2, 3},
+		{3, 4, 5},
 	};
 	_st->base_plane = Mesh(attrs, verts, tris);
 
@@ -153,7 +143,7 @@ inline void st::_update_terrain_vertex_ssbo()
 	// RUST DEVELOPERS CRY OVER THIS BEAUTIFUL POINTER FUCKING
 	// TOUCHING MEMORY IN PLACES IT COULDN'T EVEN IMAGINE
 	// not funny
-	// FIXME partially update the ssbo so that high render distances are usable
+	// FIXME only partially update the ssbo per chunk so that high render distances are usable
 	void* ptr = _st->terrain_vertex_ssbo.map_buffer(MapBufferAccess::WRITE);
 	TR_DEFER(_st->terrain_vertex_ssbo.unmap_buffer());
 

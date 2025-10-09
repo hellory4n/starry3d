@@ -30,12 +30,10 @@
 
 #pragma mrshader include starry/shader/defs.glsl
 
-uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 uniform uvec2 u_atlas_size;
 
-#pragma mrshader define U_MODEL "u_model"
 #pragma mrshader define U_VIEW "u_view"
 #pragma mrshader define U_PROJECTION "u_projection"
 #pragma mrshader define U_ATLAS_SIZE "u_atlas_size"

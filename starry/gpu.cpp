@@ -235,12 +235,12 @@ void st::Mesh::free()
 	glDeleteVertexArrays(1, &_vao);
 	glDeleteBuffers(1, &_vbo);
 	glDeleteBuffers(1, &_ebo);
+	tr::info("freed mesh (vao %u)", _vao);
+
 	_vao = 0;
 	_vbo = 0;
 	_ebo = 0;
 	_index_count = 0;
-
-	tr::info("freed mesh (vao %u)", _vao);
 }
 
 void st::Mesh::draw(uint32 instances) const
@@ -335,8 +335,8 @@ st::ShaderProgram::ShaderProgram()
 void st::ShaderProgram::free()
 {
 	glDeleteProgram(_program);
-	_program = 0;
 	tr::info("deleted shader program (id %u)", _program);
+	_program = 0;
 }
 
 // 'Method can be made const'

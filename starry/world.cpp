@@ -42,17 +42,8 @@
 
 tr::Matrix4x4 st::Camera::view_matrix() const
 {
-	// we have to do this otherwise everything looks massive
-	// and making everything smaller is more expensive probably
-	// TODO i might be wrong
-	tr::Vec3<float32> real_position =
-		-(position * tr::Vec3<float32>{
-				     float32(_st->grid_size.x), float32(_st->grid_size.y),
-				     float32(_st->grid_size.z)
-			     });
-
 	tr::Matrix4x4 position_mat =
-		tr::Matrix4x4::translate(real_position.x, real_position.y, real_position.z);
+		tr::Matrix4x4::translate(-position.x, -position.y, -position.z);
 
 	tr::Matrix4x4 rotation_mat = tr::Matrix4x4::identity();
 	rotation_mat = rotation_mat.rotate_x(tr::deg2rad(rotation.x));

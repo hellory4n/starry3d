@@ -36,7 +36,10 @@
 #pragma mrshader include starry/shader/atlas.glsl
 #pragma mrshader include starry/shader/uniforms.glsl
 
-layout (location = 0) in vec3 vs_position;
+// literally just filler
+// the actual vertex data is calculated with gl_VertexID and the terrain ssbo
+// TODO probably unnecessary
+layout(location = 0) in int vs_filler;
 
 out vec2 fs_texcoords;
 out vec4 fs_color;
@@ -46,34 +49,57 @@ flat out int fs_shaded;
 
 void main()
 {
-	TerrainVertex v = unpack_vertex(u_vertices[gl_InstanceID / 4]);
+	// procedurally generated quad
+	vec3 quad_position;
+	switch (gl_VertexID) {
+	case 0:
+		quad_position = vec3(-0.5, -0.5, 0);
+		break;
+	case 1:
+		quad_position = vec3(0.5, 0.5, 0);
+		break;
+	case 2:
+		quad_position = vec3(-0.5, 0.5, 0);
+		break;
+	case 3:
+		quad_position = vec3(0.5, 0.5, 0);
+		break;
+	case 4:
+		quad_position = vec3(0.5, -0.5, 0);
+		break;
+	case 5:
+		quad_position = vec3(-0.5, -0.5, 0);
+		break;
+	}
+
+       	TerrainVertex v = unpack_vertex(u_vertices[gl_InstanceID / 4]);
 	// some vertices are just padding
 	// skip those to not waste compute
 	// yes this single if statement is noticeable (at least on my shitty laptop)
-	if (v.texture_id == 0 && v.color == uvec4(0, 0, 0, 0)) {
-		gl_Position = vec4(0, 0, 0, 1);
-		return;
-	}
+	// if (v.texture_id == 0 && v.color == uvec4(0, 0, 0, 0)) {
+	// 	gl_Position = vec4(0, 0, 0, 1);
+	// 	return;
+	// }
 
 	uvec3 chunk = u_chunk_positions[gl_InstanceID / (6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE)];
-	vec3 position = (vec3(v.position) + vs_position) * vec3(chunk + uvec3(1, 1, 1)) * CHUNK_SIZE;
+	vec3 position = (vec3(v.position) + quad_position) /** vec3(chunk + uvec3(1, 1, 1)) * CHUNK_SIZE*/;
 
 	// we only send 1 vertex per quad
 	// FIXME figure out rotating the base plane
-	switch (gl_VertexID) {
-	case QUAD_CORNER_TOP_LEFT:
-		position.z++;
-		break;
-	case QUAD_CORNER_BOTTOM_RIGHT:
-		position.x++;
-		break;
-	case QUAD_CORNER_TOP_RIGHT:
-		position.x++;
-		position.z++;
-		break;
-	}
+	// switch (gl_VertexID) {
+	// case QUAD_CORNER_TOP_LEFT:
+	// 	position.z++;
+	// 	break;
+	// case QUAD_CORNER_BOTTOM_RIGHT:
+	// 	position.x++;
+	// 	break;
+	// case QUAD_CORNER_TOP_RIGHT:
+	// 	position.x++;
+	// 	position.z++;
+	// 	break;
+	// }
 
-	gl_Position = u_projection * u_view * u_model * vec4(position, 1.0);
+	gl_Position = u_projection * u_view * vec4(position, 1.0);
 
 	if (v.using_texture) {
 		fs_texcoords = get_texcoords(v, gl_VertexID);
@@ -99,6 +125,9 @@ uniform sampler2D u_texture;
 
 void main()
 {
+	frag_color = vec4(1, 0, 0, 1);
+	return;
+
 	// TODO lighting
 	if (bool(fs_using_texture)) {
 		frag_color = texture(u_texture, fs_texcoords);
