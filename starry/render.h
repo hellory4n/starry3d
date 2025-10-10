@@ -104,6 +104,10 @@ struct Chunk
 constexpr int32 RENDER_DISTANCE = 8;
 constexpr tr::Vec3<int32> RENDER_DISTANCE_VEC{RENDER_DISTANCE};
 
+constexpr usize TERRAIN_VERTEX_SSBO_SIZE =
+	(sizeof(PackedTerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE /* / 2 */) *
+	RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE;
+
 // a lot of private functions
 // please do not touch unless you're a friend
 // (did you get the reference, do you need any pointers)

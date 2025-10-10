@@ -58,11 +58,7 @@ void st::_init_renderer()
 	_st->terrain_vertex_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_VERTICES);
 	// this calculation is explained in uniforms.glsl
 	// and i dont wanna duplicate that comment
-	_st->terrain_vertex_ssbo.update(
-		nullptr,
-		(sizeof(PackedTerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE /* / 2 */) *
-			RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE
-	);
+	_st->terrain_vertex_ssbo.update(nullptr, TERRAIN_VERTEX_SSBO_SIZE);
 	_st->chunk_positions_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_CHUNK_POSITIONS); // catchy
 	_st->chunk_positions_ssbo.update(
 		nullptr,
@@ -148,6 +144,7 @@ inline void st::_update_terrain_vertex_ssbo()
 	TR_DEFER(_st->terrain_vertex_ssbo.unmap_buffer());
 
 	auto* ssbo = static_cast<PackedTerrainVertex*>(ptr);
+	void* ssbo_end = ssbo + TERRAIN_VERTEX_SSBO_SIZE;
 
 	tr::Vec3<int32> start = (st::current_chunk() - (RENDER_DISTANCE_VEC / 2)) * CHUNK_SIZE_VEC;
 	tr::Vec3<int32> end = (st::current_chunk() + (RENDER_DISTANCE_VEC / 2)) * CHUNK_SIZE_VEC;
@@ -186,17 +183,24 @@ inline void st::_update_terrain_vertex_ssbo()
 				};
 
 // yea
-#define CUBE_FACE(Face, FaceEnum)                      \
-	TerrainVertex Face = base_vertex;              \
-	(Face).normal = FaceEnum;                      \
-	if (cube.Face.using_texture) {                 \
-		(Face).texture_id = cube.Face.texture; \
-	}                                              \
-	else {                                         \
-		(Face).color = cube.Face.color;        \
-	}                                              \
-	*ssbo = (Face);                                \
-	ssbo++;
+#define CUBE_FACE(Face, FaceEnum)                                                            \
+	TerrainVertex Face = base_vertex;                                                    \
+	(Face).normal = FaceEnum;                                                            \
+	if (cube.Face.using_texture) {                                                       \
+		(Face).texture_id = cube.Face.texture;                                       \
+	}                                                                                    \
+	else {                                                                               \
+		(Face).color = cube.Face.color;                                              \
+	}                                                                                    \
+	*ssbo = static_cast<PackedTerrainVertex>(Face);                                      \
+	ssbo++;                                                                              \
+	/* debugging thing */                                                                \
+	if (tr::is_debug() && ssbo >= ssbo_end) {                                            \
+		tr::panic(                                                                   \
+			"writing terrain vertex ssbo went out of bounds (start=%p, end=%p)", \
+			static_cast<void*>(ssbo), ssbo_end                                   \
+		);                                                                           \
+	}
 
 				CUBE_FACE(front, TerrainVertex::Normal::FRONT);
 				CUBE_FACE(back, TerrainVertex::Normal::BACK);
