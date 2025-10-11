@@ -1191,10 +1191,10 @@ static const char* ST_TERRAIN_SHADER_FRAGMENT =
 	"}\n";
 
 #define ST_TERRAIN_SHADER_SSBO_CHUNK_POSITIONS 2
-#define ST_TERRAIN_SHADER_U_VIEW "u_view"
 #define ST_TERRAIN_SHADER_U_PROJECTION "u_projection"
-#define ST_TERRAIN_SHADER_U_ATLAS_SIZE "u_atlas_size"
 #define ST_TERRAIN_SHADER_SSBO_ATLAS 0
+#define ST_TERRAIN_SHADER_U_ATLAS_SIZE "u_atlas_size"
 #define ST_TERRAIN_SHADER_SSBO_VERTICES 1
+#define ST_TERRAIN_SHADER_U_VIEW "u_view"
 
 #endif
