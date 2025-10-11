@@ -46,14 +46,6 @@ layout(binding = 0, std430) readonly buffer atlas {
 
 #pragma mrshader define SSBO_VERTICES 1
 layout(binding = 1, std430) readonly buffer vertices {
-	// max size is (8*6*16*16*16/2)*8*8*8
-	// so:
-	// - 8 bytes for the vertex
-	// - 6 quads for a cube
-	// - 16*16*16 for a chunk
-	// - divided by 2 because that's the max you can fit while avoiding culling
-	// - 8*8*8 for the render distance
-	// - = 96 kb for a chunk, 48 mb for the entire render distance
 	PackedTerrainVertex u_vertices[];
 };
 

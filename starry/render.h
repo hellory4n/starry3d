@@ -93,8 +93,7 @@ struct Chunk
 constexpr int32 RENDER_DISTANCE = 8;
 constexpr tr::Vec3<int32> RENDER_DISTANCE_VEC{RENDER_DISTANCE};
 
-// this calculation is explained in uniforms.glsl
-// and i dont wanna duplicate that comment
+// 6 faces for a cube * chunk size^3 for a cube * render distance^3 for another cube
 constexpr usize TERRAIN_VERTEX_SSBO_SIZE =
 	(sizeof(TerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE /* / 2 */) *
 	RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE;
@@ -117,12 +116,15 @@ void _terrain_pipeline();
 // actual rendering stuff
 void _render_terrain();
 void _update_terrain_vertex_ssbo_chunk(
-	tr::Vec3<int32> pos, TerrainVertex* ssbo, Chunk chunk, uint16& chunk_pos_idx
+	tr::Vec3<int32> pos, TerrainVertex* ssbo, Chunk chunk, uint16& chunk_pos_idx,
+	uint32& instances
 );
 void _update_terrain_vertex_ssbo_block(
-	tr::Vec3<int32> pos, TerrainVertex* ssbo, Block& block, uint16 chunk_pos_idx
+	tr::Vec3<int32> pos, TerrainVertex* ssbo, Block& block, uint16 chunk_pos_idx,
+	uint32& instances
 );
-void _update_terrain_vertex_ssbo();
+// returns the amount of quad instances required to render the current terrain
+uint32 _update_terrain_vertex_ssbo();
 
 // housekeeping / interop with the rest of the engine
 void _upload_atlas(TextureAtlas atlas);

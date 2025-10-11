@@ -38,7 +38,7 @@ TerrainVertex unpack_vertex(PackedTerrainVertex data)
 	v.position.y = bitfieldExtract(data.x, 4, 4);
 	v.position.z = bitfieldExtract(data.x, 8, 4);
 	v.normal = bitfieldExtract(data.x, 12, 3);
-	v.using_texture = bool(bitfieldExtract(data.x, 15, 1);
+	v.using_texture = bool(bitfieldExtract(data.x, 15, 1));
 	v.billboard = bool(bitfieldExtract(data.x, 16, 1));
 	v.shaded = bool(bitfieldExtract(data.x, 17, 1));
 

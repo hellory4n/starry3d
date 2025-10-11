@@ -74,7 +74,7 @@ void main()
 
        	TerrainVertex v = unpack_vertex(u_vertices[gl_InstanceID / 4]);
 	uvec3 chunk = u_chunk_positions[v.chunk_pos_idx];
-	vec3 position = (vec3(v.position) + quad_position) * vec3(chunk + uvec3(1, 1, 1)) * CHUNK_SIZE;
+	vec3 position = (vec3(v.position) + quad_position) /** vec3(chunk + uvec3(1, 1, 1)) * CHUNK_SIZE*/;
 
 	// FIXME figure out rotating the base plane
 

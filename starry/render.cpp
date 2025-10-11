@@ -132,7 +132,7 @@ void st::_render()
 	st::_render_terrain();
 }
 
-void st::_update_terrain_vertex_ssbo()
+uint32 st::_update_terrain_vertex_ssbo()
 {
 	// RUST DEVELOPERS CRY OVER THIS BEAUTIFUL POINTER FUCKING
 	// TOUCHING MEMORY IN PLACES IT COULDN'T EVEN IMAGINE
@@ -145,6 +145,7 @@ void st::_update_terrain_vertex_ssbo()
 	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
 	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE_VEC / 2);
 	uint16 chunk_pos_idx = 0;
+	uint32 instances = 0;
 
 	// TODO this can be parallelized
 	for (int32 x = start.x; x < end.x; x++) {
@@ -159,15 +160,18 @@ void st::_update_terrain_vertex_ssbo()
 				}
 
 				st::_update_terrain_vertex_ssbo_chunk(
-					{x, y, z}, ssbo, chunk.unwrap(), chunk_pos_idx
+					{x, y, z}, ssbo, chunk.unwrap(), chunk_pos_idx, instances
 				);
 			}
 		}
 	}
+
+	return instances;
 }
 
 void st::_update_terrain_vertex_ssbo_chunk(
-	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Chunk chunk, uint16& chunk_pos_idx
+	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Chunk chunk, uint16& chunk_pos_idx,
+	uint32& instances
 )
 {
 	(void)chunk;
@@ -183,7 +187,7 @@ void st::_update_terrain_vertex_ssbo_chunk(
 				}
 
 				st::_update_terrain_vertex_ssbo_block(
-					{x, y, z}, ssbo, block.unwrap(), chunk_pos_idx
+					{x, y, z}, ssbo, block.unwrap(), chunk_pos_idx, instances
 				);
 			}
 		}
@@ -196,9 +200,12 @@ void st::_update_terrain_vertex_ssbo_chunk(
 }
 
 void st::_update_terrain_vertex_ssbo_block(
-	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Block& block, uint16 chunk_pos_idx
+	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Block& block, uint16 chunk_pos_idx,
+	uint32& instances
 )
 {
+	instances += 6;
+
 	// hmmm
 	ModelSpec model_spec = block.model().model_spec().unwrap();
 	ModelCube cube = model_spec.meshes[0].cube;
@@ -245,7 +252,7 @@ void st::_update_terrain_vertex_ssbo_block(
 void st::_render_terrain()
 {
 	if (st::current_chunk() != _st->prev_chunk || _st->chunk_updates_in_your_area) {
-		st::_update_terrain_vertex_ssbo();
+		_st->instances = st::_update_terrain_vertex_ssbo();
 
 		// update the chunk positions ssbo
 		tr::Vec3<int32>* positions = static_cast<tr::Vec3<int32>*>(
@@ -265,8 +272,7 @@ void st::_render_terrain()
 		}
 	}
 
-	constexpr uint32 INSTANCES = 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE;
-	_st->base_plane.draw(INSTANCES);
+	_st->base_plane.draw(_st->instances);
 
 	// reset this frame's state
 	_st->prev_chunk = st::current_chunk();

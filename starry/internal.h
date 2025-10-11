@@ -78,6 +78,7 @@ struct Starry
 	tr::HashMap<tr::Vec3<int32>, Chunk> chunks;
 	tr::Vec3<int32> prev_chunk = {};
 	Mesh base_plane = {};
+	uint32 instances = 0;
 	bool chunk_updates_in_your_area = false;
 
 	// assets
