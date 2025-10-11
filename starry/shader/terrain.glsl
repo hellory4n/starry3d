@@ -74,7 +74,7 @@ void main()
 
        	TerrainVertex v = unpack_vertex(u_vertices[gl_InstanceID / 4]);
 	uvec3 chunk = u_chunk_positions[v.chunk_pos_idx];
-	vec3 position = (vec3(v.position) + quad_position) /** vec3(chunk + uvec3(1, 1, 1)) * CHUNK_SIZE*/;
+	vec3 position = (vec3(chunk) * CHUNK_SIZE) + (vec3(v.position) + quad_position);
 
 	// FIXME figure out rotating the base plane
 
@@ -104,14 +104,12 @@ uniform sampler2D u_texture;
 
 void main()
 {
-	frag_color = vec4(1, 0, 0, 1);
-	return;
-
 	// TODO lighting
 	if (bool(fs_using_texture)) {
 		frag_color = texture(u_texture, fs_texcoords);
 	}
 	else {
-		frag_color = fs_color;
+		// TODO decent transparency (tricky)
+		frag_color = vec4(fs_color.rgb, 1);
 	}
 }

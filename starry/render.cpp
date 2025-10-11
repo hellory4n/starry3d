@@ -56,10 +56,9 @@ void st::_init_renderer()
 
 	_st->atlas_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
 	_st->terrain_vertex_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_VERTICES);
-	_st->terrain_vertex_ssbo.update(nullptr, TERRAIN_VERTEX_SSBO_SIZE);
+	_st->terrain_vertex_ssbo.reserve(TERRAIN_VERTEX_SSBO_SIZE);
 	_st->chunk_positions_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_CHUNK_POSITIONS); // catchy
-	_st->chunk_positions_ssbo.update(
-		nullptr,
+	_st->chunk_positions_ssbo.reserve(
 		sizeof(tr::Vec3<int32>) * RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE
 	);
 
@@ -143,7 +142,7 @@ uint32 st::_update_terrain_vertex_ssbo()
 	auto* ssbo = static_cast<TerrainVertex*>(ptr);
 
 	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
-	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE_VEC / 2);
+	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE_VEC / 2) + CHUNK_SIZE_VEC;
 	uint16 chunk_pos_idx = 0;
 	uint32 instances = 0;
 
@@ -156,12 +155,18 @@ uint32 st::_update_terrain_vertex_ssbo()
 				// chunk has never been accessed, so it never had any blocks, no
 				// need to render air
 				if (!chunk.is_valid()) {
+					chunk_pos_idx++;
 					continue;
 				}
 
 				st::_update_terrain_vertex_ssbo_chunk(
 					{x, y, z}, ssbo, chunk.unwrap(), chunk_pos_idx, instances
 				);
+
+				// updating the chunk position ssbo goes in the exact same order
+				// so it's safe to assume we can just increment the idx
+				// FIXME this WILL break
+				chunk_pos_idx++;
 			}
 		}
 	}
@@ -192,11 +197,6 @@ void st::_update_terrain_vertex_ssbo_chunk(
 			}
 		}
 	}
-
-	// updating the chunk position ssbo goes in the exact same order
-	// so it's safe to assume we can just increment the idx
-	// FIXME this WILL break
-	chunk_pos_idx++;
 }
 
 void st::_update_terrain_vertex_ssbo_block(
@@ -224,16 +224,17 @@ void st::_update_terrain_vertex_ssbo_block(
 	base_vertex.chunk_pos_idx = chunk_pos_idx;
 
 // yea
-#define CUBE_FACE(Face, FaceEnum)                      \
-	TerrainVertex Face = base_vertex;              \
-	(Face).normal = FaceEnum;                      \
-	if (cube.Face.using_texture) {                 \
-		(Face).texture_id = cube.Face.texture; \
-	}                                              \
-	else {                                         \
-		(Face).color = cube.Face.color;        \
-	}                                              \
-	ssbo[instances] = Face;                        \
+#define CUBE_FACE(Face, FaceEnum)                       \
+	TerrainVertex Face = base_vertex;               \
+	(Face).normal = FaceEnum;                       \
+	if (cube.Face.using_texture) {                  \
+		(Face).texture_id = cube.Face.texture;  \
+	}                                               \
+	else {                                          \
+		(Face).color = cube.Face.color;         \
+	}                                               \
+	(Face).using_texture = cube.Face.using_texture; \
+	ssbo[instances] = Face;                         \
 	instances++;
 
 	CUBE_FACE(front, CubeNormal::FRONT);
@@ -259,7 +260,9 @@ void st::_render_terrain()
 		TR_DEFER(_st->chunk_positions_ssbo.unmap_buffer());
 
 		tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
-		tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE_VEC / 2);
+		tr::Vec3<int32> end =
+			st::current_chunk() + (RENDER_DISTANCE_VEC / 2) + CHUNK_SIZE_VEC;
+
 		for (int32 x = start.x; x < end.x; x++) {
 			for (int32 y = start.y; y < end.y; y++) {
 				for (int32 z = start.z; z < end.z; z++) {

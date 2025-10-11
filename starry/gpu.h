@@ -301,6 +301,12 @@ public:
 	// Only updates *some* of the data
 	void partial_update(usize offset, const void* data, usize len);
 
+	// Reserves VRAM to be used later
+	void reserve(usize len)
+	{
+		update(nullptr, len);
+	}
+
 	// Literally just `glMapBuffer` (no intermediate buffer required, just directly poke the
 	// pointer that opengl gives you)
 	void* map_buffer(MapBufferAccess access);

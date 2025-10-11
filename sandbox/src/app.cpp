@@ -23,9 +23,9 @@ sbox::Sandbox::Sandbox()
 	sbox::setup_world();
 	sbox::imgui_theme();
 
-	for (int32 x = 20; x < 50; x++) {
-		for (int32 z = 20; z < 50; z++) {
-			st::place_static_block({x, -1, z}, Model::GRASS);
+	for (int32 x = 0; x < 200; x++) {
+		for (int32 z = 0; z < 200; z++) {
+			st::place_static_block({x, 0, z}, Model::GRASS);
 		}
 	}
 
@@ -39,8 +39,10 @@ void sbox::Sandbox::update(float64 dt)
 		_ui_enabled = !_ui_enabled;
 		st::set_mouse_enabled(_ui_enabled);
 	}
+	static bool wireframe_mode = false;
 	if (st::is_key_just_pressed(st::Key::F1)) {
-		st::set_wireframe_mode(true);
+		wireframe_mode = !wireframe_mode;
+		st::set_wireframe_mode(wireframe_mode);
 	}
 
 	_player_controller(dt);
