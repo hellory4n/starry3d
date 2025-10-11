@@ -265,14 +265,14 @@ constexpr tr::Vec3<int32> block_to_chunk_pos(tr::Vec3<int32> block_pos)
 {
 	tr::Vec3<float32> fpos = {float32(block_pos.x), float32(block_pos.y), float32(block_pos.z)};
 	tr::Vec3<float32> fchunk = fpos / float32(CHUNK_SIZE);
-	return {int32(roundf(fchunk.x)), int32(roundf(fchunk.y)), int32(roundf(fchunk.z))};
+	return {int32(floorf(fchunk.x)), int32(floorf(fchunk.y)), int32(floorf(fchunk.z))};
 }
 
 // You'll never guess what this does
 constexpr tr::Vec3<int32> block_to_chunk_pos(tr::Vec3<float32> block_pos)
 {
 	tr::Vec3<float32> fchunk = block_pos / float32(CHUNK_SIZE);
-	return {int32(roundf(fchunk.x)), int32(roundf(fchunk.y)), int32(roundf(fchunk.z))};
+	return {int32(floorf(fchunk.x)), int32(floorf(fchunk.y)), int32(floorf(fchunk.z))};
 }
 
 // As the name implies, it returns the current chunk, as in whatever chunk the player's currently

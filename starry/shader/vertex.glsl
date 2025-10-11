@@ -32,30 +32,27 @@
 
 TerrainVertex unpack_vertex(PackedTerrainVertex data)
 {
+	// FIXME this definitely doesn't work on big endian who gives a shit
 	TerrainVertex v;
-
-	v.position.x = (data.x >> 0) & 0x1Fu;
-	v.position.y = (data.x >> 5) & 0x1Fu;
-	v.position.z = (data.x >> 10) & 0x1Fu;
-	v.normal = (data.x >> 15) & 0x7u;
-	v.using_texture = ((data.x >> 18) & 1u) != 0u;
-	v.billboard = ((data.x >> 19) & 1u) != 0u;
-	v.shaded = ((data.x >> 20) & 1u) != 0u;
+	v.position.x = bitfieldExtract(data.x, 0, 4);
+	v.position.y = bitfieldExtract(data.x, 4, 4);
+	v.position.z = bitfieldExtract(data.x, 8, 4);
+	v.normal = bitfieldExtract(data.x, 12, 3);
+	v.using_texture = bool(bitfieldExtract(data.x, 15, 1);
+	v.billboard = bool(bitfieldExtract(data.x, 16, 1));
+	v.shaded = bool(bitfieldExtract(data.x, 17, 1));
 
 	if (v.using_texture) {
-		v.texture_id = data.y & 0xFFFFu;
-		v.color = uvec4(255, 255, 255, 255);
+		v.texture_id = bitfieldExtract(data.y, 0, 16);
 	}
 	else {
-		v.color = uvec4(
-			(data.y >> 0) & 0xFFu,
-			(data.y >> 8) & 0xFFu,
-			(data.y >> 16) & 0xFFu,
-			(data.y >> 24) & 0xFFu
-		);
-		v.texture_id = 0;
+		v.color.r = bitfieldExtract(data.y, 0, 8);
+		v.color.g = bitfieldExtract(data.y, 8, 8);
+		v.color.b = bitfieldExtract(data.y, 16, 8);
+		v.color.a = bitfieldExtract(data.y, 24, 8);
 	}
 
+	v.chunk_pos_idx = bitfieldExtract(data.z, 0, 16);
 	return v;
 }
 

@@ -56,8 +56,6 @@ void st::_init_renderer()
 
 	_st->atlas_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
 	_st->terrain_vertex_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_VERTICES);
-	// this calculation is explained in uniforms.glsl
-	// and i dont wanna duplicate that comment
 	_st->terrain_vertex_ssbo.update(nullptr, TERRAIN_VERTEX_SSBO_SIZE);
 	_st->chunk_positions_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_CHUNK_POSITIONS); // catchy
 	_st->chunk_positions_ssbo.update(
@@ -91,7 +89,7 @@ void st::_free_renderer()
 
 void st::_upload_atlas(st::TextureAtlas atlas)
 {
-	// it's faster to just copy everything (256 kb) than it is to do hashing on the gpu
+	// it's faster to just copy everything (~1 mb) than it is to do hashing on the gpu
 	tr::Array<tr::Rect<uint32>> ssbo_data{tr::scratchpad(), MAX_ATLAS_TEXTURES};
 	for (auto [id, rect] : atlas._textures) {
 		ssbo_data[id] = rect;
@@ -134,86 +132,114 @@ void st::_render()
 	st::_render_terrain();
 }
 
-inline void st::_update_terrain_vertex_ssbo()
+void st::_update_terrain_vertex_ssbo()
 {
 	// RUST DEVELOPERS CRY OVER THIS BEAUTIFUL POINTER FUCKING
 	// TOUCHING MEMORY IN PLACES IT COULDN'T EVEN IMAGINE
 	// not funny
-	// FIXME only partially update the ssbo per chunk so that high render distances are usable
 	void* ptr = _st->terrain_vertex_ssbo.map_buffer(MapBufferAccess::WRITE);
 	TR_DEFER(_st->terrain_vertex_ssbo.unmap_buffer());
 
-	auto* ssbo = static_cast<PackedTerrainVertex*>(ptr);
-	void* ssbo_end = ssbo + TERRAIN_VERTEX_SSBO_SIZE;
+	auto* ssbo = static_cast<TerrainVertex*>(ptr);
 
-	tr::Vec3<int32> start = (st::current_chunk() - (RENDER_DISTANCE_VEC / 2)) * CHUNK_SIZE_VEC;
-	tr::Vec3<int32> end = (st::current_chunk() + (RENDER_DISTANCE_VEC / 2)) * CHUNK_SIZE_VEC;
-	// tr::Vec3<int32> start = st::current_chunk() - CHUNK_SIZE_VEC;
-	// tr::Vec3<int32> end = st::current_chunk() + CHUNK_SIZE_VEC;
+	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
+	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE_VEC / 2);
+	uint16 chunk_pos_idx = 0;
 
+	// TODO this can be parallelized
+	for (int32 x = start.x; x < end.x; x++) {
+		for (int32 y = start.y; y < end.y; y++) {
+			for (int32 z = start.z; z < end.z; z++) {
+				tr::Maybe<Chunk&> chunk = _st->chunks.try_get({x, y, z});
+
+				// chunk has never been accessed, so it never had any blocks, no
+				// need to render air
+				if (!chunk.is_valid()) {
+					continue;
+				}
+
+				st::_update_terrain_vertex_ssbo_chunk(
+					{x, y, z}, ssbo, chunk.unwrap(), chunk_pos_idx
+				);
+			}
+		}
+	}
+}
+
+void st::_update_terrain_vertex_ssbo_chunk(
+	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Chunk chunk, uint16& chunk_pos_idx
+)
+{
+	(void)chunk;
+
+	tr::Vec3<int32> start = pos * CHUNK_SIZE;
+	tr::Vec3<int32> end = start + CHUNK_SIZE_VEC;
 	for (int32 x = start.x; x < end.x; x++) {
 		for (int32 y = start.y; y < end.y; y++) {
 			for (int32 z = start.z; z < end.z; z++) {
 				tr::Maybe<Block&> block = _st->terrain_blocks.try_get({x, y, z});
 				if (!block.is_valid()) {
-					// add padding so the math doesn't bust
-					// TODO consider not
-					ssbo += 6;
 					continue;
 				}
 
-				// hmmm
-				ModelSpec model_spec = block.unwrap().model().model_spec().unwrap();
-				ModelCube cube = model_spec.meshes[0].cube;
-				tr::Vec3<int32> local_pos_32 =
-					tr::Vec3<int32>{x, y, z} -
-					st::block_to_chunk_pos(tr::Vec3<int32>{x, y, z});
-				tr::Vec3<uint8> local_pos = {
-					static_cast<uint8>(local_pos_32.x),
-					static_cast<uint8>(local_pos_32.y),
-					static_cast<uint8>(local_pos_32.z),
-				};
-
-				// TODO culling
-				TerrainVertex base_vertex = {
-					.position = local_pos,
-					.shaded = model_spec.meshes[0].cube.shaded,
-					.billboard = false,
-					.texture_id = 0, // clang-tidy shut up
-				};
-
-// yea
-#define CUBE_FACE(Face, FaceEnum)                                                            \
-	TerrainVertex Face = base_vertex;                                                    \
-	(Face).normal = FaceEnum;                                                            \
-	if (cube.Face.using_texture) {                                                       \
-		(Face).texture_id = cube.Face.texture;                                       \
-	}                                                                                    \
-	else {                                                                               \
-		(Face).color = cube.Face.color;                                              \
-	}                                                                                    \
-	*ssbo = static_cast<PackedTerrainVertex>(Face);                                      \
-	ssbo++;                                                                              \
-	/* debugging thing */                                                                \
-	if (tr::is_debug() && ssbo >= ssbo_end) {                                            \
-		tr::panic(                                                                   \
-			"writing terrain vertex ssbo went out of bounds (start=%p, end=%p)", \
-			static_cast<void*>(ssbo), ssbo_end                                   \
-		);                                                                           \
-	}
-
-				CUBE_FACE(front, TerrainVertex::Normal::FRONT);
-				CUBE_FACE(back, TerrainVertex::Normal::BACK);
-				CUBE_FACE(left, TerrainVertex::Normal::LEFT);
-				CUBE_FACE(right, TerrainVertex::Normal::RIGHT);
-				CUBE_FACE(top, TerrainVertex::Normal::TOP);
-				CUBE_FACE(bottom, TerrainVertex::Normal::BOTTOM);
-
-// yea²
-#undef CUBE_FACE
+				st::_update_terrain_vertex_ssbo_block(
+					{x, y, z}, ssbo, block.unwrap(), chunk_pos_idx
+				);
 			}
 		}
 	}
+
+	// updating the chunk position ssbo goes in the exact same order
+	// so it's safe to assume we can just increment the idx
+	// FIXME this WILL break
+	chunk_pos_idx++;
+}
+
+void st::_update_terrain_vertex_ssbo_block(
+	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Block& block, uint16 chunk_pos_idx
+)
+{
+	// hmmm
+	ModelSpec model_spec = block.model().model_spec().unwrap();
+	ModelCube cube = model_spec.meshes[0].cube;
+	tr::Vec3<int32> local_pos_32 = pos - st::block_to_chunk_pos(pos);
+	tr::Vec3<uint8> local_pos = {
+		static_cast<uint8>(local_pos_32.x),
+		static_cast<uint8>(local_pos_32.y),
+		static_cast<uint8>(local_pos_32.z),
+	};
+
+	// TODO culling
+	TerrainVertex base_vertex = {};
+	base_vertex.x = local_pos.x;
+	base_vertex.y = local_pos.y;
+	base_vertex.z = local_pos.z;
+	base_vertex.shaded = model_spec.meshes[0].cube.shaded;
+	base_vertex.billboard = false;
+	base_vertex.chunk_pos_idx = chunk_pos_idx;
+
+// yea
+#define CUBE_FACE(Face, FaceEnum)                      \
+	TerrainVertex Face = base_vertex;              \
+	(Face).normal = FaceEnum;                      \
+	if (cube.Face.using_texture) {                 \
+		(Face).texture_id = cube.Face.texture; \
+	}                                              \
+	else {                                         \
+		(Face).color = cube.Face.color;        \
+	}                                              \
+	*ssbo = Face;                                  \
+	ssbo++;
+
+	CUBE_FACE(front, CubeNormal::FRONT);
+	CUBE_FACE(back, CubeNormal::BACK);
+	CUBE_FACE(left, CubeNormal::LEFT);
+	CUBE_FACE(right, CubeNormal::RIGHT);
+	CUBE_FACE(top, CubeNormal::TOP);
+	CUBE_FACE(bottom, CubeNormal::BOTTOM);
+
+// yea²
+#undef CUBE_FACE
 }
 
 void st::_render_terrain()
@@ -244,40 +270,10 @@ void st::_render_terrain()
 
 	// reset this frame's state
 	_st->prev_chunk = st::current_chunk();
-	_st->chunk_position_ssbo_offset = 0;
 	_st->chunk_updates_in_your_area = false;
 }
 
 void st::set_wireframe_mode(bool val)
 {
 	glPolygonMode(GL_FRONT_AND_BACK, val ? GL_LINE : GL_FILL);
-}
-
-st::PackedTerrainVertex::PackedTerrainVertex(TerrainVertex src)
-{
-	x = src.position.x;
-	y = src.position.y;
-	z = src.position.z;
-	normal = static_cast<uint8>(src.normal);
-	using_texture = src.using_texture;
-	billboard = src.billboard;
-	shaded = src.shaded;
-	if (src.using_texture) {
-		texture_id = src.texture_id;
-	}
-	else {
-		color = src.color;
-	}
-
-	// to make clang-tidy happy
-	_reserved = 0;
-}
-
-st::PackedTerrainVertex::operator tr::Vec2<uint32>() const
-{
-	// FIXME this probably (definitely) only works on little endian who gives a shit
-	// FIXME this is definitely undefined behavior
-	uint64 bits = *reinterpret_cast<const uint64*>(this);
-	return {static_cast<uint32>(bits & 0xFFFFFFFFu),
-		static_cast<uint32>((bits >> 32) & 0xFFFFFFFFu)};
 }

@@ -33,51 +33,36 @@
 
 namespace st {
 
-// As the name implies, it's the vertex for terrain. Note this is actually not the real vertex
-// format though, the real format is `st::PackedModelVertex` which puts everything together into an
-// `uint64` (as a normal struct would have padding and waste space, it'd also be incompatible with
-// glsl which only has 32-bit ints)
-struct TerrainVertex
+enum class CubeNormal : uint8
 {
-	// Using a Vec3<float32> would take up too much space
-	enum class Normal : uint8
-	{
-		FRONT = 0,
-		BACK = 1,
-		LEFT = 2,
-		RIGHT = 3,
-		TOP = 4,
-		BOTTOM = 5,
-	};
-
-	tr::Vec3<uint8> position = {};
-	Normal normal = Normal::FRONT;
-	bool shaded = true;
-	bool using_texture = false;
-	bool billboard = false;
-	union {
-		TextureId texture_id;
-		tr::Color color = tr::COLOR_WHITE;
-	};
+	FRONT = 0,
+	BACK = 1,
+	LEFT = 2,
+	RIGHT = 3,
+	TOP = 4,
+	BOTTOM = 5,
 };
 
 // #pragma pack is supported by gcc, clang, and msvc :)
 #pragma pack(push, 1)
-// Like a TerrainVertex, but more packed (uses less space (blazingly fast (money mouth emoji)))
-struct PackedTerrainVertex
+// Hyper optimized blazingly fast "vertex" format for terrain
+struct TerrainVertex
 {
-	uint8 x : 5, y : 5, z : 5;
-	uint8 normal : 3;
+	uint8 x : 4 = 0;
+	uint8 y : 4 = 0;
+	uint8 z : 4 = 0;
+	CubeNormal normal : 3 = CubeNormal::FRONT;
 	// flags
-	uint8 using_texture : 1;
-	uint8 billboard : 1;
-	uint8 shaded : 1;
+	uint8 using_texture : 1 = false;
+	uint8 billboard : 1 = false;
+	uint8 shaded : 1 = true;
 
 private:
 	// TODO use it
 	// we could use 5+5 bits for lengths when we add greedy meshing
-	// +1 extra flag
-	uint32 _reserved : 11;
+	// +4 extra flags
+	[[maybe_unused]]
+	uint32 _reserved1 : 14 = 0;
 
 public:
 	union {
@@ -85,13 +70,17 @@ public:
 		tr::Color color;
 	};
 
-	PackedTerrainVertex(TerrainVertex src);
-	operator tr::Vec2<uint32>() const;
+	uint16 chunk_pos_idx = 0;
+
+private:
+	// use for more material settings? idfk
+	[[maybe_unused]]
+	uint16 _reserved2 = 0;
 };
 #pragma pack(pop)
 
 // just in case
-static_assert(sizeof(PackedTerrainVertex) == 8, "too bad");
+static_assert(sizeof(TerrainVertex) == 12, "too bad");
 
 // Di?h
 struct Chunk
@@ -104,9 +93,13 @@ struct Chunk
 constexpr int32 RENDER_DISTANCE = 8;
 constexpr tr::Vec3<int32> RENDER_DISTANCE_VEC{RENDER_DISTANCE};
 
+// this calculation is explained in uniforms.glsl
+// and i dont wanna duplicate that comment
 constexpr usize TERRAIN_VERTEX_SSBO_SIZE =
-	(sizeof(PackedTerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE /* / 2 */) *
+	(sizeof(TerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE /* / 2 */) *
 	RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE;
+
+void set_wireframe_mode(bool val);
 
 // a lot of private functions
 // please do not touch unless you're a friend
@@ -123,12 +116,16 @@ void _terrain_pipeline();
 
 // actual rendering stuff
 void _render_terrain();
+void _update_terrain_vertex_ssbo_chunk(
+	tr::Vec3<int32> pos, TerrainVertex* ssbo, Chunk chunk, uint16& chunk_pos_idx
+);
+void _update_terrain_vertex_ssbo_block(
+	tr::Vec3<int32> pos, TerrainVertex* ssbo, Block& block, uint16 chunk_pos_idx
+);
 void _update_terrain_vertex_ssbo();
 
 // housekeeping / interop with the rest of the engine
 void _upload_atlas(TextureAtlas atlas);
-
-void set_wireframe_mode(bool val);
 
 }
 

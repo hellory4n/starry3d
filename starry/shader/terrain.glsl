@@ -73,31 +73,10 @@ void main()
 	}
 
        	TerrainVertex v = unpack_vertex(u_vertices[gl_InstanceID / 4]);
-	// some vertices are just padding
-	// skip those to not waste compute
-	// yes this single if statement is noticeable (at least on my shitty laptop)
-	// if (v.texture_id == 0 && v.color == uvec4(0, 0, 0, 0)) {
-	// 	gl_Position = vec4(0, 0, 0, 1);
-	// 	return;
-	// }
+	uvec3 chunk = u_chunk_positions[v.chunk_pos_idx];
+	vec3 position = (vec3(v.position) + quad_position) * vec3(chunk + uvec3(1, 1, 1)) * CHUNK_SIZE;
 
-	uvec3 chunk = u_chunk_positions[gl_InstanceID / (6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE)];
-	vec3 position = (vec3(v.position) + quad_position) /** vec3(chunk + uvec3(1, 1, 1)) * CHUNK_SIZE*/;
-
-	// we only send 1 vertex per quad
 	// FIXME figure out rotating the base plane
-	// switch (gl_VertexID) {
-	// case QUAD_CORNER_TOP_LEFT:
-	// 	position.z++;
-	// 	break;
-	// case QUAD_CORNER_BOTTOM_RIGHT:
-	// 	position.x++;
-	// 	break;
-	// case QUAD_CORNER_TOP_RIGHT:
-	// 	position.x++;
-	// 	position.z++;
-	// 	break;
-	// }
 
 	gl_Position = u_projection * u_view * vec4(position, 1.0);
 

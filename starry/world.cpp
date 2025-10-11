@@ -193,11 +193,10 @@ st::Block& st::place_static_block(tr::Vec3<int32> pos, st::Model model)
 	block._position = pos;
 	block._type = is_terrain ? BlockType::TERRAIN : BlockType::STATIC;
 
-	// we don't want to update everything just because a block in the middle of fuckign nowhere
-	// changed what am i saying anymore the horror has become too great for anyo ne mind t o
-	// bare
+	// if a block is placed and no one is around to see it, does it really show up?
 	float64 distance = pos.distance(st::current_chunk());
 	if (distance < CHUNK_SIZE * RENDER_DISTANCE) {
+		_st->chunks[st::block_to_chunk_pos(pos)].new_this_frame = true;
 		_st->chunk_updates_in_your_area = true;
 	}
 
@@ -227,8 +226,10 @@ void st::Block::destroy()
 	}
 	_model = MODEL_AIR;
 
+	// if a block is removed and no one is around to see it, does it really show up?
 	float64 distance = _position.distance(st::current_chunk());
 	if (distance < CHUNK_SIZE * RENDER_DISTANCE) {
+		_st->chunks[st::block_to_chunk_pos(_position)].new_this_frame = true;
 		_st->chunk_updates_in_your_area = true;
 	}
 }

@@ -38,6 +38,7 @@
 
 #include "starry/app.h"
 #include "starry/gpu.h"
+#include "starry/render.h"
 #include "starry/world.h"
 
 namespace st {
@@ -74,7 +75,7 @@ struct Starry
 	StorageBuffer atlas_ssbo = {};
 	StorageBuffer terrain_vertex_ssbo = {};
 	StorageBuffer chunk_positions_ssbo = {};
-	usize chunk_position_ssbo_offset = 0;
+	tr::HashMap<tr::Vec3<int32>, Chunk> chunks;
 	tr::Vec3<int32> prev_chunk = {};
 	Mesh base_plane = {};
 	bool chunk_updates_in_your_area = false;
@@ -102,6 +103,7 @@ struct Starry
 		models = tr::HashMap<Model, ModelSpec>(asset_arena);
 		terrain_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
 		static_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
+		chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(render_arena);
 	}
 };
 

@@ -36,6 +36,7 @@ struct TerrainVertex {
 	bool billboard;
 	uint texture_id;
 	uvec4 color;
+	uint chunk_pos_idx;
 };
 
 #define NORMAL_FRONT 0u
@@ -62,6 +63,7 @@ struct Rect {
 struct PackedTerrainVertex {
 	uint x;
 	uint y;
+	uint z;
 };
 
 #endif // _ST_DEFS_H
