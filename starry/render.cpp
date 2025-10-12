@@ -131,7 +131,7 @@ void st::_render()
 	st::_render_terrain();
 }
 
-uint32 st::_update_terrain_ssbos()
+uint32 st::_update_terrain_vertex_ssbo()
 {
 	// RUST DEVELOPERS CRY OVER THIS BEAUTIFUL POINTER FUCKING
 	// TOUCHING MEMORY IN PLACES IT COULDN'T EVEN IMAGINE
@@ -142,8 +142,7 @@ uint32 st::_update_terrain_ssbos()
 	auto* ssbo = static_cast<TerrainVertex*>(ptr);
 
 	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
-	tr::Vec3<int32> end =
-		st::current_chunk() + (RENDER_DISTANCE_VEC / 2) + tr::Vec3<int32>{1, 1, 1};
+	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE_VEC / 2) + CHUNK_SIZE_VEC;
 	uint16 chunk_pos_idx = 0;
 	uint32 instances = 0;
 
@@ -160,7 +159,7 @@ uint32 st::_update_terrain_ssbos()
 					continue;
 				}
 
-				st::_update_terrain_ssbos_chunk(
+				st::_update_terrain_vertex_ssbo_chunk(
 					{x, y, z}, ssbo, chunk.unwrap(), chunk_pos_idx, instances
 				);
 
@@ -175,8 +174,8 @@ uint32 st::_update_terrain_ssbos()
 	return instances;
 }
 
-void st::_update_terrain_ssbos_chunk(
-	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Chunk chunk, uint16 chunk_pos_idx,
+void st::_update_terrain_vertex_ssbo_chunk(
+	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Chunk chunk, uint16& chunk_pos_idx,
 	uint32& instances
 )
 {
@@ -192,25 +191,37 @@ void st::_update_terrain_ssbos_chunk(
 					continue;
 				}
 
-				// hmmm
-				ModelSpec model_spec = block.unwrap().model().model_spec().unwrap();
-				ModelCube cube = model_spec.meshes[0].cube;
-				tr::Vec3<int32> local_pos_32 =
-					pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE);
-				tr::Vec3<uint8> local_pos = {
-					static_cast<uint8>(local_pos_32.x),
-					static_cast<uint8>(local_pos_32.y),
-					static_cast<uint8>(local_pos_32.z),
-				};
+				st::_update_terrain_vertex_ssbo_block(
+					{x, y, z}, ssbo, block.unwrap(), chunk_pos_idx, instances
+				);
+			}
+		}
+	}
+}
 
-				// TODO culling
-				TerrainVertex base_vertex = {};
-				base_vertex.x = local_pos.x;
-				base_vertex.y = local_pos.y;
-				base_vertex.z = local_pos.z;
-				base_vertex.shaded = model_spec.meshes[0].cube.shaded;
-				base_vertex.billboard = false;
-				base_vertex.chunk_pos_idx = chunk_pos_idx;
+void st::_update_terrain_vertex_ssbo_block(
+	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Block& block, uint16 chunk_pos_idx,
+	uint32& instances
+)
+{
+	// hmmm
+	ModelSpec model_spec = block.model().model_spec().unwrap();
+	ModelCube cube = model_spec.meshes[0].cube;
+	tr::Vec3<int32> local_pos_32 = pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE);
+	tr::Vec3<uint8> local_pos = {
+		static_cast<uint8>(local_pos_32.x),
+		static_cast<uint8>(local_pos_32.y),
+		static_cast<uint8>(local_pos_32.z),
+	};
+
+	// TODO culling
+	TerrainVertex base_vertex = {};
+	base_vertex.x = local_pos.x;
+	base_vertex.y = local_pos.y;
+	base_vertex.z = local_pos.z;
+	base_vertex.shaded = model_spec.meshes[0].cube.shaded;
+	base_vertex.billboard = false;
+	base_vertex.chunk_pos_idx = chunk_pos_idx;
 
 // yea
 #define CUBE_FACE(Face, FaceEnum)                       \
@@ -226,31 +237,27 @@ void st::_update_terrain_ssbos_chunk(
 	ssbo[instances] = Face;                         \
 	instances++;
 
-				CUBE_FACE(front, CubeNormal::FRONT);
-				CUBE_FACE(back, CubeNormal::BACK);
-				CUBE_FACE(left, CubeNormal::LEFT);
-				CUBE_FACE(right, CubeNormal::RIGHT);
-				CUBE_FACE(top, CubeNormal::TOP);
-				CUBE_FACE(bottom, CubeNormal::BOTTOM);
+	CUBE_FACE(front, CubeNormal::FRONT);
+	CUBE_FACE(back, CubeNormal::BACK);
+	CUBE_FACE(left, CubeNormal::LEFT);
+	CUBE_FACE(right, CubeNormal::RIGHT);
+	CUBE_FACE(top, CubeNormal::TOP);
+	CUBE_FACE(bottom, CubeNormal::BOTTOM);
 
 // yea²
 #undef CUBE_FACE
-			}
-		}
-	}
 }
 
 void st::_render_terrain()
 {
 	if (st::current_chunk() != _st->prev_chunk || _st->chunk_updates_in_your_area) {
-		_st->instances = st::_update_terrain_ssbos();
+		_st->instances = st::_update_terrain_vertex_ssbo();
 
 		// update the chunk positions ssbo
 		tr::Vec3<int32>* positions = static_cast<tr::Vec3<int32>*>(
 			_st->chunk_positions_ssbo.map_buffer(MapBufferAccess::WRITE)
 		);
 		TR_DEFER(_st->chunk_positions_ssbo.unmap_buffer());
-		int32 chunk_pos_idx = 0;
 
 		tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
 		tr::Vec3<int32> end =
@@ -259,12 +266,11 @@ void st::_render_terrain()
 		for (int32 x = start.x; x < end.x; x++) {
 			for (int32 y = start.y; y < end.y; y++) {
 				for (int32 z = start.z; z < end.z; z++) {
-					positions[chunk_pos_idx] = {x, y, z};
-					chunk_pos_idx++;
+					*positions = {x, y, z};
+					positions++;
 				}
 			}
 		}
-		tr::info("updating chunk mesh!");
 	}
 
 	_st->base_plane.draw(_st->instances);

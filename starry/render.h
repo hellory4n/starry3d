@@ -115,12 +115,16 @@ void _terrain_pipeline();
 
 // actual rendering stuff
 void _render_terrain();
-void _update_terrain_ssbos_chunk(
-	tr::Vec3<int32> pos, TerrainVertex* ssbo, Chunk chunk, uint16 chunk_pos_idx,
+void _update_terrain_vertex_ssbo_chunk(
+	tr::Vec3<int32> pos, TerrainVertex* ssbo, Chunk chunk, uint16& chunk_pos_idx,
+	uint32& instances
+);
+void _update_terrain_vertex_ssbo_block(
+	tr::Vec3<int32> pos, TerrainVertex* ssbo, Block& block, uint16 chunk_pos_idx,
 	uint32& instances
 );
 // returns the amount of quad instances required to render the current terrain
-uint32 _update_terrain_ssbos();
+uint32 _update_terrain_vertex_ssbo();
 
 // housekeeping / interop with the rest of the engine
 void _upload_atlas(TextureAtlas atlas);
