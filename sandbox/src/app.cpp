@@ -15,7 +15,7 @@
 sbox::Sandbox::Sandbox()
 {
 	st::Camera& cam = st::Camera::current();
-	cam.position = {0, 0, 1};
+	cam.position = {0, 5, 10};
 	cam.fov = 90;
 	cam.projection = st::CameraProjection::PERSPECTIVE;
 	st::set_mouse_enabled(_ui_enabled);
@@ -25,7 +25,7 @@ sbox::Sandbox::Sandbox()
 
 	for (int32 x = 4; x < 200; x++) {
 		for (int32 z = 4; z < 200; z++) {
-			st::place_static_block({x, 2, z}, Model::GRASS);
+			st::place_static_block({x, 4, z}, Model::GRASS);
 		}
 	}
 

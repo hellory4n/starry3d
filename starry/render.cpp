@@ -142,7 +142,8 @@ uint32 st::_update_terrain_ssbos()
 	auto* ssbo = static_cast<TerrainVertex*>(ptr);
 
 	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
-	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE_VEC / 2) + CHUNK_SIZE_VEC;
+	tr::Vec3<int32> end =
+		st::current_chunk() + (RENDER_DISTANCE_VEC / 2) + tr::Vec3<int32>{1, 1, 1};
 	uint16 chunk_pos_idx = 0;
 	uint32 instances = 0;
 
@@ -155,6 +156,7 @@ uint32 st::_update_terrain_ssbos()
 				// chunk has never been accessed, so it never had any blocks, no
 				// need to render air
 				if (!chunk.is_valid()) {
+					chunk_pos_idx++;
 					continue;
 				}
 
@@ -162,10 +164,9 @@ uint32 st::_update_terrain_ssbos()
 					{x, y, z}, ssbo, chunk.unwrap(), chunk_pos_idx, instances
 				);
 
-				// chunk positionma
-				// we don't set the ssbo just yet because opengl is funny
-				// TODO vulkan is looking tantalizing...
-				_st->chunk_positions[chunk_pos_idx] = {x, y, z};
+				// updating the chunk position ssbo goes in the exact same order
+				// so it's safe to assume we can just increment the idx
+				// FIXME this WILL break
 				chunk_pos_idx++;
 			}
 		}
@@ -175,7 +176,7 @@ uint32 st::_update_terrain_ssbos()
 }
 
 void st::_update_terrain_ssbos_chunk(
-	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Chunk chunk, uint16& chunk_pos_idx,
+	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Chunk chunk, uint16 chunk_pos_idx,
 	uint32& instances
 )
 {
@@ -243,9 +244,27 @@ void st::_render_terrain()
 {
 	if (st::current_chunk() != _st->prev_chunk || _st->chunk_updates_in_your_area) {
 		_st->instances = st::_update_terrain_ssbos();
-		_st->chunk_positions_ssbo.update(
-			*_st->chunk_positions, _st->chunk_positions.len() * sizeof(tr::Vec3<int32>)
+
+		// update the chunk positions ssbo
+		tr::Vec3<int32>* positions = static_cast<tr::Vec3<int32>*>(
+			_st->chunk_positions_ssbo.map_buffer(MapBufferAccess::WRITE)
 		);
+		TR_DEFER(_st->chunk_positions_ssbo.unmap_buffer());
+		int32 chunk_pos_idx = 0;
+
+		tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
+		tr::Vec3<int32> end =
+			st::current_chunk() + (RENDER_DISTANCE_VEC / 2) + CHUNK_SIZE_VEC;
+
+		for (int32 x = start.x; x < end.x; x++) {
+			for (int32 y = start.y; y < end.y; y++) {
+				for (int32 z = start.z; z < end.z; z++) {
+					positions[chunk_pos_idx] = {x, y, z};
+					chunk_pos_idx++;
+				}
+			}
+		}
+		tr::info("updating chunk mesh!");
 	}
 
 	_st->base_plane.draw(_st->instances);

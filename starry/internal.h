@@ -75,7 +75,6 @@ struct Starry
 	StorageBuffer atlas_ssbo = {};
 	StorageBuffer terrain_vertex_ssbo = {};
 	StorageBuffer chunk_positions_ssbo = {};
-	tr::Array<tr::Vec3<int32>> chunk_positions;
 	tr::HashMap<tr::Vec3<int32>, Chunk> chunks;
 	tr::Vec3<int32> prev_chunk = {};
 	Mesh base_plane = {};
@@ -106,9 +105,6 @@ struct Starry
 		terrain_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
 		static_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
 		chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(render_arena);
-		chunk_positions = tr::Array<tr::Vec3<int32>>(
-			render_arena, RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE
-		);
 	}
 };
 

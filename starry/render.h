@@ -116,7 +116,7 @@ void _terrain_pipeline();
 // actual rendering stuff
 void _render_terrain();
 void _update_terrain_ssbos_chunk(
-	tr::Vec3<int32> pos, TerrainVertex* ssbo, Chunk chunk, uint16& chunk_pos_idx,
+	tr::Vec3<int32> pos, TerrainVertex* ssbo, Chunk chunk, uint16 chunk_pos_idx,
 	uint32& instances
 );
 // returns the amount of quad instances required to render the current terrain

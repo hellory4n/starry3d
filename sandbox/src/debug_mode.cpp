@@ -135,6 +135,10 @@ static void _debug_mode()
 		"%s: %f", cam.projection == st::CameraProjection::PERSPECTIVE ? "FOV" : "Zoom",
 		cam.fov // it's a union, the value is the same but with different names
 	);
+	ImGui::BulletText(
+		"Current chunk: %i, %i, %i", st::current_chunk().x, st::current_chunk().y,
+		st::current_chunk().z
+	);
 
 	// i love hacking my own engine
 	ImGui::Text("Memory usage:");
@@ -149,6 +153,14 @@ static void _debug_mode()
 	ImGui::BulletText(
 		"_st->world_arena: %zu KiB", tr::bytes_to_kb(st::_st->world_arena.allocated())
 	);
+
+	ImGui::Text("Rendering:");
+	ImGui::BulletText("Terrain quads: %i", st::_st->instances);
+	ImGui::BulletText("Triangles: %i", st::_st->instances * 2);
+	// this is the same logic the renderer uses for checking when it should be updated
+	if (st::_st->prev_chunk != st::current_chunk() || st::_st->chunk_updates_in_your_area) {
+		ImGui::TextColored(st::imgui::rgb(0xc6262e), "updating terrain mesh!");
+	}
 }
 
 void sbox::debug_mode()

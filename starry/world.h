@@ -120,21 +120,21 @@ void set_grid_size(tr::Vec3<uint8> size);
 // you'll never guess what this is
 struct TextureOrColor
 {
-	bool using_texture = false;
 	union {
 		TextureId texture = 0;
 		tr::Color color;
 	};
+	bool using_texture = false;
 
 	TextureOrColor() {}
 	TextureOrColor(TextureId texture)
-		: using_texture(true)
-		, texture(texture)
+		: texture(texture)
+		, using_texture(true)
 	{
 	}
 	TextureOrColor(tr::Color color)
-		: using_texture(false)
-		, color(color)
+		: color(color)
+		, using_texture(false)
 	{
 	}
 };
