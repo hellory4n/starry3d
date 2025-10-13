@@ -23,11 +23,24 @@ sbox::Sandbox::Sandbox()
 	sbox::setup_world();
 	sbox::imgui_theme();
 
-	for (int32 x = 0; x < 200; x++) {
-		for (int32 z = 0; z < 200; z++) {
-			st::place_static_block({x, 0, z}, Model::GRASS);
-		}
-	}
+	// this just makes an H
+	st::place_static_block({0, 0, 0}, Model::GRASS);
+	st::place_static_block({0, 1, 0}, Model::GRASS);
+	st::place_static_block({0, 2, 0}, Model::GRASS);
+	st::place_static_block({0, 3, 0}, Model::GRASS);
+	st::place_static_block({0, 4, 0}, Model::GRASS);
+	st::place_static_block({1, 2, 0}, Model::GRASS);
+	st::place_static_block({2, 0, 0}, Model::GRASS);
+	st::place_static_block({2, 1, 0}, Model::GRASS);
+	st::place_static_block({2, 2, 0}, Model::GRASS);
+	st::place_static_block({2, 3, 0}, Model::GRASS);
+	st::place_static_block({2, 4, 0}, Model::GRASS);
+
+	// for (int32 x = 5; x < 200; x++) {
+	// 	for (int32 z = 0; z < 200; z++) {
+	// 		st::place_static_block({x, 0, z}, Model::GRASS);
+	// 	}
+	// }
 
 	tr::log("initialized sandbox :)");
 }

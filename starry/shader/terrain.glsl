@@ -72,11 +72,32 @@ void main()
 		break;
 	}
 
-       	TerrainVertex v = unpack_vertex(u_vertices[gl_InstanceID / 4]);
+	TerrainVertex v = unpack_vertex(u_vertices[gl_InstanceID]);
+
+	// the quad is facing front, rotate it for all the other faces
+	switch (v.normal) {
+	case NORMAL_FRONT:
+		quad_position = vec3(quad_position.x, quad_position.y, 0.5);
+		break;
+	case NORMAL_BACK:
+		quad_position = vec3(-quad_position.x, quad_position.y, -0.5);
+		break;
+	case NORMAL_LEFT:
+		quad_position = vec3(-0.5, quad_position.y, quad_position.x);
+		break;
+	case NORMAL_RIGHT:
+		quad_position = vec3(0.5, quad_position.y, -quad_position.x);
+		break;
+	case NORMAL_TOP:
+		quad_position = vec3(quad_position.x, 0.5, -quad_position.y);
+		break;
+	case NORMAL_BOTTOM:
+		quad_position = vec3(quad_position.x, -0.5, quad_position.y);
+		break;
+	}
+
 	uvec3 chunk = u_chunk_positions[v.chunk_pos_idx];
 	vec3 position = (vec3(chunk) * CHUNK_SIZE) + (vec3(v.position) + quad_position);
-
-	// FIXME figure out rotating the base plane
 
 	gl_Position = u_projection * u_view * vec4(position, 1.0);
 
