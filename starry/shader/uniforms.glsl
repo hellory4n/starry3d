@@ -51,7 +51,9 @@ layout(binding = 1, std430) readonly buffer vertices {
 
 #pragma mrshader define SSBO_CHUNK_POSITIONS 2
 layout(binding = 2, std430) readonly buffer chunk_positions {
-	ivec3 u_chunk_positions[];
+	// the w is for padding
+	// ivec3 would make that padding hidden
+	ivec4 u_chunk_positions[];
 };
 
 #endif // _ST_UNIFORMS_H

@@ -59,7 +59,7 @@ void st::_init_renderer()
 	_st->terrain_vertex_ssbo.reserve(TERRAIN_VERTEX_SSBO_SIZE);
 	_st->chunk_positions_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_CHUNK_POSITIONS); // catchy
 	_st->chunk_positions_ssbo.reserve(
-		sizeof(tr::Vec3<int32>) * RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE
+		sizeof(tr::Vec4<int32>) * RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE
 	);
 
 	// the actual data is calculated in the vertex shader
@@ -255,7 +255,8 @@ void st::_render_terrain()
 		_st->instances = st::_update_terrain_vertex_ssbo();
 
 		// update the chunk positions ssbo
-		tr::Vec3<int32>* positions = static_cast<tr::Vec3<int32>*>(
+		// the w is for padding otherwise std430 shits itself
+		tr::Vec4<int32>* positions = static_cast<tr::Vec4<int32>*>(
 			_st->chunk_positions_ssbo.map_buffer(MapBufferAccess::WRITE)
 		);
 		TR_DEFER(_st->chunk_positions_ssbo.unmap_buffer());
@@ -267,7 +268,7 @@ void st::_render_terrain()
 		for (int32 x = start.x; x < end.x; x++) {
 			for (int32 y = start.y; y < end.y; y++) {
 				for (int32 z = start.z; z < end.z; z++) {
-					positions[chunk_pos_idx] = {x, y, z};
+					positions[chunk_pos_idx] = {x, y, z, 0};
 					chunk_pos_idx++;
 				}
 			}
