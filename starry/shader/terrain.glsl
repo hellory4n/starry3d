@@ -31,7 +31,6 @@
 #pragma mrshader name ST_TERRAIN_SHADER
 
 #pragma mrshader vertex
-
 #pragma mrshader include starry/shader/vertex.glsl
 #pragma mrshader include starry/shader/atlas.glsl
 #pragma mrshader include starry/shader/uniforms.glsl
@@ -43,6 +42,7 @@ layout(location = 0) in int vs_filler;
 
 out vec2 fs_texcoords;
 out vec4 fs_color;
+flat out uint fs_normal;
 // you can't pass a bool here :DDDDD
 flat out int fs_using_texture;
 flat out int fs_shaded;
@@ -108,13 +108,17 @@ void main()
 		fs_texcoords = vec2(0, 0);
 		fs_color = vec4(v.color) / 255;
 	}
+	fs_normal = v.normal;
 	fs_using_texture = int(v.using_texture);
 	fs_shaded = int(v.shaded);
 }
 
 #pragma mrshader fragment
+#pragma mrshader include starry/shader/light.glsl
+
 in vec2 fs_texcoords;
 in vec4 fs_color;
+flat in uint fs_normal;
 flat in int fs_using_texture;
 flat in int fs_shaded;
 
@@ -124,12 +128,23 @@ uniform sampler2D u_texture;
 
 void main()
 {
-	// TODO lighting
+	const vec3 REAL_NORMALS[6] = {
+		vec3(0, 0, -1),
+		vec3(0, 0, 1),
+		vec3(-1, 0, 0),
+		vec3(1, 0, 0),
+		vec3(0, 1, 0),
+		vec3(0, -1, 0),
+	};
+	vec3 real_normal = REAL_NORMALS[fs_normal];
+
+	vec4 base_color;
 	if (bool(fs_using_texture)) {
-		frag_color = texture(u_texture, fs_texcoords);
+		base_color = texture(u_texture, fs_texcoords);
 	}
 	else {
 		// TODO decent transparency (tricky)
-		frag_color = vec4(fs_color.rgb, 1);
+		base_color = vec4(fs_color.rgb, 1);
 	}
+	frag_color = vec4(light(base_color, real_normal).rgb, 1);
 }

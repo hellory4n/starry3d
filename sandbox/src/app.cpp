@@ -8,6 +8,7 @@
 #include <starry/app.h>
 #include <starry/render.h>
 
+#include "FastNoiseLite.h"
 #include "debug_mode.h"
 #include "starry/world.h"
 #include "world.h"
@@ -23,22 +24,14 @@ sbox::Sandbox::Sandbox()
 	sbox::setup_world();
 	sbox::imgui_theme();
 
-	// this just makes an H
-	st::place_static_block({16, 1, 0}, Model::GRASS);
-	st::place_static_block({16, 2, 0}, Model::GRASS);
-	st::place_static_block({16, 3, 0}, Model::GRASS);
-	st::place_static_block({16, 4, 0}, Model::GRASS);
-	st::place_static_block({16, 5, 0}, Model::GRASS);
-	st::place_static_block({17, 3, 0}, Model::GRASS);
-	st::place_static_block({18, 1, 0}, Model::GRASS);
-	st::place_static_block({18, 2, 0}, Model::GRASS);
-	st::place_static_block({18, 3, 0}, Model::GRASS);
-	st::place_static_block({18, 4, 0}, Model::GRASS);
-	st::place_static_block({18, 5, 0}, Model::GRASS);
-
-	for (int32 x = 0; x < 200; x++) {
-		for (int32 z = 0; z < 200; z++) {
-			st::place_static_block({x, 0, z}, Model::GRASS);
+	FastNoiseLite noise = {};
+	noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+	for (float32 x = -1000; x < 1000; x++) {
+		for (float32 z = -1000; z < 1000; z++) {
+			float32 y = noise.GetNoise(x, z) * 20;
+			st::place_static_block(
+				tr::Vec3<float32>{x, y, z}.cast<int32>(), Model::GRASS
+			);
 		}
 	}
 

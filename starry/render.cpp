@@ -208,12 +208,8 @@ void st::_update_terrain_vertex_ssbo_block(
 	// hmmm
 	ModelSpec model_spec = block.model().model_spec().unwrap();
 	ModelCube cube = model_spec.meshes[0].cube;
-	tr::Vec3<int32> local_pos_32 = pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE);
-	tr::Vec3<uint8> local_pos = {
-		static_cast<uint8>(local_pos_32.x),
-		static_cast<uint8>(local_pos_32.y),
-		static_cast<uint8>(local_pos_32.z),
-	};
+	tr::Vec3<uint8> local_pos =
+		(pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>();
 
 	// TODO culling
 	TerrainVertex base_vertex = {};

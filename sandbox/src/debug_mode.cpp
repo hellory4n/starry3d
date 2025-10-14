@@ -10,6 +10,7 @@
 #include <starry/world.h>
 
 #include "starry/internal.h"
+#include "trippin/log.h"
 #include "trippin/memory.h"
 
 static void _dock_space()
@@ -139,6 +140,10 @@ static void _debug_mode()
 		"Current chunk: %i, %i, %i", st::current_chunk().x, st::current_chunk().y,
 		st::current_chunk().z
 	);
+	ImGui::BulletText(
+		"Previous chunk: %i, %i, %i", st::_st->prev_chunk.x, st::_st->prev_chunk.y,
+		st::_st->prev_chunk.z
+	);
 
 	// i love hacking my own engine
 	ImGui::Text("Memory usage:");
@@ -160,6 +165,7 @@ static void _debug_mode()
 	// this is the same logic the renderer uses for checking when it should be updated
 	if (st::_st->prev_chunk != st::current_chunk() || st::_st->chunk_updates_in_your_area) {
 		ImGui::TextColored(st::imgui::rgb(0xc6262e), "updating terrain mesh!");
+		tr::log("updating terrain mesh!");
 	}
 }
 

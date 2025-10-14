@@ -205,10 +205,8 @@ st::Block& st::place_static_block(tr::Vec3<int32> pos, st::Model model)
 
 st::DynamicBlock::operator Block() const
 {
-	tr::Vec3<int32> rounded_position = {
-		int32(roundf(position.x)), int32(roundf(position.y)), int32(roundf(position.z))
-	};
-	return Block{rounded_position, model(), BlockType::DYNAMIC};
+	tr::Vec3<float32> rounded = {roundf(position.x), roundf(position.y), roundf(position.z)};
+	return Block{rounded.cast<int32>(), model(), BlockType::DYNAMIC};
 }
 
 tr::Maybe<st::DynamicBlock&> st::Block::to_dynamic_block() const // NOLINT

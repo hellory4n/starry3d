@@ -263,16 +263,22 @@ constexpr tr::Vec3<int32> CHUNK_SIZE_VEC{CHUNK_SIZE}; // makes some math cleaner
 // You'll never guess what this does
 constexpr tr::Vec3<int32> block_to_chunk_pos(tr::Vec3<int32> block_pos)
 {
-	tr::Vec3<float32> fpos = {float32(block_pos.x), float32(block_pos.y), float32(block_pos.z)};
-	tr::Vec3<float32> fchunk = fpos / float32(CHUNK_SIZE);
-	return {int32(floorf(fchunk.x)), int32(floorf(fchunk.y)), int32(floorf(fchunk.z))};
+	tr::Vec3<float32> fpos = block_pos.cast<float32>();
+	tr::Vec3<float32> fchunk = fpos / static_cast<float32>(CHUNK_SIZE);
+	fchunk.x = floorf(fchunk.x);
+	fchunk.y = floorf(fchunk.y);
+	fchunk.z = floorf(fchunk.z);
+	return fchunk.cast<int32>();
 }
 
 // You'll never guess what this does
 constexpr tr::Vec3<int32> block_to_chunk_pos(tr::Vec3<float32> block_pos)
 {
-	tr::Vec3<float32> fchunk = block_pos / float32(CHUNK_SIZE);
-	return {int32(floorf(fchunk.x)), int32(floorf(fchunk.y)), int32(floorf(fchunk.z))};
+	tr::Vec3<float32> fchunk = block_pos / static_cast<float32>(CHUNK_SIZE);
+	fchunk.x = floorf(fchunk.x);
+	fchunk.y = floorf(fchunk.y);
+	fchunk.z = floorf(fchunk.z);
+	return fchunk.cast<int32>();
 }
 
 // As the name implies, it returns the current chunk, as in whatever chunk the player's currently
