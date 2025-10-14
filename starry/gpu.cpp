@@ -598,5 +598,7 @@ void st::StorageBuffer::unmap_buffer()
 {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, _buffer);
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	// sync with the gpu or some shit
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 // NOLINTEND(readability-make-member-function-const)

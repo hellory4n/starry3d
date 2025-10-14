@@ -24,23 +24,23 @@ sbox::Sandbox::Sandbox()
 	sbox::imgui_theme();
 
 	// this just makes an H
-	st::place_static_block({0, 0, 0}, Model::GRASS);
-	st::place_static_block({0, 1, 0}, Model::GRASS);
-	st::place_static_block({0, 2, 0}, Model::GRASS);
-	st::place_static_block({0, 3, 0}, Model::GRASS);
-	st::place_static_block({0, 4, 0}, Model::GRASS);
-	st::place_static_block({1, 2, 0}, Model::GRASS);
-	st::place_static_block({2, 0, 0}, Model::GRASS);
-	st::place_static_block({2, 1, 0}, Model::GRASS);
-	st::place_static_block({2, 2, 0}, Model::GRASS);
-	st::place_static_block({2, 3, 0}, Model::GRASS);
-	st::place_static_block({2, 4, 0}, Model::GRASS);
+	st::place_static_block({16, 1, 0}, Model::GRASS);
+	st::place_static_block({16, 2, 0}, Model::GRASS);
+	st::place_static_block({16, 3, 0}, Model::GRASS);
+	st::place_static_block({16, 4, 0}, Model::GRASS);
+	st::place_static_block({16, 5, 0}, Model::GRASS);
+	st::place_static_block({17, 3, 0}, Model::GRASS);
+	st::place_static_block({18, 1, 0}, Model::GRASS);
+	st::place_static_block({18, 2, 0}, Model::GRASS);
+	st::place_static_block({18, 3, 0}, Model::GRASS);
+	st::place_static_block({18, 4, 0}, Model::GRASS);
+	st::place_static_block({18, 5, 0}, Model::GRASS);
 
-	// for (int32 x = 5; x < 200; x++) {
-	// 	for (int32 z = 0; z < 200; z++) {
-	// 		st::place_static_block({x, 0, z}, Model::GRASS);
-	// 	}
-	// }
+	for (int32 x = 0; x < 200; x++) {
+		for (int32 z = 0; z < 200; z++) {
+			st::place_static_block({x, 0, z}, Model::GRASS);
+		}
+	}
 
 	tr::log("initialized sandbox :)");
 }

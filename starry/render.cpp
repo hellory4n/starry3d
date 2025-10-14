@@ -142,7 +142,7 @@ uint32 st::_update_terrain_vertex_ssbo()
 	auto* ssbo = static_cast<TerrainVertex*>(ptr);
 
 	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
-	tr::Vec3<int32> end = st::current_chunk() + (RENDER_DISTANCE_VEC / 2) + CHUNK_SIZE_VEC;
+	tr::Vec3<int32> end = start + RENDER_DISTANCE_VEC;
 	uint16 chunk_pos_idx = 0;
 	uint32 instances = 0;
 
@@ -183,6 +183,7 @@ void st::_update_terrain_vertex_ssbo_chunk(
 
 	tr::Vec3<int32> start = pos * CHUNK_SIZE;
 	tr::Vec3<int32> end = start + CHUNK_SIZE_VEC;
+
 	for (int32 x = start.x; x < end.x; x++) {
 		for (int32 y = start.y; y < end.y; y++) {
 			for (int32 z = start.z; z < end.z; z++) {
@@ -258,16 +259,16 @@ void st::_render_terrain()
 			_st->chunk_positions_ssbo.map_buffer(MapBufferAccess::WRITE)
 		);
 		TR_DEFER(_st->chunk_positions_ssbo.unmap_buffer());
+		uint32 chunk_pos_idx = 0;
 
 		tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
-		tr::Vec3<int32> end =
-			st::current_chunk() + (RENDER_DISTANCE_VEC / 2) + CHUNK_SIZE_VEC;
+		tr::Vec3<int32> end = start + RENDER_DISTANCE_VEC;
 
 		for (int32 x = start.x; x < end.x; x++) {
 			for (int32 y = start.y; y < end.y; y++) {
 				for (int32 z = start.z; z < end.z; z++) {
-					*positions = {x, y, z};
-					positions++;
+					positions[chunk_pos_idx] = {x, y, z};
+					chunk_pos_idx++;
 				}
 			}
 		}

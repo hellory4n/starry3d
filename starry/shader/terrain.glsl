@@ -96,7 +96,7 @@ void main()
 		break;
 	}
 
-	uvec3 chunk = u_chunk_positions[v.chunk_pos_idx];
+	ivec3 chunk = u_chunk_positions[int(v.chunk_pos_idx)];
 	vec3 position = (vec3(chunk) * CHUNK_SIZE) + (vec3(v.position) + quad_position);
 
 	gl_Position = u_projection * u_view * vec4(position, 1.0);

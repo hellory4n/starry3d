@@ -44,6 +44,7 @@ enum class CubeNormal : uint8
 };
 
 // #pragma pack is supported by gcc, clang, and msvc :)
+// FIXME endianness will fuck with this but it's fine for now
 #pragma pack(push, 1)
 // Hyper optimized blazingly fast "vertex" format for terrain
 struct TerrainVertex
