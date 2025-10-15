@@ -1,4 +1,3 @@
-/* clang-format off */
 // MIT License
 //
 // Copyright(c) 2023 Jordan Peck (jordan.me2@gmail.com)
@@ -2585,4 +2584,3 @@ const T FastNoiseLite::Lookup<T>::RandVecs3D[] =
 };
 
 #endif
-/* clang-format on */

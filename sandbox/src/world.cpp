@@ -85,5 +85,21 @@ void sbox::setup_world()
 	};
 	st::register_model_spec(Model::KIRBY_RIPOFF, "sandbox::kirby_ripoff", mesh_kirby);
 
+	tr::Array<st::ModelMesh> mesh_the_j_cube = {
+		st::ModelCube{
+			      .position = {0, 0, 0},
+			      .size = {16, 16, 16},
+			      .front = Texture::THE_J,
+			      .back = Texture::THE_J,
+			      .left = Texture::THE_J,
+			      .right = Texture::THE_J,
+			      .top = Texture::THE_J,
+			      .bottom = Texture::THE_J,
+			      },
+	};
+	st::register_model_spec(
+		Model::THE_J_BUT_ITS_A_CUBE, "sandbox::the_j_but_its_a_cube", mesh_dirt
+	);
+
 	atlas.set_current();
 }

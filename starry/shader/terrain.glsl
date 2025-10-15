@@ -52,22 +52,22 @@ void main()
 	// procedurally generated quad
 	vec3 quad_position;
 	switch (gl_VertexID) {
-	case 0:
+	case 0: // bottom left
 		quad_position = vec3(-0.5, -0.5, 0);
 		break;
-	case 1:
+	case 1: // top right
 		quad_position = vec3(0.5, 0.5, 0);
 		break;
-	case 2:
+	case 2: // top left
 		quad_position = vec3(-0.5, 0.5, 0);
 		break;
-	case 3:
+	case 3: // top right
 		quad_position = vec3(0.5, 0.5, 0);
 		break;
-	case 4:
+	case 4: // bottom right
 		quad_position = vec3(0.5, -0.5, 0);
 		break;
-	case 5:
+	case 5: // bottom left
 		quad_position = vec3(-0.5, -0.5, 0);
 		break;
 	}
@@ -138,13 +138,13 @@ void main()
 	};
 	vec3 real_normal = REAL_NORMALS[fs_normal];
 
-	vec4 base_color;
-	if (bool(fs_using_texture)) {
-		base_color = texture(u_texture, fs_texcoords);
-	}
-	else {
-		// TODO decent transparency (tricky)
-		base_color = vec4(fs_color.rgb, 1);
-	}
+	vec4 base_color = vec4(fs_texcoords, 0, 1);
+	// if (bool(fs_using_texture)) {
+	// 	base_color = texture(u_texture, fs_texcoords);
+	// }
+	// else {
+	// 	// TODO decent transparency (tricky)
+	// 	base_color = vec4(1, 0, 0, 1);
+	// }
 	frag_color = vec4(light(base_color, real_normal).rgb, 1);
 }

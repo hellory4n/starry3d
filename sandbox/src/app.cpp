@@ -5,10 +5,10 @@
 #include <trippin/math.h>
 #include <trippin/memory.h>
 
+#include <FastNoiseLite.h>
 #include <starry/app.h>
 #include <starry/render.h>
 
-#include "FastNoiseLite.h"
 #include "debug_mode.h"
 #include "starry/world.h"
 #include "world.h"
@@ -30,7 +30,8 @@ sbox::Sandbox::Sandbox()
 		for (float32 z = -1000; z < 1000; z++) {
 			float32 y = noise.GetNoise(x, z) * 20;
 			st::place_static_block(
-				tr::Vec3<float32>{x, y, z}.cast<int32>(), Model::GRASS
+				tr::Vec3<float32>{x, y, z}.cast<int32>(),
+				Model::THE_J_BUT_ITS_A_CUBE
 			);
 		}
 	}
@@ -107,7 +108,15 @@ void sbox::Sandbox::_player_controller(float64 dt) const
 		move.y -= 1;
 	}
 
-	if (move.length() > 0.0f) {
-		cam.position += move.normalize() * PLAYER_SPEED * float32(dt);
+	// ctrl is normal run
+	// alt is ultra fast run for when youre extra impatient
+	float32 run = 1;
+	if (st::is_key_held(st::Key::LEFT_CTRL)) {
+		run += 3;
 	}
+	if (st::is_key_held(st::Key::LEFT_ALT)) {
+		run += 3;
+	}
+
+	cam.position += move.normalize() * PLAYER_SPEED * run * float32(dt);
 }

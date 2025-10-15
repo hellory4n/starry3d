@@ -19,6 +19,8 @@ namespace Model {
 	constexpr st::Model DIRT = 2;
 	constexpr st::Model THE_J = 3;
 	constexpr st::Model KIRBY_RIPOFF = 4;
+	constexpr st::Model THE_J_BUT_ITS_A_CUBE = 5;
+	// balls   bamlls
 };
 
 void setup_world();

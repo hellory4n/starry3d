@@ -46,11 +46,6 @@ struct TerrainVertex {
 #define NORMAL_TOP 4u
 #define NORMAL_BOTTOM 5u
 
-#define QUAD_CORNER_TOP_LEFT 0u
-#define QUAD_CORNER_TOP_RIGHT 1u
-#define QUAD_CORNER_BOTTOM_LEFT 2u
-#define QUAD_CORNER_BOTTOM_RIGHT 3u
-
 #define CHUNK_SIZE 16
 
 struct Rect {

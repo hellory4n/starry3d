@@ -33,20 +33,22 @@
 
 vec2 get_texcoords(TerrainVertex v, int vertex_id)
 {
-	vec2 texcoords = vec2(0, 0);
+	vec2 texcoords;
 	Rect texture_rect = u_atlas_textures[v.texture_id];
 
-	switch (vertex_id % 4) {
-	case QUAD_CORNER_TOP_LEFT:
+	switch (vertex_id) {
+	case 2: // top left
 		texcoords = vec2(float(texture_rect.x), float(texture_rect.y));
 		break;
-	case QUAD_CORNER_TOP_RIGHT:
+	case 1: // top right
+	case 3:
 		texcoords = vec2(float(texture_rect.x + texture_rect.width), float(texture_rect.y));
 		break;
-	case QUAD_CORNER_BOTTOM_LEFT:
+	case 0: // bottom left
+	case 5:
 		texcoords = vec2(float(texture_rect.x), float(texture_rect.y + texture_rect.height));
 		break;
-	case QUAD_CORNER_BOTTOM_RIGHT:
+	case 4: // bottom right
 		texcoords = vec2(float(texture_rect.x + texture_rect.width),
 			float(texture_rect.y + texture_rect.height)
 		);
