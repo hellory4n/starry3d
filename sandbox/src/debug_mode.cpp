@@ -1,6 +1,7 @@
 #include "debug_mode.h"
 
 #include <trippin/common.h>
+#include <trippin/math.h>
 #include <trippin/memory.h>
 #include <trippin/string.h>
 
@@ -139,6 +140,34 @@ static void _debug_mode()
 		"Current chunk: %i, %i, %i", st::current_chunk().x, st::current_chunk().y,
 		st::current_chunk().z
 	);
+
+	float64 camera_yaw = fmodf(fmodf(cam.rotation.y, 360) + 360, 360);
+	tr::String facing;
+	if (camera_yaw < 22.5 || camera_yaw >= 337.5) {
+		facing = "north";
+	}
+	else if (camera_yaw < 67.5) {
+		facing = "north east";
+	}
+	else if (camera_yaw < 112.5) {
+		facing = "east";
+	}
+	else if (camera_yaw < 157.5) {
+		facing = "south east";
+	}
+	else if (camera_yaw < 202.5) {
+		facing = "south";
+	}
+	else if (camera_yaw < 247.5) {
+		facing = "south west";
+	}
+	else if (camera_yaw < 292.5) {
+		facing = "west";
+	}
+	else {
+		facing = "north west";
+	}
+	ImGui::BulletText("Facing %s", *facing);
 
 	// i love hacking my own engine
 	ImGui::Text("Memory usage:");

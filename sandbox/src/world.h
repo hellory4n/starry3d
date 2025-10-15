@@ -20,7 +20,7 @@ namespace Model {
 	constexpr st::Model THE_J = 3;
 	constexpr st::Model KIRBY_RIPOFF = 4;
 	constexpr st::Model THE_J_BUT_ITS_A_CUBE = 5;
-};
+}
 
 void setup_world();
 

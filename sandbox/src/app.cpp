@@ -26,14 +26,22 @@ sbox::Sandbox::Sandbox()
 
 	FastNoiseLite noise = {};
 	noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-	for (float32 x = -1000; x < 1000; x++) {
-		for (float32 z = -1000; z < 1000; z++) {
+	for (float32 x = -500; x < 500; x++) {
+		for (float32 z = -500; z < 500; z++) {
 			float32 y = noise.GetNoise(x, z) * 20;
 			st::place_static_block(
 				tr::Vec3<float32>{x, y, z}.cast<int32>(), Model::GRASS
 			);
+
+			// either makes it 50x slower or fucks with the terrain :(
+			// for (float32 y2 = -20; y2 < y; y2++) {
+			// 	st::place_static_block(
+			// 		tr::Vec3<float32>{x, y2, z}.cast<int32>(), Model::DIRT
+			// 	);
+			// }
 		}
 	}
+	tr::log("generated terrain");
 
 	tr::log("initialized sandbox :)");
 }

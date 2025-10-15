@@ -69,7 +69,7 @@ void st::_init_renderer()
 	const tr::Array<const int32> verts = {0, 0, 0, 0, 0, 0};
 	const tr::Array<const Triangle> tris = {
 		{0, 1, 2},
-		{3, 4, 5},
+		{5, 4, 3},
 	};
 	_st->base_plane = Mesh(attrs, verts, tris);
 
@@ -102,9 +102,9 @@ void st::_base_pipeline()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// glEnable(GL_CULL_FACE);
-	// glCullFace(GL_BACK);
-	// glFrontFace(GL_CCW);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CCW);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -206,13 +206,24 @@ void st::_update_terrain_vertex_ssbo_block(
 	uint32& instances
 )
 {
-	// hmmm
+	// is this block visible at all?
+	bool front_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, 0, -1});
+	bool back_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, 0, 1});
+	bool left_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{-1, 0, 0});
+	bool right_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{1, 0, 0});
+	bool top_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{0, 1, 0});
+	bool bottom_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, -1, 0});
+	bool visible = front_visible || back_visible || left_visible || right_visible ||
+		       top_visible || bottom_visible;
+	if (!visible) {
+		return;
+	}
+
 	ModelSpec model_spec = block.model().model_spec().unwrap();
 	ModelCube cube = model_spec.meshes[0].cube;
 	tr::Vec3<uint8> local_pos =
 		(pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>();
 
-	// TODO culling
 	TerrainVertex base_vertex = {};
 	base_vertex.x = local_pos.x;
 	base_vertex.y = local_pos.y;
@@ -221,19 +232,21 @@ void st::_update_terrain_vertex_ssbo_block(
 	base_vertex.billboard = false;
 	base_vertex.chunk_pos_idx = chunk_pos_idx;
 
-// yea
-#define CUBE_FACE(Face, FaceEnum)                       \
-	TerrainVertex Face = base_vertex;               \
-	(Face).normal = FaceEnum;                       \
-	if (cube.Face.using_texture) {                  \
-		(Face).texture_id = cube.Face.texture;  \
-	}                                               \
-	else {                                          \
-		(Face).color = cube.Face.color;         \
-	}                                               \
-	(Face).using_texture = cube.Face.using_texture; \
-	ssbo[instances] = Face;                         \
-	instances++;
+// i love exploiting the compiler
+#define CUBE_FACE(Face, FaceEnum)                               \
+	if (Face##_visible) {                                   \
+		TerrainVertex Face = base_vertex;               \
+		(Face).normal = FaceEnum;                       \
+		if (cube.Face.using_texture) {                  \
+			(Face).texture_id = cube.Face.texture;  \
+		}                                               \
+		else {                                          \
+			(Face).color = cube.Face.color;         \
+		}                                               \
+		(Face).using_texture = cube.Face.using_texture; \
+		ssbo[instances] = Face;                         \
+		instances++;                                    \
+	}
 
 	CUBE_FACE(front, CubeNormal::FRONT);
 	CUBE_FACE(back, CubeNormal::BACK);
@@ -242,7 +255,7 @@ void st::_update_terrain_vertex_ssbo_block(
 	CUBE_FACE(top, CubeNormal::TOP);
 	CUBE_FACE(bottom, CubeNormal::BOTTOM);
 
-// yea²
+// yea
 #undef CUBE_FACE
 }
 
