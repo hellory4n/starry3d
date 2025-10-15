@@ -94,6 +94,7 @@ void st::_upload_atlas(st::TextureAtlas atlas)
 		ssbo_data[id] = rect;
 	}
 	_st->atlas_ssbo.update(*ssbo_data, ssbo_data.len() * sizeof(tr::Rect<uint32>));
+	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_ATLAS_SIZE, atlas.size());
 }
 
 void st::_base_pipeline()

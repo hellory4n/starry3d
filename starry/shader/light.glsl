@@ -31,7 +31,7 @@
 // shitty tmp constants
 const vec3 SUN_DIR = vec3(0.5, 1.0, -0.75);
 const vec4 SUN_COLOR = vec4(1, 1, 1, 1);
-const vec4 AMBIENT = vec4(0.6, 0.6, 0.6, 1);
+const vec4 AMBIENT = vec4(0.5, 0.55, 0.5, 1);
 
 vec4 light(vec4 src, vec3 normal)
 {

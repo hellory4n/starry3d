@@ -98,7 +98,7 @@ void sbox::setup_world()
 			      },
 	};
 	st::register_model_spec(
-		Model::THE_J_BUT_ITS_A_CUBE, "sandbox::the_j_but_its_a_cube", mesh_dirt
+		Model::THE_J_BUT_ITS_A_CUBE, "sandbox::the_j_but_its_a_cube", mesh_the_j_cube
 	);
 
 	atlas.set_current();

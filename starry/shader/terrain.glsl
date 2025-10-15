@@ -114,6 +114,7 @@ void main()
 }
 
 #pragma mrshader fragment
+#pragma mrshader include starry/shader/uniforms.glsl
 #pragma mrshader include starry/shader/light.glsl
 
 in vec2 fs_texcoords;
@@ -128,6 +129,10 @@ uniform sampler2D u_texture;
 
 void main()
 {
+	if (u_atlas_size == uvec2(0, 0)) {
+		frag_color = vec4(1, 0, 0, 1);
+		return;
+	}
 	const vec3 REAL_NORMALS[6] = {
 		vec3(0, 0, -1),
 		vec3(0, 0, 1),
@@ -138,13 +143,13 @@ void main()
 	};
 	vec3 real_normal = REAL_NORMALS[fs_normal];
 
-	vec4 base_color = vec4(fs_texcoords, 0, 1);
-	// if (bool(fs_using_texture)) {
-	// 	base_color = texture(u_texture, fs_texcoords);
-	// }
-	// else {
-	// 	// TODO decent transparency (tricky)
-	// 	base_color = vec4(1, 0, 0, 1);
-	// }
+	vec4 base_color;
+	if (bool(fs_using_texture)) {
+		base_color = texture(u_texture, fs_texcoords);
+	}
+	else {
+		// TODO decent transparency (tricky)
+		base_color = vec4(fs_color.rgb, 1);
+	}
 	frag_color = vec4(light(base_color, real_normal).rgb, 1);
 }

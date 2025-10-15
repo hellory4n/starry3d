@@ -30,8 +30,7 @@ sbox::Sandbox::Sandbox()
 		for (float32 z = -1000; z < 1000; z++) {
 			float32 y = noise.GetNoise(x, z) * 20;
 			st::place_static_block(
-				tr::Vec3<float32>{x, y, z}.cast<int32>(),
-				Model::THE_J_BUT_ITS_A_CUBE
+				tr::Vec3<float32>{x, y, z}.cast<int32>(), Model::GRASS
 			);
 		}
 	}
