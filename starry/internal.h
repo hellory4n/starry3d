@@ -99,12 +99,12 @@ struct Starry
 		, world_arena(world_arena)
 		, render_arena(render_arena)
 	{
-		key_state = tr::Array<InputState>(arena, int(st::Key::LAST) + 1);
-		mouse_state = tr::Array<InputState>(arena, int(st::MouseButton::LAST) + 1);
-		models = tr::HashMap<Model, ModelSpec>(asset_arena);
-		terrain_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
-		static_blocks = tr::HashMap<tr::Vec3<int32>, Block>(world_arena);
-		chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(render_arena);
+		key_state = tr::Array<InputState>(this->arena, int(st::Key::LAST) + 1);
+		mouse_state = tr::Array<InputState>(this->arena, int(st::MouseButton::LAST) + 1);
+		models = tr::HashMap<Model, ModelSpec>(this->asset_arena);
+		terrain_blocks = tr::HashMap<tr::Vec3<int32>, Block>(this->world_arena);
+		static_blocks = tr::HashMap<tr::Vec3<int32>, Block>(this->world_arena);
+		chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(this->render_arena);
 	}
 };
 

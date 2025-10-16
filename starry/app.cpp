@@ -45,6 +45,7 @@
 	#undef far
 	#undef min
 	#undef max
+	#undef WIN32 // doesn't even have a value it's just there to fuck with you?????
 #endif
 
 #include "starry/internal.h"

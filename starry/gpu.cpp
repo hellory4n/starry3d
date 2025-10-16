@@ -473,7 +473,9 @@ tr::Result<st::Texture> st::Texture::load(tr::String path, TextureSettings setti
 	int width = 0;
 	int height = 0;
 	int channels = 0;
-	uint8* data = stbi_load_from_memory(*bytes, bytes.len(), &width, &height, &channels, 4);
+	uint8* data = stbi_load_from_memory(
+		*bytes, static_cast<int>(bytes.len()), &width, &height, &channels, 4
+	);
 	if (data == nullptr) {
 		return tr::StringError("couldn't load texture from %s", *path);
 	}

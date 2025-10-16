@@ -43,9 +43,6 @@ enum class CubeNormal : uint8
 	BOTTOM = 5,
 };
 
-// #pragma pack is supported by gcc, clang, and msvc :)
-// FIXME endianness will fuck with this but it's fine for now
-#pragma pack(push, 1)
 // Hyper optimized blazingly fast "vertex" format for terrain
 struct TerrainVertex
 {
@@ -77,11 +74,38 @@ private:
 	// use for more material settings? idfk
 	[[maybe_unused]]
 	uint16 _reserved2 = 0;
+
+public:
+	// bit fields are fucked :(
+	operator tr::Vec3<uint32>() const
+	{
+		tr::Vec3<uint32> p;
+
+		// lower 32 bits
+		p.x |= (x & 0xFu) << 0;
+		p.x |= (y & 0xFu) << 4;
+		p.x |= (z & 0xFu) << 8;
+		p.x |= (static_cast<uint32>(normal) & 0x7u) << 12;
+		p.x |= (using_texture & 0x1u) << 15;
+		p.x |= (billboard & 0x1u) << 16;
+		p.x |= (shaded & 0x1u) << 17;
+
+		// next 32 bits
+		// texture_id is conveniently copied here too since it's a union
+		p.y |= (color.r & 0xFFu) << 0;
+		p.y |= (color.g & 0xFFu) << 8;
+		p.y |= (color.b & 0xFFu) << 16;
+		p.y |= (color.a & 0xFFu) << 24;
+
+		// last 32 bits
+		p.z |= (chunk_pos_idx & 0xFFFFu) << 0;
+
+		return p;
+	}
 };
-#pragma pack(pop)
 
 // just in case
-static_assert(sizeof(TerrainVertex) == 12, "too bad");
+static_assert(sizeof(tr::Vec3<uint32>) == 12, "too bad");
 
 // Di?h
 struct Chunk
@@ -91,13 +115,14 @@ struct Chunk
 };
 
 // TODO setting the render distance
-constexpr int32 RENDER_DISTANCE = 8;
+constexpr int32 RENDER_DISTANCE = 12;
 constexpr tr::Vec3<int32> RENDER_DISTANCE_VEC{RENDER_DISTANCE};
 
-// 6 faces for a cube * chunk size^3 for a cube * render distance^3 for another cube
+// 6 faces for a cube * chunk size^3 for a cube / 2 bcuz that's the max you can fit before it gets
+// culled * render distance^3 for another cube
 constexpr usize TERRAIN_VERTEX_SSBO_SIZE =
-	(sizeof(TerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE /* / 2 */) *
-	RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE;
+	(sizeof(TerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE / 2) * RENDER_DISTANCE *
+	RENDER_DISTANCE * RENDER_DISTANCE;
 
 void set_wireframe_mode(bool val);
 
@@ -117,11 +142,11 @@ void _terrain_pipeline();
 // actual rendering stuff
 void _render_terrain();
 void _update_terrain_vertex_ssbo_chunk(
-	tr::Vec3<int32> pos, TerrainVertex* ssbo, Chunk chunk, uint16& chunk_pos_idx,
+	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, Chunk chunk, uint16& chunk_pos_idx,
 	uint32& instances
 );
 void _update_terrain_vertex_ssbo_block(
-	tr::Vec3<int32> pos, TerrainVertex* ssbo, Block& block, uint16 chunk_pos_idx,
+	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, Block& block, uint16 chunk_pos_idx,
 	uint32& instances
 );
 // returns the amount of quad instances required to render the current terrain

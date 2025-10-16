@@ -38,7 +38,6 @@
 #include <trippin/string.h>
 #include <trippin/util.h>
 
-// sokol supports them, but we don't
 // these all use clang so #warning should work
 // TODO support them? it's that shrimple
 #ifdef __APPLE__

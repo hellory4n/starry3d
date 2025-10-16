@@ -140,7 +140,7 @@ uint32 st::_update_terrain_vertex_ssbo()
 	void* ptr = _st->terrain_vertex_ssbo.map_buffer(MapBufferAccess::WRITE);
 	TR_DEFER(_st->terrain_vertex_ssbo.unmap_buffer());
 
-	auto* ssbo = static_cast<TerrainVertex*>(ptr);
+	auto* ssbo = static_cast<tr::Vec3<uint32>*>(ptr);
 
 	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
 	tr::Vec3<int32> end = start + RENDER_DISTANCE_VEC;
@@ -176,7 +176,7 @@ uint32 st::_update_terrain_vertex_ssbo()
 }
 
 void st::_update_terrain_vertex_ssbo_chunk(
-	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Chunk chunk, uint16& chunk_pos_idx,
+	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, st::Chunk chunk, uint16& chunk_pos_idx,
 	uint32& instances
 )
 {
@@ -202,7 +202,7 @@ void st::_update_terrain_vertex_ssbo_chunk(
 }
 
 void st::_update_terrain_vertex_ssbo_block(
-	tr::Vec3<int32> pos, st::TerrainVertex* ssbo, st::Block& block, uint16 chunk_pos_idx,
+	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, st::Block& block, uint16 chunk_pos_idx,
 	uint32& instances
 )
 {
@@ -233,19 +233,19 @@ void st::_update_terrain_vertex_ssbo_block(
 	base_vertex.chunk_pos_idx = chunk_pos_idx;
 
 // i love exploiting the compiler
-#define CUBE_FACE(Face, FaceEnum)                               \
-	if (Face##_visible) {                                   \
-		TerrainVertex Face = base_vertex;               \
-		(Face).normal = FaceEnum;                       \
-		if (cube.Face.using_texture) {                  \
-			(Face).texture_id = cube.Face.texture;  \
-		}                                               \
-		else {                                          \
-			(Face).color = cube.Face.color;         \
-		}                                               \
-		(Face).using_texture = cube.Face.using_texture; \
-		ssbo[instances] = Face;                         \
-		instances++;                                    \
+#define CUBE_FACE(Face, FaceEnum)                                      \
+	if (Face##_visible) {                                          \
+		TerrainVertex Face = base_vertex;                      \
+		(Face).normal = FaceEnum;                              \
+		if (cube.Face.using_texture) {                         \
+			(Face).texture_id = cube.Face.texture;         \
+		}                                                      \
+		else {                                                 \
+			(Face).color = cube.Face.color;                \
+		}                                                      \
+		(Face).using_texture = cube.Face.using_texture;        \
+		ssbo[instances] = static_cast<tr::Vec3<uint32>>(Face); \
+		instances++;                                           \
 	}
 
 	CUBE_FACE(front, CubeNormal::FRONT);
