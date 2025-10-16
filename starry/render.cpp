@@ -206,13 +206,33 @@ void st::_update_terrain_vertex_ssbo_block(
 	uint32& instances
 )
 {
+	tr::Vec3<uint8> local_pos =
+		(pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>();
+
+	// anything higher than 15 will overflow
+	// / 3 so that the lod is less noticeable
+	uint32 lod = static_cast<uint32>(
+		tr::clamp(st::block_to_chunk_pos(pos).distance(st::current_chunk()) / 3, 1.0, 15.0)
+	);
+	// %i blocks for the price of 1! saucy
+	if (local_pos.x % lod != 0) {
+		return;
+	}
+	if (local_pos.y % lod != 0) {
+		return;
+	}
+	if (local_pos.z % lod != 0) {
+		return;
+	}
+
 	// is this block visible at all?
-	bool front_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, 0, -1});
-	bool back_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, 0, 1});
-	bool left_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{-1, 0, 0});
-	bool right_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{1, 0, 0});
-	bool top_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{0, 1, 0});
-	bool bottom_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, -1, 0});
+	int32 lodi = static_cast<int32>(lod);
+	bool front_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, 0, -lodi});
+	bool back_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, 0, lodi});
+	bool left_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{-lodi, 0, 0});
+	bool right_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{lodi, 0, 0});
+	bool top_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{0, lodi, 0});
+	bool bottom_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, -lodi, 0});
 	bool visible = front_visible || back_visible || left_visible || right_visible ||
 		       top_visible || bottom_visible;
 	if (!visible) {
@@ -221,8 +241,6 @@ void st::_update_terrain_vertex_ssbo_block(
 
 	ModelSpec model_spec = block.model().model_spec().unwrap();
 	ModelCube cube = model_spec.meshes[0].cube;
-	tr::Vec3<uint8> local_pos =
-		(pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>();
 
 	TerrainVertex base_vertex = {};
 	base_vertex.x = local_pos.x;
@@ -231,6 +249,7 @@ void st::_update_terrain_vertex_ssbo_block(
 	base_vertex.shaded = model_spec.meshes[0].cube.shaded;
 	base_vertex.billboard = false;
 	base_vertex.chunk_pos_idx = chunk_pos_idx;
+	base_vertex.lod = static_cast<uint8>(lod);
 
 // i love exploiting the compiler
 #define CUBE_FACE(Face, FaceEnum)                                      \

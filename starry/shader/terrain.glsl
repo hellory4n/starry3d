@@ -96,6 +96,10 @@ void main()
 		break;
 	}
 
+	// lod balls
+	quad_position *= v.lod;
+	quad_position -= vec3(v.lod / 2); // keep the origin point
+
 	ivec3 chunk = u_chunk_positions[int(v.chunk_pos_idx)].xyz;
 	vec3 position = (vec3(chunk) * CHUNK_SIZE) + (vec3(v.position) + quad_position);
 	gl_Position = u_projection * u_view * vec4(position, 1.0);

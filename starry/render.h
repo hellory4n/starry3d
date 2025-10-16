@@ -57,10 +57,9 @@ struct TerrainVertex
 
 private:
 	// TODO use it
-	// we could use 5+5 bits for lengths when we add greedy meshing
 	// +4 extra flags
 	[[maybe_unused]]
-	uint32 _reserved1 : 14 = 0;
+	uint32 _reserved1 : 4 = 0;
 
 public:
 	union {
@@ -69,17 +68,19 @@ public:
 	};
 
 	uint16 chunk_pos_idx = 0;
+	// level of detail
+	uint8 lod : 4 = 0;
 
 private:
-	// use for more material settings? idfk
+	// yea
 	[[maybe_unused]]
-	uint16 _reserved2 = 0;
+	uint16 _reserved2 : 12 = 0;
 
 public:
 	// bit fields are fucked :(
 	operator tr::Vec3<uint32>() const
 	{
-		tr::Vec3<uint32> p;
+		tr::Vec3<uint32> p = {};
 
 		// lower 32 bits
 		p.x |= (x & 0xFu) << 0;
@@ -99,6 +100,7 @@ public:
 
 		// last 32 bits
 		p.z |= (chunk_pos_idx & 0xFFFFu) << 0;
+		p.z |= (lod & 0xFu) << 16;
 
 		return p;
 	}
@@ -123,6 +125,9 @@ constexpr tr::Vec3<int32> RENDER_DISTANCE_VEC{RENDER_DISTANCE};
 constexpr usize TERRAIN_VERTEX_SSBO_SIZE =
 	(sizeof(TerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE / 2) * RENDER_DISTANCE *
 	RENDER_DISTANCE * RENDER_DISTANCE;
+
+// anything higher will overflow
+constexpr uint32 LOD_MAX = 15;
 
 void set_wireframe_mode(bool val);
 

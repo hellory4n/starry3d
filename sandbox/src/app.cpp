@@ -26,18 +26,16 @@ sbox::Sandbox::Sandbox()
 
 	FastNoiseLite noise = {};
 	noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-	for (float32 x = -500; x < 500; x++) {
-		for (float32 z = -500; z < 500; z++) {
-			float32 y = noise.GetNoise(x, z) * 20;
-			st::place_static_block(
-				tr::Vec3<float32>{x, y, z}.cast<int32>(), Model::GRASS
-			);
-
-			// either makes it 50x slower or fucks with the terrain :(
-			// for (float32 y2 = -20; y2 < y; y2++) {
-			// 	st::place_static_block(
-			// 		tr::Vec3<float32>{x, y2, z}.cast<int32>(), Model::DIRT
-			// 	);
+	for (int32 x = -500; x < 500; x++) {
+		for (int32 z = -500; z < 500; z++) {
+			int32 height = static_cast<int32>(roundf(
+				noise.GetNoise(static_cast<float32>(x), static_cast<float32>(z)) *
+				20
+			));
+			st::place_static_block({x, height, z}, Model::GRASS);
+			st::place_static_block({x, height - 1, z}, Model::DIRT);
+			// for (int32 y = height - 1; y > height - 5; y--) {
+			// 	st::place_static_block({x, y, z}, Model::DIRT);
 			// }
 		}
 	}

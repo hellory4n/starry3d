@@ -37,6 +37,7 @@ struct TerrainVertex {
 	uint texture_id;
 	uvec4 color;
 	uint chunk_pos_idx;
+	uint lod;
 };
 
 #define NORMAL_FRONT 0u

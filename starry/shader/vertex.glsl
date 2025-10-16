@@ -53,6 +53,7 @@ TerrainVertex unpack_vertex(PackedTerrainVertex data)
 	}
 
 	v.chunk_pos_idx = bitfieldExtract(data.z, 0, 16);
+	v.lod = bitfieldExtract(data.z, 16, 5);
 	return v;
 }
 
