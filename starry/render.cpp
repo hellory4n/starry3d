@@ -121,13 +121,23 @@ void st::_terrain_pipeline()
 void st::_render()
 {
 	st::_terrain_pipeline();
-	// TODO st::Environment/st::Skybox/whatever
-	st::clear_screen(tr::Color::rgb(0x009ccf)); // weezer blue
+	st::clear_screen(_st->environment.sky_color);
 
 	// straight up setting uniforms
 	_st->terrain_shader->set_uniform(ST_TERRAIN_SHADER_U_VIEW, Camera::current().view_matrix());
 	_st->terrain_shader->set_uniform(
 		ST_TERRAIN_SHADER_U_PROJECTION, Camera::current().projection_matrix()
+	);
+	_st->terrain_shader->set_uniform(
+		ST_TERRAIN_SHADER_U_SUN_DIR, _st->environment.sun_direction
+	);
+	_st->terrain_shader->set_uniform(
+		ST_TERRAIN_SHADER_U_SUN_COLOR,
+		static_cast<tr::Vec4<float32>>(_st->environment.sun_color)
+	);
+	_st->terrain_shader->set_uniform(
+		ST_TERRAIN_SHADER_U_AMBIENT_COLOR,
+		static_cast<tr::Vec4<float32>>(_st->environment.ambient_color)
 	);
 
 	st::_render_terrain();

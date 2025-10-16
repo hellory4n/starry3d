@@ -124,6 +124,11 @@ static void _debug_mode()
 	ImGui::Begin("debug");
 	TR_DEFER(ImGui::End());
 
+	// this is the same logic the renderer uses for checking when it should be updated
+	if (st::_st->prev_chunk != st::current_chunk() || st::_st->chunk_updates_in_your_area) {
+		ImGui::TextColored(st::imgui::rgb(0xc6262e), "updating terrain mesh!");
+	}
+
 	ImGui::Text("FPS: %.1f", st::fps());
 
 	st::Camera& cam = st::Camera::current();
@@ -198,9 +203,28 @@ static void _debug_mode()
 		prev_render_distance = render_distance;
 	}
 
-	// this is the same logic the renderer uses for checking when it should be updated
-	if (st::_st->prev_chunk != st::current_chunk() || st::_st->chunk_updates_in_your_area) {
-		ImGui::TextColored(st::imgui::rgb(0xc6262e), "updating terrain mesh!");
+	// man
+	ImGui::Text("Environment");
+	st::Environment& env = st::environment();
+	static float32 sun_color[4] = {1, 1, 1, 1};
+	if (ImGui::ColorEdit4("Sun color", sun_color)) {
+		env.sun_color =
+			tr::Vec4<float32>{sun_color[0], sun_color[1], sun_color[2], sun_color[3]};
+	}
+	static float32 ambient_color[4] = {0, 0, 0, 1};
+	if (ImGui::ColorEdit4("Ambient color", ambient_color)) {
+		env.ambient_color = tr::Vec4<float32>{
+			ambient_color[0], ambient_color[1], ambient_color[2], ambient_color[3]
+		};
+	}
+	static float32 sky_color[4] = {0, 0, 0, 1};
+	if (ImGui::ColorEdit4("Sky color", ambient_color)) {
+		env.sky_color =
+			tr::Vec4<float32>{sky_color[0], sky_color[1], sky_color[2], sky_color[3]};
+	}
+	static float32 sundir[3] = {};
+	if (ImGui::DragFloat3("Sun direction", sundir, 0.01f, -1, 1)) {
+		env.sun_direction = {sundir[0], sundir[1], sundir[2]};
 	}
 }
 

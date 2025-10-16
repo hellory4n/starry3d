@@ -33,10 +33,16 @@
 uniform mat4 u_view;
 uniform mat4 u_projection;
 uniform uvec2 u_atlas_size;
+uniform vec3 u_sun_dir;
+uniform vec4 u_sun_color;
+uniform vec4 u_ambient_color;
 
 #pragma mrshader define U_VIEW "u_view"
 #pragma mrshader define U_PROJECTION "u_projection"
 #pragma mrshader define U_ATLAS_SIZE "u_atlas_size"
+#pragma mrshader define U_SUN_DIR "u_sun_dir"
+#pragma mrshader define U_SUN_COLOR "u_sun_color"
+#pragma mrshader define U_AMBIENT_COLOR "u_ambient_color"
 
 #pragma mrshader define SSBO_ATLAS 0
 layout(binding = 0, std430) readonly buffer atlas {

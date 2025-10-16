@@ -232,3 +232,8 @@ st::DynamicBlock& st::place_dynamic_block(st::Model model)
 	(void)model;
 	TR_TODO();
 }
+
+st::Environment& st::environment()
+{
+	return _st->environment;
+}

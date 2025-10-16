@@ -404,6 +404,18 @@ inline bool break_static_block(tr::Vec3<int32> pos)
 // Places a dynamic block somewhere, and returns the placed dynamic block.
 DynamicBlock& place_dynamic_block(Model model);
 
+// Sets the values for lighting and stuff
+struct Environment
+{
+	tr::Vec3<float32> sun_direction = {0.5, 1.0, -0.75};
+	tr::Color sky_color = tr::Color::rgb(0x009ccf); // weezer blue
+	tr::Color sun_color = tr::COLOR_WHITE;
+	tr::Color ambient_color = tr::Vec4<float32>{0.5f, 0.55f, 0.5f, 1.0f};
+};
+
+// Returns the current environment. This is also how you set the environment vars
+Environment& environment();
+
 }
 
 #endif

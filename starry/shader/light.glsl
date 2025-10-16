@@ -28,16 +28,13 @@
 #ifndef _ST_LIGHT_H
 #define _ST_LIGHT_H
 
-// shitty tmp constants
-const vec3 SUN_DIR = vec3(0.5, 1.0, -0.75);
-const vec4 SUN_COLOR = vec4(1, 1, 1, 1);
-const vec4 AMBIENT = vec4(0.5, 0.55, 0.5, 1);
+#pragma mrshader include starry/shader/uniforms.glsl
 
 vec4 light(vec4 src, vec3 normal)
 {
-	vec3 sundir = normalize(SUN_DIR);
+	vec3 sundir = normalize(u_sun_dir);
 	float diff = max(dot(normal, sundir), 0.0);
-	return src * ((AMBIENT * SUN_COLOR) + diff * (1.0 - AMBIENT * SUN_COLOR));
+	return src * ((u_ambient_color * u_sun_color) + diff * (1.0 - u_ambient_color * u_sun_color));
 }
 
 #endif // _ST_LIGHT_H

@@ -90,6 +90,7 @@ struct Starry
 	Camera camera = {};
 	tr::HashMap<tr::Vec3<int32>, Block> terrain_blocks;
 	tr::HashMap<tr::Vec3<int32>, Block> static_blocks;
+	Environment environment = {};
 	// TODO how tf do you store the dynamic blocks
 
 	Starry(tr::Arena& arena, tr::Arena& asset_arena, tr::Arena& world_arena,
