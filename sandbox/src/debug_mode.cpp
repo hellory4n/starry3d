@@ -12,6 +12,7 @@
 #include <starry/world.h>
 
 #include "starry/internal.h"
+#include "starry/render.h"
 
 static void _dock_space()
 {
@@ -186,6 +187,17 @@ static void _debug_mode()
 	ImGui::Text("Rendering:");
 	ImGui::BulletText("Terrain quads: %i", st::_st->instances);
 	ImGui::BulletText("Triangles: %i", st::_st->instances * 2);
+
+	static int prev_render_distance = 12;
+	static int render_distance = 12;
+	// the real limit is 40 but i don't have enough memory for that
+	if (ImGui::SliderInt("Render distance", &render_distance, 4, 20)) {
+		if (render_distance != prev_render_distance) {
+			st::set_render_distance(static_cast<uint32>(render_distance));
+		}
+		prev_render_distance = render_distance;
+	}
+
 	// this is the same logic the renderer uses for checking when it should be updated
 	if (st::_st->prev_chunk != st::current_chunk() || st::_st->chunk_updates_in_your_area) {
 		ImGui::TextColored(st::imgui::rgb(0xc6262e), "updating terrain mesh!");

@@ -80,6 +80,7 @@ struct Starry
 	Mesh base_plane = {};
 	uint32 instances = 0;
 	bool chunk_updates_in_your_area = false;
+	uint32 render_distance = 16;
 
 	// assets
 	tr::Maybe<TextureAtlas> atlas = {};
@@ -87,7 +88,6 @@ struct Starry
 
 	// world
 	Camera camera = {};
-	tr::Vec3<uint8> grid_size = {8, 8, 8};
 	tr::HashMap<tr::Vec3<int32>, Block> terrain_blocks;
 	tr::HashMap<tr::Vec3<int32>, Block> static_blocks;
 	// TODO how tf do you store the dynamic blocks

@@ -116,20 +116,17 @@ struct Chunk
 	bool new_this_frame = false;
 };
 
-// TODO setting the render distance
-constexpr int32 RENDER_DISTANCE = 12;
-constexpr tr::Vec3<int32> RENDER_DISTANCE_VEC{RENDER_DISTANCE};
-
 // 6 faces for a cube * chunk size^3 for a cube / 2 bcuz that's the max you can fit before it gets
 // culled * render distance^3 for another cube
-constexpr usize TERRAIN_VERTEX_SSBO_SIZE =
-	(sizeof(TerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE / 2) * RENDER_DISTANCE *
-	RENDER_DISTANCE * RENDER_DISTANCE;
-
-// anything higher will overflow
-constexpr uint32 LOD_MAX = 15;
+inline usize _terrain_ssbo_size(uint32 render_distance)
+{
+	return (sizeof(TerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE / 2) *
+	       render_distance * render_distance * render_distance;
+}
 
 void set_wireframe_mode(bool val);
+// Sets the render distnace :))))) (default = 16)
+void set_render_distance(uint32 chunks);
 
 // a lot of private functions
 // please do not touch unless you're a friend

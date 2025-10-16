@@ -114,11 +114,6 @@ void st::TextureAtlas::set_current() const
 	st::_upload_atlas(*this);
 }
 
-void st::set_grid_size(tr::Vec3<uint8> size)
-{
-	_st->grid_size = size;
-}
-
 tr::Maybe<const st::ModelSpec&> st::Model::model_spec() const
 {
 	// i could just do return _st->models.try_get(id); but it doesn't want to convert to const
@@ -166,7 +161,7 @@ bool st::ModelSpec::is_terrain() const
 		return false;
 	}
 
-	if (meshes[0].cube.size != _st->grid_size) {
+	if (meshes[0].cube.size != _st->settings.grid_size) {
 		return false;
 	}
 
@@ -195,7 +190,7 @@ st::Block& st::place_static_block(tr::Vec3<int32> pos, st::Model model)
 
 	// if a block is placed and no one is around to see it, does it really show up?
 	float64 distance = pos.distance(st::current_chunk());
-	if (distance < CHUNK_SIZE * RENDER_DISTANCE) {
+	if (distance < CHUNK_SIZE * _st->render_distance) {
 		_st->chunks[st::block_to_chunk_pos(pos)].new_this_frame = true;
 		_st->chunk_updates_in_your_area = true;
 	}
@@ -226,7 +221,7 @@ void st::Block::destroy()
 
 	// if a block is removed and no one is around to see it, does it really show up?
 	float64 distance = _position.distance(st::current_chunk());
-	if (distance < CHUNK_SIZE * RENDER_DISTANCE) {
+	if (distance < CHUNK_SIZE * _st->render_distance) {
 		_st->chunks[st::block_to_chunk_pos(_position)].new_this_frame = true;
 		_st->chunk_updates_in_your_area = true;
 	}

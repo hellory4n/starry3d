@@ -6,8 +6,6 @@
 
 void sbox::setup_world()
 {
-	st::set_grid_size({16, 16, 16});
-
 	// atlas
 	st::TextureAtlas atlas = st::TextureAtlas::load("app://atlas.png").unwrap();
 

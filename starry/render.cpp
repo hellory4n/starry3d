@@ -56,10 +56,11 @@ void st::_init_renderer()
 
 	_st->atlas_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
 	_st->terrain_vertex_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_VERTICES);
-	_st->terrain_vertex_ssbo.reserve(TERRAIN_VERTEX_SSBO_SIZE);
+	_st->terrain_vertex_ssbo.reserve(st::_terrain_ssbo_size(_st->render_distance));
 	_st->chunk_positions_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_CHUNK_POSITIONS); // catchy
 	_st->chunk_positions_ssbo.reserve(
-		sizeof(tr::Vec4<int32>) * RENDER_DISTANCE * RENDER_DISTANCE * RENDER_DISTANCE
+		sizeof(tr::Vec4<int32>) * _st->render_distance * _st->render_distance *
+		_st->render_distance
 	);
 
 	// the actual data is calculated in the vertex shader
@@ -142,8 +143,9 @@ uint32 st::_update_terrain_vertex_ssbo()
 
 	auto* ssbo = static_cast<tr::Vec3<uint32>*>(ptr);
 
-	tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
-	tr::Vec3<int32> end = start + RENDER_DISTANCE_VEC;
+	tr::Vec3<int32> start =
+		st::current_chunk() - (tr::Vec3<uint32>{_st->render_distance} / 2).cast<int32>();
+	tr::Vec3<int32> end = start + tr::Vec3<uint32>{_st->render_distance}.cast<int32>();
 	uint16 chunk_pos_idx = 0;
 	uint32 instances = 0;
 
@@ -210,10 +212,12 @@ void st::_update_terrain_vertex_ssbo_block(
 		(pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>();
 
 	// anything higher than 15 will overflow
-	// / 3 so that the lod is less noticeable
-	uint32 lod = static_cast<uint32>(
-		tr::clamp(st::block_to_chunk_pos(pos).distance(st::current_chunk()) / 3, 1.0, 15.0)
-	);
+	// / 2 - 4 so that the lod is less noticeable
+	// TODO lod that doesn't suck (this one doesn't save enough triangles to be worth the
+	// quality loss)
+	uint32 lod = static_cast<uint32>(tr::clamp(
+		st::block_to_chunk_pos(pos).distance(st::current_chunk()) / 2 - 3, 1.0, 15.0
+	));
 	// %i blocks for the price of 1! saucy
 	if (local_pos.x % lod != 0) {
 		return;
@@ -291,8 +295,9 @@ void st::_render_terrain()
 		TR_DEFER(_st->chunk_positions_ssbo.unmap_buffer());
 		uint32 chunk_pos_idx = 0;
 
-		tr::Vec3<int32> start = st::current_chunk() - (RENDER_DISTANCE_VEC / 2);
-		tr::Vec3<int32> end = start + RENDER_DISTANCE_VEC;
+		tr::Vec3<int32> start = st::current_chunk() -
+					(tr::Vec3<uint32>{_st->render_distance} / 2).cast<int32>();
+		tr::Vec3<int32> end = start + tr::Vec3<uint32>{_st->render_distance}.cast<int32>();
 
 		for (int32 x = start.x; x < end.x; x++) {
 			for (int32 y = start.y; y < end.y; y++) {
@@ -314,4 +319,22 @@ void st::_render_terrain()
 void st::set_wireframe_mode(bool val)
 {
 	glPolygonMode(GL_FRONT_AND_BACK, val ? GL_LINE : GL_FILL);
+}
+
+void st::set_render_distance(uint32 chunks)
+{
+	TR_ASSERT_MSG(chunks <= 40, "render distance must be <=40 due to technical limitations");
+	if (chunks == 0) {
+		tr::warn("render distance is 0, ignoring st::set_render_distance call");
+		return;
+	}
+	_st->render_distance = chunks;
+
+	// resize buffers
+	_st->terrain_vertex_ssbo.update(nullptr, st::_terrain_ssbo_size(chunks));
+	_st->chunk_positions_ssbo.update(
+		nullptr, sizeof(tr::Vec4<int32>) * chunks * chunks * chunks
+	);
+
+	_st->chunk_updates_in_your_area = true; // pls update
 }

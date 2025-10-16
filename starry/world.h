@@ -113,10 +113,6 @@ public:
 	}
 };
 
-// You know how in pixel art you usually have a grid size and everything snaps to that? This is just
-// that but in 3D.
-void set_grid_size(tr::Vec3<uint8> size);
-
 // you'll never guess what this is
 struct TextureOrColor
 {

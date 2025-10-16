@@ -252,6 +252,10 @@ struct ApplicationSettings
 	bool fullscreen = false;
 	bool vsync = false;
 	bool high_dpi = false;
+
+	// You know how in pixel art you usually have a grid size and everything snaps to that? This
+	// is just that but in 3D.
+	tr::Vec3<uint8> grid_size = {8, 8, 8};
 };
 
 // the funny lambda stuff is so the app is initialized *after* the engine, without the whole
