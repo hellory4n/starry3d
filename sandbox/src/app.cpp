@@ -34,7 +34,7 @@ sbox::Sandbox::Sandbox()
 			));
 			st::place_static_block({x, height, z}, MODEL_GRASS);
 			st::place_static_block({x, height - 1, z}, MODEL_DIRT);
-			// for (int32 y = height - 1; y > height - 5; y--) {
+			// for (int32 y = height - 1; y > -20; y--) {
 			// 	st::place_static_block({x, y, z}, MODEL_DIRT);
 			// }
 		}

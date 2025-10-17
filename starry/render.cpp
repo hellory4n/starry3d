@@ -238,25 +238,42 @@ void st::_update_terrain_vertex_ssbo_block(
 	}
 
 	// is this block visible at all?
+	// chunk borders are a bit fucky to check for
 	int32 lodi = static_cast<int32>(lod);
+	bool front_visible;
+	bool back_visible;
+	bool left_visible;
+	bool right_visible;
+	bool top_visible;
+	bool bottom_visible;
+	bool is_on_chunk_border = local_pos.x == 0 || local_pos.y == 0 || local_pos.z == 0 ||
+				  local_pos.x >= CHUNK_SIZE - 1 || local_pos.y >= CHUNK_SIZE - 1 ||
+				  local_pos.z >= CHUNK_SIZE - 1;
 
-	// chunk borders are a bit fucky so just assume that it's visible
-	// TODO wtf is this shit
-	bool front_visible =
-		local_pos.z != 0 ? chunk[pos - tr::Vec3<int32>{0, 0, -lodi}] == MODEL_AIR : true;
-	bool back_visible = local_pos.z != CHUNK_SIZE - 1
-				    ? chunk[pos - tr::Vec3<int32>{0, 0, lodi}] == MODEL_AIR
-				    : true;
-	bool left_visible =
-		local_pos.x != 0 ? chunk[pos + tr::Vec3<int32>{-lodi, 0, 0}] == MODEL_AIR : true;
-	bool right_visible = local_pos.x != CHUNK_SIZE - 1
-				     ? chunk[pos + tr::Vec3<int32>{lodi, 0, 0}] == MODEL_AIR
-				     : true;
-	bool top_visible = local_pos.y != CHUNK_SIZE - 1
-				   ? chunk[pos + tr::Vec3<int32>{0, lodi, 0}] == MODEL_AIR
-				   : true;
-	bool bottom_visible =
-		local_pos.y != 0 ? chunk[pos - tr::Vec3<int32>{0, -lodi, 0}] == MODEL_AIR : true;
+	// st::_get_terrain_block is slower as it's going through 9838952 hashmap doohickeys, while
+	// st::Chunk is just an array of numbers
+	if (is_on_chunk_border) {
+		front_visible =
+			!st::_get_terrain_block(pos - tr::Vec3<int32>{0, 0, -lodi}).is_valid();
+		back_visible =
+			!st::_get_terrain_block(pos - tr::Vec3<int32>{0, 0, lodi}).is_valid();
+		left_visible =
+			!st::_get_terrain_block(pos + tr::Vec3<int32>{-lodi, 0, 0}).is_valid();
+		right_visible =
+			!st::_get_terrain_block(pos + tr::Vec3<int32>{lodi, 0, 0}).is_valid();
+		top_visible = !st::_get_terrain_block(pos + tr::Vec3<int32>{0, lodi, 0}).is_valid();
+		bottom_visible =
+			!st::_get_terrain_block(pos - tr::Vec3<int32>{0, -lodi, 0}).is_valid();
+	}
+	else {
+		front_visible = chunk[pos - tr::Vec3<int32>{0, 0, -lodi}] == MODEL_AIR;
+		back_visible = chunk[pos - tr::Vec3<int32>{0, 0, lodi}] == MODEL_AIR;
+		left_visible = chunk[pos + tr::Vec3<int32>{-lodi, 0, 0}] == MODEL_AIR;
+		right_visible = chunk[pos + tr::Vec3<int32>{lodi, 0, 0}] == MODEL_AIR;
+		top_visible = chunk[pos + tr::Vec3<int32>{0, lodi, 0}] == MODEL_AIR;
+		bottom_visible = chunk[pos - tr::Vec3<int32>{0, -lodi, 0}] == MODEL_AIR;
+	}
+
 	bool visible = front_visible || back_visible || left_visible || right_visible ||
 		       top_visible || bottom_visible;
 	if (!visible) {

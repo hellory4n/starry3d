@@ -369,6 +369,7 @@ private:
 	// all of them can touch block's private parts
 	friend DynamicBlock;
 	friend tr::Maybe<Block> get_static_block(tr::Vec3<int32> pos);
+	friend tr::Maybe<Block> _get_terrain_block(tr::Vec3<int32> pos);
 	friend Block place_static_block(tr::Vec3<int32> pos, Model model);
 	friend tr::HashMap<tr::Vec3<int32>, Block>; // ???????
 };
@@ -420,6 +421,9 @@ struct Environment
 
 // Returns the current environment. This is also how you set the environment vars
 Environment& environment();
+
+// Like st::get_static_block but it skips checking for static blocks; for use in the renderer
+tr::Maybe<Block> _get_terrain_block(tr::Vec3<int32> pos);
 
 }
 

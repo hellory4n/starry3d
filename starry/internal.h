@@ -103,7 +103,7 @@ struct Starry
 		mouse_state = tr::Array<InputState>(this->arena, int(st::MouseButton::LAST) + 1);
 		models = tr::HashMap<Model, ModelSpec>(this->asset_arena);
 		static_blocks = tr::HashMap<tr::Vec3<int32>, Model>(this->world_arena);
-		terrain_chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(this->render_arena);
+		terrain_chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(this->world_arena);
 	}
 };
 

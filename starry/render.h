@@ -132,10 +132,12 @@ struct Chunk
 	}
 };
 
-// 6 faces for a cube * chunk size^3 for a cube / 2 bcuz that's the max you can fit before it gets
-// culled * render distance^3 for another cube
 inline usize _terrain_ssbo_size(uint32 render_distance)
 {
+	// 6 faces for a cube * chunk size^3 for a cube / 2 bcuz that's the max you can fit before
+	// it gets culled * render distance^3 for another cube
+	// FIXME this is *more* than the standard's SSBO size limit of 128 MB, it is up to the
+	// drivers to accept more than that
 	return (sizeof(TerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE / 2) *
 	       render_distance * render_distance * render_distance;
 }

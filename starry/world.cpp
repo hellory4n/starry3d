@@ -170,17 +170,26 @@ bool st::ModelSpec::is_terrain() const
 
 tr::Maybe<st::Block> st::get_static_block(tr::Vec3<int32> pos)
 {
+	if (_st->terrain_chunks.contains(st::block_to_chunk_pos(pos))) {
+		Model model = _st->terrain_chunks[st::block_to_chunk_pos(pos)][pos];
+		if (model != MODEL_AIR) {
+			return Block(pos, model, BlockType::TERRAIN);
+		}
+	}
 	if (_st->static_blocks.contains(pos)) {
 		Model model = _st->static_blocks[pos];
 		return Block(pos, model, BlockType::STATIC);
 	}
-	else if (_st->terrain_chunks.contains(st::block_to_chunk_pos(pos))) {
-		Model model = _st->terrain_chunks[st::block_to_chunk_pos(pos)][pos];
+	return {};
+}
 
-		if (model == MODEL_AIR) {
-			return {};
+tr::Maybe<st::Block> st::_get_terrain_block(tr::Vec3<int32> pos)
+{
+	if (_st->terrain_chunks.contains(st::block_to_chunk_pos(pos))) {
+		Model model = _st->terrain_chunks[st::block_to_chunk_pos(pos)][pos];
+		if (model != MODEL_AIR) {
+			return Block(pos, model, BlockType::TERRAIN);
 		}
-		return Block(pos, model, BlockType::TERRAIN);
 	}
 	return {};
 }
