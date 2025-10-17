@@ -26,6 +26,7 @@
 #ifndef _ST_RENDER_H
 #define _ST_RENDER_H
 
+#include <trippin/common.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
 
@@ -112,8 +113,23 @@ static_assert(sizeof(tr::Vec3<uint32>) == 12, "too bad");
 // Di?h
 struct Chunk
 {
+	tr::Array<Model> blocks = {};
 	// regenerating the mesh for every chunk every frame is really wasteful
 	bool new_this_frame = false;
+
+	Chunk();
+	Model& operator[](tr::Vec3<uint8> local_pos) const;
+	Model& operator[](tr::Vec3<int32> pos) const
+	{
+		// catchy
+		return (*this)[(pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>()];
+	}
+
+	tr::Maybe<Model&> try_get(tr::Vec3<uint8> local_pos) const;
+	tr::Maybe<Model&> try_get(tr::Vec3<int32> pos) const
+	{
+		return try_get((pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>());
+	}
 };
 
 // 6 faces for a cube * chunk size^3 for a cube / 2 bcuz that's the max you can fit before it gets
@@ -148,7 +164,7 @@ void _update_terrain_vertex_ssbo_chunk(
 	uint32& instances
 );
 void _update_terrain_vertex_ssbo_block(
-	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, Block& block, uint16 chunk_pos_idx,
+	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, Chunk chunk, Model model, uint16 chunk_pos_idx,
 	uint32& instances
 );
 // returns the amount of quad instances required to render the current terrain

@@ -26,16 +26,16 @@ sbox::Sandbox::Sandbox()
 
 	FastNoiseLite noise = {};
 	noise.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
-	for (int32 x = -500; x < 500; x++) {
-		for (int32 z = -500; z < 500; z++) {
+	for (int32 z = -500; z < 500; z++) {
+		for (int32 x = -500; x < 500; x++) {
 			int32 height = static_cast<int32>(roundf(
 				noise.GetNoise(static_cast<float32>(x), static_cast<float32>(z)) *
 				20
 			));
-			st::place_static_block({x, height, z}, Model::GRASS);
-			st::place_static_block({x, height - 1, z}, Model::DIRT);
+			st::place_static_block({x, height, z}, MODEL_GRASS);
+			st::place_static_block({x, height - 1, z}, MODEL_DIRT);
 			// for (int32 y = height - 1; y > height - 5; y--) {
-			// 	st::place_static_block({x, y, z}, Model::DIRT);
+			// 	st::place_static_block({x, y, z}, MODEL_DIRT);
 			// }
 		}
 	}

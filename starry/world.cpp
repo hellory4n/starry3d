@@ -168,34 +168,44 @@ bool st::ModelSpec::is_terrain() const
 	return true;
 }
 
-tr::Maybe<st::Block&> st::get_static_block(tr::Vec3<int32> pos)
+tr::Maybe<st::Block> st::get_static_block(tr::Vec3<int32> pos)
 {
 	if (_st->static_blocks.contains(pos)) {
-		return _st->static_blocks[pos];
+		Model model = _st->static_blocks[pos];
+		return Block(pos, model, BlockType::STATIC);
 	}
-	else if (_st->terrain_blocks.contains(pos)) {
-		return _st->terrain_blocks[pos];
+	else if (_st->terrain_chunks.contains(st::block_to_chunk_pos(pos))) {
+		Model model = _st->terrain_chunks[st::block_to_chunk_pos(pos)][pos];
+
+		if (model == MODEL_AIR) {
+			return {};
+		}
+		return Block(pos, model, BlockType::TERRAIN);
 	}
 	return {};
 }
 
-st::Block& st::place_static_block(tr::Vec3<int32> pos, st::Model model)
+st::Block st::place_static_block(tr::Vec3<int32> pos, st::Model model)
 {
 	TR_ASSERT(model.model_spec().is_valid());
 	bool is_terrain = model.model_spec().unwrap().is_terrain();
-	Block& block = is_terrain ? _st->terrain_blocks[pos] : _st->static_blocks[pos];
-	block._model = model;
-	block._position = pos;
-	block._type = is_terrain ? BlockType::TERRAIN : BlockType::STATIC;
 
-	// if a block is placed and no one is around to see it, does it really show up?
-	float64 distance = pos.distance(st::current_chunk());
-	if (distance < CHUNK_SIZE * _st->render_distance) {
-		_st->chunks[st::block_to_chunk_pos(pos)].new_this_frame = true;
-		_st->chunk_updates_in_your_area = true;
+	if (is_terrain) {
+		_st->terrain_chunks[st::block_to_chunk_pos(pos)][pos] = model;
+
+		// if a block is placed and no one is around to see it, does it really show up?
+		float64 distance = pos.distance(st::current_chunk());
+		if (distance < CHUNK_SIZE * _st->render_distance) {
+			_st->terrain_chunks[st::block_to_chunk_pos(pos)].new_this_frame = true;
+			_st->chunk_updates_in_your_area = true;
+		}
+
+		return Block(pos, model, BlockType::TERRAIN);
 	}
-
-	return block;
+	else {
+		_st->static_blocks[pos] = model;
+		return Block(pos, model, BlockType::STATIC);
+	}
 }
 
 st::DynamicBlock::operator Block() const
@@ -212,7 +222,7 @@ tr::Maybe<st::DynamicBlock&> st::Block::to_dynamic_block() const // NOLINT
 void st::Block::destroy()
 {
 	if (model().model_spec().unwrap().is_terrain()) {
-		_st->terrain_blocks.remove(_position);
+		_st->terrain_chunks[st::block_to_chunk_pos(_position)][_position] = MODEL_AIR;
 	}
 	else {
 		_st->static_blocks.remove(_position);
@@ -222,7 +232,7 @@ void st::Block::destroy()
 	// if a block is removed and no one is around to see it, does it really show up?
 	float64 distance = _position.distance(st::current_chunk());
 	if (distance < CHUNK_SIZE * _st->render_distance) {
-		_st->chunks[st::block_to_chunk_pos(_position)].new_this_frame = true;
+		_st->terrain_chunks[st::block_to_chunk_pos(_position)].new_this_frame = true;
 		_st->chunk_updates_in_your_area = true;
 	}
 }

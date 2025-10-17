@@ -203,6 +203,11 @@ struct Model
 {
 	uint16 id;
 
+	constexpr Model()
+		: id(0)
+	{
+	}
+
 	constexpr Model(uint16 id)
 		: id(id)
 	{
@@ -363,17 +368,17 @@ private:
 	// blocks have lots of friends
 	// all of them can touch block's private parts
 	friend DynamicBlock;
-	friend tr::Maybe<Block&> get_static_block(tr::Vec3<int32> pos);
-	friend Block& place_static_block(tr::Vec3<int32> pos, Model model);
+	friend tr::Maybe<Block> get_static_block(tr::Vec3<int32> pos);
+	friend Block place_static_block(tr::Vec3<int32> pos, Model model);
 	friend tr::HashMap<tr::Vec3<int32>, Block>; // ???????
 };
 
 // Returns the static block in that position. Note that not all blocks have a position, to
 // check that use the `st::Block.exists()` function
-tr::Maybe<Block&> get_static_block(tr::Vec3<int32> pos);
+tr::Maybe<Block> get_static_block(tr::Vec3<int32> pos);
 
 // Places a static block somewhere, and returns the placed block.
-Block& place_static_block(tr::Vec3<int32> pos, Model model);
+Block place_static_block(tr::Vec3<int32> pos, Model model);
 
 // util functions, just to make things shorter/easier to read
 inline bool block_exists_at(tr::Vec3<int32> pos)
@@ -383,7 +388,7 @@ inline bool block_exists_at(tr::Vec3<int32> pos)
 
 inline tr::Maybe<Model> get_model_from_pos(tr::Vec3<int32> pos)
 {
-	tr::Maybe<Block&> block = st::get_static_block(pos);
+	tr::Maybe<Block> block = st::get_static_block(pos);
 	if (block.is_valid()) {
 		return block.unwrap().model();
 	}
@@ -393,7 +398,7 @@ inline tr::Maybe<Model> get_model_from_pos(tr::Vec3<int32> pos)
 // Removes a static/terrain block somewhere, and returns true if the original block existed.
 inline bool break_static_block(tr::Vec3<int32> pos)
 {
-	tr::Maybe<Block&> block = st::get_static_block(pos);
+	tr::Maybe<Block> block = st::get_static_block(pos);
 	if (block.is_valid()) {
 		block.unwrap().destroy();
 		return true;

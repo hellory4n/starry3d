@@ -160,10 +160,10 @@ uint32 st::_update_terrain_vertex_ssbo()
 	uint32 instances = 0;
 
 	// TODO this can be parallelized
-	for (int32 x = start.x; x < end.x; x++) {
+	for (int32 z = start.z; z < end.z; z++) {
 		for (int32 y = start.y; y < end.y; y++) {
-			for (int32 z = start.z; z < end.z; z++) {
-				tr::Maybe<Chunk&> chunk = _st->chunks.try_get({x, y, z});
+			for (int32 x = start.x; x < end.x; x++) {
+				tr::Maybe<Chunk&> chunk = _st->terrain_chunks.try_get({x, y, z});
 
 				// chunk has never been accessed, so it never had any blocks, no
 				// need to render air
@@ -192,21 +192,19 @@ void st::_update_terrain_vertex_ssbo_chunk(
 	uint32& instances
 )
 {
-	(void)chunk;
-
 	tr::Vec3<int32> start = pos * CHUNK_SIZE;
 	tr::Vec3<int32> end = start + CHUNK_SIZE_VEC;
 
-	for (int32 x = start.x; x < end.x; x++) {
+	for (int32 z = start.z; z < end.z; z++) {
 		for (int32 y = start.y; y < end.y; y++) {
-			for (int32 z = start.z; z < end.z; z++) {
-				tr::Maybe<Block&> block = _st->terrain_blocks.try_get({x, y, z});
-				if (!block.is_valid()) {
+			for (int32 x = start.x; x < end.x; x++) {
+				Model model = chunk[tr::Vec3<int32>{x, y, z}];
+				if (model == MODEL_AIR) {
 					continue;
 				}
 
 				st::_update_terrain_vertex_ssbo_block(
-					{x, y, z}, ssbo, block.unwrap(), chunk_pos_idx, instances
+					{x, y, z}, ssbo, chunk, model, chunk_pos_idx, instances
 				);
 			}
 		}
@@ -214,8 +212,8 @@ void st::_update_terrain_vertex_ssbo_chunk(
 }
 
 void st::_update_terrain_vertex_ssbo_block(
-	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, st::Block& block, uint16 chunk_pos_idx,
-	uint32& instances
+	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, st::Chunk chunk, st::Model model,
+	uint16 chunk_pos_idx, uint32& instances
 )
 {
 	tr::Vec3<uint8> local_pos =
@@ -241,19 +239,31 @@ void st::_update_terrain_vertex_ssbo_block(
 
 	// is this block visible at all?
 	int32 lodi = static_cast<int32>(lod);
-	bool front_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, 0, -lodi});
-	bool back_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, 0, lodi});
-	bool left_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{-lodi, 0, 0});
-	bool right_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{lodi, 0, 0});
-	bool top_visible = !_st->terrain_blocks.contains(pos + tr::Vec3<int32>{0, lodi, 0});
-	bool bottom_visible = !_st->terrain_blocks.contains(pos - tr::Vec3<int32>{0, -lodi, 0});
+
+	// chunk borders are a bit fucky so just assume that it's visible
+	// TODO wtf is this shit
+	bool front_visible =
+		local_pos.z != 0 ? chunk[pos - tr::Vec3<int32>{0, 0, -lodi}] == MODEL_AIR : true;
+	bool back_visible = local_pos.z != CHUNK_SIZE - 1
+				    ? chunk[pos - tr::Vec3<int32>{0, 0, lodi}] == MODEL_AIR
+				    : true;
+	bool left_visible =
+		local_pos.x != 0 ? chunk[pos + tr::Vec3<int32>{-lodi, 0, 0}] == MODEL_AIR : true;
+	bool right_visible = local_pos.x != CHUNK_SIZE - 1
+				     ? chunk[pos + tr::Vec3<int32>{lodi, 0, 0}] == MODEL_AIR
+				     : true;
+	bool top_visible = local_pos.y != CHUNK_SIZE - 1
+				   ? chunk[pos + tr::Vec3<int32>{0, lodi, 0}] == MODEL_AIR
+				   : true;
+	bool bottom_visible =
+		local_pos.y != 0 ? chunk[pos - tr::Vec3<int32>{0, -lodi, 0}] == MODEL_AIR : true;
 	bool visible = front_visible || back_visible || left_visible || right_visible ||
 		       top_visible || bottom_visible;
 	if (!visible) {
 		return;
 	}
 
-	ModelSpec model_spec = block.model().model_spec().unwrap();
+	ModelSpec model_spec = model.model_spec().unwrap();
 	ModelCube cube = model_spec.meshes[0].cube;
 
 	TerrainVertex base_vertex = {};
@@ -309,9 +319,9 @@ void st::_render_terrain()
 					(tr::Vec3<uint32>{_st->render_distance} / 2).cast<int32>();
 		tr::Vec3<int32> end = start + tr::Vec3<uint32>{_st->render_distance}.cast<int32>();
 
-		for (int32 x = start.x; x < end.x; x++) {
+		for (int32 z = start.z; z < end.z; z++) {
 			for (int32 y = start.y; y < end.y; y++) {
-				for (int32 z = start.z; z < end.z; z++) {
+				for (int32 x = start.x; x < end.x; x++) {
 					positions[chunk_pos_idx] = {x, y, z, 0};
 					chunk_pos_idx++;
 				}
@@ -333,7 +343,7 @@ void st::set_wireframe_mode(bool val)
 
 void st::set_render_distance(uint32 chunks)
 {
-	TR_ASSERT_MSG(chunks <= 40, "render distance must be <=40 due to technical limitations");
+	TR_ASSERT_MSG(chunks <= 40, "render distance must be <= 40 due to technical limitations");
 	if (chunks == 0) {
 		tr::warn("render distance is 0, ignoring st::set_render_distance call");
 		return;
@@ -347,4 +357,23 @@ void st::set_render_distance(uint32 chunks)
 	);
 
 	_st->chunk_updates_in_your_area = true; // pls update
+}
+
+st::Chunk::Chunk()
+{
+	blocks = {_st->world_arena, CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE};
+}
+
+st::Model& st::Chunk::operator[](tr::Vec3<uint8> local_pos) const
+{
+	// basically a 3D array
+	return blocks
+		[local_pos.x * CHUNK_SIZE * CHUNK_SIZE + local_pos.y * CHUNK_SIZE + local_pos.z];
+}
+
+tr::Maybe<st::Model&> st::Chunk::try_get(tr::Vec3<uint8> local_pos) const
+{
+	return blocks.try_get(
+		local_pos.x * CHUNK_SIZE * CHUNK_SIZE + local_pos.y * CHUNK_SIZE + local_pos.z
+	);
 }

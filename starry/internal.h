@@ -75,7 +75,6 @@ struct Starry
 	StorageBuffer atlas_ssbo = {};
 	StorageBuffer terrain_vertex_ssbo = {};
 	StorageBuffer chunk_positions_ssbo = {};
-	tr::HashMap<tr::Vec3<int32>, Chunk> chunks;
 	tr::Vec3<int32> prev_chunk = {};
 	Mesh base_plane = {};
 	uint32 instances = 0;
@@ -88,8 +87,8 @@ struct Starry
 
 	// world
 	Camera camera = {};
-	tr::HashMap<tr::Vec3<int32>, Block> terrain_blocks;
-	tr::HashMap<tr::Vec3<int32>, Block> static_blocks;
+	tr::HashMap<tr::Vec3<int32>, Chunk> terrain_chunks;
+	tr::HashMap<tr::Vec3<int32>, Model> static_blocks;
 	Environment environment = {};
 	// TODO how tf do you store the dynamic blocks
 
@@ -103,9 +102,8 @@ struct Starry
 		key_state = tr::Array<InputState>(this->arena, int(st::Key::LAST) + 1);
 		mouse_state = tr::Array<InputState>(this->arena, int(st::MouseButton::LAST) + 1);
 		models = tr::HashMap<Model, ModelSpec>(this->asset_arena);
-		terrain_blocks = tr::HashMap<tr::Vec3<int32>, Block>(this->world_arena);
-		static_blocks = tr::HashMap<tr::Vec3<int32>, Block>(this->world_arena);
-		chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(this->render_arena);
+		static_blocks = tr::HashMap<tr::Vec3<int32>, Model>(this->world_arena);
+		terrain_chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(this->render_arena);
 	}
 };
 
