@@ -118,15 +118,15 @@ struct Chunk
 	bool new_this_frame = false;
 
 	Chunk();
-	Model& operator[](tr::Vec3<uint8> local_pos) const;
-	Model& operator[](tr::Vec3<int32> pos) const
+	Model& operator[](tr::Vec3<uint8> local_pos);
+	Model& operator[](tr::Vec3<int32> pos)
 	{
 		// catchy
 		return (*this)[(pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>()];
 	}
 
-	tr::Maybe<Model&> try_get(tr::Vec3<uint8> local_pos) const;
-	tr::Maybe<Model&> try_get(tr::Vec3<int32> pos) const
+	tr::Maybe<Model&> try_get(tr::Vec3<uint8> local_pos);
+	tr::Maybe<Model&> try_get(tr::Vec3<int32> pos)
 	{
 		return try_get((pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>());
 	}
@@ -136,10 +136,10 @@ inline usize _terrain_ssbo_size(uint32 render_distance)
 {
 	// 6 faces for a cube * chunk size^3 for a cube / 2 bcuz that's the max you can fit before
 	// it gets culled * render distance^3 for another cube
-	// FIXME this is *more* than the standard's SSBO size limit of 128 MB, it is up to the
-	// drivers to accept more than that
-	return (sizeof(TerrainVertex) * 6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE / 2) *
-	       render_distance * render_distance * render_distance;
+	// FIXME this is most likely *more* than the standard's SSBO size limit of 128 MB, it is up
+	// to the drivers to accept more than that
+	return (6 * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE / 2) * render_distance * render_distance *
+	       render_distance;
 }
 
 void set_wireframe_mode(bool val);
@@ -161,16 +161,15 @@ void _terrain_pipeline();
 
 // actual rendering stuff
 void _render_terrain();
-void _update_terrain_vertex_ssbo_chunk(
-	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, Chunk chunk, uint16& chunk_pos_idx,
-	uint32& instances
+// waits on a loop for updates from the main thread
+void _terrain_update_thread();
+void _terrain_update_thread_write_ssbo();
+void _terrain_update_thread_write_chunk(
+	tr::Vec3<int32> pos, Chunk chunk, uint16& chunk_pos_idx, uint32& instances
 );
-void _update_terrain_vertex_ssbo_block(
-	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, Chunk chunk, Model model, uint16 chunk_pos_idx,
-	uint32& instances
+void _terrain_update_thread_write_block(
+	tr::Vec3<int32> pos, Chunk chunk, Model model, uint16 chunk_pos_idx, uint32& instances
 );
-// returns the amount of quad instances required to render the current terrain
-uint32 _update_terrain_vertex_ssbo();
 
 // housekeeping / interop with the rest of the engine
 void _upload_atlas(TextureAtlas atlas);

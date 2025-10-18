@@ -28,6 +28,8 @@
 
 #include "starry/render.h"
 
+#include <thread>
+
 #include <trippin/common.h>
 #include <trippin/log.h>
 #include <trippin/math.h>
@@ -56,7 +58,9 @@ void st::_init_renderer()
 
 	_st->atlas_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_ATLAS);
 	_st->terrain_vertex_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_VERTICES);
-	_st->terrain_vertex_ssbo.reserve(st::_terrain_ssbo_size(_st->render_distance));
+	_st->terrain_vertex_ssbo.reserve(
+		st::_terrain_ssbo_size(_st->render_distance) * sizeof(tr::Vec3<uint32>)
+	);
 	_st->chunk_positions_ssbo = StorageBuffer(ST_TERRAIN_SHADER_SSBO_CHUNK_POSITIONS); // catchy
 	_st->chunk_positions_ssbo.reserve(
 		sizeof(tr::Vec4<int32>) * _st->render_distance * _st->render_distance *
@@ -74,11 +78,16 @@ void st::_init_renderer()
 	};
 	_st->base_plane = Mesh(attrs, verts, tris);
 
+	// im threading it
+	_st->terrain_update_thread = std::thread(st::_terrain_update_thread);
+	_st->terrain_update_thread.detach();
+
 	tr::info("renderer initialized");
 }
 
 void st::_free_renderer()
 {
+	_st->terrain_update_thread_running = false;
 	_st->terrain_shader->free();
 	_st->base_plane.free();
 	_st->atlas_ssbo.free();
@@ -143,16 +152,41 @@ void st::_render()
 	st::_render_terrain();
 }
 
-uint32 st::_update_terrain_vertex_ssbo()
+void st::_terrain_update_thread()
 {
-	// RUST DEVELOPERS CRY OVER THIS BEAUTIFUL POINTER FUCKING
-	// TOUCHING MEMORY IN PLACES IT COULDN'T EVEN IMAGINE
-	// not funny
-	void* ptr = _st->terrain_vertex_ssbo.map_buffer(MapBufferAccess::WRITE);
-	TR_DEFER(_st->terrain_vertex_ssbo.unmap_buffer());
+	while (_st->terrain_update_thread_running) {
+		// if there are no updates just keep idle
+		if (st::current_chunk() == _st->prev_chunk && !_st->chunk_updates_in_your_area) {
+			continue;
+		}
 
-	auto* ssbo = static_cast<tr::Vec3<uint32>*>(ptr);
+		// actually update
+		_st->terrain_updating_it = true;
+		TR_DEFER(_st->terrain_updating_it = false);
+		st::_terrain_update_thread_write_ssbo();
 
+		// the w is for padding otherwise std430 shits itself
+		uint32 chunk_pos_idx = 0;
+
+		tr::Vec3<int32> start = st::current_chunk() -
+					(tr::Vec3<uint32>{_st->render_distance} / 2).cast<int32>();
+		tr::Vec3<int32> end = start + tr::Vec3<uint32>{_st->render_distance}.cast<int32>();
+
+		for (int32 z = start.z; z < end.z; z++) {
+			for (int32 y = start.y; y < end.y; y++) {
+				for (int32 x = start.x; x < end.x; x++) {
+					_st->chunk_pos_buffer[chunk_pos_idx] = {x, y, z, 0};
+					chunk_pos_idx++;
+				}
+			}
+		}
+
+		_st->pls_upload_buffers = true;
+	}
+}
+
+void st::_terrain_update_thread_write_ssbo()
+{
 	tr::Vec3<int32> start =
 		st::current_chunk() - (tr::Vec3<uint32>{_st->render_distance} / 2).cast<int32>();
 	tr::Vec3<int32> end = start + tr::Vec3<uint32>{_st->render_distance}.cast<int32>();
@@ -172,8 +206,8 @@ uint32 st::_update_terrain_vertex_ssbo()
 					continue;
 				}
 
-				st::_update_terrain_vertex_ssbo_chunk(
-					{x, y, z}, ssbo, chunk.unwrap(), chunk_pos_idx, instances
+				st::_terrain_update_thread_write_chunk(
+					{x, y, z}, chunk.unwrap(), chunk_pos_idx, instances
 				);
 
 				// updating the chunk position ssbo goes in the exact same order
@@ -184,12 +218,11 @@ uint32 st::_update_terrain_vertex_ssbo()
 		}
 	}
 
-	return instances;
+	_st->instances = instances;
 }
 
-void st::_update_terrain_vertex_ssbo_chunk(
-	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, st::Chunk chunk, uint16& chunk_pos_idx,
-	uint32& instances
+void st::_terrain_update_thread_write_chunk(
+	tr::Vec3<int32> pos, st::Chunk chunk, uint16& chunk_pos_idx, uint32& instances
 )
 {
 	tr::Vec3<int32> start = pos * CHUNK_SIZE;
@@ -203,17 +236,17 @@ void st::_update_terrain_vertex_ssbo_chunk(
 					continue;
 				}
 
-				st::_update_terrain_vertex_ssbo_block(
-					{x, y, z}, ssbo, chunk, model, chunk_pos_idx, instances
+				st::_terrain_update_thread_write_block(
+					{x, y, z}, chunk, model, chunk_pos_idx, instances
 				);
 			}
 		}
 	}
 }
 
-void st::_update_terrain_vertex_ssbo_block(
-	tr::Vec3<int32> pos, tr::Vec3<uint32>* ssbo, st::Chunk chunk, st::Model model,
-	uint16 chunk_pos_idx, uint32& instances
+void st::_terrain_update_thread_write_block(
+	tr::Vec3<int32> pos, st::Chunk chunk, st::Model model, uint16 chunk_pos_idx,
+	uint32& instances
 )
 {
 	tr::Vec3<uint8> local_pos =
@@ -293,19 +326,19 @@ void st::_update_terrain_vertex_ssbo_block(
 	base_vertex.lod = static_cast<uint8>(lod);
 
 // i love exploiting the compiler
-#define CUBE_FACE(Face, FaceEnum)                                      \
-	if (Face##_visible) {                                          \
-		TerrainVertex Face = base_vertex;                      \
-		(Face).normal = FaceEnum;                              \
-		if (cube.Face.using_texture) {                         \
-			(Face).texture_id = cube.Face.texture;         \
-		}                                                      \
-		else {                                                 \
-			(Face).color = cube.Face.color;                \
-		}                                                      \
-		(Face).using_texture = cube.Face.using_texture;        \
-		ssbo[instances] = static_cast<tr::Vec3<uint32>>(Face); \
-		instances++;                                           \
+#define CUBE_FACE(Face, FaceEnum)                                                            \
+	if (Face##_visible) {                                                                \
+		TerrainVertex Face = base_vertex;                                            \
+		(Face).normal = FaceEnum;                                                    \
+		if (cube.Face.using_texture) {                                               \
+			(Face).texture_id = cube.Face.texture;                               \
+		}                                                                            \
+		else {                                                                       \
+			(Face).color = cube.Face.color;                                      \
+		}                                                                            \
+		(Face).using_texture = cube.Face.using_texture;                              \
+		_st->terrain_vertex_buffer[instances] = static_cast<tr::Vec3<uint32>>(Face); \
+		instances++;                                                                 \
 	}
 
 	CUBE_FACE(front, CubeNormal::FRONT);
@@ -321,31 +354,21 @@ void st::_update_terrain_vertex_ssbo_block(
 
 void st::_render_terrain()
 {
-	if (st::current_chunk() != _st->prev_chunk || _st->chunk_updates_in_your_area) {
-		_st->instances = st::_update_terrain_vertex_ssbo();
-
-		// update the chunk positions ssbo
-		// the w is for padding otherwise std430 shits itself
-		tr::Vec4<int32>* positions = static_cast<tr::Vec4<int32>*>(
-			_st->chunk_positions_ssbo.map_buffer(MapBufferAccess::WRITE)
+	// opengl stuff has to be on the main thread lmao
+	// TODO vulkan is looking tantalizing...
+	if (_st->pls_upload_buffers) {
+		_st->terrain_vertex_ssbo.update(
+			*_st->terrain_vertex_buffer,
+			_st->terrain_vertex_buffer.len() * sizeof(tr::Vec3<uint32>)
 		);
-		TR_DEFER(_st->chunk_positions_ssbo.unmap_buffer());
-		uint32 chunk_pos_idx = 0;
-
-		tr::Vec3<int32> start = st::current_chunk() -
-					(tr::Vec3<uint32>{_st->render_distance} / 2).cast<int32>();
-		tr::Vec3<int32> end = start + tr::Vec3<uint32>{_st->render_distance}.cast<int32>();
-
-		for (int32 z = start.z; z < end.z; z++) {
-			for (int32 y = start.y; y < end.y; y++) {
-				for (int32 x = start.x; x < end.x; x++) {
-					positions[chunk_pos_idx] = {x, y, z, 0};
-					chunk_pos_idx++;
-				}
-			}
-		}
+		_st->chunk_positions_ssbo.update(
+			*_st->chunk_pos_buffer,
+			_st->chunk_pos_buffer.len() * sizeof(tr::Vec4<int32>)
+		);
+		_st->pls_upload_buffers = false;
 	}
 
+	// updating the terrain vertex ssbo is in another thread :))))))
 	_st->base_plane.draw(_st->instances);
 
 	// reset this frame's state
@@ -365,6 +388,17 @@ void st::set_render_distance(uint32 chunks)
 		tr::warn("render distance is 0, ignoring st::set_render_distance call");
 		return;
 	}
+
+	// it would be pretty unfortunate if we set this while the terrain update thread is updating
+	// it, so just wait until it's done
+	if (_st->terrain_updating_it) {
+		while (true) {
+			if (!_st->terrain_updating_it) {
+				break;
+			}
+		}
+	}
+
 	_st->render_distance = chunks;
 
 	// resize buffers
@@ -372,6 +406,12 @@ void st::set_render_distance(uint32 chunks)
 	_st->chunk_positions_ssbo.update(
 		nullptr, sizeof(tr::Vec4<int32>) * chunks * chunks * chunks
 	);
+
+	// make a new arena to not waste memory
+	_st->render_arena.free();
+	_st->render_arena = _st->arena.make_ref<tr::Arena>();
+	_st->terrain_vertex_buffer =
+		tr::Array<tr::Vec3<uint32>>(_st->render_arena, st::_terrain_ssbo_size(chunks));
 
 	_st->chunk_updates_in_your_area = true; // pls update
 }
@@ -381,14 +421,14 @@ st::Chunk::Chunk()
 	blocks = {_st->world_arena, CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE};
 }
 
-st::Model& st::Chunk::operator[](tr::Vec3<uint8> local_pos) const
+st::Model& st::Chunk::operator[](tr::Vec3<uint8> local_pos)
 {
 	// basically a 3D array
 	return blocks
 		[local_pos.x * CHUNK_SIZE * CHUNK_SIZE + local_pos.y * CHUNK_SIZE + local_pos.z];
 }
 
-tr::Maybe<st::Model&> st::Chunk::try_get(tr::Vec3<uint8> local_pos) const
+tr::Maybe<st::Model&> st::Chunk::try_get(tr::Vec3<uint8> local_pos)
 {
 	return blocks.try_get(
 		local_pos.x * CHUNK_SIZE * CHUNK_SIZE + local_pos.y * CHUNK_SIZE + local_pos.z

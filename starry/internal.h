@@ -29,6 +29,8 @@
 #ifndef _ST_INTERNAL_H
 #define _ST_INTERNAL_H
 
+#include <thread>
+
 #include <trippin/common.h>
 #include <trippin/math.h>
 #include <trippin/memory.h>
@@ -75,11 +77,18 @@ struct Starry
 	StorageBuffer atlas_ssbo = {};
 	StorageBuffer terrain_vertex_ssbo = {};
 	StorageBuffer chunk_positions_ssbo = {};
-	tr::Vec3<int32> prev_chunk = {};
 	Mesh base_plane = {};
+	uint32 render_distance = 16;
+	// render thread
+	std::thread terrain_update_thread = {};
+	tr::Array<tr::Vec3<uint32>> terrain_vertex_buffer;
+	tr::Array<tr::Vec4<int32>> chunk_pos_buffer;
+	tr::Vec3<int32> prev_chunk = {};
 	uint32 instances = 0;
 	bool chunk_updates_in_your_area = false;
-	uint32 render_distance = 16;
+	bool terrain_update_thread_running = true; // otherwise the thread runs forever
+	bool terrain_updating_it = false; // set by the terrain update thread while it's updating it
+	bool pls_upload_buffers = false;
 
 	// assets
 	tr::Maybe<TextureAtlas> atlas = {};
@@ -104,6 +113,13 @@ struct Starry
 		models = tr::HashMap<Model, ModelSpec>(this->asset_arena);
 		static_blocks = tr::HashMap<tr::Vec3<int32>, Model>(this->world_arena);
 		terrain_chunks = tr::HashMap<tr::Vec3<int32>, Chunk>(this->world_arena);
+		terrain_vertex_buffer = tr::Array<tr::Vec3<uint32>>(
+			this->render_arena, st::_terrain_ssbo_size(render_distance)
+		);
+		chunk_pos_buffer = tr::Array<tr::Vec4<int32>>(
+			this->render_arena, sizeof(tr::Vec4<int32>) * render_distance *
+						    render_distance * render_distance
+		);
 	}
 };
 

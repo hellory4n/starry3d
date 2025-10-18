@@ -218,7 +218,7 @@ static void _debug_mode()
 		};
 	}
 	static float32 sky_color[4] = {0, 0, 0, 1};
-	if (ImGui::ColorEdit4("Sky color", ambient_color)) {
+	if (ImGui::ColorEdit4("Sky color", sky_color)) {
 		env.sky_color =
 			tr::Vec4<float32>{sky_color[0], sky_color[1], sky_color[2], sky_color[3]};
 	}
