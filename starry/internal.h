@@ -79,6 +79,7 @@ struct Starry
 	StorageBuffer chunk_positions_ssbo = {};
 	Mesh base_plane = {};
 	uint32 render_distance = 16;
+
 	// render thread
 	std::thread terrain_update_thread = {};
 	tr::Array<tr::Vec3<uint32>> terrain_vertex_buffer;

@@ -118,16 +118,11 @@ struct Chunk
 	bool new_this_frame = false;
 
 	Chunk();
-	Model& operator[](tr::Vec3<uint8> local_pos);
-	Model& operator[](tr::Vec3<int32> pos)
-	{
-		// catchy
-		return (*this)[(pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>()];
-	}
-
 	tr::Maybe<Model&> try_get(tr::Vec3<uint8> local_pos);
 	tr::Maybe<Model&> try_get(tr::Vec3<int32> pos)
 	{
+		// catchy
+		// FIXME this will overflow and die
 		return try_get((pos - (st::block_to_chunk_pos(pos) * CHUNK_SIZE)).cast<uint8>());
 	}
 };

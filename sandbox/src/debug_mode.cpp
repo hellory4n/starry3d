@@ -125,7 +125,7 @@ static void _debug_mode()
 	TR_DEFER(ImGui::End());
 
 	// this is the same logic the renderer uses for checking when it should be updated
-	if (st::_st->prev_chunk != st::current_chunk() || st::_st->chunk_updates_in_your_area) {
+	if (st::_st->chunk_updates_in_your_area) {
 		ImGui::TextColored(st::imgui::rgb(0xc6262e), "updating terrain mesh!");
 	}
 

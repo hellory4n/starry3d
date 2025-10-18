@@ -171,9 +171,13 @@ bool st::ModelSpec::is_terrain() const
 tr::Maybe<st::Block> st::get_static_block(tr::Vec3<int32> pos)
 {
 	if (_st->terrain_chunks.contains(st::block_to_chunk_pos(pos))) {
-		Model model = _st->terrain_chunks[st::block_to_chunk_pos(pos)][pos];
-		if (model != MODEL_AIR) {
-			return Block(pos, model, BlockType::TERRAIN);
+		tr::Maybe<Model&> model =
+			_st->terrain_chunks[st::block_to_chunk_pos(pos)].try_get(pos);
+		if (!model.is_valid()) {
+			return {};
+		}
+		if (model.unwrap() != MODEL_AIR) {
+			return Block(pos, model.unwrap(), BlockType::TERRAIN);
 		}
 	}
 	if (_st->static_blocks.contains(pos)) {
@@ -186,9 +190,13 @@ tr::Maybe<st::Block> st::get_static_block(tr::Vec3<int32> pos)
 tr::Maybe<st::Block> st::_get_terrain_block(tr::Vec3<int32> pos)
 {
 	if (_st->terrain_chunks.contains(st::block_to_chunk_pos(pos))) {
-		Model model = _st->terrain_chunks[st::block_to_chunk_pos(pos)][pos];
-		if (model != MODEL_AIR) {
-			return Block(pos, model, BlockType::TERRAIN);
+		tr::Maybe<Model&> model =
+			_st->terrain_chunks[st::block_to_chunk_pos(pos)].try_get(pos);
+		if (!model.is_valid()) {
+			return {};
+		}
+		if (model.unwrap() != MODEL_AIR) {
+			return Block(pos, model.unwrap(), BlockType::TERRAIN);
 		}
 	}
 	return {};
@@ -200,7 +208,8 @@ st::Block st::place_static_block(tr::Vec3<int32> pos, st::Model model)
 	bool is_terrain = model.model_spec().unwrap().is_terrain();
 
 	if (is_terrain) {
-		_st->terrain_chunks[st::block_to_chunk_pos(pos)][pos] = model;
+		auto mmodel = _st->terrain_chunks[st::block_to_chunk_pos(pos)].try_get(pos);
+		mmodel.unwrap() = model;
 
 		// if a block is placed and no one is around to see it, does it really show up?
 		float64 distance = pos.distance(st::current_chunk());
@@ -231,7 +240,8 @@ tr::Maybe<st::DynamicBlock&> st::Block::to_dynamic_block() const // NOLINT
 void st::Block::destroy()
 {
 	if (model().model_spec().unwrap().is_terrain()) {
-		_st->terrain_chunks[st::block_to_chunk_pos(_position)][_position] = MODEL_AIR;
+		_st->terrain_chunks[st::block_to_chunk_pos(_position)].try_get(_position).unwrap() =
+			MODEL_AIR;
 	}
 	else {
 		_st->static_blocks.remove(_position);

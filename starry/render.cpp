@@ -150,17 +150,24 @@ void st::_render()
 	);
 
 	st::_render_terrain();
+
+	// reset this frame's state
+	_st->prev_chunk = st::current_chunk();
 }
 
 void st::_terrain_update_thread()
 {
 	while (_st->terrain_update_thread_running) {
 		// if there are no updates just keep idle
-		if (st::current_chunk() == _st->prev_chunk && !_st->chunk_updates_in_your_area) {
+		if (!_st->chunk_updates_in_your_area) {
+			using namespace std::literals::chrono_literals;
+			std::this_thread::sleep_for(0.01s); // just so cpu usage isn't insalubrious
 			continue;
 		}
 
 		// actually update
+		tr::Stopwatch sw = {};
+		sw.start();
 		_st->terrain_updating_it = true;
 		TR_DEFER(_st->terrain_updating_it = false);
 		st::_terrain_update_thread_write_ssbo();
@@ -182,6 +189,9 @@ void st::_terrain_update_thread()
 		}
 
 		_st->pls_upload_buffers = true;
+		_st->chunk_updates_in_your_area = false;
+		sw.stop();
+		sw.print_time_us("terrain update thread");
 	}
 }
 
@@ -231,13 +241,16 @@ void st::_terrain_update_thread_write_chunk(
 	for (int32 z = start.z; z < end.z; z++) {
 		for (int32 y = start.y; y < end.y; y++) {
 			for (int32 x = start.x; x < end.x; x++) {
-				Model model = chunk[tr::Vec3<int32>{x, y, z}];
-				if (model == MODEL_AIR) {
+				auto model = chunk.try_get(tr::Vec3<int32>{x, y, z});
+				if (!model.is_valid()) {
+					continue;
+				}
+				if (model.unwrap() == MODEL_AIR) {
 					continue;
 				}
 
 				st::_terrain_update_thread_write_block(
-					{x, y, z}, chunk, model, chunk_pos_idx, instances
+					{x, y, z}, chunk, model.unwrap(), chunk_pos_idx, instances
 				);
 			}
 		}
@@ -299,12 +312,19 @@ void st::_terrain_update_thread_write_block(
 			!st::_get_terrain_block(pos - tr::Vec3<int32>{0, -lodi, 0}).is_valid();
 	}
 	else {
-		front_visible = chunk[pos - tr::Vec3<int32>{0, 0, -lodi}] == MODEL_AIR;
-		back_visible = chunk[pos - tr::Vec3<int32>{0, 0, lodi}] == MODEL_AIR;
-		left_visible = chunk[pos + tr::Vec3<int32>{-lodi, 0, 0}] == MODEL_AIR;
-		right_visible = chunk[pos + tr::Vec3<int32>{lodi, 0, 0}] == MODEL_AIR;
-		top_visible = chunk[pos + tr::Vec3<int32>{0, lodi, 0}] == MODEL_AIR;
-		bottom_visible = chunk[pos - tr::Vec3<int32>{0, -lodi, 0}] == MODEL_AIR;
+		Model air_but_as_an_lvalue = MODEL_AIR;
+		front_visible = chunk.try_get(pos - tr::Vec3<int32>{0, 0, -lodi})
+					.value_or(air_but_as_an_lvalue) == MODEL_AIR;
+		back_visible = chunk.try_get(pos - tr::Vec3<int32>{0, 0, lodi})
+				       .value_or(air_but_as_an_lvalue) == MODEL_AIR;
+		left_visible = chunk.try_get(pos + tr::Vec3<int32>{-lodi, 0, 0})
+				       .value_or(air_but_as_an_lvalue) == MODEL_AIR;
+		right_visible = chunk.try_get(pos + tr::Vec3<int32>{lodi, 0, 0})
+					.value_or(air_but_as_an_lvalue) == MODEL_AIR;
+		top_visible = chunk.try_get(pos + tr::Vec3<int32>{0, lodi, 0})
+				      .value_or(air_but_as_an_lvalue) == MODEL_AIR;
+		bottom_visible = chunk.try_get(pos - tr::Vec3<int32>{0, -lodi, 0})
+					 .value_or(air_but_as_an_lvalue) == MODEL_AIR;
 	}
 
 	bool visible = front_visible || back_visible || left_visible || right_visible ||
@@ -354,9 +374,15 @@ void st::_terrain_update_thread_write_block(
 
 void st::_render_terrain()
 {
+	if (st::current_chunk() != _st->prev_chunk) {
+		_st->chunk_updates_in_your_area = true;
+	}
+
 	// opengl stuff has to be on the main thread lmao
 	// TODO vulkan is looking tantalizing...
 	if (_st->pls_upload_buffers) {
+		tr::Stopwatch sw = {};
+		sw.start();
 		_st->terrain_vertex_ssbo.update(
 			*_st->terrain_vertex_buffer,
 			_st->terrain_vertex_buffer.len() * sizeof(tr::Vec3<uint32>)
@@ -366,14 +392,15 @@ void st::_render_terrain()
 			_st->chunk_pos_buffer.len() * sizeof(tr::Vec4<int32>)
 		);
 		_st->pls_upload_buffers = false;
+		sw.stop();
+		sw.print_time_us("ssbo updating");
 	}
 
-	// updating the terrain vertex ssbo is in another thread :))))))
+	tr::Stopwatch sw = {};
+	sw.start();
 	_st->base_plane.draw(_st->instances);
-
-	// reset this frame's state
-	_st->prev_chunk = st::current_chunk();
-	_st->chunk_updates_in_your_area = false;
+	sw.stop();
+	sw.print_time_us("drawing");
 }
 
 void st::set_wireframe_mode(bool val)
@@ -421,15 +448,21 @@ st::Chunk::Chunk()
 	blocks = {_st->world_arena, CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE};
 }
 
-st::Model& st::Chunk::operator[](tr::Vec3<uint8> local_pos)
-{
-	// basically a 3D array
-	return blocks
-		[local_pos.x * CHUNK_SIZE * CHUNK_SIZE + local_pos.y * CHUNK_SIZE + local_pos.z];
-}
-
 tr::Maybe<st::Model&> st::Chunk::try_get(tr::Vec3<uint8> local_pos)
 {
+	// weird race condition thing with the terrain update thread, just assume it's not there so
+	// it stops horrifically crashing
+	// FIXME it doesn't even work??? (bcuz .buf() just *can't* return null)
+	// just fix the real bug
+	// TR_GCC_IGNORE_WARNING(-Wtautological-pointer-compare) if (&blocks == nullptr) {
+	// 	return {};
+	// }
+	// TR_GCC_RESTORE()
+	// if (blocks.buf() == nullptr) {
+	// 	return {};
+	// }
+
+	// basically a 3D array
 	return blocks.try_get(
 		local_pos.x * CHUNK_SIZE * CHUNK_SIZE + local_pos.y * CHUNK_SIZE + local_pos.z
 	);
