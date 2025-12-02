@@ -1,11 +1,7 @@
 const std = @import("std");
 const glfw = @import("zglfw");
 
-var _glfw_initialized = false;
-var _glfw_deinitialized = false;
-var _windows_opened: i32 = 0;
-
-// Window settings duh
+/// Window settings duh
 pub const Settings = struct {
     size: @Vector(2, i32) = .{ 1280, 720 },
     resizable: bool = true,
@@ -14,7 +10,7 @@ pub const Settings = struct {
 };
 
 pub const Window = struct {
-    _handle: ?*glfw.Window = undefined,
+    __handle: ?*glfw.Window = undefined,
 
     pub fn open(comptime title: []const u8, settings: Settings) !Window {
         // just in case you want multiple windows
@@ -33,22 +29,22 @@ pub const Window = struct {
         _ = glfw.setErrorCallback(windowErrorCallback);
 
         var window = Window{};
-        window._handle = try glfw.createWindow(settings.size[0], settings.size[1], title ++ "\x00", null);
+        window.__handle = try glfw.createWindow(settings.size[0], settings.size[1], title ++ "\x00", null);
 
-        glfw.makeContextCurrent(window._handle.?);
+        glfw.makeContextCurrent(window.__handle.?);
 
-        _windows_opened += 1;
+        __windows_opened += 1;
         return window;
     }
 
     pub fn close(window: *Window) void {
-        if (window._handle != null) {
-            glfw.destroyWindow(window._handle.?);
+        if (window.__handle != null) {
+            glfw.destroyWindow(window.__handle.?);
         }
-        window._handle = null;
+        window.__handle = null;
 
-        _windows_opened -= 1;
-        if (_windows_opened == 0) {
+        __windows_opened -= 1;
+        if (__windows_opened == 0) {
             glfw.terminate();
             _glfw_deinitialized = true;
         }
@@ -56,7 +52,7 @@ pub const Window = struct {
 
     /// Used for setting up the main loop
     pub fn isClosing(window: Window) bool {
-        return glfw.windowShouldClose(window._handle.?);
+        return glfw.windowShouldClose(window.__handle.?);
     }
 
     /// Recommended to be called at the start of your main loop
@@ -66,14 +62,9 @@ pub const Window = struct {
 
     /// Recommended to be called at the end of your main loop
     pub fn swapBuffers(window: Window) void {
-        glfw.swapBuffers(window._handle.?);
+        glfw.swapBuffers(window.__handle.?);
     }
 };
-
-fn windowErrorCallback(error_code: c_int, description: ?[*:0]const u8) callconv(.c) void {
-    std.debug.print("GLFW error {x}: {s}", .{ error_code, description.? });
-    @breakpoint();
-}
 
 pub const WindowSystem = enum {
     // No window system
@@ -99,3 +90,12 @@ pub fn windowSystem() WindowSystem {
         .wayland => .wayland,
     };
 }
+
+fn windowErrorCallback(error_code: c_int, description: ?[*:0]const u8) callconv(.c) void {
+    std.debug.print("GLFW error {x}: {s}", .{ error_code, description.? });
+    @breakpoint();
+}
+
+var _glfw_initialized = false;
+var _glfw_deinitialized = false;
+var __windows_opened: i32 = 0;

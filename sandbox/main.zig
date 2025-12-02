@@ -14,7 +14,8 @@ pub fn sandboxUpdate(_: f32) !void {
 }
 
 pub fn main() !void {
-    try starry.app.run("sandbox", .{
+    try starry.app.run(.{
+        .name = "sandbox",
         .new = sandboxNew,
         .free = sandboxFree,
         .update = sandboxUpdate,

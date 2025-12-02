@@ -3,6 +3,9 @@ const internal = @import("internal.zig");
 
 /// Used for creating a Starry application
 pub const Settings = struct {
+    /// Used for the window title and stuff
+    name: []const u8,
+
     /// Called after the engine is initialized but just before the main loop
     new: ?fn () anyerror!void,
     /// Called before the engine is freed,
@@ -15,15 +18,18 @@ pub const Settings = struct {
     window: window.Settings = .{},
 };
 
-pub fn run(comptime name: []const u8, settings: Settings) !void {
-    internal.engine.window = try window.Window.open(name, settings.window);
+/// Runs the engine, and eventually, your app :)
+pub fn run(comptime settings: Settings) !void {
+    internal.engine.window = try window.Window.open(settings.name, settings.window);
     defer internal.engine.window.close();
 
     if (settings.new) |real_new_fn| {
         try real_new_fn();
     }
-    if (settings.free) |real_free_fn| {
-        defer real_free_fn();
+    defer {
+        if (settings.free) |real_free_fn| {
+            real_free_fn();
+        }
     }
 
     while (!internal.engine.window.isClosing()) {
