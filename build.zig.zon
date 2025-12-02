@@ -1,6 +1,12 @@
 .{
     .name = .starry3d,
     .version = "0.7.0",
+    .dependencies = .{
+        .zglfw = .{
+            .url = "git+https://github.com/zig-gamedev/zglfw#15bf6ec59a4e1399d0c753455f69b28f09e41791",
+            .hash = "zglfw-0.10.0-dev-zgVDNHO2IQDy_fSdwY5U4z42rHUuKgt7T9f-qmQ3FnuL",
+        },
+    },
     .fingerprint = 0x3bc229cbaf2e2060,
     .minimum_zig_version = "0.15.2",
     .paths = .{

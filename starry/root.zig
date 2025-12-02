@@ -1,6 +1,10 @@
-const std = @import("std");
+pub const app = @import("app.zig");
+pub const window = @import("window.zig");
 
-/// Tantalizing.
-pub fn lib_func() void {
-    std.debug.print("hehe\n", .{});
-}
+const std = @import("std");
+pub const version = std.SemanticVersion{
+    .major = 0,
+    .minor = 7,
+    .patch = 0,
+    .pre = "dev",
+};

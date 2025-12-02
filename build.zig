@@ -16,12 +16,21 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const build_examples = b.option(bool, "build_examples", "build examples :)") orelse true;
+    // TODO i don't think it does anything without this
+    // idk how you're supposed to build a zig library
+    const build_examples = b.option(bool, "build_sandbox", "Also build sandbox (the test project for Starry)") orelse true;
 
     const mod = b.addModule("starry3d", .{
         .root_source_file = b.path("starry/root.zig"),
         .target = target,
     });
+
+    // starry dependencies
+    const zglfw = b.dependency("zglfw", .{});
+    mod.addImport("zglfw", zglfw.module("root"));
+    if (target.result.os.tag != .emscripten) {
+        mod.linkLibrary(zglfw.artifact("glfw"));
+    }
 
     if (build_examples) {
         const exe = b.addExecutable(.{
@@ -37,7 +46,7 @@ pub fn build(b: *std.Build) void {
         });
         b.installArtifact(exe);
 
-        const run_step = b.step("run", "Run the app");
+        const run_step = b.step("run", "Run sandbox");
         const run_cmd = b.addRunArtifact(exe);
         run_step.dependOn(&run_cmd.step);
         run_cmd.step.dependOn(b.getInstallStep());
