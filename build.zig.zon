@@ -1,0 +1,12 @@
+.{
+    .name = .starry3d,
+    .version = "0.7.0",
+    .fingerprint = 0x3bc229cbaf2e2060,
+    .minimum_zig_version = "0.15.2",
+    .paths = .{
+        "LICENSE",
+        "build.zig",
+        "build.zig.zon",
+        "starry",
+    },
+}
