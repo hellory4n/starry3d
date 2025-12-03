@@ -11,7 +11,8 @@ const testing = std.testing;
 /// Probably thread-safe, idk lol.
 pub const ScratchAllocator = struct {
     __start_pos: isize = -1,
-    __fallback_alloc: heap.GeneralPurposeAllocator(.{}) = undefined,
+    __fallback_alloc: heap.ArenaAllocator = undefined,
+    __fallback_backing_alloc: heap.GeneralPurposeAllocator(.{}) = undefined, // catchy
     __created_fallback: bool = false,
 
     pub fn init() ScratchAllocator {
@@ -30,6 +31,11 @@ pub const ScratchAllocator = struct {
         @memset(__scratch_buffer[@intCast(scratch.__start_pos)..], 0xaa);
         __scratch_alloc.end_index = @intCast(scratch.__start_pos);
         scratch.__start_pos = -1;
+
+        if (scratch.__created_fallback) {
+            scratch.__fallback_alloc.deinit();
+            _ = scratch.__fallback_backing_alloc.deinit();
+        }
     }
 
     /// allocating it rn
@@ -64,7 +70,10 @@ pub const ScratchAllocator = struct {
             return ptr;
         } else {
             if (!scratch.__created_fallback) {
-                scratch.__fallback_alloc = heap.GeneralPurposeAllocator(.{}).init;
+                scratch.__fallback_backing_alloc = heap.GeneralPurposeAllocator(.{}).init;
+                scratch.__fallback_alloc = heap.ArenaAllocator.init(
+                    scratch.__fallback_backing_alloc.allocator(),
+                );
                 scratch.__created_fallback = true;
             }
             return scratch.__fallback_alloc.allocator().vtable.alloc(
