@@ -7,3 +7,4 @@ debug/
 build/
 build-*/
 docgen_tmp/
+log.txt

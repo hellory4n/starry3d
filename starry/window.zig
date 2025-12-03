@@ -1,3 +1,4 @@
+//! Windowing and input and stuff. Amazing.
 const std = @import("std");
 const glfw = @import("zglfw");
 
@@ -15,13 +16,13 @@ pub const Window = struct {
     pub fn open(comptime title: []const u8, settings: Settings) !Window {
         // just in case you want multiple windows
         // really doubt anyone will ever close all windows just to make new ones but ok
-        if (_glfw_deinitialized) {
-            _glfw_deinitialized = false;
-            _glfw_initialized = false;
+        if (__glfw_deinitialized) {
+            __glfw_deinitialized = false;
+            __glfw_initialized = false;
         }
-        if (!_glfw_initialized) {
+        if (!__glfw_initialized) {
             try glfw.init();
-            _glfw_initialized = true;
+            __glfw_initialized = true;
         }
 
         glfw.windowHint(.resizable, settings.resizable);
@@ -46,7 +47,7 @@ pub const Window = struct {
         __windows_opened -= 1;
         if (__windows_opened == 0) {
             glfw.terminate();
-            _glfw_deinitialized = true;
+            __glfw_deinitialized = true;
         }
     }
 
@@ -92,10 +93,10 @@ pub fn windowSystem() WindowSystem {
 }
 
 fn windowErrorCallback(error_code: c_int, description: ?[*:0]const u8) callconv(.c) void {
-    std.debug.print("GLFW error {x}: {s}", .{ error_code, description.? });
+    std.debug.print("GLFW error 0x{x}: {s}", .{ error_code, description.? });
     @breakpoint();
 }
 
-var _glfw_initialized = false;
-var _glfw_deinitialized = false;
+var __glfw_initialized = false;
+var __glfw_deinitialized = false;
 var __windows_opened: i32 = 0;

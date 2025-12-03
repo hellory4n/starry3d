@@ -1,16 +1,21 @@
 const std = @import("std");
 const starry = @import("starry3d");
 
+pub const std_options = starry.util.std_options;
+
 pub fn sandboxNew() !void {
-    std.debug.print("sandboxma\n", .{});
+    std.log.info("sandbox", .{});
+    std.log.err("error", .{});
+    std.log.warn("warning", .{});
+    std.log.debug("debug", .{});
 }
 
 pub fn sandboxFree() void {
-    std.debug.print("amxobdnas\n", .{});
+    std.log.info("amxobdnas", .{});
 }
 
 pub fn sandboxUpdate(_: f32) !void {
-    std.debug.print("oughhh\n", .{});
+    std.log.info("oughhh", .{});
 }
 
 pub fn main() !void {
@@ -19,5 +24,6 @@ pub fn main() !void {
         .new = sandboxNew,
         .free = sandboxFree,
         .update = sandboxUpdate,
+        .logfiles = &[_][]const u8{"log.txt"},
     });
 }

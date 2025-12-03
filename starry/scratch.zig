@@ -1,3 +1,4 @@
+//! Temporary allocator, full legal name is a scratchpad arena
 const std = @import("std");
 const mem = std.mem;
 const heap = std.heap;

@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // TODO i don't think it does anything without this
+    // TODO i don't think it does anything when you disable this
     // idk how you're supposed to build a zig library
     const build_examples = b.option(bool, "build_sandbox", "Also build sandbox (the test project for Starry)") orelse true;
 
@@ -53,5 +53,23 @@ pub fn build(b: *std.Build) void {
         if (b.args) |args| {
             run_cmd.addArgs(args);
         }
+    }
+
+    // there's real tests too
+    const test_step = b.step("test", "Run Starry unit tests");
+    const tests = b.addTest(.{
+        .name = "starry3d-tests",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("starry/root.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    b.installArtifact(tests);
+    const test_cmd = b.addRunArtifact(tests);
+    test_step.dependOn(&test_cmd.step);
+    test_cmd.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        test_cmd.addArgs(args);
     }
 }

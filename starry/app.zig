@@ -1,5 +1,7 @@
+//! Manages the engine/app's lifetime and puts the whole engine together
+const std = @import("std");
 const window = @import("window.zig");
-const internal = @import("internal.zig");
+const log = @import("log.zig");
 
 /// Used for creating a Starry application
 pub const Settings = struct {
@@ -16,12 +18,23 @@ pub const Settings = struct {
 
     /// You usually want this to be configurable by the end user
     window: window.Settings = .{},
+
+    /// List of files which log.
+    logfiles: ?[]const []const u8 = null,
 };
 
 /// Runs the engine, and eventually, your app :)
 pub fn run(comptime settings: Settings) !void {
-    internal.engine.window = try window.Window.open(settings.name, settings.window);
-    defer internal.engine.window.close();
+    // values that last for as long as the program does
+    var core_alloc = std.heap.GeneralPurposeAllocator(.{}).init;
+    defer _ = core_alloc.deinit();
+
+    try log.__initLogging(core_alloc.allocator(), settings);
+    defer log.__freeLogging();
+    log.stlog.info("hehe", .{});
+
+    var win = try window.Window.open(settings.name, settings.window);
+    defer win.close();
 
     if (settings.new) |real_new_fn| {
         try real_new_fn();
@@ -32,13 +45,13 @@ pub fn run(comptime settings: Settings) !void {
         }
     }
 
-    while (!internal.engine.window.isClosing()) {
-        internal.engine.window.pollEvents();
+    while (!win.isClosing()) {
+        win.pollEvents();
 
         if (settings.update) |real_update_fn| {
             try real_update_fn(0); // TODO the real fucking delta time
         }
 
-        internal.engine.window.swapBuffers();
+        win.swapBuffers();
     }
 }
