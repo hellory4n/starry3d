@@ -56,7 +56,8 @@ pub fn build(b: *std.Build) void {
     }
 
     // there's real tests too
-    const test_step = b.step("test", "Run Starry unit tests");
+    const test_step = b.step("test", "Run zmath tests");
+
     const tests = b.addTest(.{
         .name = "starry3d-tests",
         .root_module = b.createModule(.{
@@ -66,10 +67,6 @@ pub fn build(b: *std.Build) void {
         }),
     });
     b.installArtifact(tests);
-    const test_cmd = b.addRunArtifact(tests);
-    test_step.dependOn(&test_cmd.step);
-    test_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| {
-        test_cmd.addArgs(args);
-    }
+    //tests.root_module.addImport("zmath_options", options_module);
+    test_step.dependOn(&b.addRunArtifact(tests).step);
 }

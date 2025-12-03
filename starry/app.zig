@@ -31,7 +31,6 @@ pub fn run(comptime settings: Settings) !void {
 
     try log.__initLogging(core_alloc.allocator(), settings);
     defer log.__freeLogging();
-    log.stlog.info("hehe", .{});
 
     var win = try window.Window.open(settings.name, settings.window);
     defer win.close();

@@ -11,3 +11,8 @@ pub const version = std.SemanticVersion{
     .patch = 0,
     .pre = "dev",
 };
+
+// otherwise tests don't work
+test {
+    std.testing.refAllDecls(@This());
+}

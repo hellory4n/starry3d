@@ -1,12 +1,1 @@
-# so github doesn't say half of the repo is C
-*.h linguist-language=C++
-thirdparty/* linguist-vendored
-# auto-generated files
-*.glsl.h linguist-vendored
-
-# sane files
 * text=auto eol=lf
-# windows
-*.bat eol=crlf
-*.sln eol=crlf
-*.vcxproj eol=crlf

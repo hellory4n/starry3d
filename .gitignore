@@ -1,10 +1,13 @@
 # if you have OS-specific or editor-specific files to ignore,
 # put them in your global ~/.gitignore
+
+# zig stuff
 .zig-cache/
 zig-out/
 release/
 debug/
 build/
 build-*/
-docgen_tmp/
+
+# engine specific
 log.txt

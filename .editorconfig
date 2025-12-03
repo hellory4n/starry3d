@@ -3,24 +3,8 @@ root = true
 [*]
 charset = utf-8
 end_of_line = lf
-indent_size = 8
-indent_style = tab
-insert_final_newline = true
-max_line_length = 100
-trim_trailing_whitespace = true
-
-[*.md]
-indent_style = space
-
-# yaml and its consequences have been a disaster for the human race
-[*.{yml, yaml}, .clang{-format, -tidy, d}, build.ninja]
-indent_size = 2
-indent_style = space
-
-[*.json]
 indent_size = 4
 indent_style = space
-
-# windows bullshit :(
-[*.sln, *.vcxproj, *.bat]
-end_of_line = crlf
+insert_final_newline = true
+max_line_length = 120
+trim_trailing_whitespace = true
