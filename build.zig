@@ -28,9 +28,13 @@ pub fn build(b: *std.Build) void {
     // starry dependencies
     const zglfw = b.dependency("zglfw", .{});
     mod.addImport("zglfw", zglfw.module("root"));
-    if (target.result.os.tag != .emscripten) {
-        mod.linkLibrary(zglfw.artifact("glfw"));
-    }
+    mod.linkLibrary(zglfw.artifact("glfw"));
+
+    const registry = b.dependency("vulkan_headers", .{}).path("registry/vk.xml");
+    const vulkan = b.dependency("vulkan", .{
+        .registry = registry,
+    }).module("vulkan-zig");
+    mod.addImport("vulkan", vulkan);
 
     if (build_examples) {
         const exe = b.addExecutable(.{
