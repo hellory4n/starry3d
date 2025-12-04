@@ -8,4 +8,8 @@ pub var vkd: vk.DeviceWrapper = undefined;
 
 pub var instance: vk.Instance = undefined;
 pub var device: vk.Device = undefined;
+
 pub var graphics_queue: vk.Queue = undefined;
+pub var present_queue: vk.Queue = undefined;
+
+pub var surface: vk.SurfaceKHR = undefined;

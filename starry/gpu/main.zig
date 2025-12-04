@@ -14,8 +14,9 @@ const GpuSettings = struct {
     // TODO
 };
 
-/// Initializes the GPU for rendering and future `starry.gpu` calls.
-pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, _: win.Window) !void {
+/// Does the bare minimum GPU initialization. To setup the GPU for rendering, you have to call
+/// `gpu.initRendering`
+pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, window: win.Window) !void {
     var scratch = ScratchAllocator.init();
     defer scratch.deinit();
     impl.vkb = vk.BaseWrapper.load(getInstanceProcAddress);
@@ -36,7 +37,9 @@ pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, _: win
 
     const required_instance_exts = try glfw.getRequiredInstanceExtensions();
     const extra_instance_exts = [_][*:0]const u8{
-        vk.extensions.khr_portability_enumeration.name, // required on macOS
+        // required on macOS
+        vk.extensions.khr_portability_enumeration.name,
+        vk.extensions.khr_get_physical_device_properties_2.name,
     };
     const instance_exts = try scratch.allocator().alloc(
         [*:0]const u8,
@@ -69,6 +72,8 @@ pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, _: win
         .enabled_extension_count = @intCast(instance_exts.len),
         .pp_enabled_layer_names = if (use_validation_layers) (&validation_layers).ptr else null,
         .enabled_layer_count = if (use_validation_layers) 1 else 0,
+        // also required on macOS
+        .flags = .{ .enumerate_portability_bit_khr = true },
     };
 
     // unfortunately vulkan-zig makes the boilerplate more esoteric
@@ -78,21 +83,42 @@ pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, _: win
     errdefer impl.vki.destroyInstance(impl.instance, null);
     std.log.info("initialized Vulkan instance", .{});
 
+    // make a surface
+    try glfw.createWindowSurface(
+        @ptrFromInt(@intFromEnum(impl.instance)),
+        window.__handle.?,
+        null,
+        &impl.surface,
+    );
+
     // finally create the device
     const physical_device = try pickDevice();
 
     const queue_families = try findQueueFamilies(physical_device);
     const queue_priority = [_]f32{1.0};
-    const queue_create_infos = [_]vk.DeviceQueueCreateInfo{.{
-        .queue_family_index = queue_families.graphics_family.?,
-        .queue_count = 1,
-        .p_queue_priorities = &queue_priority,
-    }};
+
+    const queue_create_infos = [_]vk.DeviceQueueCreateInfo{
+        .{
+            .queue_family_index = queue_families.graphics_family.?,
+            .queue_count = 1,
+            .p_queue_priorities = &queue_priority,
+        },
+        .{
+            .queue_family_index = queue_families.present_family.?,
+            .queue_count = 1,
+            .p_queue_priorities = &queue_priority,
+        },
+    };
+    // if the queue create infos point to the same family idx then vulkan farts and dies
+    const queue_count: u32 = if (queue_families.graphics_family.? == queue_families.present_family.?)
+        1
+    else
+        2;
 
     const device_features = vk.PhysicalDeviceFeatures{};
     const device_create_info = vk.DeviceCreateInfo{
         .p_queue_create_infos = &queue_create_infos,
-        .queue_create_info_count = 1,
+        .queue_create_info_count = queue_count,
         .p_enabled_features = &device_features,
         .pp_enabled_layer_names = if (use_validation_layers) (&validation_layers).ptr else null,
         .enabled_layer_count = if (use_validation_layers) 1 else 0,
@@ -103,14 +129,15 @@ pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, _: win
     std.log.info("initialized Vulkan device", .{});
 
     impl.graphics_queue = impl.vkd.getDeviceQueue(impl.device, queue_families.graphics_family.?, 0);
+    impl.present_queue = impl.vkd.getDeviceQueue(impl.device, queue_families.present_family.?, 0);
 
     std.log.info("Vulkan fully initialized", .{});
 }
 
-/// Deinitializes the GPU for rendering. This doesn't free GPU resources, you must manage them
-/// manually before calling this function.
+/// Deinitializes the GPU. This doesn't free GPU resources, you must manage them manually before calling this function. `initRendering` also has a matching `deinitRendering` that you have to call.
 pub fn deinit() void {
     impl.vkd.destroyDevice(impl.device, null);
+    impl.vki.destroySurfaceKHR(impl.instance, impl.surface, null);
     impl.vki.destroyInstance(impl.instance, null);
     std.log.info("deinitialized Vulkan", .{});
 }
@@ -203,9 +230,10 @@ fn pickDevice() !vk.PhysicalDevice {
 /// Idfk man.
 const QueueFamilies = struct {
     graphics_family: ?u32 = null,
+    present_family: ?u32 = null,
 
     pub fn isComplete(queue_families: QueueFamilies) bool {
-        return queue_families.graphics_family != null;
+        return queue_families.graphics_family != null and queue_families.present_family != null;
     }
 };
 
@@ -223,6 +251,15 @@ fn findQueueFamilies(dev: vk.PhysicalDevice) !QueueFamilies {
     for (queue_families, 0..) |queue_family, i| {
         if (queue_family.queue_flags.contains(.{ .graphics_bit = true })) {
             indices.graphics_family = @intCast(i);
+        }
+
+        const present_support = try impl.vki.getPhysicalDeviceSurfaceSupportKHR(
+            dev,
+            @intCast(i),
+            impl.surface,
+        );
+        if (present_support == .true) {
+            indices.present_family = @intCast(i);
         }
 
         if (indices.isComplete()) {
