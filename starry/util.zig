@@ -18,6 +18,20 @@ pub fn zigstrToCstr(alloc: std.mem.Allocator, s: []const u8) ![*:0]const u8 {
     return newstr;
 }
 
+/// For use with C libraries, using a max of 0 makes it go forever (how safe!)
+pub fn strnlen(s: [*]const u8, max: usize) usize {
+    var max_real = max;
+    if (max == 0) max_real = std.math.maxInt(usize);
+
+    var len: usize = 0;
+    while (len < max_real) : (len += 1) {
+        if (s[len] == 0) {
+            return len;
+        }
+    }
+    return len;
+}
+
 /// If true, the file at that path does in fact exist and is alive and well and stuff.
 pub fn fileExists(path: []const u8) !bool {
     _ = std.fs.cwd().statFile(path) catch |err| {
