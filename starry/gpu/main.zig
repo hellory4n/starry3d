@@ -72,16 +72,41 @@ pub fn init(comptime app_settings: app.Settings, _: win.Window) !void {
     impl.instance = try impl.vkb.createInstance(&instance_create_info, null);
     impl.vki = vk.InstanceWrapper.load(impl.instance, impl.vkb.dispatch.vkGetInstanceProcAddr.?);
     errdefer impl.vki.destroyInstance(impl.instance, null);
+    std.log.info("initialized Vulkan instance", .{});
 
-    // finally setup device
-    _ = try pickDevice();
+    // finally create the device
+    const physical_device = try pickDevice();
 
-    std.log.info("initialized Vulkan", .{});
+    const queue_families = try findQueueFamilies(physical_device);
+    const queue_priority = [_]f32{1.0};
+    const queue_create_infos = [_]vk.DeviceQueueCreateInfo{.{
+        .queue_family_index = queue_families.graphics_family.?,
+        .queue_count = 1,
+        .p_queue_priorities = &queue_priority,
+    }};
+
+    const device_features = vk.PhysicalDeviceFeatures{};
+    const device_create_info = vk.DeviceCreateInfo{
+        .p_queue_create_infos = &queue_create_infos,
+        .queue_create_info_count = 1,
+        .p_enabled_features = &device_features,
+        .pp_enabled_layer_names = if (use_validation_layers) (&validation_layers).ptr else null,
+        .enabled_layer_count = if (use_validation_layers) 1 else 0,
+    };
+    impl.device = try impl.vki.createDevice(physical_device, &device_create_info, null);
+    impl.vkd = vk.DeviceWrapper.load(impl.device, impl.vki.dispatch.vkGetDeviceProcAddr.?);
+    errdefer impl.vkd.destroyDevice(impl.vkd, null);
+    std.log.info("initialized Vulkan device", .{});
+
+    impl.graphics_queue = impl.vkd.getDeviceQueue(impl.device, queue_families.graphics_family.?, 0);
+
+    std.log.info("Vulkan fully initialized", .{});
 }
 
 /// Deinitializes the GPU for rendering. This doesn't free GPU resources, you must manage them
 /// manually before calling this function.
 pub fn deinit() void {
+    impl.vkd.destroyDevice(impl.device, null);
     impl.vki.destroyInstance(impl.instance, null);
     std.log.info("deinitialized Vulkan", .{});
 }
@@ -114,6 +139,7 @@ fn pickDevice() !vk.PhysicalDevice {
     var best_score: u64 = 0;
     var best_device_i: usize = 0;
     for (devices, 0..) |device, i| {
+        // TODO make these accessible to everything else
         const props = impl.vki.getPhysicalDeviceProperties(device);
         // const features = impl.vki.getPhysicalDeviceFeatures(device); TODO use it probably
         const memory = impl.vki.getPhysicalDeviceMemoryProperties(device);
@@ -172,7 +198,7 @@ fn pickDevice() !vk.PhysicalDevice {
 
 /// Idfk man.
 const QueueFamilies = struct {
-    graphics_family: ?usize = null,
+    graphics_family: ?u32 = null,
 
     pub fn isComplete(queue_families: QueueFamilies) bool {
         return queue_families.graphics_family != null;
@@ -192,7 +218,7 @@ fn findQueueFamilies(dev: vk.PhysicalDevice) !QueueFamilies {
 
     for (queue_families, 0..) |queue_family, i| {
         if (queue_family.queue_flags.contains(.{ .graphics_bit = true })) {
-            indices.graphics_family = i;
+            indices.graphics_family = @intCast(i);
         }
 
         if (indices.isComplete()) {
