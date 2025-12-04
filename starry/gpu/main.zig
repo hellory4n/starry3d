@@ -69,10 +69,12 @@ pub fn init(comptime app_settings: app.Settings, _: win.Window) !void {
 
     // unfortunately vulkan-zig makes the boilerplate more esoteric
     // just look at the vulkan-zig docs i cant be bothered
-    const instance = try impl.vkb.createInstance(&instance_create_info, null);
-    impl.vki = vk.InstanceWrapper.load(instance, impl.vkb.dispatch.vkGetInstanceProcAddr.?);
-    impl.instance = vk.InstanceProxy.init(instance, &impl.vki);
-    errdefer impl.instance.destroyInstance(null);
+    impl.instance = try impl.vkb.createInstance(&instance_create_info, null);
+    impl.vki = vk.InstanceWrapper.load(impl.instance, impl.vkb.dispatch.vkGetInstanceProcAddr.?);
+    errdefer impl.vki.destroyInstance(impl.instance, null);
+
+    // finally setup device
+    _ = try pickDevice();
 
     std.log.info("initialized Vulkan", .{});
 }
@@ -80,13 +82,124 @@ pub fn init(comptime app_settings: app.Settings, _: win.Window) !void {
 /// Deinitializes the GPU for rendering. This doesn't free GPU resources, you must manage them
 /// manually before calling this function.
 pub fn deinit() void {
-    impl.instance.destroyInstance(null);
+    impl.vki.destroyInstance(impl.instance, null);
     std.log.info("deinitialized Vulkan", .{});
 }
 
 /// glfw and vulkan-zig have different definitions of vk.Instance but they're the fucking same
 fn getInstanceProcAddress(instance: vk.Instance, procname: [*:0]const u8) ?glfw.VulkanFn {
     return glfw.getInstanceProcAddress(@ptrFromInt(@intFromEnum(instance)), procname);
+}
+
+const DevicePickingError = error{
+    NoDeviceWithVulkan,
+    NoDeviceGoodEnough,
+};
+
+/// Returns the best device for running the most massive engine of all time
+fn pickDevice() !vk.PhysicalDevice {
+    var scratch = ScratchAllocator.init();
+    defer scratch.deinit();
+
+    var device_count: u32 = 0;
+    _ = try impl.vki.enumeratePhysicalDevices(impl.instance, &device_count, null);
+    if (device_count == 0) {
+        return error.NoDeviceWithVulkan;
+    }
+
+    const devices = try scratch.allocator().alloc(vk.PhysicalDevice, device_count);
+    _ = try impl.vki.enumeratePhysicalDevices(impl.instance, &device_count, devices.ptr);
+
+    var best_device: ?vk.PhysicalDevice = null;
+    var best_score: u64 = 0;
+    var best_device_i: usize = 0;
+    for (devices, 0..) |device, i| {
+        const props = impl.vki.getPhysicalDeviceProperties(device);
+        // const features = impl.vki.getPhysicalDeviceFeatures(device); TODO use it probably
+        const memory = impl.vki.getPhysicalDeviceMemoryProperties(device);
+        const queue_families = try findQueueFamilies(device);
+        var score: u64 = 0;
+
+        std.log.info("device #{d} '{s}':", .{ i, props.device_name });
+
+        // discrete gpus are better
+        if (props.device_type == .discrete_gpu) {
+            score += 10_000;
+        }
+        // integrated gpus are the next best thing (there's other types)
+        else if (props.device_type == .integrated_gpu) {
+            score += 5000;
+        }
+        std.log.info("- type: {s}", .{@tagName(props.device_type)});
+
+        // more vram is more good
+        var total_vram: u64 = 0;
+        for (memory.memory_heaps[0..memory.memory_heap_count]) |heap| {
+            total_vram += heap.size;
+        }
+        std.log.info(
+            "- vram: {d} MB, ~{d} GB",
+            .{ total_vram / 1024 / 1024, total_vram / 1024 / 1024 / 1024 },
+        );
+        score += total_vram / 1024 / 1024;
+
+        // we do have to check if it's supported
+        var supported = true;
+        if (!queue_families.isComplete()) {
+            supported = false;
+            std.log.info("- unsupported:", .{});
+            std.log.info("  - graphics family: {s}", .{
+                if (queue_families.graphics_family == null) "unsupported" else "ok",
+            });
+        }
+
+        std.log.info("- score: {d}", .{score});
+
+        if (score > best_score and supported) {
+            best_device = device;
+            best_score = score;
+            best_device_i = i;
+        }
+    }
+
+    if (best_device) |best_device_real| {
+        std.log.info("using device #{d}", .{best_device_i});
+        return best_device_real;
+    } else {
+        return error.NoDeviceGoodEnough;
+    }
+}
+
+/// Idfk man.
+const QueueFamilies = struct {
+    graphics_family: ?usize = null,
+
+    pub fn isComplete(queue_families: QueueFamilies) bool {
+        return queue_families.graphics_family != null;
+    }
+};
+
+fn findQueueFamilies(dev: vk.PhysicalDevice) !QueueFamilies {
+    var scratch = ScratchAllocator.init();
+    defer scratch.deinit();
+    var indices = QueueFamilies{};
+
+    var queue_family_count: u32 = undefined;
+    impl.vki.getPhysicalDeviceQueueFamilyProperties(dev, &queue_family_count, null);
+
+    const queue_families = try scratch.allocator().alloc(vk.QueueFamilyProperties, queue_family_count);
+    impl.vki.getPhysicalDeviceQueueFamilyProperties(dev, &queue_family_count, queue_families.ptr);
+
+    for (queue_families, 0..) |queue_family, i| {
+        if (queue_family.queue_flags.contains(.{ .graphics_bit = true })) {
+            indices.graphics_family = i;
+        }
+
+        if (indices.isComplete()) {
+            break;
+        }
+    }
+    return indices;
 }
 
 const validation_layer_name = "VK_LAYER_KHRONOS_validation";

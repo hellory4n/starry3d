@@ -5,4 +5,4 @@ const vk = @import("vulkan");
 pub var vkb: vk.BaseWrapper = undefined;
 pub var vki: vk.InstanceWrapper = undefined;
 
-pub var instance: vk.InstanceProxy = undefined;
+pub var instance: vk.Instance = undefined;

@@ -31,8 +31,8 @@ pub const Window = struct {
 
         // vulkan is required, obviously
         if (!glfw.isVulkanSupported()) {
-            std.log.err("vulkan isn't supported by this computer!", .{});
-            return WindowError.VulkanUnsupported;
+            std.log.err("vulkan isn't supported!", .{});
+            return error.VulkanUnsupported;
         }
 
         glfw.windowHint(.client_api, .no_api);
