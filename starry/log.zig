@@ -41,8 +41,10 @@ pub fn logfn(
     };
 
     // "default" is the default for when there's no scope, as the name implies
-    // not sure how to make this line not comically long without the compiler crying
-    const lib = comptime if (!std.mem.eql(u8, @tagName(scope), "default")) "(" ++ @tagName(scope) ++ ") " else "";
+    const lib = comptime if (!std.mem.eql(u8, @tagName(scope), "default"))
+        "(" ++ @tagName(scope) ++ ") "
+    else
+        "";
     const prefix = switch (message_level) {
         .debug => if (lib.len > 0) lib else "",
         .info => lib,

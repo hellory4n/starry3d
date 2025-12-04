@@ -10,8 +10,12 @@ const util = @import("../util.zig");
 const ScratchAllocator = @import("../scratch.zig").ScratchAllocator;
 const version = @import("../root.zig").version;
 
+const GpuSettings = struct {
+    // TODO
+};
+
 /// Initializes the GPU for rendering and future `starry.gpu` calls.
-pub fn init(comptime app_settings: app.Settings, _: win.Window) !void {
+pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, _: win.Window) !void {
     var scratch = ScratchAllocator.init();
     defer scratch.deinit();
     impl.vkb = vk.BaseWrapper.load(getInstanceProcAddress);

@@ -49,7 +49,7 @@ pub fn run(comptime settings: Settings) !void {
     var win = try window.Window.open(settings.name, settings.window);
     defer win.close();
 
-    try gpu.init(settings, win);
+    try gpu.init(settings, .{}, win);
     defer gpu.deinit();
 
     if (settings.new) |real_new_fn| {
