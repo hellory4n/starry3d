@@ -1,5 +1,6 @@
 //! Windowing and input and stuff. Amazing.
 const std = @import("std");
+const builtin = @import("builtin");
 const glfw = @import("zglfw");
 
 /// Window settings duh
@@ -9,6 +10,8 @@ pub const Settings = struct {
     vsync: bool = false,
     // TODO should have more options but i can't be bothered rn
 };
+
+const WindowError = error{VulkanUnsupported};
 
 pub const Window = struct {
     __handle: ?*glfw.Window = undefined,
@@ -22,31 +25,46 @@ pub const Window = struct {
         }
         if (!__glfw_initialized) {
             try glfw.init();
+            std.log.info("initialized GLFW", .{});
             __glfw_initialized = true;
         }
 
-        glfw.windowHint(.resizable, settings.resizable);
+        // vulkan is required, obviously
+        if (!glfw.isVulkanSupported()) {
+            std.log.err("vulkan isn't supported by this computer!", .{});
+            return WindowError.VulkanUnsupported;
+        }
+
+        glfw.windowHint(.client_api, .no_api);
+        // resizing requires some special fuckery in vulkan
+        // TODO do the fuckery dumbass
+        //glfw.windowHint(.resizable, settings.resizable);
+        glfw.windowHint(.resizable, false);
         glfw.swapInterval(if (settings.vsync) 1 else 0);
         _ = glfw.setErrorCallback(windowErrorCallback);
 
         var window = Window{};
         window.__handle = try glfw.createWindow(settings.size[0], settings.size[1], title ++ "\x00", null);
 
-        glfw.makeContextCurrent(window.__handle.?);
-
         __windows_opened += 1;
+        std.log.info(
+            "created window for {s} on {s}",
+            .{ @tagName(windowSystem()), @tagName(builtin.os.tag) },
+        );
         return window;
     }
 
     pub fn close(window: *Window) void {
         if (window.__handle != null) {
             glfw.destroyWindow(window.__handle.?);
+            std.log.info("closed window", .{});
         }
         window.__handle = null;
 
         __windows_opened -= 1;
         if (__windows_opened == 0) {
             glfw.terminate();
+            std.log.info("deinitialized GLFW", .{});
             __glfw_deinitialized = true;
         }
     }
@@ -62,8 +80,8 @@ pub const Window = struct {
     }
 
     /// Recommended to be called at the end of your main loop
-    pub fn swapBuffers(window: Window) void {
-        glfw.swapBuffers(window.__handle.?);
+    pub fn swapBuffers(_: Window) void {
+        //glfw.swapBuffers(window.__handle.?);
     }
 };
 
@@ -89,11 +107,12 @@ pub fn windowSystem() WindowSystem {
         .cocoa => .cocoa,
         .x11 => .x11,
         .wayland => .wayland,
+        else => unreachable,
     };
 }
 
 fn windowErrorCallback(error_code: c_int, description: ?[*:0]const u8) callconv(.c) void {
-    std.debug.print("GLFW error 0x{x}: {s}", .{ error_code, description.? });
+    std.log.err("GLFW error 0x{x}: {s}", .{ error_code, description.? });
     @breakpoint();
 }
 

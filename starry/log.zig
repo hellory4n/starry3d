@@ -51,6 +51,7 @@ pub fn logfn(
     };
 
     // TODO i'd like to add the time here but the stdlib can't format time yet so that's unfortunate
+    // TODO print stack trace to files on panic
 
     for (__logfiles.items) |*file| {
         // one failed log shouldn't bring down the entire engine
@@ -61,6 +62,9 @@ pub fn logfn(
             std.debug.print("couldn't log with format '{s}': {s}", .{ format, @errorName(err) });
         };
         _ = file.write("\n") catch |err| {
+            std.debug.print("couldn't log with format '{s}': {s}", .{ format, @errorName(err) });
+        };
+        file.sync() catch |err| {
             std.debug.print("couldn't log with format '{s}': {s}", .{ format, @errorName(err) });
         };
     }

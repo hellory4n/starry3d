@@ -2,11 +2,15 @@
 const std = @import("std");
 const window = @import("window.zig");
 const log = @import("log.zig");
+const gpu = @import("gpu/main.zig");
+const version = @import("root.zig").version;
 
 /// Used for creating a Starry application
 pub const Settings = struct {
     /// Used for the window title and stuff
     name: []const u8,
+    /// The app version. Amazing.
+    version: std.SemanticVersion = .{ .major = 0, .minor = 0, .patch = 1 },
 
     /// Called after the engine is initialized but just before the main loop
     new: ?fn () anyerror!void,
@@ -31,9 +35,22 @@ pub fn run(comptime settings: Settings) !void {
 
     try log.__initLogging(core_alloc.allocator(), settings);
     defer log.__freeLogging();
+    std.log.info("starry v{d}.{d}.{d}{s}{s}", .{
+        version.major,
+        version.minor,
+        version.patch,
+        if (version.pre) |pre| "-" ++ pre else "",
+        if (version.build) |build| "+" ++ build else "",
+    });
+    defer {
+        std.log.info("deinitialized starry", .{});
+    }
 
     var win = try window.Window.open(settings.name, settings.window);
     defer win.close();
+
+    try gpu.init(settings, win);
+    defer gpu.deinit();
 
     if (settings.new) |real_new_fn| {
         try real_new_fn();
