@@ -4,14 +4,11 @@ const starry = @import("starry3d");
 pub const std_options = starry.util.std_options;
 
 pub fn sandboxNew() !void {
-    std.log.info("sandbox", .{});
-    std.log.err("error", .{});
-    std.log.warn("warning", .{});
-    std.log.debug("debug", .{});
+    std.log.info("hi", .{});
 }
 
 pub fn sandboxFree() void {
-    std.log.info("amxobdnas", .{});
+    std.log.info("bye", .{});
 }
 
 pub fn sandboxUpdate(_: f32) !void {}

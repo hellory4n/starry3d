@@ -10,17 +10,13 @@ const util = @import("../util.zig");
 const ScratchAllocator = @import("../scratch.zig").ScratchAllocator;
 const version = @import("../root.zig").version;
 
-const GpuSettings = struct {
-    // TODO
-};
-
 const required_device_exts = [_][*:0]const u8{
     vk.extensions.khr_swapchain.name,
 };
 
 /// Does the bare minimum GPU initialization. To setup the GPU for rendering, you have to call
 /// `gpu.initRendering`
-pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, window: win.Window) !void {
+pub fn init(core_alloc: std.mem.Allocator, comptime app_settings: app.Settings, window: win.Window) !void {
     var scratch = ScratchAllocator.init();
     defer scratch.deinit();
     impl.vkb = vk.BaseWrapper.load(getInstanceProcAddress);
@@ -183,15 +179,58 @@ pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, window
     };
     impl.swapchain = try impl.vkd.createSwapchainKHR(impl.device, &swapchain_create_info, null);
 
+    // the vulkan impl can make more images if it feels like it
+    _ = try impl.vkd.getSwapchainImagesKHR(impl.device, impl.swapchain, &image_count, null);
+    impl.swapchain_images = try core_alloc.alloc(vk.Image, image_count);
+    _ = try impl.vkd.getSwapchainImagesKHR(
+        impl.device,
+        impl.swapchain,
+        &image_count,
+        impl.swapchain_images.ptr,
+    );
+    impl.swapchain_image_format = surface_format.format;
+    impl.swapchain_extent = extent;
+    std.log.info("created swapchain", .{});
+
+    impl.swapchain_image_views = try core_alloc.alloc(vk.ImageView, image_count);
+    var swapchain_image_view_i: usize = 0;
+    while (swapchain_image_view_i < image_count) : (swapchain_image_view_i += 1) {
+        const create_info = vk.ImageViewCreateInfo{
+            .image = impl.swapchain_images[swapchain_image_view_i],
+            .view_type = .@"2d",
+            .format = surface_format.format,
+            .components = .{ .r = .identity, .g = .identity, .b = .identity, .a = .identity },
+            .subresource_range = .{
+                .aspect_mask = .{ .color_bit = true },
+                .base_mip_level = 0,
+                .level_count = 1,
+                .base_array_layer = 0,
+                .layer_count = 1,
+            },
+        };
+
+        impl.swapchain_image_views[swapchain_image_view_i] =
+            try impl.vkd.createImageView(impl.device, &create_info, null);
+    }
+    std.log.info("created swapchain images", .{});
+
     std.log.info("Vulkan fully initialized", .{});
 }
 
 /// Deinitializes the GPU. This doesn't free GPU resources, you must manage them manually before calling this function. `initRendering` also has a matching `deinitRendering` that you have to call.
-pub fn deinit() void {
+pub fn deinit(core_alloc: std.mem.Allocator) void {
+    for (impl.swapchain_image_views) |image_view| {
+        impl.vkd.destroyImageView(impl.device, image_view, null);
+    }
+
+    core_alloc.free(impl.swapchain_images);
+    core_alloc.free(impl.swapchain_image_views);
+
     impl.vkd.destroySwapchainKHR(impl.device, impl.swapchain, null);
     impl.vkd.destroyDevice(impl.device, null);
     impl.vki.destroySurfaceKHR(impl.instance, impl.surface, null);
     impl.vki.destroyInstance(impl.instance, null);
+
     std.log.info("deinitialized Vulkan", .{});
 }
 

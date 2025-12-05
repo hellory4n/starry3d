@@ -14,3 +14,7 @@ pub var present_queue: vk.Queue = undefined;
 
 pub var surface: vk.SurfaceKHR = undefined;
 pub var swapchain: vk.SwapchainKHR = undefined;
+pub var swapchain_images: []vk.Image = undefined;
+pub var swapchain_image_views: []vk.ImageView = undefined;
+pub var swapchain_image_format: vk.Format = undefined;
+pub var swapchain_extent: vk.Extent2D = undefined;
