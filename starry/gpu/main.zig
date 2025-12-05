@@ -14,6 +14,10 @@ const GpuSettings = struct {
     // TODO
 };
 
+const required_device_exts = [_][*:0]const u8{
+    vk.extensions.khr_swapchain.name,
+};
+
 /// Does the bare minimum GPU initialization. To setup the GPU for rendering, you have to call
 /// `gpu.initRendering`
 pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, window: win.Window) !void {
@@ -96,7 +100,6 @@ pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, window
 
     const queue_families = try findQueueFamilies(physical_device);
     const queue_priority = [_]f32{1.0};
-
     const queue_create_infos = [_]vk.DeviceQueueCreateInfo{
         .{
             .queue_family_index = queue_families.graphics_family.?,
@@ -120,22 +123,72 @@ pub fn init(comptime app_settings: app.Settings, comptime _: GpuSettings, window
         .p_queue_create_infos = &queue_create_infos,
         .queue_create_info_count = queue_count,
         .p_enabled_features = &device_features,
+        .pp_enabled_extension_names = (&required_device_exts).ptr,
+        .enabled_extension_count = required_device_exts.len,
         .pp_enabled_layer_names = if (use_validation_layers) (&validation_layers).ptr else null,
         .enabled_layer_count = if (use_validation_layers) 1 else 0,
     };
     impl.device = try impl.vki.createDevice(physical_device, &device_create_info, null);
     impl.vkd = vk.DeviceWrapper.load(impl.device, impl.vki.dispatch.vkGetDeviceProcAddr.?);
-    errdefer impl.vkd.destroyDevice(impl.vkd, null);
-    std.log.info("initialized Vulkan device", .{});
+    errdefer impl.vkd.destroyDevice(impl.device, null);
 
     impl.graphics_queue = impl.vkd.getDeviceQueue(impl.device, queue_families.graphics_family.?, 0);
     impl.present_queue = impl.vkd.getDeviceQueue(impl.device, queue_families.present_family.?, 0);
+    std.log.info("initialized Vulkan device", .{});
+
+    // create swapchain
+    const swapchain_support = try querySwapchainSupport(scratch.allocator(), physical_device, impl.surface);
+    const surface_format = chooseSurfaceFormat(swapchain_support.formats.?);
+    const present_mode = choosePresentMode(swapchain_support.present_modes.?);
+    const extent = chooseSwapExtent(swapchain_support.capabilities, window);
+    var image_count = swapchain_support.capabilities.min_image_count + 1;
+    if (swapchain_support.capabilities.min_image_count > 0 and
+        image_count > swapchain_support.capabilities.max_image_count)
+    {
+        image_count = swapchain_support.capabilities.min_image_count;
+    }
+
+    const queue_family_indices = [_]u32{
+        queue_families.graphics_family.?,
+        queue_families.present_family.?,
+    };
+    const swapchain_create_info = vk.SwapchainCreateInfoKHR{
+        .surface = impl.surface,
+        .min_image_count = image_count,
+        .image_format = surface_format.format,
+        .image_color_space = surface_format.color_space,
+        .image_extent = extent,
+        .image_array_layers = 1,
+        .image_usage = .{ .color_attachment_bit = true },
+
+        .image_sharing_mode = if (queue_families.graphics_family.? != queue_families.present_family.?)
+            .concurrent
+        else
+            .exclusive,
+
+        .queue_family_index_count = if (queue_families.graphics_family.? != queue_families.present_family.?)
+            2
+        else
+            0,
+
+        .p_queue_family_indices = if (queue_families.graphics_family.? != queue_families.present_family.?)
+            (&queue_family_indices).ptr
+        else
+            null,
+
+        .pre_transform = swapchain_support.capabilities.current_transform,
+        .composite_alpha = .{ .opaque_bit_khr = true },
+        .present_mode = present_mode,
+        .clipped = .true,
+    };
+    impl.swapchain = try impl.vkd.createSwapchainKHR(impl.device, &swapchain_create_info, null);
 
     std.log.info("Vulkan fully initialized", .{});
 }
 
 /// Deinitializes the GPU. This doesn't free GPU resources, you must manage them manually before calling this function. `initRendering` also has a matching `deinitRendering` that you have to call.
 pub fn deinit() void {
+    impl.vkd.destroySwapchainKHR(impl.device, impl.swapchain, null);
     impl.vkd.destroyDevice(impl.device, null);
     impl.vki.destroySurfaceKHR(impl.instance, impl.surface, null);
     impl.vki.destroyInstance(impl.instance, null);
@@ -170,12 +223,18 @@ fn pickDevice() !vk.PhysicalDevice {
     var best_score: u64 = 0;
     var best_device_i: usize = 0;
     for (devices, 0..) |device, i| {
+        var score: u64 = 0;
+
         // TODO make these accessible to everything else
         const props = impl.vki.getPhysicalDeviceProperties(device);
         // const features = impl.vki.getPhysicalDeviceFeatures(device); TODO use it probably
         const memory = impl.vki.getPhysicalDeviceMemoryProperties(device);
         const queue_families = try findQueueFamilies(device);
-        var score: u64 = 0;
+
+        var ext_count: u32 = 0;
+        _ = try impl.vki.enumerateDeviceExtensionProperties(device, null, &ext_count, null);
+        const exts = try scratch.allocator().alloc(vk.ExtensionProperties, ext_count);
+        _ = try impl.vki.enumerateDeviceExtensionProperties(device, null, &ext_count, exts.ptr);
 
         std.log.info("device #{d} '{s}':", .{ i, props.device_name });
 
@@ -204,10 +263,43 @@ fn pickDevice() !vk.PhysicalDevice {
         var supported = true;
         if (!queue_families.isComplete()) {
             supported = false;
-            std.log.info("- unsupported:", .{});
+            std.log.info("- unsupported, queue families isn't complete:", .{});
             std.log.info("  - graphics family: {s}", .{
                 if (queue_families.graphics_family == null) "unsupported" else "ok",
             });
+        }
+
+        var required_exts_supported: u32 = 0;
+        for (exts) |ext| {
+            // get the real length otherwise std.mem.eql shits itself
+            const ext_len = util.strnlen(&ext.extension_name, vk.MAX_EXTENSION_NAME_SIZE);
+            const ext_name = ext.extension_name[0..ext_len];
+
+            for (required_device_exts) |required_ext| {
+                if (std.mem.eql(u8, ext_name, required_ext[0..ext_len])) {
+                    required_exts_supported += 1;
+                }
+            }
+        }
+        if (required_exts_supported < required_device_exts.len) {
+            supported = false;
+            std.log.info("- unsupported, doesn't have required device extensions", .{});
+        } else {
+            const swapchain_support_details = try querySwapchainSupport(
+                scratch.allocator(),
+                device,
+                impl.surface,
+            );
+
+            if (swapchain_support_details.formats == null) {
+                supported = false;
+            }
+            if (swapchain_support_details.present_modes == null) {
+                supported = false;
+            }
+            if (!supported) {
+                std.log.info("- unsupported, doesn't have any swapchain formats or present modes", .{});
+            }
         }
 
         std.log.info("- score: {d}", .{score});
@@ -291,4 +383,99 @@ fn hasValidationLayers() !bool {
         }
     }
     return false;
+}
+
+const SwapchainSupportDetails = struct {
+    capabilities: vk.SurfaceCapabilitiesKHR = undefined,
+    formats: ?[]vk.SurfaceFormatKHR = null,
+    present_modes: ?[]vk.PresentModeKHR = null,
+};
+
+fn querySwapchainSupport(
+    alloc: std.mem.Allocator,
+    dev: vk.PhysicalDevice,
+    surface: vk.SurfaceKHR,
+) !SwapchainSupportDetails {
+    var details = SwapchainSupportDetails{};
+    details.capabilities = try impl.vki.getPhysicalDeviceSurfaceCapabilitiesKHR(dev, surface);
+
+    var format_count: u32 = 0;
+    _ = try impl.vki.getPhysicalDeviceSurfaceFormatsKHR(dev, surface, &format_count, null);
+    if (format_count != 0) {
+        details.formats = try alloc.alloc(vk.SurfaceFormatKHR, format_count);
+        _ = try impl.vki.getPhysicalDeviceSurfaceFormatsKHR(
+            dev,
+            surface,
+            &format_count,
+            details.formats.?.ptr,
+        );
+    }
+
+    var present_mode_count: u32 = 0;
+    _ = try impl.vki.getPhysicalDeviceSurfacePresentModesKHR(dev, surface, &present_mode_count, null);
+    if (present_mode_count != 0) {
+        details.present_modes = try alloc.alloc(vk.PresentModeKHR, present_mode_count);
+        _ = try impl.vki.getPhysicalDeviceSurfacePresentModesKHR(
+            dev,
+            surface,
+            &present_mode_count,
+            details.present_modes.?.ptr,
+        );
+    }
+
+    return details;
+}
+
+fn chooseSurfaceFormat(formats: []const vk.SurfaceFormatKHR) vk.SurfaceFormatKHR {
+    const preferred = vk.SurfaceFormatKHR{
+        .format = .b8g8r8a8_srgb,
+        .color_space = .srgb_nonlinear_khr,
+    };
+
+    for (formats) |format| {
+        if (std.meta.eql(format, preferred)) {
+            return preferred;
+        }
+    }
+
+    // probably good enough
+    return formats[0];
+}
+
+fn choosePresentMode(present_modes: []const vk.PresentModeKHR) vk.PresentModeKHR {
+    for (present_modes) |present_mode| {
+        if (present_mode == .mailbox_khr) {
+            return .mailbox_khr;
+        }
+    }
+    // only one guaranteed to be supported
+    return .fifo_khr;
+}
+
+fn chooseSwapExtent(capabilities: vk.SurfaceCapabilitiesKHR, window: win.Window) vk.Extent2D {
+    // idk this entire function is stolen
+    if (capabilities.current_extent.width != std.math.maxInt(u32)) {
+        return capabilities.current_extent;
+    } else {
+        var win_width: c_int = 0;
+        var win_height: c_int = 0;
+        glfw.getFramebufferSize(window.__handle.?, &win_width, &win_height);
+
+        const extent = vk.Extent2D{
+            .width = @intCast(win_width),
+            .height = @intCast(win_height),
+        };
+        return .{
+            .width = std.math.clamp(
+                extent.width,
+                capabilities.min_image_extent.width,
+                capabilities.max_image_extent.width,
+            ),
+            .height = std.math.clamp(
+                extent.height,
+                capabilities.min_image_extent.height,
+                capabilities.max_image_extent.height,
+            ),
+        };
+    }
 }

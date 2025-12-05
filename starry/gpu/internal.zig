@@ -13,3 +13,4 @@ pub var graphics_queue: vk.Queue = undefined;
 pub var present_queue: vk.Queue = undefined;
 
 pub var surface: vk.SurfaceKHR = undefined;
+pub var swapchain: vk.SwapchainKHR = undefined;

@@ -7,7 +7,6 @@ const glfw = @import("zglfw");
 pub const Settings = struct {
     size: @Vector(2, i32) = .{ 1280, 720 },
     resizable: bool = true,
-    vsync: bool = false,
     // TODO should have more options but i can't be bothered rn
 };
 
@@ -40,7 +39,6 @@ pub const Window = struct {
         // TODO do the fuckery dumbass
         //glfw.windowHint(.resizable, settings.resizable);
         glfw.windowHint(.resizable, false);
-        glfw.swapInterval(if (settings.vsync) 1 else 0);
         _ = glfw.setErrorCallback(windowErrorCallback);
 
         var window = Window{};
