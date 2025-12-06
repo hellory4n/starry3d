@@ -104,12 +104,15 @@ pub fn main() !void {
     _ = try writer.write("pub const spirv: []const u8 = .{\n    ");
     try finalsrc.sync();
     for (spirv) |byte| {
-        try writer.print("{x:02}, ", .{byte});
+        try writer.print("0x{x:02}, ", .{byte});
     }
     _ = try writer.write("\n};\n\n");
 
+    for (reflect.inputs) |input| {
+        try writer.print("pub const {s}_location: u32 = {d};\n", .{ input.name, input.location });
+    }
     for (reflect.outputs) |output| {
-        try writer.print("pub const {s}_location: u32 = {d};", .{ output.name, output.location });
+        try writer.print("pub const {s}_location: u32 = {d};\n", .{ output.name, output.location });
     }
     try writer.flush();
 }
