@@ -3,6 +3,7 @@ pub const window = @import("window.zig");
 pub const util = @import("util.zig");
 pub const log = @import("log.zig");
 pub const gpu = @import("gpu/main.zig");
+pub const math = @import("math.zig");
 pub const ScratchAllocator = @import("scratch.zig").ScratchAllocator;
 
 const std = @import("std");

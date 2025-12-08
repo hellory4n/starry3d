@@ -18,11 +18,7 @@ pub const stlog = std.log.scoped(.starry);
 /// make it not relative. You probably should use `app.Settings.logfiles` instead so that it can get
 /// all the logs from when the engine starts.
 pub fn addLogFile(path: []const u8) !void {
-    if (!try util.fileExists(path)) {
-        try __logfiles.append(__alloc, try std.fs.cwd().createFile(path, .{ .read = true }));
-    } else {
-        try __logfiles.append(__alloc, try std.fs.cwd().openFile(path, .{ .mode = .write_only }));
-    }
+    try __logfiles.append(__alloc, try std.fs.cwd().createFile(path, .{ .read = true }));
 }
 
 /// See `starry.util.std_options` to see how you're supposed to use this

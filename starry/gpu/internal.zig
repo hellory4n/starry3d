@@ -6,15 +6,15 @@ pub var vkb: vk.BaseWrapper = undefined;
 pub var vki: vk.InstanceWrapper = undefined;
 pub var vkd: vk.DeviceWrapper = undefined;
 
-pub var instance: vk.Instance = undefined;
-pub var device: vk.Device = undefined;
+pub var instance: vk.Instance = .null_handle;
+pub var device: vk.Device = .null_handle;
 
-pub var graphics_queue: vk.Queue = undefined;
-pub var present_queue: vk.Queue = undefined;
+pub var graphics_queue: vk.Queue = .null_handle;
+pub var present_queue: vk.Queue = .null_handle;
 
-pub var surface: vk.SurfaceKHR = undefined;
-pub var swapchain: vk.SwapchainKHR = undefined;
-pub var swapchain_images: []vk.Image = undefined;
-pub var swapchain_image_views: []vk.ImageView = undefined;
+pub var surface: vk.SurfaceKHR = .null_handle;
+pub var swapchain: vk.SwapchainKHR = .null_handle;
+pub var swapchain_images: []vk.Image = &.{};
+pub var swapchain_image_views: []vk.ImageView = &.{};
 pub var swapchain_image_format: vk.Format = undefined;
 pub var swapchain_extent: vk.Extent2D = undefined;

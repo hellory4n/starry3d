@@ -10,6 +10,11 @@ const util = @import("../util.zig");
 const ScratchAllocator = @import("../scratch.zig").ScratchAllocator;
 const version = @import("../root.zig").version;
 
+pub const ShaderModule = @import("shader.zig").ShaderModule;
+pub const ShaderSettings = @import("shader.zig").ShaderSettings;
+pub const ShaderStage = @import("shader.zig").ShaderStage;
+pub const SpecializationConstant = @import("shader.zig").SpecializationConstant;
+
 const required_device_exts = [_][*:0]const u8{
     vk.extensions.khr_swapchain.name,
 };
@@ -266,7 +271,7 @@ fn pickDevice() !vk.PhysicalDevice {
 
         // TODO make these accessible to everything else
         const props = impl.vki.getPhysicalDeviceProperties(device);
-        // const features = impl.vki.getPhysicalDeviceFeatures(device); TODO use it probably
+        const features = impl.vki.getPhysicalDeviceFeatures(device);
         const memory = impl.vki.getPhysicalDeviceMemoryProperties(device);
         const queue_families = try findQueueFamilies(device);
 
