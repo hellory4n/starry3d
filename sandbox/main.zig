@@ -11,7 +11,7 @@ pub fn sandboxFree() void {
     std.log.info("bye", .{});
 }
 
-pub fn sandboxUpdate(_: f32) !void {}
+pub fn sandboxUpdate(_: f32) void {}
 
 pub fn main() !void {
     try starry.app.run(.{

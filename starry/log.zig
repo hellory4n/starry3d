@@ -38,12 +38,12 @@ pub fn logfn(
 
     // "default" is the default for when there's no scope, as the name implies
     const lib = comptime if (!std.mem.eql(u8, @tagName(scope), "default"))
-        "(" ++ @tagName(scope) ++ ") "
+        "(" ++ @tagName(scope) ++ ")"
     else
         "";
     const prefix = switch (message_level) {
         .debug => if (lib.len > 0) lib else "",
-        .info => lib,
+        .info => if (lib.len > 0) lib ++ " " else "",
         .warn => "warning" ++ lib ++ ": ",
         .err => "error" ++ lib ++ ": ",
     };
@@ -96,7 +96,7 @@ pub fn logfn(
 var __alloc: std.mem.Allocator = undefined;
 var __logfiles: std.ArrayList(std.fs.File) = .{};
 
-pub fn __initLogging(alloc: std.mem.Allocator, comptime settings: app.Settings) !void {
+pub fn __initLogging(alloc: std.mem.Allocator, settings: app.Settings) !void {
     __alloc = alloc;
 
     if (builtin.os.tag == .windows) {
