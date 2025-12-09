@@ -11,4 +11,3 @@ build-*/
 
 # engine specific
 log.txt
-*.glsl.zig

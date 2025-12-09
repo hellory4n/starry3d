@@ -1,8 +1,6 @@
 //! Manages the engine/app's lifetime and puts the whole engine together
 const std = @import("std");
-const window = @import("window.zig");
 const log = @import("log.zig");
-const gpu = @import("gpu/main.zig");
 const version = @import("root.zig").version;
 
 /// Used for creating a Starry application
@@ -21,7 +19,7 @@ pub const Settings = struct {
     // TODO optional callbacks for input and stuff
 
     /// You usually want this to be configurable by the end user
-    window: window.Settings = .{},
+    // window: window.Settings = .{},
 
     /// List of files which log.
     logfiles: ?[]const []const u8 = null,
@@ -35,22 +33,14 @@ pub fn run(comptime settings: Settings) !void {
 
     try log.__initLogging(core_alloc.allocator(), settings);
     defer log.__freeLogging();
-    std.log.info("starry v{d}.{d}.{d}{s}{s}", .{
+    log.stlog.info("starry v{d}.{d}.{d}{s}{s}", .{
         version.major,
         version.minor,
         version.patch,
         if (version.pre) |pre| "-" ++ pre else "",
         if (version.build) |build| "+" ++ build else "",
     });
-    defer {
-        std.log.info("deinitialized starry", .{});
-    }
-
-    var win = try window.Window.open(settings.name, settings.window);
-    defer win.close();
-
-    try gpu.init(core_alloc.allocator(), settings, win);
-    defer gpu.deinit(core_alloc.allocator());
+    defer log.stlog.info("deinitialized starry", .{});
 
     if (settings.new) |real_new_fn| {
         try real_new_fn();
@@ -61,13 +51,9 @@ pub fn run(comptime settings: Settings) !void {
         }
     }
 
-    while (!win.isClosing()) {
-        win.pollEvents();
-
+    {
         if (settings.update) |real_update_fn| {
             try real_update_fn(0); // TODO the real fucking delta time
         }
-
-        win.swapBuffers();
     }
 }

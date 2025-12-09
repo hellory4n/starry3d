@@ -1,28 +1,16 @@
 const std = @import("std");
+const sokol = @import("sokol");
 
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // TODO i don't think it does anything when you disable this
-    // idk how you're supposed to build a zig library
-    const build_examples = b.option(bool, "build_sandbox", "Build sandbox (the test project for Starry)") orelse true;
-
-    const zhader = b.addExecutable(.{
-        .name = "zhader",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("tools/zhader.zig"),
-            .target = b.graph.host,
-        }),
-    });
-
-    const mod = b.addModule("starry3d", .{
+    const starry_mod = b.addModule("starry3d", .{
         .root_source_file = b.path("starry/root.zig"),
         .target = target,
     });
-    installStarryDeps(b, mod);
-    try compileShader(b, zhader, mod, b.path("starry/shader/basic.vert"), .vertex);
-    try compileShader(b, zhader, mod, b.path("starry/shader/basic.frag"), .fragment);
+    const deps = installStarryDeps(b, starry_mod, target, optimize);
+    try compileShaders(b, starry_mod, deps);
 
     const test_step = b.step("test", "Run Starry tests");
     const tests = b.addTest(.{
@@ -36,55 +24,43 @@ pub fn build(b: *std.Build) !void {
     b.installArtifact(tests);
     test_step.dependOn(&b.addRunArtifact(tests).step);
 
-    if (build_examples) {
-        sandbox(b, target, optimize, mod);
-    }
+    sandbox(b, target, optimize, starry_mod);
 }
 
-fn installStarryDeps(b: *std.Build, mod: *std.Build.Module) void {
-    const zglfw = b.dependency("zglfw", .{});
-    mod.addImport("zglfw", zglfw.module("root"));
-    mod.linkLibrary(zglfw.artifact("glfw"));
-
-    const registry = b.dependency("vulkan_headers", .{}).path("registry/vk.xml");
-    const vulkan = b.dependency("vulkan", .{
-        .registry = registry,
-    }).module("vulkan-zig");
-    mod.addImport("vulkan", vulkan);
-}
-
-const ShaderStage = enum {
-    vertex,
-    fragment,
-
-    pub fn toCompileFlag(stage: ShaderStage) []const u8 {
-        return switch (stage) {
-            .vertex => "-fshader-stage=vertex",
-            .fragment => "-fshader-stage=fragment",
-        };
-    }
+/// hsit
+const StarryDependencies = struct {
+    sokol: *std.Build.Dependency,
 };
 
-fn compileShader(
+fn installStarryDeps(
     b: *std.Build,
-    zhader: *std.Build.Step.Compile,
     mod: *std.Build.Module,
-    src: std.Build.LazyPath,
-    stage: ShaderStage,
-) !void {
-    const zhader_step = b.addRunArtifact(zhader);
-    zhader_step.addArg(stage.toCompileFlag());
-    zhader_step.addFileArg(src);
-    _ = zhader_step.addOutputFileArg(
-        try std.mem.concat(b.allocator, u8, &.{ src.basename(b, null), ".spv" }),
-    );
-    const output = zhader_step.addOutputFileArg(
-        try std.mem.concat(b.allocator, u8, &.{ src.basename(b, null), ".zig" }),
-    );
-
-    mod.addAnonymousImport(src.basename(b, null), .{
-        .root_source_file = output,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+) StarryDependencies {
+    const sokol_dep = b.dependency("sokol", .{
+        .target = target,
+        .optimize = optimize,
+        .gl = true,
     });
+    mod.addImport("sokol", sokol_dep.module("sokol"));
+
+    return .{
+        .sokol = sokol_dep,
+    };
+}
+
+fn compileShaders(b: *std.Build, mod: *std.Build.Module, deps: StarryDependencies) !void {
+    const shdc = deps.sokol.builder.dependency("shdc", .{});
+    const basic_shader = try sokol.shdc.createModule(b, "basic.glsl", deps.sokol.module("sokol"), .{
+        .shdc_dep = shdc,
+        .input = "starry/shader/basic.glsl",
+        .output = "basic.glsl.zig",
+        .slang = .{
+            .glsl430 = true,
+        },
+    });
+    mod.addImport("basic.glsl", basic_shader);
 }
 
 fn sandbox(
@@ -106,7 +82,7 @@ fn sandbox(
     });
     b.installArtifact(exe);
 
-    const run_step = b.step("run", "Run sandbox");
+    const run_step = b.step("run-sandbox", "Run sandbox");
     const run_cmd = b.addRunArtifact(exe);
     run_step.dependOn(&run_cmd.step);
     run_cmd.step.dependOn(b.getInstallStep());
