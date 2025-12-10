@@ -1,11 +1,9 @@
 //! Manages the engine/app's lifetime and puts the whole engine together
 const std = @import("std");
 const builtin = @import("builtin");
-const sapp = @import("sokol").app;
-const sglue = @import("sokol").glue;
+const glfw = @import("zglfw");
 const sg = @import("sokol").gfx;
 const slog = @import("sokol").log;
-const stime = @import("sokol").time;
 const sdtx = @import("sokol").debugtext;
 const log = @import("log.zig");
 const util = @import("util.zig");
@@ -16,7 +14,7 @@ const version = @import("root.zig").version;
 /// Used for creating a Starry application
 pub const Settings = struct {
     /// Used for the window title and stuff
-    name: []const u8,
+    name: [:0]const u8,
     /// The app version. Amazing.
     version: std.SemanticVersion = .{ .major = 0, .minor = 0, .patch = 1 },
 
@@ -40,14 +38,28 @@ pub const WindowSettings = struct {
     /// The preferred size of the window
     size: @Vector(2, i32) = .{ 1280, 720 },
     /// MSAA sample count
-    sample_count: i32 = 0,
-    /// The preferred swap interval (ignored on some platforms)
-    swap_interval: i32 = 0,
+    sample_count: ?i32 = null,
+    /// Disables VSync so that the renderer can push as many frames as possible, which is useful for
+    /// benchmarking and stuff. Only works on desktop.
+    debug_frame_rate: bool = true,
     /// Whether the rendering canvas is full resolution on high-DPI displays
     high_dpi: bool = true,
-    /// Whether the window should be created in fullscreen mode
-    fullscreen: bool = false,
+    /// Whether the window should be resizable (only works on desktop)
+    resizable: bool = true,
 };
+
+/// internal state stuff and stuff
+const GlobalState = struct {
+    settings: Settings,
+
+    /// for allocating values that last as long as the engine/program does
+    core_alloc: std.heap.GeneralPurposeAllocator(.{}),
+
+    window: *glfw.Window,
+
+    prev_time: f64,
+};
+var global: GlobalState = undefined;
 
 /// Runs the engine, and eventually, your app :)
 pub fn run(comptime settings: Settings) !void {
@@ -68,59 +80,70 @@ pub fn run(comptime settings: Settings) !void {
     });
     defer log.stlog.info("deinitialized starry", .{});
 
-    sapp.run(.{
-        .init_cb = sokolErrorWrapper(sokolInit),
-        .cleanup_cb = sokolErrorWrapper(sokolCleanup),
-        .frame_cb = sokolErrorWrapper(sokolFrame),
+    // glfw is more mature than sokol_app
+    // and stuff
+    // TODO use sokol_app on platforms other than desktop
+    try glfw.init();
+    log.stlog.info("initialized GLFW", .{});
+    defer {
+        glfw.terminate();
+        log.stlog.info("deinitialized GLFW", .{});
+    }
 
-        .width = settings.window.size[0],
-        .height = settings.window.size[1],
-        .sample_count = settings.window.sample_count,
-        .high_dpi = settings.window.high_dpi,
-        .fullscreen = settings.window.fullscreen,
-        .swap_interval = 0,
-        .icon = .{ .sokol_default = true }, // TODO set icon and stuff
+    // TODO we'll need metal on macOS
+    glfw.windowHint(.client_api, .opengl_api);
+    glfw.windowHint(.opengl_profile, .opengl_core_profile);
+    glfw.windowHint(.opengl_forward_compat, true);
+    glfw.windowHint(.context_version_major, 4);
+    glfw.windowHint(.context_version_minor, 3);
 
-        .logger = .{
-            .func = sokolLog,
-        },
-        .win32 = .{
-            .console_utf8 = true,
-        },
+    glfw.windowHint(.doublebuffer, true);
+    glfw.windowHint(.resizable, settings.window.resizable);
+    glfw.windowHint(.samples, if (settings.window.sample_count) |samples| samples else 0);
+    // TODO idk if high dpi works lmao
+    glfw.windowHint(.scale_to_monitor, !settings.window.high_dpi);
+    glfw.windowHint(.scale_framebuffer, !settings.window.high_dpi);
+
+    glfw.windowHintString(.x11_class_name, settings.name);
+    glfw.windowHintString(.wayland_app_id, settings.name);
+
+    global.window = try glfw.Window.create(
+        @intCast(settings.window.size[0]),
+        @intCast(settings.window.size[1]),
+        settings.name,
+        null,
+    );
+    log.stlog.info("created window for {s} on {s}", .{
+        @tagName(glfw.getPlatform()),
+        @tagName(builtin.os.tag),
     });
-}
+    defer {
+        global.window.destroy();
+        log.stlog.info("destroyed window", .{});
+    }
 
-/// internal state stuff and stuff
-const GlobalState = struct {
-    settings: Settings,
-    /// Used for allocating values that last as long as the engine/program does
-    core_alloc: std.heap.GeneralPurposeAllocator(.{}),
+    glfw.makeContextCurrent(global.window);
+    glfw.swapInterval(if (settings.window.debug_frame_rate) 0 else 1);
 
-    prev_time: f64,
-};
-var global: GlobalState = undefined;
-
-/// sokol doesn't expect the callbacks to return Zig errors, so we handle it here
-fn sokolErrorWrapper(comptime func: fn () anyerror!void) fn () callconv(.c) void {
-    // struct fuckery to get a lambda
-    return struct {
-        pub fn wrapper() callconv(.c) void {
-            func() catch |err| {
-                @panic(@errorName(err));
-            };
-        }
-    }.wrapper;
-}
-
-fn sokolInit() !void {
-    log.stlog.info("created window for {s}", .{@tagName(builtin.os.tag)});
-
+    // from https://github.com/floooh/sokol-samples/blob/master/glfw/glfw_glue.c
     sg.setup(.{
-        .environment = sglue.environment(),
+        .environment = .{
+            .defaults = .{
+                .color_format = .RGBA8,
+                .depth_format = .DEPTH_STENCIL,
+                .sample_count = settings.window.sample_count orelse 1,
+            },
+        },
         .logger = .{ .func = sokolLog },
     });
     log.stlog.info("using {s} graphics backend", .{@tagName(sg.queryBackend())});
-    stime.setup();
+    defer {
+        sg.shutdown();
+        log.stlog.info("shutdown graphics backend", .{});
+    }
+
+    global.prev_time = glfw.getTime();
+
     // TODO forcing the debug text thing on all apps isn't ideal
     // at least make it configurable
     // or write your own
@@ -135,45 +158,58 @@ fn sokolInit() !void {
     if (global.settings.init) |realInitFn| {
         try realInitFn();
     }
-}
-
-fn sokolCleanup() !void {
-    if (global.settings.deinit) |realDeinitFn| {
-        realDeinitFn();
+    defer {
+        if (global.settings.deinit) |realDeinitFn| {
+            realDeinitFn();
+        }
     }
 
-    sdtx.shutdown();
-    sg.shutdown();
-    log.stlog.info("shutdown graphics backend", .{});
-}
+    // main loop
+    while (!global.window.shouldClose()) {
+        glfw.pollEvents();
 
-fn sokolFrame() !void {
-    if (global.settings.update) |realUpdateFn| {
-        // f64 -> f32 because most game code uses f32
-        realUpdateFn(@floatCast(deltaTime()));
+        if (global.settings.update) |realUpdateFn| {
+            // f64 -> f32 because most game code uses f32
+            realUpdateFn(@floatCast(deltaTime()));
+        }
+
+        var pass_action = sg.PassAction{};
+        pass_action.colors[0] = .{
+            .load_action = .CLEAR,
+            .clear_value = .{ .r = 0, .g = 0, .b = 0, .a = 1 },
+        };
+        const framebuffer_size = framebufferSize();
+        sg.beginPass(.{
+            .action = pass_action,
+            // from https://github.com/floooh/sokol-samples/blob/master/glfw/glfw_glue.c
+            .swapchain = .{
+                .width = framebuffer_size[0],
+                .height = framebuffer_size[1],
+                .sample_count = global.settings.window.sample_count orelse 1,
+                .color_format = .RGBA8,
+                .depth_format = .DEPTH_STENCIL,
+                .gl = .{
+                    // we just assume here that the GL framebuffer is always 0
+                    .framebuffer = 0,
+                },
+            },
+        });
+
+        render.__draw();
+
+        // debug crap
+        const framebuffer_sizef = framebufferSizef();
+        sdtx.canvas(framebuffer_sizef[0] / 2, framebuffer_sizef[1] / 2);
+        sdtx.print("{d:.0} FPS", .{averageFps()});
+        sdtx.draw();
+
+        sg.endPass();
+        sg.commit();
+
+        global.prev_time = secondsSinceStart();
+
+        global.window.swapBuffers();
     }
-
-    var pass_action = sg.PassAction{};
-    pass_action.colors[0] = .{
-        .load_action = .CLEAR,
-        .clear_value = .{ .r = 0, .g = 0, .b = 0, .a = 1 },
-    };
-    sg.beginPass(.{
-        .action = pass_action,
-        .swapchain = sglue.swapchain(),
-    });
-
-    render.__draw();
-
-    // debug crap
-    sdtx.canvas(sapp.widthf() / 2, sapp.heightf() / 2);
-    sdtx.print("{d:.0} FPS", .{averageFps()});
-    sdtx.draw();
-
-    sg.endPass();
-    sg.commit();
-
-    global.prev_time = secondsSinceStart();
 }
 
 fn sokolLog(
@@ -509,72 +545,60 @@ pub const MouseButton = enum(u32) {
 
 /// Returns the size of the framebuffer.
 pub fn framebufferSize() @Vector(2, i32) {
-    return .{ sapp.width(), sapp.height() };
+    const size: [2]c_int = global.window.getFramebufferSize();
+    return .{ @intCast(size[0]), @intCast(size[1]) };
 }
 
 /// Returns the size of the framebuffer but in floats.
 pub fn framebufferSizef() @Vector(2, f32) {
-    return .{ sapp.widthf(), sapp.heightf() };
+    const size: [2]c_int = global.window.getFramebufferSize();
+    return .{ @floatFromInt(size[0]), @floatFromInt(size[1]) };
 }
 
 /// Returns true if high DPI is enabled and the app is actually running in a high DPI setting
 pub fn isHighDpi() bool {
-    return sapp.highDpi();
+    return global.settings.window.high_dpi and
+        std.mem.eql(f32, global.window.getContentScale(), [2]f32{ 1, 1 });
 }
 
 /// Returns the DPI scaling factor (window pixels to framebuffer pixels)
 pub fn dpiScale() f32 {
-    return sapp.dpiScale();
-}
-
-/// Returns true if the app is running in fullscreen
-pub fn isFullscreen() bool {
-    return sapp.isFullscreen();
-}
-
-/// Toggles fullscreen mode
-pub fn toggleFullscreen() void {
-    return sapp.toggleFullscreen();
-}
-
-/// If true, shows the mouse, otherwise, hides the mouse. See also `lockMouse`
-pub fn showOrHideMouse(show: bool) void {
-    sapp.showMouse(show);
+    // TODO pretty sure all platforms use the same scale horizontally and vertically but i'm not sure
+    return global.window.getContentScale()[0];
 }
 
 /// If true, locks the mouse inside the window, otherwise unlocks it.
 pub fn lockMouse(lock: bool) void {
-    sapp.lockMouse(lock);
+    _ = global.window.setInputMode(.cursor, if (lock) .disabled else .normal);
 }
 
 /// Returns true if the mouse is locked inside the window (this may toggle a few frames later)
 pub fn isMouseLocked() bool {
-    return sapp.mouseLocked();
+    const input_mode = try global.window.getInputMode(.cursor);
+    return switch (input_mode) {
+        .disabled => true,
+        else => false,
+    };
 }
 
 /// Asks nicely for the app to close (the app can handle it and not actually quit)
 pub fn requestQuit() void {
-    sapp.requestQuit();
+    global.window.setShouldClose(true);
 }
 
 /// Cancels a pending quit from `requestQuit`
 pub fn cancelQuit() void {
-    sapp.cancelQuit();
+    global.window.setShouldClose(false);
 }
 
 /// Truly quits the application (the app doesn't handle the quit event)
 pub fn forceQuit() void {
-    sapp.quit();
-}
-
-/// Returns the frame count since the app started
-pub fn frameCount() u64 {
-    return sapp.frameCount();
+    global.window.setShouldClose(true); // TODO make this different
 }
 
 /// Returns the time in seconds since the app started
 pub fn secondsSinceStart() f64 {
-    return stime.sec(stime.now());
+    return glfw.getTime();
 }
 
 /// Returns the time it took to run the last frame
@@ -584,7 +608,7 @@ pub fn deltaTime() f64 {
 
 /// Returns the average/smoothed FPS the app is running at
 pub fn averageFps() f64 {
-    return 1 / sapp.frameDuration();
+    return 1 / deltaTime();
 }
 
 /// Sets the window title to something else duh
@@ -592,5 +616,5 @@ pub fn setWindowTitle(title: []const u8) void {
     var scratch = ScratchAllocator.init();
     defer scratch.deinit();
     const title_cstr = util.zigstrToCstr(scratch.allocator(), title) catch unreachable;
-    sapp.setWindowTitle(title_cstr[0..title.len]);
+    global.window.setTitle(title_cstr);
 }

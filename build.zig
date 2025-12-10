@@ -30,6 +30,7 @@ pub fn build(b: *std.Build) !void {
 /// hsit
 const StarryDependencies = struct {
     sokol: *std.Build.Dependency,
+    glfw: *std.Build.Dependency,
 };
 
 fn installStarryDeps(
@@ -45,8 +46,13 @@ fn installStarryDeps(
     });
     mod.addImport("sokol", sokol_dep.module("sokol"));
 
+    const glfw_dep = b.dependency("zglfw", .{ .target = target, .optimize = optimize });
+    mod.addImport("zglfw", glfw_dep.module("root"));
+    mod.linkLibrary(glfw_dep.artifact("glfw"));
+
     return .{
         .sokol = sokol_dep,
+        .glfw = glfw_dep,
     };
 }
 
