@@ -96,7 +96,7 @@ pub fn logfn(
 var __alloc: std.mem.Allocator = undefined;
 var __logfiles: std.ArrayList(std.fs.File) = .{};
 
-pub fn __initLogging(alloc: std.mem.Allocator, settings: app.Settings) !void {
+pub fn __init(alloc: std.mem.Allocator, settings: app.Settings) !void {
     __alloc = alloc;
 
     if (builtin.os.tag == .windows) {
@@ -111,7 +111,7 @@ pub fn __initLogging(alloc: std.mem.Allocator, settings: app.Settings) !void {
     }
 }
 
-pub fn __freeLogging() void {
+pub fn __free() void {
     for (__logfiles.items) |*file| {
         file.close();
     }

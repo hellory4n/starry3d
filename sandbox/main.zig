@@ -3,22 +3,22 @@ const starry = @import("starry3d");
 
 pub const std_options = starry.util.std_options;
 
-pub fn sandboxNew() !void {
+fn initApp() !void {
     std.log.info("hi", .{});
 }
 
-pub fn sandboxFree() void {
+fn deinitApp() void {
     std.log.info("bye", .{});
 }
 
-pub fn sandboxUpdate(_: f32) void {}
+pub fn updateApp(_: f32) void {}
 
 pub fn main() !void {
     try starry.app.run(.{
         .name = "sandbox",
-        .new = sandboxNew,
-        .free = sandboxFree,
-        .update = sandboxUpdate,
+        .init = initApp,
+        .deinit = deinitApp,
+        .update = updateApp,
         .logfiles = &[_][]const u8{"log.txt"},
     });
 }
