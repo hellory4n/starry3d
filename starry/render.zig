@@ -23,3 +23,7 @@ pub fn __init() void {
 pub fn __deinit() void {
     log.info("deinitialized renderer", .{});
 }
+
+pub fn __draw() void {
+    // TODO
+}

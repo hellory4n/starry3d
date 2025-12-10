@@ -6,6 +6,7 @@ const sglue = @import("sokol").glue;
 const sg = @import("sokol").gfx;
 const slog = @import("sokol").log;
 const stime = @import("sokol").time;
+const sdtx = @import("sokol").debugtext;
 const log = @import("log.zig");
 const util = @import("util.zig");
 const render = @import("render.zig");
@@ -77,6 +78,7 @@ pub fn run(comptime settings: Settings) !void {
         .sample_count = settings.window.sample_count,
         .high_dpi = settings.window.high_dpi,
         .fullscreen = settings.window.fullscreen,
+        .swap_interval = 0,
         .icon = .{ .sokol_default = true }, // TODO set icon and stuff
 
         .logger = .{
@@ -119,6 +121,16 @@ fn sokolInit() !void {
     });
     log.stlog.info("using {s} graphics backend", .{@tagName(sg.queryBackend())});
     stime.setup();
+    // TODO forcing the debug text thing on all apps isn't ideal
+    // at least make it configurable
+    // or write your own
+    // who knows
+    var fonts = [_]sdtx.FontDesc{.{}} ** 8;
+    fonts[0] = sdtx.fontKc854();
+    sdtx.setup(.{
+        .logger = .{ .func = sokolLog },
+        .fonts = fonts,
+    });
 
     if (global.settings.init) |realInitFn| {
         try realInitFn();
@@ -130,6 +142,7 @@ fn sokolCleanup() !void {
         realDeinitFn();
     }
 
+    sdtx.shutdown();
     sg.shutdown();
     log.stlog.info("shutdown graphics backend", .{});
 }
@@ -139,6 +152,26 @@ fn sokolFrame() !void {
         // f64 -> f32 because most game code uses f32
         realUpdateFn(@floatCast(deltaTime()));
     }
+
+    var pass_action = sg.PassAction{};
+    pass_action.colors[0] = .{
+        .load_action = .CLEAR,
+        .clear_value = .{ .r = 0, .g = 0, .b = 0, .a = 1 },
+    };
+    sg.beginPass(.{
+        .action = pass_action,
+        .swapchain = sglue.swapchain(),
+    });
+
+    render.__draw();
+
+    // debug crap
+    sdtx.canvas(sapp.widthf() / 2, sapp.heightf() / 2);
+    sdtx.print("{d:.0} FPS", .{averageFps()});
+    sdtx.draw();
+
+    sg.endPass();
+    sg.commit();
 
     global.prev_time = secondsSinceStart();
 }
@@ -475,87 +508,87 @@ pub const MouseButton = enum(u32) {
 };
 
 /// Returns the size of the framebuffer.
-fn framebufferSize() @Vector(2, i32) {
+pub fn framebufferSize() @Vector(2, i32) {
     return .{ sapp.width(), sapp.height() };
 }
 
 /// Returns the size of the framebuffer but in floats.
-fn framebufferSizef() @Vector(2, f32) {
+pub fn framebufferSizef() @Vector(2, f32) {
     return .{ sapp.widthf(), sapp.heightf() };
 }
 
 /// Returns true if high DPI is enabled and the app is actually running in a high DPI setting
-fn isHighDpi() bool {
+pub fn isHighDpi() bool {
     return sapp.highDpi();
 }
 
 /// Returns the DPI scaling factor (window pixels to framebuffer pixels)
-fn dpiScale() f32 {
+pub fn dpiScale() f32 {
     return sapp.dpiScale();
 }
 
 /// Returns true if the app is running in fullscreen
-fn isFullscreen() bool {
+pub fn isFullscreen() bool {
     return sapp.isFullscreen();
 }
 
 /// Toggles fullscreen mode
-fn toggleFullscreen() void {
+pub fn toggleFullscreen() void {
     return sapp.toggleFullscreen();
 }
 
 /// If true, shows the mouse, otherwise, hides the mouse. See also `lockMouse`
-fn showOrHideMouse(show: bool) void {
+pub fn showOrHideMouse(show: bool) void {
     sapp.showMouse(show);
 }
 
 /// If true, locks the mouse inside the window, otherwise unlocks it.
-fn lockMouse(lock: bool) void {
+pub fn lockMouse(lock: bool) void {
     sapp.lockMouse(lock);
 }
 
 /// Returns true if the mouse is locked inside the window (this may toggle a few frames later)
-fn isMouseLocked() bool {
+pub fn isMouseLocked() bool {
     return sapp.mouseLocked();
 }
 
 /// Asks nicely for the app to close (the app can handle it and not actually quit)
-fn requestQuit() void {
+pub fn requestQuit() void {
     sapp.requestQuit();
 }
 
 /// Cancels a pending quit from `requestQuit`
-fn cancelQuit() void {
+pub fn cancelQuit() void {
     sapp.cancelQuit();
 }
 
 /// Truly quits the application (the app doesn't handle the quit event)
-fn forceQuit() void {
+pub fn forceQuit() void {
     sapp.quit();
 }
 
 /// Returns the frame count since the app started
-fn frameCount() i32 {
+pub fn frameCount() u64 {
     return sapp.frameCount();
 }
 
 /// Returns the time in seconds since the app started
-fn secondsSinceStart() f64 {
+pub fn secondsSinceStart() f64 {
     return stime.sec(stime.now());
 }
 
 /// Returns the time it took to run the last frame
-fn deltaTime() f64 {
+pub fn deltaTime() f64 {
     return secondsSinceStart() - global.prev_time;
 }
 
 /// Returns the average/smoothed FPS the app is running at
-fn averageFps() f64 {
+pub fn averageFps() f64 {
     return 1 / sapp.frameDuration();
 }
 
 /// Sets the window title to something else duh
-fn setWindowTitle(title: []const u8) void {
+pub fn setWindowTitle(title: []const u8) void {
     var scratch = ScratchAllocator.init();
     defer scratch.deinit();
     const title_cstr = util.zigstrToCstr(scratch.allocator(), title) catch unreachable;
