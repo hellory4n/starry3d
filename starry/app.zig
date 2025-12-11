@@ -205,13 +205,13 @@ pub fn run(comptime settings: Settings) !void {
         // debug crap
         const framebuffer_sizef = framebufferSizef();
         sdtx.canvas(framebuffer_sizef[0] / 2, framebuffer_sizef[1] / 2);
-        sdtx.print("{d} FPS", .{averageFps()});
+        sdtx.print("{d:.0} FPS", .{averageFps()});
         sdtx.draw();
 
         sg.endPass();
         sg.commit();
 
-        const alpha = 0.3; // controls how smooth the smoothing is
+        const alpha = 0.1; // controls how smooth the smoothing is
         global.smooth_dt = global.smooth_dt * (1.0 - alpha) + deltaTime() * alpha;
         global.prev_time = secondsSinceStart();
 

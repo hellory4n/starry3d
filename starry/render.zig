@@ -41,12 +41,9 @@ pub fn __draw() void {
     uniforms.plane_width = uniforms.plane_height * app.aspectRatio();
 
     const view_matrix = world.current_camera.viewMatrixGl();
-    inline for (view_matrix, 0..) |vec4, i| {
-        uniforms.view_matrix[i * 4] = vec4[0];
-        uniforms.view_matrix[i * 4 + 1] = vec4[1];
-        uniforms.view_matrix[i * 4 + 2] = vec4[2];
-        uniforms.view_matrix[i * 4 + 3] = vec4[3];
-    }
+    // TODO consider not
+    const view_matrix_ptr: [*]const f32 = @ptrCast((&view_matrix).ptr);
+    @memcpy(&uniforms.view_matrix, view_matrix_ptr[0 .. view_matrix.len * 4]);
     sg.applyUniforms(rtshader.UB_fs_uniform, sg.asRange(&uniforms));
 
     sg.draw(0, 6, 1);

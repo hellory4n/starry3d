@@ -5,6 +5,10 @@ pub const std_options = starry.util.std_options;
 
 fn initApp() !void {
     std.log.info("hi", .{});
+    starry.world.current_camera = .{
+        .position = .{ -6, -7, -5 },
+        .rotation = .{ 0, -5555, -16 },
+    };
 }
 
 fn deinitApp() void {

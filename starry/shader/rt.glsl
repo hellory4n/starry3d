@@ -1,19 +1,29 @@
 @vs vs
-layout(location = 0) out vec2 fs_screencoord;
+layout(location = 0) out vec2 fs_uv;
 
 vec2 positions[6] = vec2[](
     vec2(-1, -1), vec2(-1, 1), vec2(1, 1),
     vec2(-1, -1), vec2(1, -1), vec2(1, 1)
 );
 
+vec2 uvs[6] = vec2[](
+    vec2(0, 0), vec2(0, 1), vec2(1, 1),
+    vec2(0, 0), vec2(1, 0), vec2(1, 1)
+);
+
 void main() {
     gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
-    fs_screencoord = positions[gl_VertexIndex];
+    fs_uv = uvs[gl_VertexIndex];
 }
 @end
 
 @fs fs
-layout(location = 0) in vec2 fs_screencoord;
+struct Ray {
+    vec3 origin;
+    vec3 dir;
+};
+
+layout(location = 0) in vec2 fs_uv;
 
 layout(location = 0) out vec4 frag_color;
 
@@ -26,7 +36,15 @@ layout(binding = 0) uniform fs_uniform {
 } u;
 
 void main() {
-    frag_color = vec4(u.plane_width, 0, 0, 1);
+    // screen to world coords
+    vec3 view_point_local = vec3(fs_uv - 0.5, 1) *
+        vec3(u.plane_width, u.plane_height, u.near_clip_plane);
+    vec3 view_point = (u.view_matrix * vec4(view_point_local, 1)).xyz;
+
+    Ray ray;
+    ray.origin = u.camera_position;
+    ray.dir = normalize(view_point - ray.origin);
+    frag_color = vec4(ray.dir, 1);
 }
 @end
 
