@@ -58,6 +58,7 @@ const GlobalState = struct {
     window: *glfw.Window,
 
     prev_time: f64,
+    smooth_dt: f64,
 };
 var global: GlobalState = undefined;
 
@@ -142,7 +143,11 @@ pub fn run(comptime settings: Settings) !void {
         log.stlog.info("shutdown graphics backend", .{});
     }
 
+    render.__init();
+    defer render.__deinit();
+
     global.prev_time = glfw.getTime();
+    global.smooth_dt = 1 / 60; // initial guess
 
     // TODO forcing the debug text thing on all apps isn't ideal
     // at least make it configurable
@@ -200,12 +205,14 @@ pub fn run(comptime settings: Settings) !void {
         // debug crap
         const framebuffer_sizef = framebufferSizef();
         sdtx.canvas(framebuffer_sizef[0] / 2, framebuffer_sizef[1] / 2);
-        sdtx.print("{d:.0} FPS", .{averageFps()});
+        sdtx.print("{d} FPS", .{averageFps()});
         sdtx.draw();
 
         sg.endPass();
         sg.commit();
 
+        const alpha = 0.3; // controls how smooth the smoothing is
+        global.smooth_dt = global.smooth_dt * (1.0 - alpha) + deltaTime() * alpha;
         global.prev_time = secondsSinceStart();
 
         global.window.swapBuffers();
@@ -555,6 +562,12 @@ pub fn framebufferSizef() @Vector(2, f32) {
     return .{ @floatFromInt(size[0]), @floatFromInt(size[1]) };
 }
 
+/// Returns the aspect ratio of the framebuffer.
+pub fn aspectRatio() f32 {
+    const win_size = framebufferSizef();
+    return win_size[0] / win_size[1];
+}
+
 /// Returns true if high DPI is enabled and the app is actually running in a high DPI setting
 pub fn isHighDpi() bool {
     return global.settings.window.high_dpi and
@@ -608,7 +621,7 @@ pub fn deltaTime() f64 {
 
 /// Returns the average/smoothed FPS the app is running at
 pub fn averageFps() f64 {
-    return 1 / deltaTime();
+    return 1 / global.smooth_dt;
 }
 
 /// Sets the window title to something else duh

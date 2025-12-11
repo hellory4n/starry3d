@@ -1,8 +1,10 @@
 //! This renderer is called Emerson Victor. Be nice to Emerson Victor.
 const std = @import("std");
 const sg = @import("sokol").gfx;
+const app = @import("app.zig");
 const log = @import("log.zig").stlog;
-const basicShader = @import("basic.glsl").basicShaderDesc;
+const world = @import("world.zig");
+const rtshader = @import("rt.glsl");
 
 const RenderState = struct {
     /// beware of the render pipeline
@@ -13,7 +15,7 @@ var global: RenderState = undefined;
 /// Initializes the renderer. You probably shouldn't call this yourself.
 pub fn __init() void {
     global.pipeline = sg.makePipeline(.{
-        .shader = sg.makeShader(basicShader(sg.queryBackend())),
+        .shader = sg.makeShader(rtshader.rtShaderDesc(sg.queryBackend())),
     });
 
     log.info("initialized renderer", .{});
@@ -25,5 +27,27 @@ pub fn __deinit() void {
 }
 
 pub fn __draw() void {
-    // TODO
+    sg.applyPipeline(global.pipeline);
+
+    var uniforms = rtshader.FsUniform{
+        .plane_height = world.current_camera.near * std.math.tan(world.current_camera.fov * 0.5) * 2,
+        .near_clip_plane = world.current_camera.near,
+        .camera_position = world.current_camera.position,
+
+        // shut up compiler
+        .plane_width = 0,
+        .view_matrix = [1]f32{0} ** 16,
+    };
+    uniforms.plane_width = uniforms.plane_height * app.aspectRatio();
+
+    const view_matrix = world.current_camera.viewMatrixGl();
+    inline for (view_matrix, 0..) |vec4, i| {
+        uniforms.view_matrix[i * 4] = vec4[0];
+        uniforms.view_matrix[i * 4 + 1] = vec4[1];
+        uniforms.view_matrix[i * 4 + 2] = vec4[2];
+        uniforms.view_matrix[i * 4 + 3] = vec4[3];
+    }
+    sg.applyUniforms(rtshader.UB_fs_uniform, sg.asRange(&uniforms));
+
+    sg.draw(0, 6, 1);
 }

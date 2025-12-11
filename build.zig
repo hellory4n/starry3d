@@ -31,6 +31,7 @@ pub fn build(b: *std.Build) !void {
 const StarryDependencies = struct {
     sokol: *std.Build.Dependency,
     glfw: *std.Build.Dependency,
+    zmath: *std.Build.Dependency,
 };
 
 fn installStarryDeps(
@@ -50,23 +51,27 @@ fn installStarryDeps(
     mod.addImport("zglfw", glfw_dep.module("root"));
     mod.linkLibrary(glfw_dep.artifact("glfw"));
 
+    const zmath_dep = b.dependency("zmath", .{});
+    mod.addImport("zmath", zmath_dep.module("root"));
+
     return .{
         .sokol = sokol_dep,
         .glfw = glfw_dep,
+        .zmath = zmath_dep,
     };
 }
 
 fn compileShaders(b: *std.Build, mod: *std.Build.Module, deps: StarryDependencies) !void {
     const shdc = deps.sokol.builder.dependency("shdc", .{});
-    const basic_shader = try sokol.shdc.createModule(b, "basic.glsl", deps.sokol.module("sokol"), .{
+    const basic_shader = try sokol.shdc.createModule(b, "rt.glsl", deps.sokol.module("sokol"), .{
         .shdc_dep = shdc,
-        .input = "starry/shader/basic.glsl",
-        .output = "basic.glsl.zig",
+        .input = "starry/shader/rt.glsl",
+        .output = "rt.glsl.zig",
         .slang = .{
             .glsl430 = true,
         },
     });
-    mod.addImport("basic.glsl", basic_shader);
+    mod.addImport("rt.glsl", basic_shader);
 }
 
 fn sandbox(
