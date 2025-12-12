@@ -11,3 +11,5 @@ First you need these installed:
         - Debian, Ubuntu, etc: `sudo apt install libwayland-dev libxkbcommon-dev xorg-dev`
         - Fedora: `sudo dnf install wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
         - Arch: `sudo pacman -S glfw` should pull all other dependencies
+
+Now you should be able to just run `zig build`. To run sandbox (the test project), run `zig build run-sandbox`.
