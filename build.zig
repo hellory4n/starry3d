@@ -24,7 +24,7 @@ pub fn build(b: *std.Build) !void {
     b.installArtifact(tests);
     test_step.dependOn(&b.addRunArtifact(tests).step);
 
-    sandbox(b, target, optimize, starry_mod);
+    sandbox(b, target, optimize, starry_mod, deps.zmath);
 }
 
 /// hsit
@@ -79,6 +79,7 @@ fn sandbox(
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
     starry_mod: *std.Build.Module,
+    zmath_dep: *std.Build.Dependency,
 ) void {
     const exe = b.addExecutable(.{
         .name = "sandbox",
@@ -88,6 +89,7 @@ fn sandbox(
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "starry3d", .module = starry_mod },
+                .{ .name = "zmath", .module = zmath_dep.module("root") },
             },
         }),
     });

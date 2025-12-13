@@ -50,17 +50,22 @@ pub const WindowSettings = struct {
 
 /// internal state stuff and stuff
 const GlobalState = struct {
-    settings: Settings,
+    settings: Settings = undefined,
 
     /// for allocating values that last as long as the engine/program does
-    core_alloc: std.heap.GeneralPurposeAllocator(.{}),
+    core_alloc: std.heap.GeneralPurposeAllocator(.{}) = undefined,
 
-    window: *glfw.Window,
+    window: *glfw.Window = undefined,
+    key_state: [@intFromEnum(Key.last) + 1]InputState =
+        .{InputState.not_pressed} ** (@intFromEnum(Key.last) + 1),
+    mouse_state: [@intFromEnum(MouseButton.last) + 1]InputState =
+        .{InputState.not_pressed} ** (@intFromEnum(MouseButton.last) + 1),
+    prev_mouse_pos: @Vector(2, f32) = .{ 0, 0 },
 
-    prev_time: f64,
-    smooth_dt: f64,
+    prev_time: f64 = 0,
+    smooth_dt: f64 = 0,
 };
-var global: GlobalState = undefined;
+var global: GlobalState = .{};
 
 /// Runs the engine, and eventually, your app :)
 pub fn run(comptime settings: Settings) !void {
@@ -172,6 +177,7 @@ pub fn run(comptime settings: Settings) !void {
     // main loop
     while (!global.window.shouldClose()) {
         glfw.pollEvents();
+        pollInputStates();
 
         if (global.settings.update) |realUpdateFn| {
             // f64 -> f32 because most game code uses f32
@@ -214,6 +220,7 @@ pub fn run(comptime settings: Settings) !void {
         const alpha = 0.1; // controls how smooth the smoothing is
         global.smooth_dt = global.smooth_dt * (1.0 - alpha) + deltaTime() * alpha;
         global.prev_time = secondsSinceStart();
+        global.prev_mouse_pos = mousePosition();
 
         global.window.swapBuffers();
     }
@@ -395,18 +402,11 @@ fn sokolLog(
 pub const Key = enum(u32) {
     invalid = 0,
     space = 32,
-    @" " = .space,
     apostrophe = 39, // '
-    @"'" = .apostrophe,
     comma = 44, // ,
-    @"," = .comma,
     minus = 45, // -
-    @"-" = .minus,
     period = 46, // .
-    full_stop = .period,
-    @"." = .period,
     slash = 47, // /
-    @"/" = .slash,
     num_0 = 48,
     num_1 = 49,
     num_2 = 50,
@@ -417,20 +417,8 @@ pub const Key = enum(u32) {
     num_7 = 55,
     num_8 = 56,
     num_9 = 57,
-    @"0" = .num_0,
-    @"1" = .num_1,
-    @"2" = .num_2,
-    @"3" = .num_3,
-    @"4" = .num_4,
-    @"5" = .num_5,
-    @"6" = .num_6,
-    @"7" = .num_7,
-    @"8" = .num_8,
-    @"9" = .num_9,
     semicolon = 59, // ;
-    @";" = .semicolon,
     equal = 61, // =
-    @"=" = .equal,
     a = 65,
     b = 66,
     c = 67,
@@ -458,18 +446,13 @@ pub const Key = enum(u32) {
     y = 89,
     z = 90,
     left_bracket = 91, // [
-    @"[" = .left_bracket,
     backslash = 92, // \
-    @"\\" = .backslash,
     right_bracket = 93, // ]
-    @"]" = .right_bracket,
     grave_accent = 96, // `
-    @"`" = .grave_accent,
     international_1 = 161, // non-US #1
     international_2 = 162, // non-US #2
     escape = 256,
     enter = 257,
-    @"return" = .enter,
     tab = 258,
     backspace = 259,
     insert = 260,
@@ -533,22 +516,170 @@ pub const Key = enum(u32) {
     left_ctrl = 341,
     left_alt = 342,
     left_super = 343,
-    left_meta = .left_super,
     right_shift = 344,
     right_ctrl = 345,
     right_alt = 346,
     right_super = 347,
-    right_meta = .right_super,
     menu = 348,
+
+    const @" ": Key = .space;
+    const @"'": Key = .apostrophe;
+    const @",": Key = .comma;
+    const @"-": Key = .minus;
+    const @".": Key = .period;
+    const @"/": Key = .slash;
+    const @"0": Key = .num_0;
+    const @"1": Key = .num_1;
+    const @"2": Key = .num_2;
+    const @"3": Key = .num_3;
+    const @"4": Key = .num_4;
+    const @"5": Key = .num_5;
+    const @"6": Key = .num_6;
+    const @"7": Key = .num_7;
+    const @"8": Key = .num_8;
+    const @"9": Key = .num_9;
+    const @";": Key = .semicolon;
+    const @"=": Key = .equal;
+    const @"[": Key = .left_bracket;
+    const @"\\": Key = .backslash;
+    const @"]": Key = .right_bracket;
+    const @"`": Key = .grave_accent;
+    const @"return": Key = .enter;
+    const left_meta: Key = .left_super;
+    const right_meta: Key = .right_super;
+    const last: Key = .menu;
 };
 
-/// The buttons located on your pointing device technological artifice. Values are the same as Sokol
+/// The buttons located on your pointing device technological artifice. Values are the same as GLFW
 pub const MouseButton = enum(u32) {
-    left = 0x1,
-    right = 0x1,
-    middle = 0x2,
-    invalid = 0x100,
+    btn_1 = 0,
+    btn_2 = 1,
+    btn_3 = 2,
+    btn_4 = 3,
+    btn_5 = 4,
+    btn_6 = 5,
+    btn_7 = 6,
+    btn_8 = 7,
+
+    const @"1": MouseButton = .btn_1;
+    const @"2": MouseButton = .btn_2;
+    const @"3": MouseButton = .btn_3;
+    const @"4": MouseButton = .btn_4;
+    const @"5": MouseButton = .btn_5;
+    const @"6": MouseButton = .btn_6;
+    const @"7": MouseButton = .btn_7;
+    const @"8": MouseButton = .btn_8;
+
+    const left: MouseButton = .btn_1;
+    const right: MouseButton = .btn_2;
+    const middle: MouseButton = .btn_3;
+    const last: MouseButton = .btn_8;
 };
+
+const InputState = enum(u8) {
+    not_pressed,
+    just_pressed,
+    held,
+    just_released,
+
+    pub fn isPressed(state: InputState) bool {
+        return switch (state) {
+            .just_pressed, .held => true,
+            else => false,
+        };
+    }
+};
+
+fn pollInputStates() void {
+    for (@intFromEnum(Key.space)..@intFromEnum(Key.last) + 1) |key| {
+        // glfw keys have these gaps for some reason, and if you try to normally go over them and
+        // then convert it to an enum, zig crashes and dies
+        // so skip the gaps to prevent fucking
+        const enum_fields = @typeInfo(Key).@"enum".fields;
+        var field_exists = false;
+        inline for (enum_fields) |field| {
+            if (field.value == key) {
+                field_exists = true;
+                break;
+            }
+        }
+        if (!field_exists) {
+            continue;
+        }
+
+        const is_down = global.window.getKey(@enumFromInt(key)) == .press;
+        const was_down = global.key_state[key].isPressed();
+
+        if (!was_down and is_down) {
+            global.key_state[key] = .just_pressed;
+        } else if (was_down and is_down) {
+            global.key_state[key] = .held;
+        } else if (was_down and !is_down) {
+            global.key_state[key] = .just_released;
+        } else {
+            global.key_state[key] = .not_pressed;
+        }
+    }
+
+    for (@intFromEnum(MouseButton.btn_1)..@intFromEnum(MouseButton.last) + 1) |btn| {
+        // glfw and starry keys have the same values
+        const is_down = global.window.getMouseButton(@enumFromInt(btn)) == .press;
+        const was_down = global.mouse_state[btn].isPressed();
+
+        if (!was_down and is_down) {
+            global.mouse_state[btn] = .just_pressed;
+        } else if (was_down and is_down) {
+            global.mouse_state[btn] = .held;
+        } else if (was_down and !is_down) {
+            global.mouse_state[btn] = .just_released;
+        } else {
+            global.mouse_state[btn] = .not_pressed;
+        }
+    }
+}
+
+pub fn isKeyJustPressed(key: Key) bool {
+    return global.key_state[@intFromEnum(key)] == .just_pressed;
+}
+
+pub fn isKeyJustReleased(key: Key) bool {
+    return global.key_state[@intFromEnum(key)] == .just_released;
+}
+
+pub fn isKeyHeld(key: Key) bool {
+    return global.key_state[@intFromEnum(key)].isPressed();
+}
+
+pub fn isKeyNotPressed(key: Key) bool {
+    return !global.key_state[@intFromEnum(key)].isPressed();
+}
+
+pub fn isMouseButtonJustPressed(btn: MouseButton) bool {
+    return global.mouse_state[@intFromEnum(btn)] == .just_pressed;
+}
+
+pub fn isMouseButtonJustReleased(btn: MouseButton) bool {
+    return global.mouse_state[@intFromEnum(btn)] == .just_released;
+}
+
+pub fn isMouseButtonHeld(btn: MouseButton) bool {
+    return global.mouse_state[@intFromEnum(btn)].isPressed();
+}
+
+pub fn isMouseButtonNotPressed(btn: MouseButton) bool {
+    return !global.mouse_state[@intFromEnum(btn)].isPressed();
+}
+
+pub fn mousePosition() @Vector(2, f32) {
+    const pos = global.window.getCursorPos();
+    return .{ @floatCast(pos[0]), @floatCast(pos[1]) };
+}
+
+/// Returns the difference between the last frame's mouse position and the current frame's mouse
+/// position.
+pub fn deltaMousePosition() @Vector(2, f32) {
+    return mousePosition() - global.prev_mouse_pos;
+}
 
 /// Returns the size of the framebuffer.
 pub fn framebufferSize() @Vector(2, i32) {
@@ -580,14 +711,20 @@ pub fn dpiScale() f32 {
     return global.window.getContentScale()[0];
 }
 
-/// If true, locks the mouse inside the window, otherwise unlocks it.
+/// If true, locks the mouse inside the window and enables raw mouse input, otherwise unlocks it.
 pub fn lockMouse(lock: bool) void {
-    _ = global.window.setInputMode(.cursor, if (lock) .disabled else .normal);
+    // setInputMode returning an error is really unlikely
+    _ = global.window.setInputMode(.cursor, if (lock) .disabled else .normal) catch |err| {
+        @panic(@errorName(err));
+    };
 }
 
 /// Returns true if the mouse is locked inside the window (this may toggle a few frames later)
 pub fn isMouseLocked() bool {
-    const input_mode = try global.window.getInputMode(.cursor);
+    // getInputMode returning an error is really unlikely
+    const input_mode = global.window.getInputMode(.cursor) catch |err| {
+        @panic(@errorName(err));
+    };
     return switch (input_mode) {
         .disabled => true,
         else => false,
