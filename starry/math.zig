@@ -184,6 +184,9 @@ const VecInfo = struct {
 };
 
 fn vecInfo(comptime T: type) VecInfo {
+    if (@typeInfo(T) != .@"struct") {
+        @compileError("not a vector");
+    }
     if (!@hasField(T, "repr")) {
         @compileError("not a vector");
     }
@@ -268,4 +271,285 @@ test "vector casting" {
     try testing.expectEqual(floatVecCast(f32, v2f), vec2(f32, 1, 2));
     try testing.expectEqual(floatVecFromIntVec(f32, v2i), vec2(f32, 1, 2));
     try testing.expectEqual(intVecFromFloatVec(i32, v2f), vec2(i32, 1, 2));
+}
+
+/// Adds 2 vector2s together
+pub fn add2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
+    return .{ .repr = a.repr + b.repr };
+}
+
+/// Adds 2 vector3s together
+pub fn add3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
+    return .{ .repr = a.repr + b.repr };
+}
+
+/// Adds 2 vector4s together
+pub fn add4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
+    return .{ .repr = a.repr + b.repr };
+}
+
+/// Subtracts 2 vector2s together
+pub fn sub2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
+    return .{ .repr = a.repr - b.repr };
+}
+
+/// Subtracts 2 vector3s together
+pub fn sub3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
+    return .{ .repr = a.repr - b.repr };
+}
+
+/// Subtracts 2 vector4s together
+pub fn sub4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
+    return .{ .repr = a.repr - b.repr };
+}
+
+/// Multiplies 2 vector2s together
+pub fn mul2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
+    return .{ .repr = a.repr * b.repr };
+}
+
+/// Multiplies 2 vector3s together
+pub fn mul3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
+    return .{ .repr = a.repr * b.repr };
+}
+
+/// Multiplies 2 vector4s together
+pub fn mul4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
+    return .{ .repr = a.repr * b.repr };
+}
+
+/// Multiplies a vector2 by a scalar
+pub fn muls2(comptime T: type, a: Vec2(T), b: T) Vec2(T) {
+    return .{ .repr = a.repr * @Vector(2, T){ b, b } };
+}
+
+/// Multiplies a vector3 by a scalar
+pub fn muls3(comptime T: type, a: Vec3(T), b: T) Vec3(T) {
+    return .{ .repr = a.repr * @Vector(3, T){ b, b, b } };
+}
+
+/// Multiplies a vector4 by a scalar
+pub fn muls4(comptime T: type, a: Vec4(T), b: T) Vec4(T) {
+    return .{ .repr = a.repr * @Vector(4, T){ b, b, b, b } };
+}
+
+/// Divides 2 vector2s together
+pub fn div2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
+    return .{ .repr = a.repr / b.repr };
+}
+
+/// Divides 2 vector3s together
+pub fn div3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
+    return .{ .repr = a.repr / b.repr };
+}
+
+/// Divides 2 vector4s together
+pub fn div4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
+    return .{ .repr = a.repr / b.repr };
+}
+
+/// Divides a vector2 by a scalar
+pub fn divs2(comptime T: type, a: Vec2(T), b: T) Vec2(T) {
+    return .{ .repr = a.repr / @Vector(2, T){ b, b } };
+}
+
+/// Divides a vector3 by a scalar
+pub fn divs3(comptime T: type, a: Vec3(T), b: T) Vec3(T) {
+    return .{ .repr = a.repr / @Vector(3, T){ b, b, b } };
+}
+
+/// Divides a vector4 by a scalar
+pub fn divs4(comptime T: type, a: Vec4(T), b: T) Vec4(T) {
+    return .{ .repr = a.repr / @Vector(4, T){ b, b, b, b } };
+}
+
+/// Gets the remainder of the division between 2 vector2s
+pub fn mod2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
+    return .{ .repr = a.repr % b.repr };
+}
+
+/// Gets the remainder of the division between 2 vector3s
+pub fn mod3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
+    return .{ .repr = a.repr % b.repr };
+}
+
+/// Gets the remainder of the division between 2 vector4s
+pub fn mod4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
+    return .{ .repr = a.repr % b.repr };
+}
+
+/// Gets the remainder of the division between a vector2 and a scalar
+pub fn mods2(comptime T: type, a: Vec2(T), b: T) Vec2(T) {
+    return .{ .repr = a.repr % @Vector(2, T){ b, b } };
+}
+
+/// Gets the remainder of the division between a vector3 and a scalar
+pub fn mods3(comptime T: type, a: Vec3(T), b: T) Vec3(T) {
+    return .{ .repr = a.repr / @Vector(3, T){ b, b, b } };
+}
+
+/// Gets the remainder of the division between a vector4 and a scalar
+pub fn mods4(comptime T: type, a: Vec4(T), b: T) Vec4(T) {
+    return .{ .repr = a.repr / @Vector(4, T){ b, b, b, b } };
+}
+
+/// Returns true if 2 vector2s are equal. Doesn't handle funky float stuff.
+pub fn equal2(comptime T: type, a: Vec2(T), b: Vec2(T)) bool {
+    const either_equal = a == b;
+    return either_equal[0] and either_equal[1];
+}
+
+/// Returns true if 2 vector3s are equal. Doesn't handle funky float stuff.
+pub fn equal3(comptime T: type, a: Vec3(T), b: Vec3(T)) bool {
+    const either_equal = a == b;
+    return either_equal[0] and either_equal[1] and either_equal[2];
+}
+
+/// Returns true if 2 vector4s are equal. Doesn't handle funky float stuff.
+pub fn equal4(comptime T: type, a: Vec4(T), b: Vec4(T)) bool {
+    const either_equal = a == b;
+    return either_equal[0] and either_equal[1] and either_equal[2] and either_equal[3];
+}
+
+/// Returns true if 2 vector2s are equal. Doesn't handle funky float stuff.
+pub fn notEqual2(comptime T: type, a: Vec2(T), b: Vec2(T)) bool {
+    const either_nequal = a != b;
+    return either_nequal[0] and either_nequal[1];
+}
+
+/// Returns true if 2 vector3s are equal. Doesn't handle funky float stuff.
+pub fn notEqual3(comptime T: type, a: Vec3(T), b: Vec3(T)) bool {
+    const either_nequal = a != b;
+    return either_nequal[0] and either_nequal[1] and either_nequal[2];
+}
+
+/// Returns true if 2 vector4s are equal. Doesn't handle funky float stuff.
+pub fn notEqual4(comptime T: type, a: Vec4(T), b: Vec4(T)) bool {
+    const either_nequal = a != b;
+    return either_nequal[0] and either_nequal[1] and either_nequal[2] and either_nequal[3];
+}
+
+// TODO test that (not doing that now :))))))))))) )
+
+const VecComponents = enum { unused, x, y, z, w };
+
+fn getSwizzleComps(comps: anytype) [4]VecComponents {
+    const type_info = @typeInfo(@TypeOf(comps));
+    if (type_info != .enum_literal) {
+        @compileError("components must be an enum literal");
+    }
+
+    const comp_str = @tagName(comps);
+    if (comp_str.len > 4) {
+        @compileError("swizzle literal too long");
+    }
+
+    var components: [4]VecComponents = .{ .unused, .unused, .unused, .unused };
+    inline for (comp_str, 0..comp_str.len) |comp, i| {
+        components[i] = switch (comp) {
+            'x', 'r' => .x,
+            'y', 'g' => .y,
+            'z', 'b' => .z,
+            'w', 'a' => .w,
+            else => @compileError("invalid swizzle literal"),
+        };
+    }
+    return components;
+}
+
+fn TypeFromSwizzleLiteral(comptime T: type, comptime comps: anytype) type {
+    const components = getSwizzleComps(comps);
+    var component_count = 0;
+    inline for (components) |comp| {
+        if (comp == .unused) {
+            break;
+        }
+        component_count += 1;
+    }
+    return VectorWithLen(component_count, T);
+}
+
+/// Implements vector swizzling through major amounts of tomfoolery. For example `.xy`, `.zxy`, `.zzzw`,
+/// really any combination of xyzw that comes to mind. RGBA is also supported, for example `.abgr`.
+pub fn swizzle(
+    comptime T: type,
+    src: anytype,
+    comptime components: anytype,
+) TypeFromSwizzleLiteral(T, components) {
+    // TODO this parses the swizzle literal 3 times who gives a shit
+    const comps = comptime getSwizzleComps(components);
+    var dst: TypeFromSwizzleLiteral(T, components) = undefined;
+    const len = lengthOfVector(@TypeOf(dst));
+
+    inline for (comps, 0..comps.len) |comp, i| {
+        if (i >= len) break;
+        switch (comp) {
+            .x => dst.repr[i] = src.repr[0],
+            .y => dst.repr[i] = src.repr[1],
+            .z => dst.repr[i] = src.repr[2],
+            .w => dst.repr[i] = src.repr[3],
+            .unused => break,
+        }
+    }
+
+    return dst;
+}
+
+test "vec2 -> vec2 swizzle" {
+    const v = vec2(i32, 1, 2);
+    try testing.expectEqual(vec2(i32, 1, 2), swizzle(i32, v, .xy));
+    try testing.expectEqual(vec2(i32, 2, 1), swizzle(i32, v, .yx));
+    try testing.expectEqual(vec2(i32, 1, 1), swizzle(i32, v, .xx));
+    try testing.expectEqual(vec2(i32, 2, 2), swizzle(i32, v, .yy));
+}
+
+test "vec2 -> vec3 swizzle" {
+    const v = vec2(i32, 2, 3);
+    try testing.expectEqual(vec3(i32, 3, 2, 2), swizzle(i32, v, .yxx));
+    try testing.expectEqual(vec3(i32, 2, 3, 2), swizzle(i32, v, .xyx));
+    try testing.expectEqual(vec3(i32, 3, 3, 2), swizzle(i32, v, .yyx));
+}
+
+test "vec3 -> vec2 swizzle" {
+    const v = vec3(i32, 4, 5, 6);
+    try testing.expectEqual(vec2(i32, 4, 5), swizzle(i32, v, .xy));
+    try testing.expectEqual(vec2(i32, 6, 4), swizzle(i32, v, .zx));
+    try testing.expectEqual(vec2(i32, 5, 5), swizzle(i32, v, .yy));
+}
+
+test "vec3 -> vec3 swizzle" {
+    const v = vec3(i32, 7, 8, 9);
+    try testing.expectEqual(vec3(i32, 7, 8, 9), swizzle(i32, v, .xyz));
+    try testing.expectEqual(vec3(i32, 9, 8, 7), swizzle(i32, v, .zyx));
+    try testing.expectEqual(vec3(i32, 8, 7, 8), swizzle(i32, v, .yxy));
+}
+
+test "vec3 -> vec4 swizzle" {
+    const v = vec3(i32, 1, 2, 3);
+    try testing.expectEqual(vec4(i32, 1, 2, 3, 1), swizzle(i32, v, .xyzx));
+    try testing.expectEqual(vec4(i32, 3, 3, 2, 1), swizzle(i32, v, .zzyx));
+}
+
+test "vec4 swizzle" {
+    const v = vec4(i32, 10, 20, 30, 40);
+    try testing.expectEqual(
+        vec4(i32, 10, 20, 30, 40),
+        swizzle(i32, v, .xyzw),
+    );
+    try testing.expectEqual(
+        vec4(i32, 40, 30, 20, 10),
+        swizzle(i32, v, .wzyx),
+    );
+    try testing.expectEqual(
+        vec3(i32, 20, 20, 40),
+        swizzle(i32, v, .yyw),
+    );
+}
+
+test "rgba swizzle" {
+    const v = vec4(i32, 10, 20, 30, 40);
+    try testing.expectEqual(
+        vec4(i32, 40, 30, 20, 10),
+        swizzle(i32, v, .abgr),
+    );
 }
