@@ -553,3 +553,211 @@ test "rgba swizzle" {
         swizzle(i32, v, .abgr),
     );
 }
+
+/// Returns the length of a vector2
+pub fn length2(comptime T: type, v: Vec2(T)) f32 {
+    var vector: Vec2(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        vector = floatVecCast(f32, v);
+    } else if (@typeInfo(T) == .int) {
+        vector = floatVecFromIntVec(f32, v);
+    } else {
+        @compileError("invalid type");
+    }
+
+    return @sqrt(v.x() * v.x() + v.y() * v.y());
+}
+
+/// Returns the length of a vector3
+pub fn length3(comptime T: type, v: Vec3(T)) f32 {
+    var vector: Vec3(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        vector = floatVecCast(f32, v);
+    } else if (@typeInfo(T) == .int) {
+        vector = floatVecFromIntVec(f32, v);
+    } else {
+        @compileError("invalid type");
+    }
+
+    return @sqrt(v.x() * v.x() + v.y() * v.y() + v.z() * v.z());
+}
+
+/// Returns the length of a vector4
+pub fn length4(comptime T: type, v: Vec4(T)) f32 {
+    var vector: Vec4(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        vector = floatVecCast(f32, v);
+    } else if (@typeInfo(T) == .int) {
+        vector = floatVecFromIntVec(f32, v);
+    } else {
+        @compileError("invalid type");
+    }
+
+    return @sqrt(v.x() * v.x() + v.y() * v.y() + v.z() * v.z() + v.w() * v.w());
+}
+
+/// Returns the distance between 2 vector2s
+pub fn distance2(comptime T: type, a: Vec2(T), b: Vec2(T)) f32 {
+    var veca: Vec2(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        veca = floatVecCast(f32, a);
+    } else if (@typeInfo(T) == .int) {
+        veca = floatVecFromIntVec(f32, a);
+    } else {
+        @compileError("invalid type");
+    }
+
+    var vecb: Vec2(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        vecb = floatVecCast(f32, b);
+    } else if (@typeInfo(T) == .int) {
+        vecb = floatVecFromIntVec(f32, b);
+    } else {
+        @compileError("invalid type");
+    }
+
+    const d = sub2(f32, veca, vecb);
+    return length2(f32, d);
+}
+
+/// Returns the distance between 2 vector3s
+pub fn distance3(comptime T: type, a: Vec3(T), b: Vec3(T)) f32 {
+    var veca: Vec3(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        veca = floatVecCast(f32, a);
+    } else if (@typeInfo(T) == .int) {
+        veca = floatVecFromIntVec(f32, a);
+    } else {
+        @compileError("invalid type");
+    }
+
+    var vecb: Vec3(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        vecb = floatVecCast(f32, b);
+    } else if (@typeInfo(T) == .int) {
+        vecb = floatVecFromIntVec(f32, b);
+    } else {
+        @compileError("invalid type");
+    }
+
+    const d = sub3(f32, veca, vecb);
+    return length3(f32, d);
+}
+
+/// Returns the distance between 2 vector4s
+pub fn distance4(comptime T: type, a: Vec4(T), b: Vec4(T)) f32 {
+    var veca: Vec4(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        veca = floatVecCast(f32, a);
+    } else if (@typeInfo(T) == .int) {
+        veca = floatVecFromIntVec(f32, a);
+    } else {
+        @compileError("invalid type");
+    }
+
+    var vecb: Vec4(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        vecb = floatVecCast(f32, b);
+    } else if (@typeInfo(T) == .int) {
+        vecb = floatVecFromIntVec(f32, b);
+    } else {
+        @compileError("invalid type");
+    }
+
+    const d = sub4(f32, veca, vecb);
+    return length4(f32, d);
+}
+
+/// Returns the dot product of 2 vector2s
+pub fn dot2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
+    return a.x() * b.x() + a.y() * b.y();
+}
+
+/// Returns the dot product of 2 vector3s
+pub fn dot3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
+    return a.x() * b.x() + a.y() * b.y() + a.z() * b.z();
+}
+
+/// Returns the dot product of 2 vector4s
+pub fn dot4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
+    return a.x() * b.x() + a.y() * b.y() + a.z() * b.z() + a.w() * b.w();
+}
+
+/// Returns the cross product of 2 vector3s
+pub fn cross3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
+    return vec3(
+        T,
+        a.y() * b.z() - a.z() * b.y(),
+        a.z() * b.x() - a.x() * b.z(),
+        a.x() * b.y() - a.y() * b.x(),
+    );
+}
+
+/// Normalizes a vector2
+pub fn normalize2(comptime T: type, v: Vec2(T)) Vec2(f32) {
+    var vec: Vec4(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        vec = floatVecCast(f32, v);
+    } else if (@typeInfo(T) == .int) {
+        vec = floatVecFromIntVec(f32, v);
+    } else {
+        @compileError("invalid type");
+    }
+
+    const length = length2(f32, vec);
+    // consider not dividing by 0
+    if (length == 0.0) {
+        return vec2(f32, 0, 0);
+    }
+    return divs2(f32, vec, length);
+}
+
+/// Normalizes a vector3
+pub fn normalize3(comptime T: type, v: Vec3(T)) Vec3(f32) {
+    var vec: Vec3(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        vec = floatVecCast(f32, v);
+    } else if (@typeInfo(T) == .int) {
+        vec = floatVecFromIntVec(f32, v);
+    } else {
+        @compileError("invalid type");
+    }
+
+    const length = length3(f32, vec);
+    // consider not dividing by 0
+    if (length == 0.0) {
+        return vec3(f32, 0, 0);
+    }
+    return divs3(f32, vec, length);
+}
+
+/// Normalizes a vector4
+pub fn normalize4(comptime T: type, v: Vec4(T)) Vec4(f32) {
+    var vec: Vec4(T) = undefined;
+    if (@typeInfo(T) == .float) {
+        // might be an f64 or f16
+        vec = floatVecCast(f32, v);
+    } else if (@typeInfo(T) == .int) {
+        vec = floatVecFromIntVec(f32, v);
+    } else {
+        @compileError("invalid type");
+    }
+
+    const length = length4(f32, vec);
+    // consider not dividing by 0
+    if (length == 0.0) {
+        return vec4(f32, 0, 0);
+    }
+    return divs4(f32, vec, length);
+}
