@@ -1,3 +1,4 @@
+//! Does the raytracing stuff and outputs it into a fullscreen quad
 @vs vs
 layout(location = 0) out vec2 fs_uv;
 
