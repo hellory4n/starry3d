@@ -1,6 +1,5 @@
 const std = @import("std");
 const starry = @import("starry3d");
-const zm = @import("zmath");
 
 pub const std_options = starry.util.std_options;
 
@@ -10,7 +9,7 @@ const player_speed: f32 = 5.0;
 fn initApp() !void {
     std.log.info("hi", .{});
     starry.world.current_camera = .{
-        .position = .{ 0, 0, 1 },
+        .position = starry.vec3(f32, 0, 0, 1),
         .fov = std.math.degreesToRadians(90),
     };
 }
@@ -30,49 +29,55 @@ pub fn updateApp(dt: f32) void {
 
     // fps controller
     const mpos = starry.app.deltaMousePosition();
-    starry.world.current_camera.rotation[1] += std.math.degreesToRadians(mpos[0] * mouse_sensitivity);
-    starry.world.current_camera.rotation[0] += std.math.degreesToRadians(mpos[1] * mouse_sensitivity);
+    var cam_rot = starry.world.current_camera.rotation;
+    cam_rot.setY(cam_rot.x() + std.math.degreesToRadians(mpos[0] * mouse_sensitivity));
+    cam_rot.setY(cam_rot.x() + std.math.degreesToRadians(mpos[1] * mouse_sensitivity));
     // don't break your neck
-    starry.world.current_camera.rotation[0] = std.math.clamp(
-        starry.world.current_camera.rotation[0],
+    cam_rot.setY(std.math.clamp(
+        cam_rot.y(),
         std.math.degreesToRadians(-89.0),
         std.math.degreesToRadians(89.0),
-    );
+    ));
+    starry.world.current_camera.rotation = cam_rot;
 
-    var move: @Vector(3, f32) = .{ 0, 0, 0 };
+    var move = starry.vec3(f32, 0, 0, 0);
     if (starry.app.isKeyHeld(.w)) {
-        move += @Vector(3, f32){
-            @sin(starry.world.current_camera.rotation[1]) * 1,
+        move = starry.add3(f32, move, starry.vec3(
+            f32,
+            @sin(starry.world.current_camera.rotation.y()) * 1,
             0,
-            @cos(starry.world.current_camera.rotation[1]) * -1,
-        };
+            @cos(starry.world.current_camera.rotation.y()) * -1,
+        ));
     }
     if (starry.app.isKeyHeld(.s)) {
-        move += @Vector(3, f32){
-            @sin(starry.world.current_camera.rotation[1]) * -1,
+        move = starry.add3(f32, move, starry.vec3(
+            f32,
+            @sin(starry.world.current_camera.rotation.y()) * -1,
             0,
-            @cos(starry.world.current_camera.rotation[1]) * 1,
-        };
+            @cos(starry.world.current_camera.rotation.y()) * 1,
+        ));
     }
     if (starry.app.isKeyHeld(.a)) {
-        move += @Vector(3, f32){
-            @sin(starry.world.current_camera.rotation[1] - @as(f32, std.math.pi) / 2) * 1,
+        move = starry.add3(f32, move, starry.vec3(
+            f32,
+            @sin(starry.world.current_camera.rotation.y() - @as(f32, std.math.pi) / 2) * 1,
             0,
-            @cos(starry.world.current_camera.rotation[1] - @as(f32, std.math.pi) / 2) * -1,
-        };
+            @cos(starry.world.current_camera.rotation.y() - @as(f32, std.math.pi) / 2) * -1,
+        ));
     }
     if (starry.app.isKeyHeld(.d)) {
-        move += @Vector(3, f32){
-            @sin(starry.world.current_camera.rotation[1] - @as(f32, std.math.pi) / 2) * -1,
+        move = starry.add3(f32, move, starry.vec3(
+            f32,
+            @sin(starry.world.current_camera.rotation.y() - @as(f32, std.math.pi) / 2) * -1,
             0,
-            @cos(starry.world.current_camera.rotation[1] - @as(f32, std.math.pi) / 2) * 1,
-        };
+            @cos(starry.world.current_camera.rotation.y() - @as(f32, std.math.pi) / 2) * 1,
+        ));
     }
     if (starry.app.isKeyHeld(.space)) {
-        move[1] += 1;
+        move.setY(move.y() + 1);
     }
     if (starry.app.isKeyHeld(.left_shift)) {
-        move[1] -= 1;
+        move.setY(move.y() - 1);
     }
 
     // ctrl is normal run
@@ -84,19 +89,14 @@ pub fn updateApp(dt: f32) void {
     if (starry.app.isKeyHeld(.left_alt)) {
         run += 6;
     }
-    // zmath is weird
-    const move4 = @Vector(4, f32){ move[0], move[1], move[2], 1 };
-    const normalized = zm.normalize3(move4);
-    var normalized3 = @Vector(3, f32){ normalized[0], normalized[1], normalized[2] };
-    // nanma balls
-    if (std.math.isNan(normalized3[0])) normalized3[0] = 0;
-    if (std.math.isNan(normalized3[1])) normalized3[1] = 0;
-    if (std.math.isNan(normalized3[2])) normalized3[2] = 0;
+    move = starry.normalize3(f32, move);
 
     // bloody hell mate
-    starry.world.current_camera.position +=
-        normalized3 * @Vector(3, f32){ player_speed, player_speed, player_speed } *
-        @Vector(3, f32){ run, run, run } * @Vector(3, f32){ dt, dt, dt };
+    starry.world.current_camera.position = starry.add3(
+        f32,
+        starry.world.current_camera.position,
+        starry.muls3(f32, starry.muls3(f32, starry.muls3(f32, move, player_speed), run), dt),
+    );
 }
 
 pub fn main() !void {

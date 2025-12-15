@@ -12,20 +12,24 @@ pub fn Vec2(comptime T: type) type {
             return vec.repr[0];
         }
 
+        pub fn setX(vec: *@This(), val: T) void {
+            vec.repr[0] = val;
+        }
+
         pub fn y(vec: @This()) T {
             return vec.repr[1];
         }
 
-        pub fn r(vec: @This()) T {
-            return vec.repr[0];
-        }
-
-        pub fn g(vec: @This()) T {
-            return vec.repr[1];
+        pub fn setY(vec: *@This(), val: T) void {
+            vec.repr[1] = val;
         }
 
         pub fn nth(vec: @This(), comptime idx: comptime_int) T {
             return vec.repr[idx];
+        }
+
+        pub fn setNth(vec: *@This(), comptime idx: comptime_int, val: T) void {
+            vec.repr[idx] = val;
         }
 
         pub fn toArray(vec: @This()) [2]T {
@@ -43,28 +47,56 @@ pub fn Vec3(comptime T: type) type {
             return vec.repr[0];
         }
 
+        pub fn setX(vec: *@This(), val: T) void {
+            vec.repr[0] = val;
+        }
+
         pub fn y(vec: @This()) T {
             return vec.repr[1];
+        }
+
+        pub fn setY(vec: *@This(), val: T) void {
+            vec.repr[1] = val;
         }
 
         pub fn z(vec: @This()) T {
             return vec.repr[2];
         }
 
+        pub fn setZ(vec: *@This(), val: T) void {
+            vec.repr[2] = val;
+        }
+
         pub fn r(vec: @This()) T {
             return vec.repr[0];
+        }
+
+        pub fn setR(vec: *@This(), val: T) void {
+            vec.repr[0] = val;
         }
 
         pub fn g(vec: @This()) T {
             return vec.repr[1];
         }
 
+        pub fn setG(vec: *@This(), val: T) void {
+            vec.repr[1] = val;
+        }
+
         pub fn b(vec: @This()) T {
             return vec.repr[2];
         }
 
+        pub fn setB(vec: *@This(), val: T) void {
+            vec.repr[2] = val;
+        }
+
         pub fn nth(vec: @This(), comptime idx: comptime_int) T {
             return vec.repr[idx];
+        }
+
+        pub fn setNth(vec: *@This(), comptime idx: comptime_int, val: T) void {
+            vec.repr[idx] = val;
         }
 
         pub fn toArray(vec: @This()) [3]T {
@@ -82,36 +114,72 @@ pub fn Vec4(comptime T: type) type {
             return vec.repr[0];
         }
 
+        pub fn setX(vec: *@This(), val: T) void {
+            vec.repr[0] = val;
+        }
+
         pub fn y(vec: @This()) T {
             return vec.repr[1];
+        }
+
+        pub fn setY(vec: *@This(), val: T) void {
+            vec.repr[1] = val;
         }
 
         pub fn z(vec: @This()) T {
             return vec.repr[2];
         }
 
+        pub fn setZ(vec: *@This(), val: T) void {
+            vec.repr[2] = val;
+        }
+
         pub fn w(vec: @This()) T {
             return vec.repr[3];
+        }
+
+        pub fn setW(vec: *@This(), val: T) void {
+            vec.repr[3] = val;
         }
 
         pub fn r(vec: @This()) T {
             return vec.repr[0];
         }
 
+        pub fn setR(vec: *@This(), val: T) void {
+            vec.repr[0] = val;
+        }
+
         pub fn g(vec: @This()) T {
             return vec.repr[1];
+        }
+
+        pub fn setG(vec: *@This(), val: T) void {
+            vec.repr[1] = val;
         }
 
         pub fn b(vec: @This()) T {
             return vec.repr[2];
         }
 
+        pub fn setB(vec: *@This(), val: T) void {
+            vec.repr[2] = val;
+        }
+
         pub fn a(vec: @This()) T {
             return vec.repr[3];
         }
 
+        pub fn setA(vec: *@This(), val: T) void {
+            vec.repr[3] = val;
+        }
+
         pub fn nth(vec: @This(), comptime idx: comptime_int) T {
             return vec.repr[idx];
+        }
+
+        pub fn setNth(vec: *@This(), comptime idx: comptime_int, val: T) void {
+            vec.repr[idx] = val;
         }
 
         pub fn toArray(vec: @This()) [4]T {
@@ -138,12 +206,10 @@ pub fn vec4(comptime T: type, x: T, y: T, z: T, w: T) Vec4(T) {
 test "basic vectors" {
     const v2: Vec2(i32) = vec2(i32, 1, 2);
     try testing.expectEqual(v2.x(), 1);
-    try testing.expectEqual(v2.r(), v2.x());
-    try testing.expectEqual(v2.nth(0), v2.r());
+    try testing.expectEqual(v2.nth(0), v2.x());
     try testing.expectEqual(v2.toArray()[0], v2.nth(0));
     try testing.expectEqual(v2.y(), 2);
-    try testing.expectEqual(v2.g(), v2.y());
-    try testing.expectEqual(v2.nth(1), v2.g());
+    try testing.expectEqual(v2.nth(1), v2.y());
     try testing.expectEqual(v2.toArray()[1], v2.nth(1));
 
     const v3: Vec3(i32) = vec3(i32, 1, 2, 3);
@@ -747,7 +813,7 @@ pub fn normalize3(comptime T: type, v: Vec3(T)) Vec3(f32) {
     const length = length3(f32, vec);
     // consider not dividing by 0
     if (length == 0.0) {
-        return vec3(f32, 0, 0);
+        return vec3(f32, 0, 0, 0);
     }
     return divs3(f32, vec, length);
 }
@@ -767,7 +833,7 @@ pub fn normalize4(comptime T: type, v: Vec4(T)) Vec4(f32) {
     const length = length4(f32, vec);
     // consider not dividing by 0
     if (length == 0.0) {
-        return vec4(f32, 0, 0);
+        return vec4(f32, 0, 0, 0, 0);
     }
     return divs4(f32, vec, length);
 }
