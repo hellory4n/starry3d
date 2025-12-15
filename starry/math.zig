@@ -1,4 +1,5 @@
-//! Meth
+//! Touching linear algebra library inspired by GLSL. Everything uses OpenGL conventions, with
+//! column-major matrices, +Y is up, right-handed coordinates, etc.
 const std = @import("std");
 const testing = std.testing;
 
@@ -177,6 +178,15 @@ test "basic vectors" {
     try testing.expectEqual(v4.nth(3), v4.a());
     try testing.expectEqual(v4.toArray()[3], v4.nth(3));
 }
+
+// why not
+pub const Rgb = Vec3;
+pub const Rgba = Vec4;
+pub const rgb = vec3;
+pub const rgba = vec4;
+/// Euler rotation in radians
+pub const Rot = Vec3;
+pub const rot = vec3;
 
 const VecInfo = struct {
     len: comptime_int,
@@ -760,4 +770,266 @@ pub fn normalize4(comptime T: type, v: Vec4(T)) Vec4(f32) {
         return vec4(f32, 0, 0);
     }
     return divs4(f32, vec, length);
+}
+
+/// A 4x4 column-major matrix of float32s.
+pub const Mat4x4 = struct {
+    repr: [4][4]f32,
+
+    pub fn nth(mat: @This(), comptime col: comptime_int, comptime row: comptime_int) f32 {
+        return mat.repr[col][row];
+    }
+
+    pub fn column(mat: @This(), comptime col: comptime_int) Vec4(f32) {
+        return vec4(
+            f32,
+            mat.nth(col, 0),
+            mat.nth(col, 1),
+            mat.nth(col, 2),
+            mat.nth(col, 3),
+        );
+    }
+};
+
+// TODO no idea if the compiler is optimizing this to use simd
+
+pub fn zero4x4() Mat4x4 {
+    return .{ .repr = [4][4]f32{
+        [_]f32{ 0, 0, 0, 0 },
+        [_]f32{ 0, 0, 0, 0 },
+        [_]f32{ 0, 0, 0, 0 },
+        [_]f32{ 0, 0, 0, 0 },
+    } };
+}
+
+pub fn identity4x4() Mat4x4 {
+    return .{ .repr = [4][4]f32{
+        [_]f32{ 1, 0, 0, 0 },
+        [_]f32{ 0, 1, 0, 0 },
+        [_]f32{ 0, 0, 1, 0 },
+        [_]f32{ 0, 0, 0, 1 },
+    } };
+}
+
+pub fn add4x4(a: Mat4x4, b: Mat4x4) Mat4x4 {
+    var result = zero4x4();
+    result.repr[0] = add4(f32, a.column(0), b.column(0)).toArray();
+    result.repr[1] = add4(f32, a.column(1), b.column(1)).toArray();
+    result.repr[2] = add4(f32, a.column(2), b.column(2)).toArray();
+    result.repr[3] = add4(f32, a.column(3), b.column(3)).toArray();
+    return result;
+}
+
+pub fn sub4x4(a: Mat4x4, b: Mat4x4) Mat4x4 {
+    var result = zero4x4();
+    result.repr[0] = sub4(f32, a.column(0), b.column(0)).toArray();
+    result.repr[1] = sub4(f32, a.column(1), b.column(1)).toArray();
+    result.repr[2] = sub4(f32, a.column(2), b.column(2)).toArray();
+    result.repr[3] = sub4(f32, a.column(3), b.column(3)).toArray();
+    return result;
+}
+
+pub fn transpose4x4(m: Mat4x4) Mat4x4 {
+    var result = zero4x4();
+    for (0..4) |i| {
+        for (0..4) |j| {
+            result.repr[i][j] = m.repr[j][i];
+        }
+    }
+    return m;
+}
+
+/// idk this is stolen
+fn linearCombine(a: Vec4(f32), b: Mat4x4) Vec4(f32) {
+    var result = vec4(f32, 0, 0, 0, 0);
+    result.repr[0] = a.nth(0) * b.column(0).x();
+    result.repr[1] = a.nth(0) * b.column(0).y();
+    result.repr[2] = a.nth(0) * b.column(0).z();
+    result.repr[3] = a.nth(0) * b.column(0).w();
+
+    result.repr[0] += a.nth(1) * b.column(1).x();
+    result.repr[1] += a.nth(1) * b.column(1).y();
+    result.repr[2] += a.nth(1) * b.column(1).z();
+    result.repr[3] += a.nth(1) * b.column(1).w();
+
+    result.repr[0] += a.nth(2) * b.column(2).x();
+    result.repr[1] += a.nth(2) * b.column(2).y();
+    result.repr[2] += a.nth(2) * b.column(2).z();
+    result.repr[3] += a.nth(2) * b.column(2).w();
+
+    result.repr[0] += a.nth(3) * b.column(3).x();
+    result.repr[1] += a.nth(3) * b.column(3).y();
+    result.repr[2] += a.nth(3) * b.column(3).z();
+    result.repr[3] += a.nth(3) * b.column(3).w();
+    return result;
+}
+
+pub fn mul4x4(a: Mat4x4, b: Mat4x4) Mat4x4 {
+    var result = zero4x4();
+    result.repr[0] = linearCombine(b.column(0), a);
+    result.repr[1] = linearCombine(b.column(1), a);
+    result.repr[2] = linearCombine(b.column(2), a);
+    result.repr[3] = linearCombine(b.column(3), a);
+    return result;
+}
+
+pub fn muls4x4(m: Mat4x4, scalar: f32) Mat4x4 {
+    var result = zero4x4();
+    for (0..4) |i| {
+        for (0..4) |j| {
+            result.repr[i][j] = m.repr[i][j] * scalar;
+        }
+    }
+    return m;
+}
+
+pub fn divs4x4(m: Mat4x4, scalar: f32) Mat4x4 {
+    var result = zero4x4();
+    for (0..4) |i| {
+        for (0..4) |j| {
+            result.repr[i][j] = m.repr[i][j] / scalar;
+        }
+    }
+    return m;
+}
+
+pub fn mulv4x4(m: Mat4x4, v: Vec4(f32)) Mat4x4 {
+    return linearCombine(v, m);
+}
+
+pub fn determinant4x4(m: Mat4x4) f32 {
+    const c01 = cross3(f32, swizzle(f32, m.column(0).xyz), swizzle(f32, m.column(1).xyz));
+    const c23 = cross3(f32, swizzle(f32, m.column(2).xyz), swizzle(f32, m.column(3).xyz));
+    const b10 = sub3(
+        f32,
+        muls3(f32, swizzle(f32, m.column(0), .xyz), m.column(1).w()),
+        muls3(f32, swizzle(f32, m.column(1), .xyz), m.column(0).w()),
+    );
+    const b32 = sub3(
+        f32,
+        muls3(f32, swizzle(f32, m.column(2), .xyz), m.column(3).w()),
+        muls3(f32, swizzle(f32, m.column(3), .xyz), m.column(2).w()),
+    );
+    return dot3(f32, c01, b32) + dot3(f32, c23, b10);
+}
+
+pub fn inv4x4(m: Mat4x4) Mat4x4 {
+    const c01 = cross3(f32, swizzle(f32, m.column(0).xyz), swizzle(f32, m.column(1).xyz));
+    const c23 = cross3(f32, swizzle(f32, m.column(2).xyz), swizzle(f32, m.column(3).xyz));
+    const b10 = sub3(
+        f32,
+        muls3(f32, swizzle(f32, m.column(0), .xyz), m.column(1).w()),
+        muls3(f32, swizzle(f32, m.column(1), .xyz), m.column(0).w()),
+    );
+    const b32 = sub3(
+        f32,
+        muls3(f32, swizzle(f32, m.column(2), .xyz), m.column(3).w()),
+        muls3(f32, swizzle(f32, m.column(3), .xyz), m.column(2).w()),
+    );
+
+    const inv_determinant = 1.0 / (dot3(c01, b32) + dot3(c23, b10));
+    c01 = muls3(c01, inv_determinant);
+    c23 = muls3(c23, inv_determinant);
+    b10 = muls3(b10, inv_determinant);
+    b32 = muls3(b32, inv_determinant);
+
+    // helper to more easily steal from handmade math
+    const v4v = struct {
+        pub fn v4v(a: Vec3(f32), b: f32) Vec4(f32) {
+            return vec4(f32, a.x(), a.y(), a.z(), b);
+        }
+    }.v4v;
+
+    var result = zero4x4();
+    // quite the mouthful
+    result.repr[0] = v4v(
+        add3(f32, cross3(f32, swizzle(f32, m.column(1), .xyz), b32), muls3(c23, m.column(1).w())),
+        -dot3(swizzle(f32, m.column(1), .xyz), c23),
+    );
+    result.repr[1] = v4v(
+        sub3(f32, cross3(f32, swizzle(f32, m.column(0), .xyz), b32), muls3(c23, m.column(0).w())),
+        dot3(swizzle(f32, m.column(0), .xyz), c23),
+    );
+    result.repr[2] = v4v(
+        add3(f32, cross3(f32, swizzle(f32, m.column(3), .xyz), b10), muls3(c01, m.column(3).w())),
+        -dot3(swizzle(f32, m.column(3), .xyz), c01),
+    );
+    result.repr[3] = v4v(
+        sub3(f32, cross3(f32, swizzle(f32, m.column(2), .xyz), b10), muls3(c01, m.column(2).w())),
+        dot3(swizzle(f32, m.column(2), .xyz), c01),
+    );
+    return transpose4x4(result);
+}
+
+/// Returns a right-handed orthographic projection matrix with Z ranging from -1 to 1 (the OpenGL
+/// convention). `left`, `right`, `bottom`, and `top` specify the coordinates of their respective
+/// clipping planes. `near` and `far` specify the distances to the near and far clipping planes.
+pub fn orthographic4x4(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) Mat4x4 {
+    const result = zero4x4();
+    result.repr[0][0] = 2.0 / (right - left);
+    result.repr[1][1] = 2.0 / (top - bottom);
+    result.repr[2][2] = 2.0 / (near - far);
+    result.repr[3][3] = 1.0;
+
+    result.repr[3][0] = (left + right) / (left - right);
+    result.repr[3][1] = (bottom + top) / (bottom - top);
+    result.repr[3][2] = (near + far) / (near - far);
+    return result;
+}
+
+/// Returns a right-handed perspective projection matrix with Z ranging from -1 to 1 (the OpenGL
+/// convention). `fov` is in radians. `aspect_ratio` is the width divided by the height of where
+/// you're rendering things to. `near` and `far` specify the distances to the near and far
+/// clipping planes.
+pub fn perspective4x4(fov: f32, aspect_ratio: f32, near: f32, far: f32) Mat4x4 {
+    const result = zero4x4();
+    const cotangent = 1.0 / @tan(fov / 2.0);
+    result.repr[0][0] = cotangent / aspect_ratio;
+    result.repr[1][1] = cotangent;
+    result.repr[2][3] = -1.0;
+
+    result.repr[2][2] = (near + far) / (near - far);
+    result.repr[3][2] = (2.0 * near * far) / (near - far);
+    return result;
+}
+
+pub fn translation4x4(pos: Vec3(f32)) Mat4x4 {
+    const result = identity4x4();
+    result.repr[3][0] = pos.x();
+    result.repr[3][1] = pos.y();
+    result.repr[3][2] = pos.z();
+    return result;
+}
+
+pub fn rotatex4x4(m: Mat4x4, rad: f32) Mat4x4 {
+    const s = @sin(rad);
+    const c = @cos(rad);
+    var r = zero4x4();
+    r[0] = [4]f32{ 1, 0, 0, 0 };
+    r[1] = [4]f32{ 0, c, s, 0 };
+    r[2] = [4]f32{ 0, -s, c, 0 };
+    r[3] = [4]f32{ 0, 0, 0, 1 };
+    return mul4x4(m, r);
+}
+
+pub fn rotatey4x4(m: Mat4x4, rad: f32) Mat4x4 {
+    const s = @sin(rad);
+    const c = @cos(rad);
+    var r = zero4x4();
+    r[0] = [4]f32{ c, 0, -s, 0 };
+    r[1] = [4]f32{ 0, 1, 0, 0 };
+    r[2] = [4]f32{ s, 0, c, 0 };
+    r[3] = [4]f32{ 0, 0, 0, 1 };
+    return mul4x4(m, r);
+}
+
+pub fn rotatez4x4(m: Mat4x4, rad: f32) Mat4x4 {
+    const s = @sin(rad);
+    const c = @cos(rad);
+    var r = zero4x4();
+    r[0] = [4]f32{ c, s, 0, 0 };
+    r[1] = [4]f32{ -s, c, 0, 0 };
+    r[2] = [4]f32{ 0, 0, 1, 0 };
+    r[3] = [4]f32{ 0, 0, 0, 1 };
+    return mul4x4(m, r);
 }
