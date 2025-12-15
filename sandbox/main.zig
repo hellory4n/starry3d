@@ -30,8 +30,8 @@ pub fn updateApp(dt: f32) void {
     // fps controller
     const mpos = starry.app.deltaMousePosition();
     var cam_rot = starry.world.current_camera.rotation;
-    cam_rot.setY(cam_rot.x() + std.math.degreesToRadians(mpos[0] * mouse_sensitivity));
-    cam_rot.setY(cam_rot.x() + std.math.degreesToRadians(mpos[1] * mouse_sensitivity));
+    cam_rot.setX(cam_rot.x() + std.math.degreesToRadians(mpos[0] * mouse_sensitivity));
+    cam_rot.setY(cam_rot.y() + std.math.degreesToRadians(mpos[1] * mouse_sensitivity));
     // don't break your neck
     cam_rot.setY(std.math.clamp(
         cam_rot.y(),

@@ -902,7 +902,7 @@ pub fn transpose4x4(m: Mat4x4) Mat4x4 {
             result.repr[i][j] = m.repr[j][i];
         }
     }
-    return m;
+    return result;
 }
 
 /// idk this is stolen
@@ -932,10 +932,9 @@ fn linearCombine(a: Vec4(f32), b: Mat4x4) Vec4(f32) {
 
 pub fn mul4x4(a: Mat4x4, b: Mat4x4) Mat4x4 {
     var result = zero4x4();
-    result.repr[0] = linearCombine(b.column(0), a).toArray();
-    result.repr[1] = linearCombine(b.column(1), a).toArray();
-    result.repr[2] = linearCombine(b.column(2), a).toArray();
-    result.repr[3] = linearCombine(b.column(3), a).toArray();
+    inline for (0..4) |i| {
+        result.repr[i] = linearCombine(b.column(i), a).toArray();
+    }
     return result;
 }
 
@@ -946,7 +945,7 @@ pub fn muls4x4(m: Mat4x4, scalar: f32) Mat4x4 {
             result.repr[i][j] = m.repr[i][j] * scalar;
         }
     }
-    return m;
+    return result;
 }
 
 pub fn divs4x4(m: Mat4x4, scalar: f32) Mat4x4 {
@@ -956,7 +955,7 @@ pub fn divs4x4(m: Mat4x4, scalar: f32) Mat4x4 {
             result.repr[i][j] = m.repr[i][j] / scalar;
         }
     }
-    return m;
+    return result;
 }
 
 pub fn mulv4x4(m: Mat4x4, v: Vec4(f32)) Vec4(f32) {
@@ -980,51 +979,70 @@ pub fn determinant4x4(m: Mat4x4) f32 {
 }
 
 pub fn inv4x4(m: Mat4x4) Mat4x4 {
-    var c01 = cross3(f32, swizzle(f32, m.column(0), .xyz), swizzle(f32, m.column(1), .xyz));
-    var c23 = cross3(f32, swizzle(f32, m.column(2), .xyz), swizzle(f32, m.column(3), .xyz));
-    var b10 = sub3(
-        f32,
-        muls3(f32, swizzle(f32, m.column(0), .xyz), m.column(1).w()),
-        muls3(f32, swizzle(f32, m.column(1), .xyz), m.column(0).w()),
-    );
-    var b32 = sub3(
-        f32,
-        muls3(f32, swizzle(f32, m.column(2), .xyz), m.column(3).w()),
-        muls3(f32, swizzle(f32, m.column(3), .xyz), m.column(2).w()),
-    );
+    const m00 = m.repr[0][0];
+    const m01 = m.repr[0][1];
+    const m02 = m.repr[0][2];
+    const m03 = m.repr[0][3];
 
-    const inv_determinant = 1.0 / (dot3(f32, c01, b32) + dot3(f32, c23, b10));
-    c01 = muls3(f32, c01, inv_determinant);
-    c23 = muls3(f32, c23, inv_determinant);
-    b10 = muls3(f32, b10, inv_determinant);
-    b32 = muls3(f32, b32, inv_determinant);
+    const m10 = m.repr[1][0];
+    const m11 = m.repr[1][1];
+    const m12 = m.repr[1][2];
+    const m13 = m.repr[1][3];
 
-    // helper to more easily steal from handmade math
-    const v4v = struct {
-        pub fn v4v(a: Vec3(f32), b: f32) Vec4(f32) {
-            return vec4(f32, a.x(), a.y(), a.z(), b);
-        }
-    }.v4v;
+    const m20 = m.repr[2][0];
+    const m21 = m.repr[2][1];
+    const m22 = m.repr[2][2];
+    const m23 = m.repr[2][3];
 
-    var result = zero4x4();
-    // quite the mouthful
-    result.repr[0] = v4v(
-        add3(f32, cross3(f32, swizzle(f32, m.column(1), .xyz), b32), muls3(f32, c23, m.column(1).w())),
-        -dot3(f32, swizzle(f32, m.column(1), .xyz), c23),
-    ).toArray();
-    result.repr[1] = v4v(
-        sub3(f32, cross3(f32, swizzle(f32, m.column(0), .xyz), b32), muls3(f32, c23, m.column(0).w())),
-        dot3(f32, swizzle(f32, m.column(0), .xyz), c23),
-    ).toArray();
-    result.repr[2] = v4v(
-        add3(f32, cross3(f32, swizzle(f32, m.column(3), .xyz), b10), muls3(f32, c01, m.column(3).w())),
-        -dot3(f32, swizzle(f32, m.column(3), .xyz), c01),
-    ).toArray();
-    result.repr[3] = v4v(
-        sub3(f32, cross3(f32, swizzle(f32, m.column(2), .xyz), b10), muls3(f32, c01, m.column(2).w())),
-        dot3(f32, swizzle(f32, m.column(2), .xyz), c01),
-    ).toArray();
-    return transpose4x4(result);
+    const m30 = m.repr[3][0];
+    const m31 = m.repr[3][1];
+    const m32 = m.repr[3][2];
+    const m33 = m.repr[3][3];
+
+    // not even gonna bother formatting this
+    const c00 = m11 * (m22 * m33 - m23 * m32) - m21 * (m12 * m33 - m13 * m32) + m31 * (m12 * m23 - m13 * m22);
+
+    const c01 = -m01 * (m22 * m33 - m23 * m32) + m21 * (m02 * m33 - m03 * m32) - m31 * (m02 * m23 - m03 * m22);
+
+    const c02 = m01 * (m12 * m33 - m13 * m32) - m11 * (m02 * m33 - m03 * m32) + m31 * (m02 * m13 - m03 * m12);
+
+    const c03 = -m01 * (m12 * m23 - m13 * m22) + m11 * (m02 * m23 - m03 * m22) - m21 * (m02 * m13 - m03 * m12);
+
+    const det = m00 * c00 + m10 * c01 + m20 * c02 + m30 * c03;
+    const inv_det = 1.0 / det;
+
+    var r = zero4x4();
+
+    r.repr[0][0] = c00 * inv_det;
+    r.repr[0][1] = c01 * inv_det;
+    r.repr[0][2] = c02 * inv_det;
+    r.repr[0][3] = c03 * inv_det;
+
+    r.repr[1][0] = (-m10 * (m22 * m33 - m23 * m32) + m20 * (m12 * m33 - m13 * m32) - m30 * (m12 * m23 - m13 * m22)) * inv_det;
+
+    r.repr[1][1] = (m00 * (m22 * m33 - m23 * m32) - m20 * (m02 * m33 - m03 * m32) + m30 * (m02 * m23 - m03 * m22)) * inv_det;
+
+    r.repr[1][2] = (-m00 * (m12 * m33 - m13 * m32) + m10 * (m02 * m33 - m03 * m32) - m30 * (m02 * m13 - m03 * m12)) * inv_det;
+
+    r.repr[1][3] = (m00 * (m12 * m23 - m13 * m22) - m10 * (m02 * m23 - m03 * m22) + m20 * (m02 * m13 - m03 * m12)) * inv_det;
+
+    r.repr[2][0] = (m10 * (m21 * m33 - m23 * m31) - m20 * (m11 * m33 - m13 * m31) + m30 * (m11 * m23 - m13 * m21)) * inv_det;
+
+    r.repr[2][1] = (-m00 * (m21 * m33 - m23 * m31) + m20 * (m01 * m33 - m03 * m31) - m30 * (m01 * m23 - m03 * m21)) * inv_det;
+
+    r.repr[2][2] = (m00 * (m11 * m33 - m13 * m31) - m10 * (m01 * m33 - m03 * m31) + m30 * (m01 * m13 - m03 * m11)) * inv_det;
+
+    r.repr[2][3] = (-m00 * (m11 * m23 - m13 * m21) + m10 * (m01 * m23 - m03 * m21) - m20 * (m01 * m13 - m03 * m11)) * inv_det;
+
+    r.repr[3][0] = (-m10 * (m21 * m32 - m22 * m31) + m20 * (m11 * m32 - m12 * m31) - m30 * (m11 * m22 - m12 * m21)) * inv_det;
+
+    r.repr[3][1] = (m00 * (m21 * m32 - m22 * m31) - m20 * (m01 * m32 - m02 * m31) + m30 * (m01 * m22 - m02 * m21)) * inv_det;
+
+    r.repr[3][2] = (-m00 * (m11 * m32 - m12 * m31) + m10 * (m01 * m32 - m02 * m31) - m30 * (m01 * m12 - m02 * m11)) * inv_det;
+
+    r.repr[3][3] = (m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 * m21) + m20 * (m01 * m12 - m02 * m11)) * inv_det;
+
+    return r;
 }
 
 /// Returns a right-handed orthographic projection matrix with Z ranging from -1 to 1 (the OpenGL
@@ -1098,4 +1116,160 @@ pub fn rotatez4x4(m: Mat4x4, rad: f32) Mat4x4 {
     r.repr[2] = [4]f32{ 0, 0, 1, 0 };
     r.repr[3] = [4]f32{ 0, 0, 0, 1 };
     return mul4x4(m, r);
+}
+
+/// testing util
+fn expectMatEqApprox(a: Mat4x4, b: Mat4x4, eps: f32) !void {
+    for (0..4) |c| {
+        for (0..4) |r| {
+            try testing.expectApproxEqAbs(a.repr[c][r], b.repr[c][r], eps);
+        }
+    }
+}
+
+fn expectVecEqApprox(a: Vec4(f32), b: Vec4(f32), eps: f32) !void {
+    try testing.expectApproxEqAbs(a.x(), b.x(), eps);
+    try testing.expectApproxEqAbs(a.y(), b.y(), eps);
+    try testing.expectApproxEqAbs(a.z(), b.z(), eps);
+    try testing.expectApproxEqAbs(a.w(), b.w(), eps);
+}
+
+test "Mat4x4.nth and column access" {
+    const m = identity4x4();
+    try testing.expectEqual(@as(f32, 1), m.nth(0, 0));
+    try testing.expectEqual(@as(f32, 0), m.nth(0, 1));
+
+    const col2 = m.column(2);
+    try testing.expectEqual(@as(f32, 0), col2.x());
+    try testing.expectEqual(@as(f32, 0), col2.y());
+    try testing.expectEqual(@as(f32, 1), col2.z());
+    try testing.expectEqual(@as(f32, 0), col2.w());
+}
+
+test "add4x4 identity + identity = scaled identity" {
+    const a = identity4x4();
+    const b = identity4x4();
+    const c = add4x4(a, b);
+
+    for (0..4) |i| {
+        try testing.expectEqual(@as(f32, 2), c.repr[i][i]);
+    }
+}
+
+test "sub4x4 identity - identity = zero" {
+    const a = identity4x4();
+    const b = identity4x4();
+    const c = sub4x4(a, b);
+
+    for (0..4) |c_idx| {
+        for (0..4) |r| {
+            try testing.expectEqual(@as(f32, 0), c.repr[c_idx][r]);
+        }
+    }
+}
+
+test "transpose4x4 swaps rows and columns" {
+    var m = zero4x4();
+    m.repr[1][2] = 5;
+
+    const t = transpose4x4(m);
+    try testing.expectEqual(@as(f32, 5), t.repr[2][1]);
+}
+
+test "inv(identity) == identity exactly" {
+    const i = identity4x4();
+    const inv = inv4x4(i);
+    try expectMatEqApprox(i, inv, 0.0);
+}
+
+test "mul4x4 identity * identity = identity" {
+    const i = identity4x4();
+    const r = mul4x4(i, i);
+    try expectMatEqApprox(i, r, 0.0001);
+}
+
+test "mulv4x4 identity leaves vector unchanged" {
+    const i = identity4x4();
+    const v = vec4(f32, 1, 2, 3, 1);
+    const r = mulv4x4(i, v);
+    try expectVecEqApprox(v, r, 0.0001);
+}
+
+test "muls4x4 scales matrix" {
+    const m = identity4x4();
+    const r = muls4x4(m, 2);
+
+    try testing.expectEqual(@as(f32, 2), r.repr[0][0]);
+}
+
+test "divs4x4 scales matrix" {
+    const m = identity4x4();
+    const r = divs4x4(m, 2);
+
+    try testing.expectEqual(@as(f32, 0.5), r.repr[0][0]);
+}
+
+test "determinant of identity is 1" {
+    const i = identity4x4();
+    try testing.expectApproxEqAbs(@as(f32, 1), determinant4x4(i), 0.0001);
+}
+
+test "inverse of identity is identity" {
+    const i = identity4x4();
+    const inv = inv4x4(i);
+    try expectMatEqApprox(i, inv, 0.0001);
+}
+
+test "matrix * inverse = identity" {
+    var m = translation4x4(vec3(f32, 3, -2, 5));
+    m = rotatex4x4(m, 0.3);
+
+    const inv = inv4x4(m);
+    const prod = mul4x4(m, inv);
+
+    try expectMatEqApprox(identity4x4(), prod, 0.001);
+}
+
+test "inv4x4 is true inverse" {
+    var m = identity4x4();
+    m = rotatey4x4(m, 0.7);
+    m = translation4x4(vec3(f32, 1, 2, 3));
+
+    const inv = inv4x4(m);
+    const lhs = mul4x4(inv, m);
+    const rhs = mul4x4(m, inv);
+
+    try expectMatEqApprox(identity4x4(), lhs, 0.001);
+    try expectMatEqApprox(identity4x4(), rhs, 0.001);
+}
+
+test "orthographic4x4 basic properties" {
+    const o = orthographic4x4(-1, 1, -1, 1, -1, 1);
+    try testing.expectApproxEqAbs(@as(f32, 1), o.repr[0][0], 0.0001);
+    try testing.expectApproxEqAbs(@as(f32, 1), o.repr[1][1], 0.0001);
+    try testing.expectApproxEqAbs(@as(f32, -1), o.repr[2][2], 0.0001);
+}
+
+test "perspective4x4 sets w clip correctly" {
+    const p = perspective4x4(std.math.pi / 2.0, 1.0, 0.1, 100.0);
+    try testing.expectEqual(@as(f32, -1), p.repr[2][3]);
+}
+
+test "translation4x4 moves origin" {
+    const t = translation4x4(vec3(f32, 1, 2, 3));
+    const v = vec4(f32, 0, 0, 0, 1);
+    const r = mulv4x4(t, v);
+
+    try testing.expectEqual(@as(f32, 1), r.x());
+    try testing.expectEqual(@as(f32, 2), r.y());
+    try testing.expectEqual(@as(f32, 3), r.z());
+}
+
+test "rotatez4x4 rotates unit x to y" {
+    const m = rotatez4x4(identity4x4(), std.math.pi / 2.0);
+    const v = vec4(f32, 1, 0, 0, 1);
+    const r = mulv4x4(m, v);
+
+    try testing.expectApproxEqAbs(@as(f32, 0), r.x(), 0.001);
+    try testing.expectApproxEqAbs(@as(f32, 1), r.y(), 0.001);
 }
