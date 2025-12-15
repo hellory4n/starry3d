@@ -688,17 +688,17 @@ pub fn distance4(comptime T: type, a: Vec4(T), b: Vec4(T)) f32 {
 }
 
 /// Returns the dot product of 2 vector2s
-pub fn dot2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
+pub fn dot2(comptime T: type, a: Vec2(T), b: Vec2(T)) T {
     return a.x() * b.x() + a.y() * b.y();
 }
 
 /// Returns the dot product of 2 vector3s
-pub fn dot3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
+pub fn dot3(comptime T: type, a: Vec3(T), b: Vec3(T)) T {
     return a.x() * b.x() + a.y() * b.y() + a.z() * b.z();
 }
 
 /// Returns the dot product of 2 vector4s
-pub fn dot4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
+pub fn dot4(comptime T: type, a: Vec4(T), b: Vec4(T)) T {
     return a.x() * b.x() + a.y() * b.y() + a.z() * b.z() + a.w() * b.w();
 }
 
@@ -866,10 +866,10 @@ fn linearCombine(a: Vec4(f32), b: Mat4x4) Vec4(f32) {
 
 pub fn mul4x4(a: Mat4x4, b: Mat4x4) Mat4x4 {
     var result = zero4x4();
-    result.repr[0] = linearCombine(b.column(0), a);
-    result.repr[1] = linearCombine(b.column(1), a);
-    result.repr[2] = linearCombine(b.column(2), a);
-    result.repr[3] = linearCombine(b.column(3), a);
+    result.repr[0] = linearCombine(b.column(0), a).toArray();
+    result.repr[1] = linearCombine(b.column(1), a).toArray();
+    result.repr[2] = linearCombine(b.column(2), a).toArray();
+    result.repr[3] = linearCombine(b.column(3), a).toArray();
     return result;
 }
 
@@ -893,13 +893,13 @@ pub fn divs4x4(m: Mat4x4, scalar: f32) Mat4x4 {
     return m;
 }
 
-pub fn mulv4x4(m: Mat4x4, v: Vec4(f32)) Mat4x4 {
+pub fn mulv4x4(m: Mat4x4, v: Vec4(f32)) Vec4(f32) {
     return linearCombine(v, m);
 }
 
 pub fn determinant4x4(m: Mat4x4) f32 {
-    const c01 = cross3(f32, swizzle(f32, m.column(0).xyz), swizzle(f32, m.column(1).xyz));
-    const c23 = cross3(f32, swizzle(f32, m.column(2).xyz), swizzle(f32, m.column(3).xyz));
+    const c01 = cross3(f32, swizzle(f32, m.column(0), .xyz), swizzle(f32, m.column(1), .xyz));
+    const c23 = cross3(f32, swizzle(f32, m.column(2), .xyz), swizzle(f32, m.column(3), .xyz));
     const b10 = sub3(
         f32,
         muls3(f32, swizzle(f32, m.column(0), .xyz), m.column(1).w()),
@@ -914,24 +914,24 @@ pub fn determinant4x4(m: Mat4x4) f32 {
 }
 
 pub fn inv4x4(m: Mat4x4) Mat4x4 {
-    const c01 = cross3(f32, swizzle(f32, m.column(0).xyz), swizzle(f32, m.column(1).xyz));
-    const c23 = cross3(f32, swizzle(f32, m.column(2).xyz), swizzle(f32, m.column(3).xyz));
-    const b10 = sub3(
+    var c01 = cross3(f32, swizzle(f32, m.column(0), .xyz), swizzle(f32, m.column(1), .xyz));
+    var c23 = cross3(f32, swizzle(f32, m.column(2), .xyz), swizzle(f32, m.column(3), .xyz));
+    var b10 = sub3(
         f32,
         muls3(f32, swizzle(f32, m.column(0), .xyz), m.column(1).w()),
         muls3(f32, swizzle(f32, m.column(1), .xyz), m.column(0).w()),
     );
-    const b32 = sub3(
+    var b32 = sub3(
         f32,
         muls3(f32, swizzle(f32, m.column(2), .xyz), m.column(3).w()),
         muls3(f32, swizzle(f32, m.column(3), .xyz), m.column(2).w()),
     );
 
-    const inv_determinant = 1.0 / (dot3(c01, b32) + dot3(c23, b10));
-    c01 = muls3(c01, inv_determinant);
-    c23 = muls3(c23, inv_determinant);
-    b10 = muls3(b10, inv_determinant);
-    b32 = muls3(b32, inv_determinant);
+    const inv_determinant = 1.0 / (dot3(f32, c01, b32) + dot3(f32, c23, b10));
+    c01 = muls3(f32, c01, inv_determinant);
+    c23 = muls3(f32, c23, inv_determinant);
+    b10 = muls3(f32, b10, inv_determinant);
+    b32 = muls3(f32, b32, inv_determinant);
 
     // helper to more easily steal from handmade math
     const v4v = struct {
@@ -943,21 +943,21 @@ pub fn inv4x4(m: Mat4x4) Mat4x4 {
     var result = zero4x4();
     // quite the mouthful
     result.repr[0] = v4v(
-        add3(f32, cross3(f32, swizzle(f32, m.column(1), .xyz), b32), muls3(c23, m.column(1).w())),
-        -dot3(swizzle(f32, m.column(1), .xyz), c23),
-    );
+        add3(f32, cross3(f32, swizzle(f32, m.column(1), .xyz), b32), muls3(f32, c23, m.column(1).w())),
+        -dot3(f32, swizzle(f32, m.column(1), .xyz), c23),
+    ).toArray();
     result.repr[1] = v4v(
-        sub3(f32, cross3(f32, swizzle(f32, m.column(0), .xyz), b32), muls3(c23, m.column(0).w())),
-        dot3(swizzle(f32, m.column(0), .xyz), c23),
-    );
+        sub3(f32, cross3(f32, swizzle(f32, m.column(0), .xyz), b32), muls3(f32, c23, m.column(0).w())),
+        dot3(f32, swizzle(f32, m.column(0), .xyz), c23),
+    ).toArray();
     result.repr[2] = v4v(
-        add3(f32, cross3(f32, swizzle(f32, m.column(3), .xyz), b10), muls3(c01, m.column(3).w())),
-        -dot3(swizzle(f32, m.column(3), .xyz), c01),
-    );
+        add3(f32, cross3(f32, swizzle(f32, m.column(3), .xyz), b10), muls3(f32, c01, m.column(3).w())),
+        -dot3(f32, swizzle(f32, m.column(3), .xyz), c01),
+    ).toArray();
     result.repr[3] = v4v(
-        sub3(f32, cross3(f32, swizzle(f32, m.column(2), .xyz), b10), muls3(c01, m.column(2).w())),
-        dot3(swizzle(f32, m.column(2), .xyz), c01),
-    );
+        sub3(f32, cross3(f32, swizzle(f32, m.column(2), .xyz), b10), muls3(f32, c01, m.column(2).w())),
+        dot3(f32, swizzle(f32, m.column(2), .xyz), c01),
+    ).toArray();
     return transpose4x4(result);
 }
 
@@ -965,7 +965,7 @@ pub fn inv4x4(m: Mat4x4) Mat4x4 {
 /// convention). `left`, `right`, `bottom`, and `top` specify the coordinates of their respective
 /// clipping planes. `near` and `far` specify the distances to the near and far clipping planes.
 pub fn orthographic4x4(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) Mat4x4 {
-    const result = zero4x4();
+    var result = zero4x4();
     result.repr[0][0] = 2.0 / (right - left);
     result.repr[1][1] = 2.0 / (top - bottom);
     result.repr[2][2] = 2.0 / (near - far);
@@ -982,7 +982,7 @@ pub fn orthographic4x4(left: f32, right: f32, bottom: f32, top: f32, near: f32, 
 /// you're rendering things to. `near` and `far` specify the distances to the near and far
 /// clipping planes.
 pub fn perspective4x4(fov: f32, aspect_ratio: f32, near: f32, far: f32) Mat4x4 {
-    const result = zero4x4();
+    var result = zero4x4();
     const cotangent = 1.0 / @tan(fov / 2.0);
     result.repr[0][0] = cotangent / aspect_ratio;
     result.repr[1][1] = cotangent;
@@ -994,7 +994,7 @@ pub fn perspective4x4(fov: f32, aspect_ratio: f32, near: f32, far: f32) Mat4x4 {
 }
 
 pub fn translation4x4(pos: Vec3(f32)) Mat4x4 {
-    const result = identity4x4();
+    var result = identity4x4();
     result.repr[3][0] = pos.x();
     result.repr[3][1] = pos.y();
     result.repr[3][2] = pos.z();
@@ -1005,10 +1005,10 @@ pub fn rotatex4x4(m: Mat4x4, rad: f32) Mat4x4 {
     const s = @sin(rad);
     const c = @cos(rad);
     var r = zero4x4();
-    r[0] = [4]f32{ 1, 0, 0, 0 };
-    r[1] = [4]f32{ 0, c, s, 0 };
-    r[2] = [4]f32{ 0, -s, c, 0 };
-    r[3] = [4]f32{ 0, 0, 0, 1 };
+    r.repr[0] = [4]f32{ 1, 0, 0, 0 };
+    r.repr[1] = [4]f32{ 0, c, s, 0 };
+    r.repr[2] = [4]f32{ 0, -s, c, 0 };
+    r.repr[3] = [4]f32{ 0, 0, 0, 1 };
     return mul4x4(m, r);
 }
 
@@ -1016,10 +1016,10 @@ pub fn rotatey4x4(m: Mat4x4, rad: f32) Mat4x4 {
     const s = @sin(rad);
     const c = @cos(rad);
     var r = zero4x4();
-    r[0] = [4]f32{ c, 0, -s, 0 };
-    r[1] = [4]f32{ 0, 1, 0, 0 };
-    r[2] = [4]f32{ s, 0, c, 0 };
-    r[3] = [4]f32{ 0, 0, 0, 1 };
+    r.repr[0] = [4]f32{ c, 0, -s, 0 };
+    r.repr[1] = [4]f32{ 0, 1, 0, 0 };
+    r.repr[2] = [4]f32{ s, 0, c, 0 };
+    r.repr[3] = [4]f32{ 0, 0, 0, 1 };
     return mul4x4(m, r);
 }
 
@@ -1027,9 +1027,9 @@ pub fn rotatez4x4(m: Mat4x4, rad: f32) Mat4x4 {
     const s = @sin(rad);
     const c = @cos(rad);
     var r = zero4x4();
-    r[0] = [4]f32{ c, s, 0, 0 };
-    r[1] = [4]f32{ -s, c, 0, 0 };
-    r[2] = [4]f32{ 0, 0, 1, 0 };
-    r[3] = [4]f32{ 0, 0, 0, 1 };
+    r.repr[0] = [4]f32{ c, s, 0, 0 };
+    r.repr[1] = [4]f32{ -s, c, 0, 0 };
+    r.repr[2] = [4]f32{ 0, 0, 1, 0 };
+    r.repr[3] = [4]f32{ 0, 0, 0, 1 };
     return mul4x4(m, r);
 }
