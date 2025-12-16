@@ -29,23 +29,16 @@ layout(location = 0) in vec2 fs_uv;
 layout(location = 0) out vec4 frag_color;
 
 layout(binding = 0) uniform fs_uniform {
-    float plane_width;
-    float plane_height;
-    float near_clip_plane;
-    vec3 camera_position;
+    vec3 view_params;
     mat4 view_matrix;
 } u;
 
 void main() {
-    // screen to world coords
-    vec3 view_point_local = vec3(fs_uv - 0.5, 1) *
-        vec3(u.plane_width, u.plane_height, u.near_clip_plane);
-    vec3 view_point = (u.view_matrix * vec4(view_point_local, 1)).xyz;
+    // flip the Y axis to follow raytracing in one weekend
+    // stupid i know
+    vec2 uv = vec2(fs_uv.x, -fs_uv.y + 1);
 
-    Ray ray;
-    ray.origin = u.camera_position;
-    ray.dir = normalize(view_point - ray.origin);
-    frag_color = vec4(ray.dir, 1);
+    frag_color = vec4(uv, 0.0, 1.0);
 }
 @end
 

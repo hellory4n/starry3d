@@ -15,20 +15,6 @@ pub const Camera = struct {
     fov: f32 = std.math.degreesToRadians(45),
     near: f32 = 0.01,
     far: f32 = 1000,
-
-    // TODO figure out orthographic cameras
-
-    /// Returns the view matrix
-    pub fn viewMatrix(cam: Camera) m.Mat4x4 {
-        const pos_mat = m.translation4x4(cam.position);
-
-        var rot_mat = m.identity4x4();
-        rot_mat = m.rotatex4x4(rot_mat, cam.rotation.x());
-        rot_mat = m.rotatey4x4(rot_mat, cam.rotation.y());
-        rot_mat = m.rotatez4x4(rot_mat, cam.rotation.z());
-
-        return m.mul4x4(rot_mat, pos_mat);
-    }
 };
 
 /// It's the current camera. What did you expect.

@@ -505,7 +505,20 @@ pub fn notEqual4(comptime T: type, a: Vec4(T), b: Vec4(T)) bool {
     return either_nequal[0] and either_nequal[1] and either_nequal[2] and either_nequal[3];
 }
 
-// TODO test that (not doing that now :))))))))))) )
+/// Negates a vector2
+pub fn neg2(comptime T: type, v: Vec2(T)) Vec2(T) {
+    return vec2(T, -v.x(), -v.y());
+}
+
+/// Negates a vector3
+pub fn neg3(comptime T: type, v: Vec3(T)) Vec3(T) {
+    return vec3(T, -v.x(), -v.y(), -v.z());
+}
+
+/// Negates a vector4
+pub fn neg4(comptime T: type, v: Vec4(T)) Vec4(T) {
+    return vec4(T, -v.x(), -v.y(), -v.z(), -v.w());
+}
 
 const VecComponents = enum { unused, x, y, z, w };
 
@@ -876,6 +889,8 @@ pub fn identity4x4() Mat4x4 {
         [_]f32{ 0, 0, 0, 1 },
     } };
 }
+
+// FIXME there's a huge chance at least half of this is broken
 
 pub fn add4x4(a: Mat4x4, b: Mat4x4) Mat4x4 {
     var result = zero4x4();
