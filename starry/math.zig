@@ -281,7 +281,12 @@ fn VectorWithLen(comptime len: comptime_int, comptime T: type) type {
 
 fn TypeOfVector(vec: anytype) type {
     const vec_info = vecInfo(@TypeOf(vec));
-    return VectorWithLen(vec_info.len, vec_info.child);
+    return comptime VectorWithLen(vec_info.len, vec_info.child);
+}
+
+fn ChildTypeOfVector(comptime T: type) type {
+    const vec_info = vecInfo(T);
+    return vec_info.child;
 }
 
 fn lengthOfVector(comptime T: type) comptime_int {
@@ -349,175 +354,123 @@ test "vector casting" {
     try testing.expectEqual(intVecFromFloatVec(i32, v2f), vec2(i32, 1, 2));
 }
 
-/// Adds 2 vector2s together
-pub fn add2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
-    return .{ .repr = a.repr + b.repr };
+/// Adds 2 vectors together
+pub fn add(a: anytype, b: anytype) @TypeOf(a) {
+    if (@TypeOf(a) != @TypeOf(b)) {
+        @compileError("vector types must be the same");
+    }
+
+    var result: @TypeOf(a) = undefined;
+    inline for (0..lengthOfVector(@TypeOf(a))) |i| {
+        result.setNth(i, a.nth(i) + b.nth(i));
+    }
+    return result;
 }
 
-/// Adds 2 vector3s together
-pub fn add3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
-    return .{ .repr = a.repr + b.repr };
+/// Subtracts 2 vectors together
+pub fn sub(a: anytype, b: anytype) @TypeOf(a) {
+    if (@TypeOf(a) != @TypeOf(b)) {
+        @compileError("vector types must be the same");
+    }
+
+    var result: @TypeOf(a) = undefined;
+    inline for (0..lengthOfVector(@TypeOf(a))) |i| {
+        result.setNth(i, a.nth(i) - b.nth(i));
+    }
+    return result;
 }
 
-/// Adds 2 vector4s together
-pub fn add4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
-    return .{ .repr = a.repr + b.repr };
+/// Multiplies 2 vectors together
+pub fn mul(a: anytype, b: anytype) @TypeOf(a) {
+    if (@TypeOf(a) != @TypeOf(b)) {
+        @compileError("vector types must be the same");
+    }
+
+    var result: @TypeOf(a) = undefined;
+    inline for (0..lengthOfVector(@TypeOf(a))) |i| {
+        result.setNth(i, a.nth(i) * b.nth(i));
+    }
+    return result;
 }
 
-/// Subtracts 2 vector2s together
-pub fn sub2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
-    return .{ .repr = a.repr - b.repr };
+/// Multiplies a vector by a scalar. `a` *must* be a vector.
+pub fn muls(a: anytype, b: anytype) @TypeOf(a) {
+    if (ChildTypeOfVector(@TypeOf(a)) != @TypeOf(b)) {
+        @compileError("vector types must be the same");
+    }
+
+    var result: @TypeOf(a) = undefined;
+    inline for (0..lengthOfVector(@TypeOf(a))) |i| {
+        result.setNth(i, a.nth(i) * b);
+    }
+    return result;
 }
 
-/// Subtracts 2 vector3s together
-pub fn sub3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
-    return .{ .repr = a.repr - b.repr };
+/// Divides 2 vectors together. Does *not* handle division by zero.
+pub fn div(a: anytype, b: anytype) @TypeOf(a) {
+    if (@TypeOf(a) != @TypeOf(b)) {
+        @compileError("vector types must be the same");
+    }
+
+    var result: @TypeOf(a) = undefined;
+    inline for (0..lengthOfVector(@TypeOf(a))) |i| {
+        result.setNth(i, a.nth(i) / b.nth(i));
+    }
+    return result;
 }
 
-/// Subtracts 2 vector4s together
-pub fn sub4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
-    return .{ .repr = a.repr - b.repr };
+/// Divides a vector by a scalar. `a` *must* be a vector. Does *not* handle division by zero.
+pub fn divs(a: anytype, b: anytype) @TypeOf(a) {
+    if (ChildTypeOfVector(@TypeOf(a)) != @TypeOf(b)) {
+        @compileError("vector types must be the same");
+    }
+
+    var result: @TypeOf(a) = undefined;
+    inline for (0..lengthOfVector(@TypeOf(a))) |i| {
+        result.setNth(i, a.nth(i) / b);
+    }
+    return result;
 }
 
-/// Multiplies 2 vector2s together
-pub fn mul2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
-    return .{ .repr = a.repr * b.repr };
+/// Gets the remainder of dividing 2 vectors together. Does *not* handle division by zero.
+pub fn mod(a: anytype, b: anytype) @TypeOf(a) {
+    if (@TypeOf(a) != @TypeOf(b)) {
+        @compileError("vector types must be the same");
+    }
+
+    var result: @TypeOf(a) = undefined;
+    inline for (0..lengthOfVector(@TypeOf(a))) |i| {
+        result.setNth(i, a.nth(i) % b.nth(i));
+    }
+    return result;
 }
 
-/// Multiplies 2 vector3s together
-pub fn mul3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
-    return .{ .repr = a.repr * b.repr };
+/// Gets the remainder of diving a vector by a scalar. `a` *must* be a vector. Does *not* handle
+/// division by zero.
+pub fn mods(a: anytype, b: anytype) @TypeOf(a) {
+    if (ChildTypeOfVector(@TypeOf(a)) != @TypeOf(b)) {
+        @compileError("vector types must be the same");
+    }
+
+    var result: @TypeOf(a) = undefined;
+    inline for (0..lengthOfVector(@TypeOf(a))) |i| {
+        result.setNth(i, a.nth(i) % b);
+    }
+    return result;
 }
 
-/// Multiplies 2 vector4s together
-pub fn mul4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
-    return .{ .repr = a.repr * b.repr };
-}
+test "add vectors" {
+    const a = vec2(i32, 1, 2);
+    const b = vec2(i32, 2, 4);
+    try testing.expectEqual(vec2(i32, 3, 6), add(a, b));
 
-/// Multiplies a vector2 by a scalar
-pub fn muls2(comptime T: type, a: Vec2(T), b: T) Vec2(T) {
-    return .{ .repr = a.repr * @Vector(2, T){ b, b } };
-}
+    const c = vec3(u64, 1, 2, 3);
+    const d = vec3(u64, 2, 4, 6);
+    try testing.expectEqual(vec3(u64, 3, 6, 9), add(c, d));
 
-/// Multiplies a vector3 by a scalar
-pub fn muls3(comptime T: type, a: Vec3(T), b: T) Vec3(T) {
-    return .{ .repr = a.repr * @Vector(3, T){ b, b, b } };
-}
+    try testing.expectEqual(vec2(i32, 3, 6), muls(a, @as(i32, 3)));
 
-/// Multiplies a vector4 by a scalar
-pub fn muls4(comptime T: type, a: Vec4(T), b: T) Vec4(T) {
-    return .{ .repr = a.repr * @Vector(4, T){ b, b, b, b } };
-}
-
-/// Divides 2 vector2s together
-pub fn div2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
-    return .{ .repr = a.repr / b.repr };
-}
-
-/// Divides 2 vector3s together
-pub fn div3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
-    return .{ .repr = a.repr / b.repr };
-}
-
-/// Divides 2 vector4s together
-pub fn div4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
-    return .{ .repr = a.repr / b.repr };
-}
-
-/// Divides a vector2 by a scalar
-pub fn divs2(comptime T: type, a: Vec2(T), b: T) Vec2(T) {
-    return .{ .repr = a.repr / @Vector(2, T){ b, b } };
-}
-
-/// Divides a vector3 by a scalar
-pub fn divs3(comptime T: type, a: Vec3(T), b: T) Vec3(T) {
-    return .{ .repr = a.repr / @Vector(3, T){ b, b, b } };
-}
-
-/// Divides a vector4 by a scalar
-pub fn divs4(comptime T: type, a: Vec4(T), b: T) Vec4(T) {
-    return .{ .repr = a.repr / @Vector(4, T){ b, b, b, b } };
-}
-
-/// Gets the remainder of the division between 2 vector2s
-pub fn mod2(comptime T: type, a: Vec2(T), b: Vec2(T)) Vec2(T) {
-    return .{ .repr = a.repr % b.repr };
-}
-
-/// Gets the remainder of the division between 2 vector3s
-pub fn mod3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
-    return .{ .repr = a.repr % b.repr };
-}
-
-/// Gets the remainder of the division between 2 vector4s
-pub fn mod4(comptime T: type, a: Vec4(T), b: Vec4(T)) Vec4(T) {
-    return .{ .repr = a.repr % b.repr };
-}
-
-/// Gets the remainder of the division between a vector2 and a scalar
-pub fn mods2(comptime T: type, a: Vec2(T), b: T) Vec2(T) {
-    return .{ .repr = a.repr % @Vector(2, T){ b, b } };
-}
-
-/// Gets the remainder of the division between a vector3 and a scalar
-pub fn mods3(comptime T: type, a: Vec3(T), b: T) Vec3(T) {
-    return .{ .repr = a.repr / @Vector(3, T){ b, b, b } };
-}
-
-/// Gets the remainder of the division between a vector4 and a scalar
-pub fn mods4(comptime T: type, a: Vec4(T), b: T) Vec4(T) {
-    return .{ .repr = a.repr / @Vector(4, T){ b, b, b, b } };
-}
-
-/// Returns true if 2 vector2s are equal. Doesn't handle funky float stuff.
-pub fn equal2(comptime T: type, a: Vec2(T), b: Vec2(T)) bool {
-    const either_equal = a == b;
-    return either_equal[0] and either_equal[1];
-}
-
-/// Returns true if 2 vector3s are equal. Doesn't handle funky float stuff.
-pub fn equal3(comptime T: type, a: Vec3(T), b: Vec3(T)) bool {
-    const either_equal = a == b;
-    return either_equal[0] and either_equal[1] and either_equal[2];
-}
-
-/// Returns true if 2 vector4s are equal. Doesn't handle funky float stuff.
-pub fn equal4(comptime T: type, a: Vec4(T), b: Vec4(T)) bool {
-    const either_equal = a == b;
-    return either_equal[0] and either_equal[1] and either_equal[2] and either_equal[3];
-}
-
-/// Returns true if 2 vector2s are equal. Doesn't handle funky float stuff.
-pub fn notEqual2(comptime T: type, a: Vec2(T), b: Vec2(T)) bool {
-    const either_nequal = a != b;
-    return either_nequal[0] and either_nequal[1];
-}
-
-/// Returns true if 2 vector3s are equal. Doesn't handle funky float stuff.
-pub fn notEqual3(comptime T: type, a: Vec3(T), b: Vec3(T)) bool {
-    const either_nequal = a != b;
-    return either_nequal[0] and either_nequal[1] and either_nequal[2];
-}
-
-/// Returns true if 2 vector4s are equal. Doesn't handle funky float stuff.
-pub fn notEqual4(comptime T: type, a: Vec4(T), b: Vec4(T)) bool {
-    const either_nequal = a != b;
-    return either_nequal[0] and either_nequal[1] and either_nequal[2] and either_nequal[3];
-}
-
-/// Negates a vector2
-pub fn neg2(comptime T: type, v: Vec2(T)) Vec2(T) {
-    return vec2(T, -v.x(), -v.y());
-}
-
-/// Negates a vector3
-pub fn neg3(comptime T: type, v: Vec3(T)) Vec3(T) {
-    return vec3(T, -v.x(), -v.y(), -v.z());
-}
-
-/// Negates a vector4
-pub fn neg4(comptime T: type, v: Vec4(T)) Vec4(T) {
-    return vec4(T, -v.x(), -v.y(), -v.z(), -v.w());
+    // TODO test the rest probably
 }
 
 const VecComponents = enum { unused, x, y, z, w };
@@ -641,650 +594,4 @@ test "rgba swizzle" {
         vec4(i32, 40, 30, 20, 10),
         swizzle(i32, v, .abgr),
     );
-}
-
-/// Returns the length of a vector2
-pub fn length2(comptime T: type, v: Vec2(T)) f32 {
-    var vector: Vec2(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        vector = floatVecCast(f32, v);
-    } else if (@typeInfo(T) == .int) {
-        vector = floatVecFromIntVec(f32, v);
-    } else {
-        @compileError("invalid type");
-    }
-
-    return @sqrt(v.x() * v.x() + v.y() * v.y());
-}
-
-/// Returns the length of a vector3
-pub fn length3(comptime T: type, v: Vec3(T)) f32 {
-    var vector: Vec3(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        vector = floatVecCast(f32, v);
-    } else if (@typeInfo(T) == .int) {
-        vector = floatVecFromIntVec(f32, v);
-    } else {
-        @compileError("invalid type");
-    }
-
-    return @sqrt(v.x() * v.x() + v.y() * v.y() + v.z() * v.z());
-}
-
-/// Returns the length of a vector4
-pub fn length4(comptime T: type, v: Vec4(T)) f32 {
-    var vector: Vec4(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        vector = floatVecCast(f32, v);
-    } else if (@typeInfo(T) == .int) {
-        vector = floatVecFromIntVec(f32, v);
-    } else {
-        @compileError("invalid type");
-    }
-
-    return @sqrt(v.x() * v.x() + v.y() * v.y() + v.z() * v.z() + v.w() * v.w());
-}
-
-/// Returns the distance between 2 vector2s
-pub fn distance2(comptime T: type, a: Vec2(T), b: Vec2(T)) f32 {
-    var veca: Vec2(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        veca = floatVecCast(f32, a);
-    } else if (@typeInfo(T) == .int) {
-        veca = floatVecFromIntVec(f32, a);
-    } else {
-        @compileError("invalid type");
-    }
-
-    var vecb: Vec2(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        vecb = floatVecCast(f32, b);
-    } else if (@typeInfo(T) == .int) {
-        vecb = floatVecFromIntVec(f32, b);
-    } else {
-        @compileError("invalid type");
-    }
-
-    const d = sub2(f32, veca, vecb);
-    return length2(f32, d);
-}
-
-/// Returns the distance between 2 vector3s
-pub fn distance3(comptime T: type, a: Vec3(T), b: Vec3(T)) f32 {
-    var veca: Vec3(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        veca = floatVecCast(f32, a);
-    } else if (@typeInfo(T) == .int) {
-        veca = floatVecFromIntVec(f32, a);
-    } else {
-        @compileError("invalid type");
-    }
-
-    var vecb: Vec3(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        vecb = floatVecCast(f32, b);
-    } else if (@typeInfo(T) == .int) {
-        vecb = floatVecFromIntVec(f32, b);
-    } else {
-        @compileError("invalid type");
-    }
-
-    const d = sub3(f32, veca, vecb);
-    return length3(f32, d);
-}
-
-/// Returns the distance between 2 vector4s
-pub fn distance4(comptime T: type, a: Vec4(T), b: Vec4(T)) f32 {
-    var veca: Vec4(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        veca = floatVecCast(f32, a);
-    } else if (@typeInfo(T) == .int) {
-        veca = floatVecFromIntVec(f32, a);
-    } else {
-        @compileError("invalid type");
-    }
-
-    var vecb: Vec4(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        vecb = floatVecCast(f32, b);
-    } else if (@typeInfo(T) == .int) {
-        vecb = floatVecFromIntVec(f32, b);
-    } else {
-        @compileError("invalid type");
-    }
-
-    const d = sub4(f32, veca, vecb);
-    return length4(f32, d);
-}
-
-/// Returns the dot product of 2 vector2s
-pub fn dot2(comptime T: type, a: Vec2(T), b: Vec2(T)) T {
-    return a.x() * b.x() + a.y() * b.y();
-}
-
-/// Returns the dot product of 2 vector3s
-pub fn dot3(comptime T: type, a: Vec3(T), b: Vec3(T)) T {
-    return a.x() * b.x() + a.y() * b.y() + a.z() * b.z();
-}
-
-/// Returns the dot product of 2 vector4s
-pub fn dot4(comptime T: type, a: Vec4(T), b: Vec4(T)) T {
-    return a.x() * b.x() + a.y() * b.y() + a.z() * b.z() + a.w() * b.w();
-}
-
-/// Returns the cross product of 2 vector3s
-pub fn cross3(comptime T: type, a: Vec3(T), b: Vec3(T)) Vec3(T) {
-    return vec3(
-        T,
-        a.y() * b.z() - a.z() * b.y(),
-        a.z() * b.x() - a.x() * b.z(),
-        a.x() * b.y() - a.y() * b.x(),
-    );
-}
-
-/// Normalizes a vector2
-pub fn normalize2(comptime T: type, v: Vec2(T)) Vec2(f32) {
-    var vec: Vec4(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        vec = floatVecCast(f32, v);
-    } else if (@typeInfo(T) == .int) {
-        vec = floatVecFromIntVec(f32, v);
-    } else {
-        @compileError("invalid type");
-    }
-
-    const length = length2(f32, vec);
-    // consider not dividing by 0
-    if (length == 0.0) {
-        return vec2(f32, 0, 0);
-    }
-    return divs2(f32, vec, length);
-}
-
-/// Normalizes a vector3
-pub fn normalize3(comptime T: type, v: Vec3(T)) Vec3(f32) {
-    var vec: Vec3(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        vec = floatVecCast(f32, v);
-    } else if (@typeInfo(T) == .int) {
-        vec = floatVecFromIntVec(f32, v);
-    } else {
-        @compileError("invalid type");
-    }
-
-    const length = length3(f32, vec);
-    // consider not dividing by 0
-    if (length == 0.0) {
-        return vec3(f32, 0, 0, 0);
-    }
-    return divs3(f32, vec, length);
-}
-
-/// Normalizes a vector4
-pub fn normalize4(comptime T: type, v: Vec4(T)) Vec4(f32) {
-    var vec: Vec4(T) = undefined;
-    if (@typeInfo(T) == .float) {
-        // might be an f64 or f16
-        vec = floatVecCast(f32, v);
-    } else if (@typeInfo(T) == .int) {
-        vec = floatVecFromIntVec(f32, v);
-    } else {
-        @compileError("invalid type");
-    }
-
-    const length = length4(f32, vec);
-    // consider not dividing by 0
-    if (length == 0.0) {
-        return vec4(f32, 0, 0, 0, 0);
-    }
-    return divs4(f32, vec, length);
-}
-
-/// A 4x4 column-major matrix of float32s.
-pub const Mat4x4 = struct {
-    repr: [4][4]f32,
-
-    pub fn nth(mat: @This(), comptime col: comptime_int, comptime row: comptime_int) f32 {
-        return mat.repr[col][row];
-    }
-
-    pub fn column(mat: @This(), comptime col: comptime_int) Vec4(f32) {
-        return vec4(
-            f32,
-            mat.nth(col, 0),
-            mat.nth(col, 1),
-            mat.nth(col, 2),
-            mat.nth(col, 3),
-        );
-    }
-};
-
-// TODO no idea if the compiler is optimizing this to use simd
-
-pub fn zero4x4() Mat4x4 {
-    return .{ .repr = [4][4]f32{
-        [_]f32{ 0, 0, 0, 0 },
-        [_]f32{ 0, 0, 0, 0 },
-        [_]f32{ 0, 0, 0, 0 },
-        [_]f32{ 0, 0, 0, 0 },
-    } };
-}
-
-pub fn identity4x4() Mat4x4 {
-    return .{ .repr = [4][4]f32{
-        [_]f32{ 1, 0, 0, 0 },
-        [_]f32{ 0, 1, 0, 0 },
-        [_]f32{ 0, 0, 1, 0 },
-        [_]f32{ 0, 0, 0, 1 },
-    } };
-}
-
-// FIXME there's a huge chance at least half of this is broken
-
-pub fn add4x4(a: Mat4x4, b: Mat4x4) Mat4x4 {
-    var result = zero4x4();
-    result.repr[0] = add4(f32, a.column(0), b.column(0)).toArray();
-    result.repr[1] = add4(f32, a.column(1), b.column(1)).toArray();
-    result.repr[2] = add4(f32, a.column(2), b.column(2)).toArray();
-    result.repr[3] = add4(f32, a.column(3), b.column(3)).toArray();
-    return result;
-}
-
-pub fn sub4x4(a: Mat4x4, b: Mat4x4) Mat4x4 {
-    var result = zero4x4();
-    result.repr[0] = sub4(f32, a.column(0), b.column(0)).toArray();
-    result.repr[1] = sub4(f32, a.column(1), b.column(1)).toArray();
-    result.repr[2] = sub4(f32, a.column(2), b.column(2)).toArray();
-    result.repr[3] = sub4(f32, a.column(3), b.column(3)).toArray();
-    return result;
-}
-
-pub fn transpose4x4(m: Mat4x4) Mat4x4 {
-    var result = zero4x4();
-    for (0..4) |i| {
-        for (0..4) |j| {
-            result.repr[i][j] = m.repr[j][i];
-        }
-    }
-    return result;
-}
-
-/// idk this is stolen
-fn linearCombine(a: Vec4(f32), b: Mat4x4) Vec4(f32) {
-    var result = vec4(f32, 0, 0, 0, 0);
-    result.repr[0] = a.nth(0) * b.column(0).x();
-    result.repr[1] = a.nth(0) * b.column(0).y();
-    result.repr[2] = a.nth(0) * b.column(0).z();
-    result.repr[3] = a.nth(0) * b.column(0).w();
-
-    result.repr[0] += a.nth(1) * b.column(1).x();
-    result.repr[1] += a.nth(1) * b.column(1).y();
-    result.repr[2] += a.nth(1) * b.column(1).z();
-    result.repr[3] += a.nth(1) * b.column(1).w();
-
-    result.repr[0] += a.nth(2) * b.column(2).x();
-    result.repr[1] += a.nth(2) * b.column(2).y();
-    result.repr[2] += a.nth(2) * b.column(2).z();
-    result.repr[3] += a.nth(2) * b.column(2).w();
-
-    result.repr[0] += a.nth(3) * b.column(3).x();
-    result.repr[1] += a.nth(3) * b.column(3).y();
-    result.repr[2] += a.nth(3) * b.column(3).z();
-    result.repr[3] += a.nth(3) * b.column(3).w();
-    return result;
-}
-
-pub fn mul4x4(a: Mat4x4, b: Mat4x4) Mat4x4 {
-    var result = zero4x4();
-    inline for (0..4) |i| {
-        result.repr[i] = linearCombine(b.column(i), a).toArray();
-    }
-    return result;
-}
-
-pub fn muls4x4(m: Mat4x4, scalar: f32) Mat4x4 {
-    var result = zero4x4();
-    for (0..4) |i| {
-        for (0..4) |j| {
-            result.repr[i][j] = m.repr[i][j] * scalar;
-        }
-    }
-    return result;
-}
-
-pub fn divs4x4(m: Mat4x4, scalar: f32) Mat4x4 {
-    var result = zero4x4();
-    for (0..4) |i| {
-        for (0..4) |j| {
-            result.repr[i][j] = m.repr[i][j] / scalar;
-        }
-    }
-    return result;
-}
-
-pub fn mulv4x4(m: Mat4x4, v: Vec4(f32)) Vec4(f32) {
-    return linearCombine(v, m);
-}
-
-pub fn determinant4x4(m: Mat4x4) f32 {
-    const c01 = cross3(f32, swizzle(f32, m.column(0), .xyz), swizzle(f32, m.column(1), .xyz));
-    const c23 = cross3(f32, swizzle(f32, m.column(2), .xyz), swizzle(f32, m.column(3), .xyz));
-    const b10 = sub3(
-        f32,
-        muls3(f32, swizzle(f32, m.column(0), .xyz), m.column(1).w()),
-        muls3(f32, swizzle(f32, m.column(1), .xyz), m.column(0).w()),
-    );
-    const b32 = sub3(
-        f32,
-        muls3(f32, swizzle(f32, m.column(2), .xyz), m.column(3).w()),
-        muls3(f32, swizzle(f32, m.column(3), .xyz), m.column(2).w()),
-    );
-    return dot3(f32, c01, b32) + dot3(f32, c23, b10);
-}
-
-pub fn inv4x4(m: Mat4x4) Mat4x4 {
-    const m00 = m.repr[0][0];
-    const m01 = m.repr[0][1];
-    const m02 = m.repr[0][2];
-    const m03 = m.repr[0][3];
-
-    const m10 = m.repr[1][0];
-    const m11 = m.repr[1][1];
-    const m12 = m.repr[1][2];
-    const m13 = m.repr[1][3];
-
-    const m20 = m.repr[2][0];
-    const m21 = m.repr[2][1];
-    const m22 = m.repr[2][2];
-    const m23 = m.repr[2][3];
-
-    const m30 = m.repr[3][0];
-    const m31 = m.repr[3][1];
-    const m32 = m.repr[3][2];
-    const m33 = m.repr[3][3];
-
-    // not even gonna bother formatting this
-    const c00 = m11 * (m22 * m33 - m23 * m32) - m21 * (m12 * m33 - m13 * m32) + m31 * (m12 * m23 - m13 * m22);
-
-    const c01 = -m01 * (m22 * m33 - m23 * m32) + m21 * (m02 * m33 - m03 * m32) - m31 * (m02 * m23 - m03 * m22);
-
-    const c02 = m01 * (m12 * m33 - m13 * m32) - m11 * (m02 * m33 - m03 * m32) + m31 * (m02 * m13 - m03 * m12);
-
-    const c03 = -m01 * (m12 * m23 - m13 * m22) + m11 * (m02 * m23 - m03 * m22) - m21 * (m02 * m13 - m03 * m12);
-
-    const det = m00 * c00 + m10 * c01 + m20 * c02 + m30 * c03;
-    const inv_det = 1.0 / det;
-
-    var r = zero4x4();
-
-    r.repr[0][0] = c00 * inv_det;
-    r.repr[0][1] = c01 * inv_det;
-    r.repr[0][2] = c02 * inv_det;
-    r.repr[0][3] = c03 * inv_det;
-
-    r.repr[1][0] = (-m10 * (m22 * m33 - m23 * m32) + m20 * (m12 * m33 - m13 * m32) - m30 * (m12 * m23 - m13 * m22)) * inv_det;
-
-    r.repr[1][1] = (m00 * (m22 * m33 - m23 * m32) - m20 * (m02 * m33 - m03 * m32) + m30 * (m02 * m23 - m03 * m22)) * inv_det;
-
-    r.repr[1][2] = (-m00 * (m12 * m33 - m13 * m32) + m10 * (m02 * m33 - m03 * m32) - m30 * (m02 * m13 - m03 * m12)) * inv_det;
-
-    r.repr[1][3] = (m00 * (m12 * m23 - m13 * m22) - m10 * (m02 * m23 - m03 * m22) + m20 * (m02 * m13 - m03 * m12)) * inv_det;
-
-    r.repr[2][0] = (m10 * (m21 * m33 - m23 * m31) - m20 * (m11 * m33 - m13 * m31) + m30 * (m11 * m23 - m13 * m21)) * inv_det;
-
-    r.repr[2][1] = (-m00 * (m21 * m33 - m23 * m31) + m20 * (m01 * m33 - m03 * m31) - m30 * (m01 * m23 - m03 * m21)) * inv_det;
-
-    r.repr[2][2] = (m00 * (m11 * m33 - m13 * m31) - m10 * (m01 * m33 - m03 * m31) + m30 * (m01 * m13 - m03 * m11)) * inv_det;
-
-    r.repr[2][3] = (-m00 * (m11 * m23 - m13 * m21) + m10 * (m01 * m23 - m03 * m21) - m20 * (m01 * m13 - m03 * m11)) * inv_det;
-
-    r.repr[3][0] = (-m10 * (m21 * m32 - m22 * m31) + m20 * (m11 * m32 - m12 * m31) - m30 * (m11 * m22 - m12 * m21)) * inv_det;
-
-    r.repr[3][1] = (m00 * (m21 * m32 - m22 * m31) - m20 * (m01 * m32 - m02 * m31) + m30 * (m01 * m22 - m02 * m21)) * inv_det;
-
-    r.repr[3][2] = (-m00 * (m11 * m32 - m12 * m31) + m10 * (m01 * m32 - m02 * m31) - m30 * (m01 * m12 - m02 * m11)) * inv_det;
-
-    r.repr[3][3] = (m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 * m21) + m20 * (m01 * m12 - m02 * m11)) * inv_det;
-
-    return r;
-}
-
-/// Returns a right-handed orthographic projection matrix with Z ranging from -1 to 1 (the OpenGL
-/// convention). `left`, `right`, `bottom`, and `top` specify the coordinates of their respective
-/// clipping planes. `near` and `far` specify the distances to the near and far clipping planes.
-pub fn orthographic4x4(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) Mat4x4 {
-    var result = zero4x4();
-    result.repr[0][0] = 2.0 / (right - left);
-    result.repr[1][1] = 2.0 / (top - bottom);
-    result.repr[2][2] = 2.0 / (near - far);
-    result.repr[3][3] = 1.0;
-
-    result.repr[3][0] = (left + right) / (left - right);
-    result.repr[3][1] = (bottom + top) / (bottom - top);
-    result.repr[3][2] = (near + far) / (near - far);
-    return result;
-}
-
-/// Returns a right-handed perspective projection matrix with Z ranging from -1 to 1 (the OpenGL
-/// convention). `fov` is in radians. `aspect_ratio` is the width divided by the height of where
-/// you're rendering things to. `near` and `far` specify the distances to the near and far
-/// clipping planes.
-pub fn perspective4x4(fov: f32, aspect_ratio: f32, near: f32, far: f32) Mat4x4 {
-    var result = zero4x4();
-    const cotangent = 1.0 / @tan(fov / 2.0);
-    result.repr[0][0] = cotangent / aspect_ratio;
-    result.repr[1][1] = cotangent;
-    result.repr[2][3] = -1.0;
-
-    result.repr[2][2] = (near + far) / (near - far);
-    result.repr[3][2] = (2.0 * near * far) / (near - far);
-    return result;
-}
-
-pub fn translation4x4(pos: Vec3(f32)) Mat4x4 {
-    var result = identity4x4();
-    result.repr[3][0] = pos.x();
-    result.repr[3][1] = pos.y();
-    result.repr[3][2] = pos.z();
-    return result;
-}
-
-pub fn rotatex4x4(m: Mat4x4, rad: f32) Mat4x4 {
-    const s = @sin(rad);
-    const c = @cos(rad);
-    var r = zero4x4();
-    r.repr[0] = [4]f32{ 1, 0, 0, 0 };
-    r.repr[1] = [4]f32{ 0, c, s, 0 };
-    r.repr[2] = [4]f32{ 0, -s, c, 0 };
-    r.repr[3] = [4]f32{ 0, 0, 0, 1 };
-    return mul4x4(m, r);
-}
-
-pub fn rotatey4x4(m: Mat4x4, rad: f32) Mat4x4 {
-    const s = @sin(rad);
-    const c = @cos(rad);
-    var r = zero4x4();
-    r.repr[0] = [4]f32{ c, 0, -s, 0 };
-    r.repr[1] = [4]f32{ 0, 1, 0, 0 };
-    r.repr[2] = [4]f32{ s, 0, c, 0 };
-    r.repr[3] = [4]f32{ 0, 0, 0, 1 };
-    return mul4x4(m, r);
-}
-
-pub fn rotatez4x4(m: Mat4x4, rad: f32) Mat4x4 {
-    const s = @sin(rad);
-    const c = @cos(rad);
-    var r = zero4x4();
-    r.repr[0] = [4]f32{ c, s, 0, 0 };
-    r.repr[1] = [4]f32{ -s, c, 0, 0 };
-    r.repr[2] = [4]f32{ 0, 0, 1, 0 };
-    r.repr[3] = [4]f32{ 0, 0, 0, 1 };
-    return mul4x4(m, r);
-}
-
-/// testing util
-fn expectMatEqApprox(a: Mat4x4, b: Mat4x4, eps: f32) !void {
-    for (0..4) |c| {
-        for (0..4) |r| {
-            try testing.expectApproxEqAbs(a.repr[c][r], b.repr[c][r], eps);
-        }
-    }
-}
-
-fn expectVecEqApprox(a: Vec4(f32), b: Vec4(f32), eps: f32) !void {
-    try testing.expectApproxEqAbs(a.x(), b.x(), eps);
-    try testing.expectApproxEqAbs(a.y(), b.y(), eps);
-    try testing.expectApproxEqAbs(a.z(), b.z(), eps);
-    try testing.expectApproxEqAbs(a.w(), b.w(), eps);
-}
-
-test "Mat4x4.nth and column access" {
-    const m = identity4x4();
-    try testing.expectEqual(@as(f32, 1), m.nth(0, 0));
-    try testing.expectEqual(@as(f32, 0), m.nth(0, 1));
-
-    const col2 = m.column(2);
-    try testing.expectEqual(@as(f32, 0), col2.x());
-    try testing.expectEqual(@as(f32, 0), col2.y());
-    try testing.expectEqual(@as(f32, 1), col2.z());
-    try testing.expectEqual(@as(f32, 0), col2.w());
-}
-
-test "add4x4 identity + identity = scaled identity" {
-    const a = identity4x4();
-    const b = identity4x4();
-    const c = add4x4(a, b);
-
-    for (0..4) |i| {
-        try testing.expectEqual(@as(f32, 2), c.repr[i][i]);
-    }
-}
-
-test "sub4x4 identity - identity = zero" {
-    const a = identity4x4();
-    const b = identity4x4();
-    const c = sub4x4(a, b);
-
-    for (0..4) |c_idx| {
-        for (0..4) |r| {
-            try testing.expectEqual(@as(f32, 0), c.repr[c_idx][r]);
-        }
-    }
-}
-
-test "transpose4x4 swaps rows and columns" {
-    var m = zero4x4();
-    m.repr[1][2] = 5;
-
-    const t = transpose4x4(m);
-    try testing.expectEqual(@as(f32, 5), t.repr[2][1]);
-}
-
-test "inv(identity) == identity exactly" {
-    const i = identity4x4();
-    const inv = inv4x4(i);
-    try expectMatEqApprox(i, inv, 0.0);
-}
-
-test "mul4x4 identity * identity = identity" {
-    const i = identity4x4();
-    const r = mul4x4(i, i);
-    try expectMatEqApprox(i, r, 0.0001);
-}
-
-test "mulv4x4 identity leaves vector unchanged" {
-    const i = identity4x4();
-    const v = vec4(f32, 1, 2, 3, 1);
-    const r = mulv4x4(i, v);
-    try expectVecEqApprox(v, r, 0.0001);
-}
-
-test "muls4x4 scales matrix" {
-    const m = identity4x4();
-    const r = muls4x4(m, 2);
-
-    try testing.expectEqual(@as(f32, 2), r.repr[0][0]);
-}
-
-test "divs4x4 scales matrix" {
-    const m = identity4x4();
-    const r = divs4x4(m, 2);
-
-    try testing.expectEqual(@as(f32, 0.5), r.repr[0][0]);
-}
-
-test "determinant of identity is 1" {
-    const i = identity4x4();
-    try testing.expectApproxEqAbs(@as(f32, 1), determinant4x4(i), 0.0001);
-}
-
-test "inverse of identity is identity" {
-    const i = identity4x4();
-    const inv = inv4x4(i);
-    try expectMatEqApprox(i, inv, 0.0001);
-}
-
-test "matrix * inverse = identity" {
-    var m = translation4x4(vec3(f32, 3, -2, 5));
-    m = rotatex4x4(m, 0.3);
-
-    const inv = inv4x4(m);
-    const prod = mul4x4(m, inv);
-
-    try expectMatEqApprox(identity4x4(), prod, 0.001);
-}
-
-test "inv4x4 is true inverse" {
-    var m = identity4x4();
-    m = rotatey4x4(m, 0.7);
-    m = translation4x4(vec3(f32, 1, 2, 3));
-
-    const inv = inv4x4(m);
-    const lhs = mul4x4(inv, m);
-    const rhs = mul4x4(m, inv);
-
-    try expectMatEqApprox(identity4x4(), lhs, 0.001);
-    try expectMatEqApprox(identity4x4(), rhs, 0.001);
-}
-
-test "orthographic4x4 basic properties" {
-    const o = orthographic4x4(-1, 1, -1, 1, -1, 1);
-    try testing.expectApproxEqAbs(@as(f32, 1), o.repr[0][0], 0.0001);
-    try testing.expectApproxEqAbs(@as(f32, 1), o.repr[1][1], 0.0001);
-    try testing.expectApproxEqAbs(@as(f32, -1), o.repr[2][2], 0.0001);
-}
-
-test "perspective4x4 sets w clip correctly" {
-    const p = perspective4x4(std.math.pi / 2.0, 1.0, 0.1, 100.0);
-    try testing.expectEqual(@as(f32, -1), p.repr[2][3]);
-}
-
-test "translation4x4 moves origin" {
-    const t = translation4x4(vec3(f32, 1, 2, 3));
-    const v = vec4(f32, 0, 0, 0, 1);
-    const r = mulv4x4(t, v);
-
-    try testing.expectEqual(@as(f32, 1), r.x());
-    try testing.expectEqual(@as(f32, 2), r.y());
-    try testing.expectEqual(@as(f32, 3), r.z());
-}
-
-test "rotatez4x4 rotates unit x to y" {
-    const m = rotatez4x4(identity4x4(), std.math.pi / 2.0);
-    const v = vec4(f32, 1, 0, 0, 1);
-    const r = mulv4x4(m, v);
-
-    try testing.expectApproxEqAbs(@as(f32, 0), r.x(), 0.001);
-    try testing.expectApproxEqAbs(@as(f32, 1), r.y(), 0.001);
 }
