@@ -8,6 +8,7 @@ const sdtx = @import("sokol").debugtext;
 const log = @import("log.zig");
 const util = @import("util.zig");
 const render = @import("render.zig");
+const math = @import("math.zig");
 const ScratchAllocator = @import("scratch.zig").ScratchAllocator;
 const version = @import("root.zig").version;
 
@@ -36,7 +37,7 @@ pub const Settings = struct {
 /// You usually want this to be configurable by the end user
 pub const WindowSettings = struct {
     /// The preferred size of the window
-    size: @Vector(2, i32) = .{ 1280, 720 },
+    size: math.Vec2(i32) = math.vec2(i32, 1280, 720),
     /// MSAA sample count
     sample_count: ?i32 = null,
     /// Disables VSync so that the renderer can push as many frames as possible, which is useful for
@@ -60,7 +61,7 @@ const GlobalState = struct {
         .{InputState.not_pressed} ** (@intFromEnum(Key.last) + 1),
     mouse_state: [@intFromEnum(MouseButton.last) + 1]InputState =
         .{InputState.not_pressed} ** (@intFromEnum(MouseButton.last) + 1),
-    prev_mouse_pos: @Vector(2, f32) = .{ 0, 0 },
+    prev_mouse_pos: math.Vec2(f32) = math.vec2(f32, 0, 0),
 
     prev_time: f64 = 0,
     smooth_dt: f64 = 0,
@@ -114,8 +115,8 @@ pub fn run(comptime settings: Settings) !void {
     glfw.windowHintString(.wayland_app_id, settings.name);
 
     global.window = try glfw.Window.create(
-        @intCast(settings.window.size[0]),
-        @intCast(settings.window.size[1]),
+        @intCast(settings.window.size.x()),
+        @intCast(settings.window.size.y()),
         settings.name,
         null,
     );
@@ -194,8 +195,8 @@ pub fn run(comptime settings: Settings) !void {
             .action = pass_action,
             // from https://github.com/floooh/sokol-samples/blob/master/glfw/glfw_glue.c
             .swapchain = .{
-                .width = framebuffer_size[0],
-                .height = framebuffer_size[1],
+                .width = framebuffer_size.x(),
+                .height = framebuffer_size.y(),
                 .sample_count = global.settings.window.sample_count orelse 1,
                 .color_format = .RGBA8,
                 .depth_format = .DEPTH_STENCIL,
@@ -210,7 +211,7 @@ pub fn run(comptime settings: Settings) !void {
 
         // debug crap
         const framebuffer_sizef = framebufferSizef();
-        sdtx.canvas(framebuffer_sizef[0] / 2, framebuffer_sizef[1] / 2);
+        sdtx.canvas(framebuffer_sizef.x() / 2, framebuffer_sizef.y() / 2);
         sdtx.print("{d:.0} FPS", .{averageFps()});
         sdtx.draw();
 
@@ -670,33 +671,33 @@ pub fn isMouseButtonNotPressed(btn: MouseButton) bool {
     return !global.mouse_state[@intFromEnum(btn)].isPressed();
 }
 
-pub fn mousePosition() @Vector(2, f32) {
+pub fn mousePosition() math.Vec2(f32) {
     const pos = global.window.getCursorPos();
-    return .{ @floatCast(pos[0]), @floatCast(pos[1]) };
+    return math.vec2(f32, @floatCast(pos[0]), @floatCast(pos[1]));
 }
 
 /// Returns the difference between the last frame's mouse position and the current frame's mouse
 /// position.
-pub fn deltaMousePosition() @Vector(2, f32) {
-    return mousePosition() - global.prev_mouse_pos;
+pub fn deltaMousePosition() math.Vec2(f32) {
+    return math.sub(mousePosition(), global.prev_mouse_pos);
 }
 
 /// Returns the size of the framebuffer.
-pub fn framebufferSize() @Vector(2, i32) {
+pub fn framebufferSize() math.Vec2(i32) {
     const size: [2]c_int = global.window.getFramebufferSize();
-    return .{ @intCast(size[0]), @intCast(size[1]) };
+    return math.vec2(i32, @intCast(size[0]), @intCast(size[1]));
 }
 
 /// Returns the size of the framebuffer but in floats.
-pub fn framebufferSizef() @Vector(2, f32) {
+pub fn framebufferSizef() math.Vec2(f32) {
     const size: [2]c_int = global.window.getFramebufferSize();
-    return .{ @floatFromInt(size[0]), @floatFromInt(size[1]) };
+    return math.vec2(f32, @floatFromInt(size[0]), @floatFromInt(size[1]));
 }
 
 /// Returns the aspect ratio of the framebuffer.
 pub fn aspectRatio() f32 {
     const win_size = framebufferSizef();
-    return win_size[0] / win_size[1];
+    return win_size.x() / win_size.y();
 }
 
 /// Returns true if high DPI is enabled and the app is actually running in a high DPI setting
@@ -715,6 +716,7 @@ pub fn dpiScale() f32 {
 pub fn lockMouse(lock: bool) void {
     // setInputMode returning an error is really unlikely
     _ = global.window.setInputMode(.cursor, if (lock) .disabled else .normal) catch |err| {
+        std.log.err("{d}", .{@errorName(err)});
         @panic(@errorName(err));
     };
 }
@@ -723,6 +725,7 @@ pub fn lockMouse(lock: bool) void {
 pub fn isMouseLocked() bool {
     // getInputMode returning an error is really unlikely
     const input_mode = global.window.getInputMode(.cursor) catch |err| {
+        std.log.err("{d}", .{@errorName(err)});
         @panic(@errorName(err));
     };
     return switch (input_mode) {
