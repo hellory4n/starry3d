@@ -293,6 +293,14 @@ fn lengthOfVector(comptime T: type) comptime_int {
     return vecInfo(T).len;
 }
 
+fn zeroVector(comptime len: comptime_int, comptime T: type) VectorWithLen(len, T) {
+    var result: VectorWithLen(len, T) = undefined;
+    inline for (0..len) |i| {
+        result.setNth(i, 0);
+    }
+    return result;
+}
+
 /// Casting it rn
 pub fn intVecFromFloatVec(
     comptime To: type,
@@ -443,6 +451,38 @@ pub fn mod(a: anytype, b: anytype) @TypeOf(a) {
         result.setNth(i, a.nth(i) % b.nth(i));
     }
     return result;
+}
+
+pub fn lengthSquared(v: anytype) f32 {
+    const vec = switch (@typeInfo(ChildTypeOfVector(@TypeOf(v)))) {
+        .float => floatVecCast(f32, v),
+        .int => floatVecFromIntVec(f32, v),
+        else => @compileError("what?"),
+    };
+
+    var result: f32 = 0;
+    inline for (0..lengthOfVector(@TypeOf(vec))) |i| {
+        result += vec.nth(i) * vec.nth(i);
+    }
+    return result;
+}
+
+pub fn length(v: anytype) f32 {
+    return @sqrt(lengthSquared(v));
+}
+
+pub fn normalize(v: anytype) VectorWithLen(lengthOfVector(@TypeOf(v)), f32) {
+    const vec = switch (@typeInfo(ChildTypeOfVector(@TypeOf(v)))) {
+        .float => floatVecCast(f32, v),
+        .int => floatVecFromIntVec(f32, v),
+        else => @compileError("what?"),
+    };
+
+    const len = length(vec);
+    if (len == 0) {
+        return zeroVector(lengthOfVector(@TypeOf(v)), f32);
+    }
+    return divs(vec, len);
 }
 
 /// Gets the remainder of diving a vector by a scalar. `a` *must* be a vector. Does *not* handle

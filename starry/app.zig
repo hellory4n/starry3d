@@ -716,7 +716,7 @@ pub fn dpiScale() f32 {
 pub fn lockMouse(lock: bool) void {
     // setInputMode returning an error is really unlikely
     _ = global.window.setInputMode(.cursor, if (lock) .disabled else .normal) catch |err| {
-        std.log.err("{d}", .{@errorName(err)});
+        std.log.err("{s}", .{@errorName(err)});
         @panic(@errorName(err));
     };
 }
@@ -725,7 +725,7 @@ pub fn lockMouse(lock: bool) void {
 pub fn isMouseLocked() bool {
     // getInputMode returning an error is really unlikely
     const input_mode = global.window.getInputMode(.cursor) catch |err| {
-        std.log.err("{d}", .{@errorName(err)});
+        std.log.err("{s}", .{@errorName(err)});
         @panic(@errorName(err));
     };
     return switch (input_mode) {

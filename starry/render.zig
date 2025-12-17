@@ -31,9 +31,12 @@ pub fn __draw() void {
 
     const win_size = app.framebufferSizef();
     var uniforms = rtshader.FsUniform{
-        .image_width = win_size.x(),
-        .image_height = win_size.y(),
-        .aspect_ratio = app.aspectRatio(),
+        .u_image_width = win_size.x(),
+        .u_image_height = win_size.y(),
+        .u_aspect_ratio = app.aspectRatio(),
+        .u_fovy = world.current_camera.fov,
+        .u_camera_position = world.current_camera.position.toArray(),
+        .u_camera_rotation = world.current_camera.rotation.toArray(),
     };
     sg.applyUniforms(rtshader.UB_fs_uniform, sg.asRange(&uniforms));
 
