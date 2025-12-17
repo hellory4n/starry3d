@@ -29,11 +29,13 @@ pub fn __deinit() void {
 pub fn __draw() void {
     sg.applyPipeline(global.pipeline);
 
-    // var uniforms = rtshader.FsUniform{
-    //     .camera_position = world.current_camera.position.toArray(),
-    //     .aspect_ratio = app.aspectRatio(),
-    // };
-    // sg.applyUniforms(rtshader.UB_fs_uniform, sg.asRange(&uniforms));
+    const win_size = app.framebufferSizef();
+    var uniforms = rtshader.FsUniform{
+        .image_width = win_size[0],
+        .image_height = win_size[1],
+        .aspect_ratio = app.aspectRatio(),
+    };
+    sg.applyUniforms(rtshader.UB_fs_uniform, sg.asRange(&uniforms));
 
     sg.draw(0, 6, 1);
 }
