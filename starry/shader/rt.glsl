@@ -24,11 +24,23 @@ struct Ray {
     vec3 direction;
 };
 
+bool hitSphere(vec3 center, float radius, Ray r) {
+    vec3 oc = center - r.origin;
+    float a = dot(r.direction, r.direction);
+    float b = -2.0 * dot(r.direction, oc);
+    float c = dot(oc, oc) - radius * radius;
+    float discriminant = b * b - 4 * a * c;
+    return (discriminant >= 0);
+}
+
 vec3 rayAt(Ray ray, float t) {
     return ray.origin + t * ray.direction;
 }
 
 vec4 rayColor(Ray r) {
+    if (hitSphere(vec3(0,0,-1), 0.5, r))
+        return vec4(1, 0, 0, 1);
+
     vec3 unit_direction = normalize(r.direction);
     float a = 0.5 * (unit_direction.y + 1.0);
     return vec4((1.0 - a) * vec3(1.0, 1.0, 1.0) + a * vec3(0.5, 0.7, 1.0), 1.0);
