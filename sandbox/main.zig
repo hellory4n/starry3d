@@ -30,16 +30,16 @@ pub fn updateApp(dt: f32) void {
 
     // fps controller
     const mpos = starry.app.deltaMousePosition();
-    var cam_rot = starry.world.current_camera.rotation;
+    var cam_rot = sm.quatToEulerRad(starry.world.current_camera.rotation);
     cam_rot.setX(cam_rot.x() + std.math.degreesToRadians(mpos.y() * mouse_sensitivity));
     cam_rot.setY(cam_rot.y() + std.math.degreesToRadians(mpos.x() * mouse_sensitivity));
     // don't break your neck
-    cam_rot.setY(std.math.clamp(
+    cam_rot.setX(std.math.clamp(
         cam_rot.y(),
         std.math.degreesToRadians(-89.0),
         std.math.degreesToRadians(89.0),
     ));
-    starry.world.current_camera.rotation = cam_rot;
+    starry.world.current_camera.rotation = sm.normalize(sm.eulerRad(cam_rot));
 
     var move = sm.vec3(f32, 0, 0, 0);
     if (starry.app.isKeyHeld(.w)) {

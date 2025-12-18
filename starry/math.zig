@@ -725,8 +725,12 @@ pub fn length(v: anytype) f32 {
 }
 
 /// Normalizes a vector or quaternion
-pub fn normalize(v: anytype) VectorWithLen(lengthOfVector(@TypeOf(v)), f32) {
-    const vec = switch (@typeInfo(ChildTypeOfVector(@TypeOf(v)))) {
+pub fn normalize(
+    v: anytype,
+) if (@TypeOf(v) == Quat) Quat else VectorWithLen(lengthOfVector(@TypeOf(v)), f32) {
+    const vec = if (@TypeOf(v) == Quat)
+        v
+    else switch (@typeInfo(ChildTypeOfVector(@TypeOf(v)))) {
         .float => floatVecCast(f32, v),
         .int => floatVecFromIntVec(f32, v),
         else => @compileError("what?"),
@@ -734,6 +738,9 @@ pub fn normalize(v: anytype) VectorWithLen(lengthOfVector(@TypeOf(v)), f32) {
 
     const len = length(vec);
     if (len == 0) {
+        if (@TypeOf(v) == Quat) {
+            return quat(0, 0, 0, 1);
+        }
         return zeroVector(lengthOfVector(@TypeOf(v)), f32);
     }
     return divs(vec, len);

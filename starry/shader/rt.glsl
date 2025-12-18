@@ -19,6 +19,11 @@ void main() {
 @end
 
 @fs fs
+vec3 rotateByQuat(vec3 vec, vec4 quat) {
+    vec3 t = 2.0 * cross(quat.xyz, vec);
+    return vec + quat.w * t + cross(quat.xyz, t);
+}
+
 struct Ray {
     vec3 origin;
     vec3 direction;
@@ -54,49 +59,35 @@ layout(binding = 0) uniform fs_uniform {
     float u_image_width;
     float u_image_height;
     float u_aspect_ratio;
-    float u_fovy;
+    float u_fovy; // radians
     vec3 u_camera_position;
-    vec3 u_camera_rotation;
+    vec4 u_camera_rotation; // quaternion
 };
 
-const float pi = 3.1415926535897932384626433;
-const float tau = 6.2831853071795864769252867;
 const float focal_length = 1;
+const vec3 vup = vec3(0, 1, 0);
 
 void main() {
-    // hack stop busting
-    float yaw = mod(u_camera_rotation.y, tau);
-    float pitch = clamp(u_camera_rotation.x, -pi / 2 + 0.001, pi / 2 - 0.001);
-
-    // camera rotation crap
-    // TODO where the fuck is roll
-    vec3 forward;
-    forward.x = cos(pitch) * sin(yaw);
-    forward.y = sin(pitch);
-    forward.z = -cos(pitch) * cos(yaw);
-    forward = normalize(forward);
-
-    vec3 w = -forward;
-    vec3 up = abs(w.y) > 0.999 ? vec3(0, 0, 1) : vec3(0, 1, 0);
-    vec3 u = normalize(cross(up, w));
-    vec3 v = cross(w, u);
-
-    float viewport_height = 2.0 * tan(u_fovy / 2) * focal_length;
+    // viewport stuff
+    float theta = u_fovy;
+    float h = tan(theta / 2);
+    float viewport_height = 2 * h * focal_length;
     float viewport_width = viewport_height * u_aspect_ratio;
-    vec3 viewport_u = u * viewport_width;
-    vec3 viewport_v = v * viewport_height;
 
-    // no idea what this is but i think it's important
+    vec3 w = -rotateByQuat(vec3(0, 0, -1), u_camera_rotation);
+    vec3 u = rotateByQuat(vec3(1, 0, 0), u_camera_rotation);
+    vec3 v = rotateByQuat(vec3(0, 1, 0), -u_camera_rotation);
+
+    vec3 viewport_u = viewport_width * u;
+    vec3 viewport_v = viewport_height * v;
+
     vec3 pixel_delta_u = viewport_u / u_image_width;
     vec3 pixel_delta_v = viewport_v / u_image_height;
 
-    // wheres my top left pixel in world space i thought it was here
-    vec2 frag_coord = vec2(gl_FragCoord.x, -gl_FragCoord.y) + vec2(0, u_image_height);
     vec3 viewport_upper_left =
         u_camera_position - (focal_length * w) - viewport_u / 2 - viewport_v / 2;
     vec3 pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
-    vec3 pixel_center =
-        pixel00_loc + (frag_coord.x * pixel_delta_u) + (frag_coord.y * pixel_delta_v);
+    vec3 pixel_center = pixel00_loc + (gl_FragCoord.x * pixel_delta_u) + (gl_FragCoord.y * pixel_delta_v);
 
     Ray ray;
     ray.direction = pixel_center - u_camera_position;
