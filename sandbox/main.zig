@@ -1,5 +1,6 @@
 const std = @import("std");
 const starry = @import("starry3d");
+const sm = starry.math;
 
 pub const std_options = starry.util.std_options;
 
@@ -9,7 +10,7 @@ const player_speed: f32 = 5.0;
 fn initApp() !void {
     std.log.info("hi", .{});
     starry.world.current_camera = .{
-        .position = starry.math.vec3(f32, 0, 0, 5),
+        .position = sm.vec3(f32, 0, 0, 5),
         .fov = std.math.degreesToRadians(45),
     };
 }
@@ -40,9 +41,9 @@ pub fn updateApp(dt: f32) void {
     ));
     starry.world.current_camera.rotation = cam_rot;
 
-    var move = starry.math.vec3(f32, 0, 0, 0);
+    var move = sm.vec3(f32, 0, 0, 0);
     if (starry.app.isKeyHeld(.w)) {
-        move = starry.math.add(move, starry.math.vec3(
+        move = sm.add(move, sm.vec3(
             f32,
             @sin(starry.world.current_camera.rotation.y()) * 1,
             0,
@@ -50,7 +51,7 @@ pub fn updateApp(dt: f32) void {
         ));
     }
     if (starry.app.isKeyHeld(.s)) {
-        move = starry.math.add(move, starry.math.vec3(
+        move = sm.add(move, sm.vec3(
             f32,
             @sin(starry.world.current_camera.rotation.y()) * -1,
             0,
@@ -58,7 +59,7 @@ pub fn updateApp(dt: f32) void {
         ));
     }
     if (starry.app.isKeyHeld(.a)) {
-        move = starry.math.add(move, starry.math.vec3(
+        move = sm.add(move, sm.vec3(
             f32,
             @sin(starry.world.current_camera.rotation.y() - @as(f32, std.math.pi) / 2) * 1,
             0,
@@ -66,7 +67,7 @@ pub fn updateApp(dt: f32) void {
         ));
     }
     if (starry.app.isKeyHeld(.d)) {
-        move = starry.math.add(move, starry.math.vec3(
+        move = sm.add(move, sm.vec3(
             f32,
             @sin(starry.world.current_camera.rotation.y() - @as(f32, std.math.pi) / 2) * -1,
             0,
@@ -89,12 +90,12 @@ pub fn updateApp(dt: f32) void {
     if (starry.app.isKeyHeld(.left_alt)) {
         run += 6;
     }
-    move = starry.math.normalize(move);
+    move = sm.normalize(move);
 
     // bloody hell mate
-    starry.world.current_camera.position = starry.math.add(
+    starry.world.current_camera.position = sm.add(
         starry.world.current_camera.position,
-        starry.math.muls(starry.math.muls(starry.math.muls(move, player_speed), run), dt),
+        sm.muls(sm.muls(sm.muls(move, player_speed), run), dt),
     );
 }
 

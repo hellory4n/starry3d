@@ -10,7 +10,7 @@ const up = m.vec3(f32, 0, 1, -1);
 /// i saw the sun
 pub const Camera = struct {
     position: m.Vec3(f32) = m.vec3(f32, 0, 0, 0),
-    rotation: m.Rot(f32) = m.rot(f32, 0, 0, 0),
+    rotation: m.Vec3(f32) = m.vec3(f32, 0, 0, 0),
     /// in radians
     fov: f32 = std.math.degreesToRadians(45),
     near: f32 = 0.01,
