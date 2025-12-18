@@ -9,6 +9,7 @@ const log = @import("log.zig");
 const util = @import("util.zig");
 const render = @import("render.zig");
 const math = @import("math.zig");
+const world = @import("world.zig");
 const ScratchAllocator = @import("scratch.zig").ScratchAllocator;
 const version = @import("root.zig").version;
 
@@ -212,7 +213,12 @@ pub fn run(comptime settings: Settings) !void {
         // debug crap
         const framebuffer_sizef = framebufferSizef();
         sdtx.canvas(framebuffer_sizef.x() / 2, framebuffer_sizef.y() / 2);
-        sdtx.print("{d:.0} FPS", .{averageFps()});
+        sdtx.print("{d:.0} FPS\n", .{averageFps()});
+        sdtx.print("at {d:.3} {d:.3} {d:.3}\n", .{
+            world.current_camera.position.x(),
+            world.current_camera.position.y(),
+            world.current_camera.position.z(),
+        });
         sdtx.draw();
 
         sg.endPass();

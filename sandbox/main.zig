@@ -4,8 +4,10 @@ const sm = starry.math;
 
 pub const std_options = starry.util.std_options;
 
-const mouse_sensitivity: f32 = 0.15;
+const mouse_sensitivity: f32 = 30;
 const player_speed: f32 = 5.0;
+var cam_pitch: f32 = 0;
+var cam_yaw: f32 = 0;
 
 fn initApp() !void {
     std.log.info("hi", .{});
@@ -30,72 +32,41 @@ pub fn updateApp(dt: f32) void {
 
     // fps controller
     const mpos = starry.app.deltaMousePosition();
-    var cam_rot = sm.quatToEulerRad(starry.world.current_camera.rotation);
-    cam_rot.setX(cam_rot.x() + std.math.degreesToRadians(mpos.y() * mouse_sensitivity));
-    cam_rot.setY(cam_rot.y() + std.math.degreesToRadians(mpos.x() * mouse_sensitivity));
-    // don't break your neck
-    cam_rot.setX(std.math.clamp(
-        cam_rot.y(),
-        std.math.degreesToRadians(-89.0),
-        std.math.degreesToRadians(89.0),
-    ));
-    starry.world.current_camera.rotation = sm.normalize(sm.eulerRad(cam_rot));
+    var cam_rot = starry.world.current_camera.rotation;
 
-    var move = sm.vec3(f32, 0, 0, 0);
-    if (starry.app.isKeyHeld(.w)) {
-        move = sm.add(move, sm.vec3(
-            f32,
-            @sin(starry.world.current_camera.rotation.y()) * 1,
-            0,
-            @cos(starry.world.current_camera.rotation.y()) * -1,
-        ));
-    }
-    if (starry.app.isKeyHeld(.s)) {
-        move = sm.add(move, sm.vec3(
-            f32,
-            @sin(starry.world.current_camera.rotation.y()) * -1,
-            0,
-            @cos(starry.world.current_camera.rotation.y()) * 1,
-        ));
-    }
-    if (starry.app.isKeyHeld(.a)) {
-        move = sm.add(move, sm.vec3(
-            f32,
-            @sin(starry.world.current_camera.rotation.y() - @as(f32, std.math.pi) / 2) * 1,
-            0,
-            @cos(starry.world.current_camera.rotation.y() - @as(f32, std.math.pi) / 2) * -1,
-        ));
-    }
-    if (starry.app.isKeyHeld(.d)) {
-        move = sm.add(move, sm.vec3(
-            f32,
-            @sin(starry.world.current_camera.rotation.y() - @as(f32, std.math.pi) / 2) * -1,
-            0,
-            @cos(starry.world.current_camera.rotation.y() - @as(f32, std.math.pi) / 2) * 1,
-        ));
-    }
-    if (starry.app.isKeyHeld(.space)) {
-        move.setY(move.y() + 1);
-    }
-    if (starry.app.isKeyHeld(.left_shift)) {
-        move.setY(move.y() - 1);
-    }
+    cam_pitch = std.math.clamp(cam_pitch + mpos.y() * mouse_sensitivity * dt, -89.0, 89.0);
+    cam_yaw += mpos.x() * mouse_sensitivity * dt;
 
-    // ctrl is normal run
-    // alt is ultra fast run for when youre extra impatient
-    var run: f32 = 1.0;
-    if (starry.app.isKeyHeld(.left_ctrl)) {
-        run += 3;
-    }
-    if (starry.app.isKeyHeld(.left_alt)) {
-        run += 6;
-    }
-    move = sm.normalize(move);
+    const pitch_quat = sm.eulerDeg(sm.vec3(f32, cam_pitch, 0, 0));
+    const yaw_quat = sm.eulerDeg(sm.vec3(f32, 0, cam_yaw, 0));
+    cam_rot = sm.mul(pitch_quat, yaw_quat);
+    starry.world.current_camera.rotation = sm.normalize(cam_rot);
 
-    // bloody hell mate
+    var input: sm.Vec3(f32) = sm.vec3(f32, 0, 0, 0);
+    if (starry.app.isKeyHeld(.w)) input.setZ(input.z() - 1);
+    if (starry.app.isKeyHeld(.s)) input.setZ(input.z() + 1);
+    if (starry.app.isKeyHeld(.a)) input.setX(input.x() - 1);
+    if (starry.app.isKeyHeld(.d)) input.setX(input.x() + 1);
+
+    const forward = sm.vec3(
+        f32,
+        @sin(std.math.degreesToRadians(cam_yaw)),
+        0,
+        @cos(std.math.degreesToRadians(cam_yaw)),
+    );
+    const right = sm.vec3(
+        f32,
+        @cos(std.math.degreesToRadians(cam_yaw)),
+        0,
+        -@sin(std.math.degreesToRadians(cam_yaw)),
+    );
+
+    const move = sm.normalize(
+        sm.add(sm.muls(forward, input.z()), sm.muls(right, input.x())),
+    );
     starry.world.current_camera.position = sm.add(
         starry.world.current_camera.position,
-        sm.muls(sm.muls(sm.muls(move, player_speed), run), dt),
+        sm.muls(move, player_speed * dt),
     );
 }
 
