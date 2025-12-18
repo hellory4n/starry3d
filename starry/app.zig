@@ -214,10 +214,15 @@ pub fn run(comptime settings: Settings) !void {
         const framebuffer_sizef = framebufferSizef();
         sdtx.canvas(framebuffer_sizef.x() / 2, framebuffer_sizef.y() / 2);
         sdtx.print("{d:.0} FPS\n", .{averageFps()});
-        sdtx.print("at {d:.3} {d:.3} {d:.3}\n", .{
+        sdtx.print("position: {d:.3} {d:.3} {d:.3}\n", .{
             world.current_camera.position.x(),
             world.current_camera.position.y(),
             world.current_camera.position.z(),
+        });
+        sdtx.print("rotation: {d:.3} {d:.3} {d:.3}\n", .{
+            std.math.radiansToDegrees(math.quatToEulerRad(world.current_camera.rotation).x()),
+            std.math.radiansToDegrees(math.quatToEulerRad(world.current_camera.rotation).y()),
+            std.math.radiansToDegrees(math.quatToEulerRad(world.current_camera.rotation).z()),
         });
         sdtx.draw();
 

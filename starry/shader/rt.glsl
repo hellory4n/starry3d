@@ -19,9 +19,13 @@ void main() {
 @end
 
 @fs fs
-vec3 rotateByQuat(vec3 vec, vec4 quat) {
-    vec3 t = 2.0 * cross(quat.xyz, vec);
-    return vec + quat.w * t + cross(quat.xyz, t);
+mat3 yawPitchRoll(float yaw, float pitch, float roll)
+{
+    mat3 r = mat3(vec3(cos(yaw), sin(yaw), 0.0), vec3(-sin(yaw), cos(yaw), 0.0), vec3(0.0, 0.0, 1.0));
+    mat3 s = mat3(vec3(1.0, 0.0, 0.0), vec3(0.0, cos(pitch), sin(pitch)), vec3(0.0, -sin(pitch), cos(pitch)));
+    mat3 t = mat3(vec3(cos(roll), 0.0, sin(roll)), vec3(0.0, 1.0, 0.0), vec3(-sin(roll), 0.0, cos(roll)));
+
+    return r * s * t;
 }
 
 struct Ray {
@@ -43,12 +47,23 @@ vec3 rayAt(Ray ray, float t) {
 }
 
 vec4 rayColor(Ray r) {
-    if (hitSphere(vec3(0,0,-1), 0.5, r))
+    // no depth stuff fuck you
+    if (hitSphere(vec3(0, 0, -1), 0.5, r)) {
         return vec4(1, 0, 0, 1);
+    }
+    if (hitSphere(vec3(1.5, 0, -1), 0.5, r)) {
+        return vec4(0, 0, 1, 1);
+    }
+    if (hitSphere(vec3(0, 1.5, -1), 0.3, r)) {
+        return vec4(1, 1, 1, 1);
+    }
+    if (hitSphere(vec3(0, 0, -2.5), 0.3, r)) {
+        return vec4(0, 1, 0, 1);
+    }
 
     vec3 unit_direction = normalize(r.direction);
     float a = 0.5 * (unit_direction.y + 1.0);
-    return vec4((1.0 - a) * vec3(1.0, 1.0, 1.0) + a * vec3(0.5, 0.7, 1.0), 1.0);
+    return vec4((a - 1.0) * vec3(1.0, 1.0, 1.0) + a * vec3(0.5, 0.7, 1.0), 1.0);
 }
 
 layout(location = 0) in vec2 fs_uv;
@@ -61,37 +76,22 @@ layout(binding = 0) uniform fs_uniform {
     float u_aspect_ratio;
     float u_fovy; // radians
     vec3 u_camera_position;
-    vec4 u_camera_rotation; // quaternion
+    vec3 u_camera_rotation; // euler radians
 };
 
-const float focal_length = 1;
-const vec3 vup = vec3(0, 1, 0);
-
 void main() {
-    // viewport stuff
-    float theta = u_fovy;
-    float h = tan(theta / 2);
-    float viewport_height = 2 * h * focal_length;
-    float viewport_width = viewport_height * u_aspect_ratio;
+    // pixel-position mapping
+    vec2 I = (2.0 * gl_FragCoord.xy - vec2(u_image_width, u_image_height)) / u_image_height / u_aspect_ratio;
 
-    vec3 w = -rotateByQuat(vec3(0, 0, -1), u_camera_rotation);
-    vec3 u = rotateByQuat(vec3(1, 0, 0), u_camera_rotation);
-    vec3 v = rotateByQuat(vec3(0, 1, 0), -u_camera_rotation);
-
-    vec3 viewport_u = viewport_width * u;
-    vec3 viewport_v = viewport_height * v;
-
-    vec3 pixel_delta_u = viewport_u / u_image_width;
-    vec3 pixel_delta_v = viewport_v / u_image_height;
-
-    vec3 viewport_upper_left =
-        u_camera_position - (focal_length * w) - viewport_u / 2 - viewport_v / 2;
-    vec3 pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
-    vec3 pixel_center = pixel00_loc + (gl_FragCoord.x * pixel_delta_u) + (gl_FragCoord.y * pixel_delta_v);
-
+    mat3 rot_mat = yawPitchRoll(u_camera_rotation.y, u_camera_rotation.x, u_camera_rotation.z);
     Ray ray;
-    ray.direction = pixel_center - u_camera_position;
-    ray.origin = u_camera_position;
+    ray.origin = rot_mat * u_camera_position;
+    ray.direction = rot_mat * vec3(I.x, I.y, 2.0);
+
+    // something has gone wrong in the middle of the code thievery
+    ray.origin = -ray.origin.xyz;
+    ray.direction = -ray.direction.xyz;
+
     frag_color = rayColor(ray);
 }
 @end

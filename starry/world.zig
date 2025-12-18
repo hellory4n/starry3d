@@ -3,9 +3,9 @@ const std = @import("std");
 const m = @import("math.zig");
 const app = @import("app.zig");
 
-const forward = m.vec3(f32, 0, 0, -1);
-const right = m.vec3(f32, 1, 0, 0);
-const up = m.vec3(f32, 0, 1, -1);
+pub const forward = m.vec3(f32, 0, 0, -1);
+pub const right = m.vec3(f32, 1, 0, 0);
+pub const up = m.vec3(f32, 0, 1, 0);
 
 /// i saw the sun
 pub const Camera = struct {
