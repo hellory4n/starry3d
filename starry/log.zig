@@ -96,7 +96,7 @@ pub fn logfn(
 var __alloc: std.mem.Allocator = undefined;
 var __logfiles: std.ArrayList(std.fs.File) = .{};
 
-pub fn __init(alloc: std.mem.Allocator, settings: app.Settings) !void {
+pub fn __init(alloc: std.mem.Allocator, settings: app.Settings) void {
     __alloc = alloc;
 
     if (builtin.os.tag == .windows) {
@@ -106,7 +106,9 @@ pub fn __init(alloc: std.mem.Allocator, settings: app.Settings) !void {
 
     if (settings.logfiles) |logfiles| {
         for (logfiles) |path| {
-            try addLogFile(path);
+            addLogFile(path) catch |err| {
+                stlog.err("logfile '{s}' unavailable: {s}", .{ path, @errorName(err) });
+            };
         }
     }
 }

@@ -70,15 +70,23 @@ const GlobalState = struct {
 var global: GlobalState = .{};
 
 /// Runs the engine, and eventually, your app :)
-pub fn run(comptime settings: Settings) !void {
+pub fn run(comptime settings: Settings) void {
     global.settings = settings;
     global.core_alloc = std.heap.GeneralPurposeAllocator(.{}).init;
     defer _ = global.core_alloc.deinit();
 
-    // sokol itself may use the logging system so it's here
-    try log.__init(global.core_alloc.allocator(), global.settings);
+    log.__init(global.core_alloc.allocator(), global.settings);
     defer log.__free();
 
+    // the rest of the program has to be wrapped so that errors are logged properly
+    realRun() catch |err| {
+        log.stlog.err("fatal error: {s}", .{@errorName(err)});
+        return;
+    };
+}
+
+fn realRun() !void {
+    // TODO clean this up
     log.stlog.info("starry v{d}.{d}.{d}{s}{s}", .{
         version.major,
         version.minor,
@@ -106,19 +114,19 @@ pub fn run(comptime settings: Settings) !void {
     glfw.windowHint(.context_version_minor, 3);
 
     glfw.windowHint(.doublebuffer, true);
-    glfw.windowHint(.resizable, settings.window.resizable);
-    glfw.windowHint(.samples, if (settings.window.sample_count) |samples| samples else 0);
+    glfw.windowHint(.resizable, global.settings.window.resizable);
+    glfw.windowHint(.samples, if (global.settings.window.sample_count) |samples| samples else 0);
     // TODO idk if high dpi works lmao
-    glfw.windowHint(.scale_to_monitor, !settings.window.high_dpi);
-    glfw.windowHint(.scale_framebuffer, !settings.window.high_dpi);
+    glfw.windowHint(.scale_to_monitor, !global.settings.window.high_dpi);
+    glfw.windowHint(.scale_framebuffer, !global.settings.window.high_dpi);
 
-    glfw.windowHintString(.x11_class_name, settings.name);
-    glfw.windowHintString(.wayland_app_id, settings.name);
+    glfw.windowHintString(.x11_class_name, global.settings.name);
+    glfw.windowHintString(.wayland_app_id, global.settings.name);
 
     global.window = try glfw.Window.create(
-        @intCast(settings.window.size.x()),
-        @intCast(settings.window.size.y()),
-        settings.name,
+        @intCast(global.settings.window.size.x()),
+        @intCast(global.settings.window.size.y()),
+        global.settings.name,
         null,
     );
     log.stlog.info("created window for {s} on {s}", .{
@@ -131,7 +139,7 @@ pub fn run(comptime settings: Settings) !void {
     }
 
     glfw.makeContextCurrent(global.window);
-    glfw.swapInterval(if (settings.window.debug_frame_rate) 0 else 1);
+    glfw.swapInterval(if (global.settings.window.debug_frame_rate) 0 else 1);
 
     // from https://github.com/floooh/sokol-samples/blob/master/glfw/glfw_glue.c
     sg.setup(.{
@@ -139,7 +147,7 @@ pub fn run(comptime settings: Settings) !void {
             .defaults = .{
                 .color_format = .RGBA8,
                 .depth_format = .DEPTH_STENCIL,
-                .sample_count = settings.window.sample_count orelse 1,
+                .sample_count = global.settings.window.sample_count orelse 1,
             },
         },
         .logger = .{ .func = sokolLog },
