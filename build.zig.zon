@@ -10,9 +10,9 @@
             .url = "git+https://github.com/zig-gamedev/zglfw#15bf6ec59a4e1399d0c753455f69b28f09e41791",
             .hash = "zglfw-0.10.0-dev-zgVDNHO2IQDy_fSdwY5U4z42rHUuKgt7T9f-qmQ3FnuL",
         },
-        .zmath = .{
-            .url = "git+https://github.com/zig-gamedev/zmath.git#3a5955b2b72cd081563fbb084eff05bffd1e3fbb",
-            .hash = "zmath-0.11.0-dev-wjwivdMsAwD-xaLj76YHUq3t9JDH-X16xuMTmnDzqbu2",
+        .zglm = .{
+            .url = "git+https://github.com/hellory4n/zglm.git#8e5791dd58fc35bf394db00f4ce00c10b574d2fc",
+            .hash = "zglm-0.1.0-rPnx2PqQAAA_cwnvMYNWk_yZuAUJ6kG2YX1-loTXN9-c",
         },
     },
     .fingerprint = 0x3bc229cbaf2e2060,

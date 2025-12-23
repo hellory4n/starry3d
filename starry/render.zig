@@ -4,7 +4,6 @@ const sg = @import("sokol").gfx;
 const app = @import("app.zig");
 const log = @import("log.zig").stlog;
 const world = @import("world.zig");
-const m = @import("math.zig");
 const rtshader = @import("rt.glsl");
 
 const RenderState = struct {
@@ -30,16 +29,16 @@ pub fn __deinit() void {
 pub fn __draw() void {
     sg.applyPipeline(global.pipeline);
 
-    const win_size = app.framebufferSizef();
-    var uniforms = rtshader.FsUniform{
-        .u_image_width = win_size.x(),
-        .u_image_height = win_size.y(),
-        .u_aspect_ratio = app.aspectRatio(),
-        .u_fovy = world.current_camera.fov,
-        .u_camera_position = world.current_camera.position.toArray(),
-        .u_camera_rotation = m.quatToEulerRad(world.current_camera.rotation).toArray(),
-    };
-    sg.applyUniforms(rtshader.UB_fs_uniform, sg.asRange(&uniforms));
+    // const win_size = app.framebufferSizef();
+    // var uniforms = rtshader.FsUniform{
+    //     .u_image_width = win_size.x(),
+    //     .u_image_height = win_size.y(),
+    //     .u_aspect_ratio = app.aspectRatio(),
+    //     .u_fovy = world.current_camera.fov,
+    //     .u_camera_position = world.current_camera.position.toArray(),
+    //     .u_camera_rotation = m.quatToEulerRad(world.current_camera.rotation).toArray(),
+    // };
+    // sg.applyUniforms(rtshader.UB_fs_uniform, sg.asRange(&uniforms));
 
     sg.draw(0, 6, 1);
 }

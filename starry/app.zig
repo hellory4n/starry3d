@@ -5,10 +5,10 @@ const glfw = @import("zglfw");
 const sg = @import("sokol").gfx;
 const slog = @import("sokol").log;
 const sdtx = @import("sokol").debugtext;
+const zglm = @import("zglm");
 const log = @import("log.zig");
 const util = @import("util.zig");
 const render = @import("render.zig");
-const math = @import("math.zig");
 const world = @import("world.zig");
 const ScratchAllocator = @import("scratch.zig").ScratchAllocator;
 const version = @import("root.zig").version;
@@ -38,7 +38,7 @@ pub const Settings = struct {
 /// You usually want this to be configurable by the end user
 pub const WindowSettings = struct {
     /// The preferred size of the window
-    size: math.Vec2(i32) = math.vec2(i32, 1280, 720),
+    size: zglm.Vec2i = zglm.Vec2i.zero(),
     /// MSAA sample count
     sample_count: ?i32 = null,
     /// Disables VSync so that the renderer can push as many frames as possible, which is useful for
@@ -62,7 +62,7 @@ const GlobalState = struct {
         .{InputState.not_pressed} ** (@intFromEnum(Key.last) + 1),
     mouse_state: [@intFromEnum(MouseButton.last) + 1]InputState =
         .{InputState.not_pressed} ** (@intFromEnum(MouseButton.last) + 1),
-    prev_mouse_pos: math.Vec2(f32) = math.vec2(f32, 0, 0),
+    prev_mouse_pos: zglm.Vec2f = zglm.Vec2f.zero(),
 
     prev_time: f64 = 0,
     smooth_dt: f64 = 0,
@@ -214,16 +214,6 @@ pub fn run(comptime settings: Settings) !void {
         const framebuffer_sizef = framebufferSizef();
         sdtx.canvas(framebuffer_sizef.x() / 2, framebuffer_sizef.y() / 2);
         sdtx.print("{d:.0} FPS\n", .{averageFps()});
-        sdtx.print("position: {d:.3} {d:.3} {d:.3}\n", .{
-            world.current_camera.position.x(),
-            world.current_camera.position.y(),
-            world.current_camera.position.z(),
-        });
-        sdtx.print("rotation: {d:.3} {d:.3} {d:.3}\n", .{
-            std.math.radiansToDegrees(math.quatToEulerRad(world.current_camera.rotation).x()),
-            std.math.radiansToDegrees(math.quatToEulerRad(world.current_camera.rotation).y()),
-            std.math.radiansToDegrees(math.quatToEulerRad(world.current_camera.rotation).z()),
-        });
         sdtx.draw();
 
         sg.endPass();
@@ -682,27 +672,27 @@ pub fn isMouseButtonNotPressed(btn: MouseButton) bool {
     return !global.mouse_state[@intFromEnum(btn)].isPressed();
 }
 
-pub fn mousePosition() math.Vec2(f32) {
+pub fn mousePosition() zglm.Vec2f {
     const pos = global.window.getCursorPos();
-    return math.vec2(f32, @floatCast(pos[0]), @floatCast(pos[1]));
+    return zglm.vec2f(@floatCast(pos[0]), @floatCast(pos[1]));
 }
 
 /// Returns the difference between the last frame's mouse position and the current frame's mouse
 /// position.
-pub fn deltaMousePosition() math.Vec2(f32) {
-    return math.sub(mousePosition(), global.prev_mouse_pos);
+pub fn deltaMousePosition() zglm.Vec2f {
+    return zglm.Vec2f.sub(mousePosition(), global.prev_mouse_pos);
 }
 
 /// Returns the size of the framebuffer.
-pub fn framebufferSize() math.Vec2(i32) {
+pub fn framebufferSize() zglm.Vec2i {
     const size: [2]c_int = global.window.getFramebufferSize();
-    return math.vec2(i32, @intCast(size[0]), @intCast(size[1]));
+    return zglm.vec2i(@intCast(size[0]), @intCast(size[1]));
 }
 
 /// Returns the size of the framebuffer but in floats.
-pub fn framebufferSizef() math.Vec2(f32) {
+pub fn framebufferSizef() zglm.Vec2f {
     const size: [2]c_int = global.window.getFramebufferSize();
-    return math.vec2(f32, @floatFromInt(size[0]), @floatFromInt(size[1]));
+    return zglm.vec2f(@floatFromInt(size[0]), @floatFromInt(size[1]));
 }
 
 /// Returns the aspect ratio of the framebuffer.

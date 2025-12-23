@@ -16,3 +16,7 @@ No fuck off.
 
 Voxel rendering can be quite the pickle, so I think it's easier and better to just do the whole thing
 from scratch. Also why not also the suffering is endless
+
+### Is this stable enough to use?
+
+No.

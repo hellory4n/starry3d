@@ -3,7 +3,6 @@ pub const app = @import("app.zig");
 pub const util = @import("util.zig");
 pub const log = @import("log.zig");
 pub const world = @import("world.zig");
-pub const math = @import("math.zig");
 
 // no external api functions, so it's private
 const render = @import("render.zig");

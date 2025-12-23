@@ -24,14 +24,14 @@ pub fn build(b: *std.Build) !void {
     b.installArtifact(tests);
     test_step.dependOn(&b.addRunArtifact(tests).step);
 
-    sandbox(b, target, optimize, starry_mod);
+    sandbox(b, target, optimize, starry_mod, deps.zglm.module("zglm"));
 }
 
 /// hsit
 const StarryDependencies = struct {
     sokol: *std.Build.Dependency,
     glfw: *std.Build.Dependency,
-    zmath: *std.Build.Dependency,
+    zglm: *std.Build.Dependency,
 };
 
 fn installStarryDeps(
@@ -51,13 +51,13 @@ fn installStarryDeps(
     mod.addImport("zglfw", glfw_dep.module("root"));
     mod.linkLibrary(glfw_dep.artifact("glfw"));
 
-    const zmath_dep = b.dependency("zmath", .{});
-    mod.addImport("zmath", zmath_dep.module("root"));
+    const zglm_dep = b.dependency("zglm", .{});
+    mod.addImport("zglm", zglm_dep.module("zglm"));
 
     return .{
         .sokol = sokol_dep,
         .glfw = glfw_dep,
-        .zmath = zmath_dep,
+        .zglm = zglm_dep,
     };
 }
 
@@ -79,6 +79,7 @@ fn sandbox(
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
     starry_mod: *std.Build.Module,
+    zglm_mod: *std.Build.Module,
 ) void {
     const exe = b.addExecutable(.{
         .name = "sandbox",
@@ -88,6 +89,7 @@ fn sandbox(
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "starry3d", .module = starry_mod },
+                .{ .name = "zglm", .module = zglm_mod },
             },
         }),
     });
