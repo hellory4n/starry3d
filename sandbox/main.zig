@@ -87,7 +87,7 @@ pub fn updateApp(_: f32) void {
     // );
 }
 
-pub fn main() !void {
+pub fn main() void {
     starry.app.run(.{
         .name = "sandbox",
         .init = initApp,

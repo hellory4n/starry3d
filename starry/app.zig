@@ -38,7 +38,7 @@ pub const Settings = struct {
 /// You usually want this to be configurable by the end user
 pub const WindowSettings = struct {
     /// The preferred size of the window
-    size: zglm.Vec2i = zglm.Vec2i.zero(),
+    size: zglm.Vec2i = zglm.vec2i(1280, 720),
     /// MSAA sample count
     sample_count: ?i32 = null,
     /// Disables VSync so that the renderer can push as many frames as possible, which is useful for

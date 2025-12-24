@@ -2,9 +2,7 @@
 
 # Starry3D
 
-The voxel graphics toolkit
-
-See the [docs directory](./docs/README.md). for the documentation.
+The voxel graphics toolkit.
 
 ## FAQ
 
@@ -20,3 +18,11 @@ from scratch. Also why not also the suffering is endless
 ### Is this stable enough to use?
 
 No.
+
+### Where's the documentation?
+
+Can't be bothered to write real documentation when the engine changes every picosecond.
+
+### Why Zig?
+
+I like Zig.
