@@ -13,12 +13,16 @@ const RenderState = struct {
 var global: RenderState = undefined;
 
 /// Initializes the renderer. You probably shouldn't call this yourself.
-pub fn __init() void {
+pub fn __init() !void {
     global.pipeline = sg.makePipeline(.{
         .shader = sg.makeShader(rtshader.rtShaderDesc(sg.queryBackend())),
     });
 
     log.info("initialized renderer", .{});
+
+    // this vexes me
+    softwareRenderer() catch |err| @panic(@errorName(err));
+    return error{FuckOff}.FuckOff;
 }
 
 /// Deinitializes the renderer. You probably shouldn't call this yourself.
@@ -26,19 +30,31 @@ pub fn __deinit() void {
     log.info("deinitialized renderer", .{});
 }
 
+fn softwareRenderer() !void {
+    const framebuffer = try std.fs.cwd().createFile("out.ppm", .{ .read = true });
+    defer framebuffer.close();
+
+    const fb_width = 640;
+    const fb_height = 360;
+
+    // ppm header
+    var shia_labuffer: [64]u8 = undefined;
+    try framebuffer.writeAll("P6\n");
+    const crap = try std.fmt.bufPrint(&shia_labuffer, "{d} {d}\n", .{ fb_width, fb_height });
+    try framebuffer.writeAll(crap);
+    try framebuffer.writeAll("255\n");
+    try framebuffer.sync();
+
+    // i am writing it
+    // this is horribly slow :)
+    inline for (0..fb_width) |_| for (0..fb_height) |_| {
+        try framebuffer.writeAll(&[_]u8{255});
+        try framebuffer.writeAll(&[_]u8{0});
+        try framebuffer.writeAll(&[_]u8{0});
+    };
+}
+
 pub fn __draw() void {
     sg.applyPipeline(global.pipeline);
-
-    // const win_size = app.framebufferSizef();
-    // var uniforms = rtshader.FsUniform{
-    //     .u_image_width = win_size.x(),
-    //     .u_image_height = win_size.y(),
-    //     .u_aspect_ratio = app.aspectRatio(),
-    //     .u_fovy = world.current_camera.fov,
-    //     .u_camera_position = world.current_camera.position.toArray(),
-    //     .u_camera_rotation = m.quatToEulerRad(world.current_camera.rotation).toArray(),
-    // };
-    // sg.applyUniforms(rtshader.UB_fs_uniform, sg.asRange(&uniforms));
-
     sg.draw(0, 6, 1);
 }

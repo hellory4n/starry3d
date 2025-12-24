@@ -78,14 +78,14 @@ pub fn run(comptime settings: Settings) void {
     log.__init(global.core_alloc.allocator(), global.settings);
     defer log.__free();
 
-    // the rest of the program has to be wrapped so that errors are logged properly
-    realRun() catch |err| {
+    // the rest of the engine has to be wrapped so that errors are logged properly
+    starryMain() catch |err| {
         log.stlog.err("fatal error: {s}", .{@errorName(err)});
         return;
     };
 }
 
-fn realRun() !void {
+fn starryMain() !void {
     // TODO clean this up
     log.stlog.info("starry v{d}.{d}.{d}{s}{s}", .{
         version.major,
@@ -158,7 +158,7 @@ fn realRun() !void {
         log.stlog.info("shutdown graphics backend", .{});
     }
 
-    render.__init();
+    try render.__init();
     defer render.__deinit();
 
     global.prev_time = glfw.getTime();
