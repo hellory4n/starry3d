@@ -2,7 +2,7 @@ const std = @import("std");
 const starry = @import("starry3d");
 const zglm = @import("zglm");
 
-pub const std_options = starry.util.std_options;
+pub const std_options = starry.std_options;
 
 const mouse_sensitivity: f32 = 30;
 const player_speed: f32 = 5.0;

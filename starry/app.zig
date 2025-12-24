@@ -7,11 +7,10 @@ const slog = @import("sokol").log;
 const sdtx = @import("sokol").debugtext;
 const zglm = @import("zglm");
 const log = @import("log.zig");
-const util = @import("util.zig");
+const root = @import("root.zig");
 const render = @import("render.zig");
 const world = @import("world.zig");
-const ScratchAllocator = @import("scratch.zig").ScratchAllocator;
-const version = @import("root.zig").version;
+const ScratchAllocator = @import("ScratchAllocator.zig");
 
 /// Used for creating a Starry application
 pub const Settings = struct {
@@ -88,11 +87,11 @@ pub fn run(comptime settings: Settings) void {
 fn starryMain() !void {
     // TODO clean this up
     log.stlog.info("starry v{d}.{d}.{d}{s}{s}", .{
-        version.major,
-        version.minor,
-        version.patch,
-        if (version.pre) |pre| "-" ++ pre else "",
-        if (version.build) |build| "+" ++ build else "",
+        root.version.major,
+        root.version.minor,
+        root.version.patch,
+        if (root.version.pre) |pre| "-" ++ pre else "",
+        if (root.version.build) |build| "+" ++ build else "",
     });
     defer log.stlog.info("deinitialized starry", .{});
 
@@ -391,7 +390,8 @@ fn sokolLog(
         }
     }.log;
 
-    const tagstr = tag[0..util.strnlen(tag, 64)];
+    const taglen = std.mem.indexOfSentinel(u8, 0, tag);
+    const tagstr = tag[0..taglen];
     const logfn: *const fn (u32, u32, [*c]const u8) void =
         if (std.mem.eql(u8, tagstr, "sapp"))
             sapp_log
@@ -777,6 +777,7 @@ pub fn averageFps() f64 {
 pub fn setWindowTitle(title: []const u8) void {
     var scratch = ScratchAllocator.init();
     defer scratch.deinit();
-    const title_cstr = util.zigstrToCstr(scratch.allocator(), title) catch unreachable;
+    const title_cstr =
+        std.mem.concatWithSentinel(scratch.allocator(), u8, &[_]u8{title}, 0) catch unreachable;
     global.window.setTitle(title_cstr);
 }

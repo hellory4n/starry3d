@@ -2,8 +2,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const app = @import("app.zig");
-const util = @import("util.zig");
-const ScratchAllocator = @import("scratch.zig").ScratchAllocator;
+const ScratchAllocator = @import("ScratchAllocator.zig");
 
 // color constants things
 // may or may not work on windows, who knows

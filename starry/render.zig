@@ -48,9 +48,7 @@ fn softwareRenderer() !void {
     // i am writing it
     // this is horribly slow :)
     inline for (0..fb_width) |_| for (0..fb_height) |_| {
-        try framebuffer.writeAll(&[_]u8{255});
-        try framebuffer.writeAll(&[_]u8{0});
-        try framebuffer.writeAll(&[_]u8{0});
+        try framebuffer.writeAll(&[_]u8{ 255, 0, 0 });
     };
 }
 
