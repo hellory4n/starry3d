@@ -11,8 +11,8 @@
             .hash = "zglfw-0.10.0-dev-zgVDNHO2IQDy_fSdwY5U4z42rHUuKgt7T9f-qmQ3FnuL",
         },
         .zglm = .{
-            .url = "git+https://github.com/hellory4n/zglm.git#8e5791dd58fc35bf394db00f4ce00c10b574d2fc",
-            .hash = "zglm-0.1.0-rPnx2PqQAAA_cwnvMYNWk_yZuAUJ6kG2YX1-loTXN9-c",
+            .url = "git+https://github.com/hellory4n/zglm.git#25cc228ef790121f311fa77c1a74374915dbbfc3",
+            .hash = "zglm-0.1.0-rPnx2PqRAADComxtRiKuGt8v5vel2RGXwM73R6OhP_Oc",
         },
     },
     .fingerprint = 0x3bc229cbaf2e2060,
