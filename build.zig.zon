@@ -3,16 +3,16 @@
     .version = "0.7.0",
     .dependencies = .{
         .sokol = .{
-            .url = "git+https://github.com/floooh/sokol-zig.git#8c6f4403f34c58e622df1fe68b270ef537a47589",
-            .hash = "sokol-0.1.0-pb1HK0mFNgCOlT9dMYI9GbeJnhJR0vq5QSgqFbhz40z4",
+            .url = "git+https://github.com/floooh/sokol-zig.git#4b04f5a54015f0cdf4a9aac35faa03f2a091514f",
+            .hash = "sokol-0.1.0-pb1HKzVmNgDI8LiFXHdBxSmH9KOjSia4W4I4GN-S5gzB",
         },
         .zglfw = .{
             .url = "git+https://github.com/zig-gamedev/zglfw#15bf6ec59a4e1399d0c753455f69b28f09e41791",
             .hash = "zglfw-0.10.0-dev-zgVDNHO2IQDy_fSdwY5U4z42rHUuKgt7T9f-qmQ3FnuL",
         },
         .zglm = .{
-            .url = "git+https://github.com/hellory4n/zglm.git#531d5ec5990a26d2a72f61be43ffcc365118a0bc",
-            .hash = "zglm-0.1.0-rPnx2F2SAAAECFEan1lP0rEIzKlT4twW7JImYTW93cvw",
+            .url = "git+https://github.com/hellory4n/zglm.git#8c8134398475f2f0e15ea111e4060253deec0a63",
+            .hash = "zglm-0.1.0-rPnx2LqxAACHHmc1k7cyVLIQ2Ez8j_6o4nRJRnHt5_Gg",
         },
     },
     .fingerprint = 0x3bc229cbaf2e2060,

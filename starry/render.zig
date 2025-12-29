@@ -63,7 +63,7 @@ fn softwareRenderer() !void {
         const color = pixel(
             zglm.vec2f(u, v),
             zglm.vec2f(@floatFromInt(fb_width), @floatFromInt(fb_height)),
-            zglm.vec3f(0, 0, 0),
+            zglm.vec3f(0, 0, 1),
         );
 
         // convert to 8 bit color
@@ -91,8 +91,17 @@ const Ray = struct {
 
     pub fn color(ray: Ray) zglm.Vec3f {
         // balls<3
-        if (ray.hitSphere(zglm.vec3f(0, 0, 1), 0.5)) {
+        if (ray.hitSphere(zglm.vec3f(0, 0, -1), 0.5)) {
             return zglm.vec3f(1, 0, 0);
+        }
+        if (ray.hitSphere(zglm.vec3f(1.5, 0, -1), 0.5)) {
+            return zglm.vec3f(0, 0, 1);
+        }
+        if (ray.hitSphere(zglm.vec3f(0, 1.5, -1), 0.3)) {
+            return zglm.vec3f(1, 1, 1);
+        }
+        if (ray.hitSphere(zglm.vec3f(0, 0, -2.5), 0.3)) {
+            return zglm.vec3f(0, 1, 0);
         }
 
         // sky thingy
@@ -131,7 +140,6 @@ fn pixel(
     const viewport_width = viewport_height *
         (@as(f32, @floatFromInt(image_width)) / @as(f32, @floatFromInt(image_height)));
 
-    // Calculate the vectors across the horizontal and down the vertical viewport edges.
     // vectors across the horizontal and down the vertical viewport edges
     const viewport_u = zglm.vec3f(viewport_width, 0, 0);
     // TODO unnegate this in glsl
