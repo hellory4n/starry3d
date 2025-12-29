@@ -23,8 +23,58 @@ layout(location = 0) in vec2 fs_uv;
 
 layout(location = 0) out vec4 frag_color;
 
+struct Ray {
+    vec3 origin;
+    vec3 dir;
+};
+
+bool hitSphere(vec3 center, float radius, Ray r) {
+    vec3 oc = center - r.origin;
+    float a = dot(r.dir, r.dir);
+    float b = -2.0 * dot(r.dir, oc);
+    float c = dot(oc, oc) - radius * radius;
+    float discriminant = b * b - 4.0 * a * c;
+    return (discriminant >= 0.0);
+}
+
+vec4 rayColor(Ray r) {
+    // no depth stuff fuck you
+    if (hitSphere(vec3(0,0,-1), 0.5, r)) {
+        return vec4(1, 0, 0, 1);
+    }
+    if (hitSphere(vec3(1.5, 0, -1), 0.5, r)) {
+        return vec4(0, 0, 1, 1);
+    }
+    if (hitSphere(vec3(0, 1.5, -1), 0.3, r)) {
+        return vec4(1, 1, 1, 1);
+    }
+    if (hitSphere(vec3(0, 0, -2.5), 0.3, r)) {
+        return vec4(0, 1, 0, 1);
+    }
+
+    vec3 unit_direction = normalize(r.dir);
+    float a = 0.5*(unit_direction.y + 1.0);
+    return vec4((1.0-a)*vec3(1.0, 1.0, 1.0) + a*vec3(0.5, 0.7, 1.0),1);
+}
+
+layout(binding = 0) uniform fs_uniform {
+    mat4 u_inv_view; // inverted view
+    mat4 u_inv_centered_view; // inverted view with no translation
+    mat4 u_inv_projection; // inverted projection
+    vec2 u_image_size;
+};
+
 void main() {
-    frag_color = vec4(fs_uv, 0, 1);
+    vec2 coords = gl_FragCoord.xy;
+	vec2 screen_pos = coords / u_image_size * 2 - 1;
+
+	Ray ray;
+	ray.origin = (u_inv_view * vec4(0, 0, 0, 1)).xyz;
+	// not normalizing the direction is faster
+	ray.dir =
+	    (u_inv_centered_view * u_inv_projection * vec4(screen_pos, 0, 1)).xyz + 0.0001;
+
+    frag_color = rayColor(ray);
 }
 @end
 
