@@ -57,8 +57,39 @@ vec4 rayColor(Ray r) {
     return vec4((1.0-a)*vec3(1.0, 1.0, 1.0) + a*vec3(0.5, 0.7, 1.0),1);
 }
 
+vec3 unproject(vec3 pos, mat4 inv_mat, vec4 viewport) {
+    vec4 vec = vec4(
+        2.0 * (pos.x - viewport.x) / viewport.z - 1.0,
+        2.0 * (pos.y - viewport.y) / viewport.w - 1.0,
+        2.0 * pos.z - 1.0,
+        1.0
+    );
+    vec = inv_mat * vec;
+    vec *= 1.0 / vec.w;
+    return vec.xyz;
+}
+
+layout(binding = 0) uniform fs_uniform {
+    mat4 u_inv_view_proj_mat;
+    vec4 u_viewport; // z/w = image size
+    vec3 u_camera_pos;
+};
+
 void main() {
-    frag_color = vec4(fs_uv,0,1);
+    vec2 pixel = gl_FragCoord.xy;
+    vec2 image_size = u_viewport.zw;
+
+    vec3 win_near = vec3(pixel, 0);
+    vec3 win_far = vec3(pixel, 1);
+
+    vec3 world_near = unproject(win_near, u_inv_view_proj_mat, u_viewport);
+    vec3 world_far = unproject(win_far, u_inv_view_proj_mat, u_viewport);
+
+    Ray ray;
+    ray.origin = u_camera_pos;
+    ray.dir = normalize(world_far - world_near);
+
+    frag_color = rayColor(ray);
 }
 @end
 

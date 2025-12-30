@@ -4,7 +4,7 @@ const zglm = @import("zglm");
 
 pub const std_options = starry.std_options;
 
-const mouse_sensitivity: f32 = 30;
+const mouse_sensitivity: f32 = 15;
 const player_speed: f32 = 5.0;
 var cam_pitch: f32 = 0;
 var cam_yaw: f32 = 0;
@@ -36,6 +36,33 @@ pub fn updateApp(dt: f32) void {
     cam_pitch = zglm.clamp(cam_pitch + mouse[1] * mouse_sensitivity * dt, -89, 89);
     cam_yaw += mouse[0] * mouse_sensitivity * dt;
     starry.world.current_camera.rotation = .{ zglm.radians(cam_pitch), zglm.radians(cam_yaw), 0 };
+
+    var move: zglm.Vec3f = @splat(0);
+    if (starry.app.isKeyHeld(.w)) {
+        move +=
+            .{ zglm.sin(zglm.radians(cam_yaw)) * 1, 0, zglm.cos(zglm.radians(cam_yaw)) * -1 };
+    }
+    if (starry.app.isKeyHeld(.s)) {
+        move +=
+            .{ zglm.sin(zglm.radians(cam_yaw)) * -1, 0, zglm.cos(zglm.radians(cam_yaw)) * 1 };
+    }
+    if (starry.app.isKeyHeld(.a)) {
+        move +=
+            .{ zglm.sin(zglm.radians(cam_yaw - 90)) * 1, 0, zglm.cos(zglm.radians(cam_yaw - 90)) * -1 };
+    }
+    if (starry.app.isKeyHeld(.d)) {
+        move +=
+            .{ zglm.sin(zglm.radians(cam_yaw - 90)) * -1, 0, zglm.cos(zglm.radians(cam_yaw - 90)) * 1 };
+    }
+    if (starry.app.isKeyHeld(.space)) {
+        move[1] += 1;
+    }
+    if (starry.app.isKeyHeld(.left_shift)) {
+        move[1] -= 1;
+    }
+
+    starry.world.current_camera.position +=
+        zglm.normalize(move) * @as(zglm.Vec3f, @splat(player_speed)) * @as(zglm.Vec3f, @splat(dt));
 }
 
 pub fn main() void {

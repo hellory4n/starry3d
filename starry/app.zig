@@ -706,7 +706,7 @@ pub fn framebufferSizef() zglm.Vec2f {
 /// Returns the aspect ratio of the framebuffer.
 pub fn aspectRatio() f32 {
     const win_size = framebufferSizef();
-    return win_size.x() / win_size.y();
+    return win_size[0] / win_size[1];
 }
 
 /// Returns true if high DPI is enabled and the app is actually running in a high DPI setting

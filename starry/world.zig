@@ -23,7 +23,7 @@ pub const Camera = struct {
     projection: Projection = .perspective,
 
     /// Returns the view matrix for the camera
-    pub fn viewMatrix(cam: Camera) zglm.Mat4x4 {
+    pub fn viewMatrix(cam: Camera) zglm.Mat4x4f {
         const pos = zglm.identity4x4f().translate(-cam.position);
 
         const rot = zglm.identity4x4f()
@@ -35,7 +35,7 @@ pub const Camera = struct {
     }
 
     /// Returns the projection matrix for the camera
-    pub fn projectionMatrix(cam: Camera) zglm.Mat4x4 {
+    pub fn projectionMatrix(cam: Camera) zglm.Mat4x4f {
         const aspect = app.aspectRatio();
 
         if (cam.projection == .perspective) {
