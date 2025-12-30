@@ -12,8 +12,8 @@ var cam_yaw: f32 = 0;
 fn initApp() !void {
     std.log.info("hi", .{});
     starry.world.current_camera = .{
-        .position = zglm.vec3f(0, 0, 5),
-        .fov = zglm.deg2rad(90),
+        .position = .{ 0, 0, 5 },
+        .fov = zglm.radians(90),
     };
 }
 
@@ -33,9 +33,9 @@ pub fn updateApp(dt: f32) void {
     // fps controller
     const mouse = starry.app.deltaMousePosition();
     // quite the mouthful
-    cam_pitch = zglm.clamp(cam_pitch + mouse.y() * mouse_sensitivity * dt, -89, 89);
-    cam_yaw += mouse.x() * mouse_sensitivity * dt;
-    starry.world.current_camera.rotation = zglm.vec3f(zglm.deg2rad(cam_pitch), zglm.deg2rad(cam_yaw), 0);
+    cam_pitch = zglm.clamp(cam_pitch + mouse[1] * mouse_sensitivity * dt, -89, 89);
+    cam_yaw += mouse[0] * mouse_sensitivity * dt;
+    starry.world.current_camera.rotation = .{ zglm.radians(cam_pitch), zglm.radians(cam_yaw), 0 };
 }
 
 pub fn main() void {

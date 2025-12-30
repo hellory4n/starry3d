@@ -3,19 +3,19 @@ const std = @import("std");
 const zglm = @import("zglm");
 const app = @import("app.zig");
 
-pub const forward = zglm.vec3f(0, 0, -1);
-pub const right = zglm.vec3f(1, 0, 0);
-pub const up = zglm.vec3f(0, 1, 0);
+pub const forward = zglm.Vec3f{ 0, 0, -1 };
+pub const right = zglm.Vec3f{ 1, 0, 0 };
+pub const up = zglm.Vec3f{ 0, 1, 0 };
 
 pub const Projection = enum { perspective, orthographic };
 
 /// i saw the sun
 pub const Camera = struct {
-    position: zglm.Vec3f = zglm.vec3f(0, 0, 0),
-    /// in radians
-    rotation: zglm.Vec3f = zglm.vec3f(0, 0, 0),
+    position: zglm.Vec3f = @splat(0),
+    /// in radians, X is pitch, Y is yaw, and Z is roll
+    rotation: zglm.Vec3f = @splat(0),
     /// in radians, only used for a perspective camera
-    fov: f32 = zglm.deg2rad(45),
+    fov: f32 = zglm.radians(45),
     /// only used for an orthographic camera
     zoom: f32 = 10,
     near: f32 = 0.001,
@@ -24,20 +24,14 @@ pub const Camera = struct {
 
     /// Returns the view matrix for the camera
     pub fn viewMatrix(cam: Camera) zglm.Mat4x4 {
-        const pos = zglm.Mat4x4.translate(cam.position.neg());
+        const pos = zglm.identity4x4f().translate(-cam.position);
 
-        const rot = zglm.Mat4x4.rotateX(cam.rotation.x())
-            .mul(.rotateY(cam.rotation.y()))
-            .mul(.rotateZ(cam.rotation.z()));
+        const rot = zglm.identity4x4f()
+            .rotate(cam.rotation[0], .{ 1, 0, 0 })
+            .rotate(cam.rotation[1], .{ 0, 1, 0 })
+            .rotate(cam.rotation[2], .{ 0, 0, 1 });
 
         return rot.mul(pos);
-    }
-
-    /// Returns the centered view matrix (no translation) for the camera
-    pub fn centeredViewMatrix(cam: Camera) zglm.Mat4x4 {
-        return zglm.Mat4x4.rotateX(cam.rotation.x())
-            .mul(.rotateY(cam.rotation.y()))
-            .mul(.rotateZ(cam.rotation.z()));
     }
 
     /// Returns the projection matrix for the camera
@@ -45,7 +39,12 @@ pub const Camera = struct {
         const aspect = app.aspectRatio();
 
         if (cam.projection == .perspective) {
-            return .perspective(cam.fov, aspect, cam.near, cam.far);
+            return zglm.perspective(.{
+                .fovy_rad = cam.fov,
+                .aspect_ratio = aspect,
+                .z_near = cam.near,
+                .z_far = cam.far,
+            });
         } else {
             // TODO this may be fucked im not sure
             const l = -cam.zoom / 2;
@@ -54,7 +53,15 @@ pub const Camera = struct {
             const height = cam.zoom * aspect;
             const b = -height / 2;
             const t = height / 2;
-            return .ortho(l, r, b, t, cam.near, cam.far);
+
+            return zglm.ortho(.{
+                .left = l,
+                .right = r,
+                .bottom = b,
+                .top = t,
+                .z_near = cam.near,
+                .z_far = cam.far,
+            });
         }
     }
 };

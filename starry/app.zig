@@ -37,7 +37,7 @@ pub const Settings = struct {
 /// You usually want this to be configurable by the end user
 pub const WindowSettings = struct {
     /// The preferred size of the window
-    size: zglm.Vec2i = zglm.vec2i(1280, 720),
+    size: zglm.Vec2i = .{ 1280, 720 },
     /// MSAA sample count
     sample_count: ?i32 = null,
     /// Disables VSync so that the renderer can push as many frames as possible, which is useful for
@@ -61,7 +61,7 @@ const GlobalState = struct {
         .{InputState.not_pressed} ** (@intFromEnum(Key.last) + 1),
     mouse_state: [@intFromEnum(MouseButton.last) + 1]InputState =
         .{InputState.not_pressed} ** (@intFromEnum(MouseButton.last) + 1),
-    prev_mouse_pos: zglm.Vec2f = zglm.Vec2f.zero(),
+    prev_mouse_pos: zglm.Vec2f = @splat(0),
 
     prev_time: f64 = 0,
     smooth_dt: f64 = 0,
@@ -123,8 +123,8 @@ fn starryMain() !void {
     glfw.windowHintString(.wayland_app_id, global.settings.name);
 
     global.window = try glfw.Window.create(
-        @intCast(global.settings.window.size.x()),
-        @intCast(global.settings.window.size.y()),
+        @intCast(global.settings.window.size[0]),
+        @intCast(global.settings.window.size[1]),
         global.settings.name,
         null,
     );
@@ -203,8 +203,8 @@ fn starryMain() !void {
             .action = pass_action,
             // from https://github.com/floooh/sokol-samples/blob/master/glfw/glfw_glue.c
             .swapchain = .{
-                .width = framebuffer_size.x(),
-                .height = framebuffer_size.y(),
+                .width = framebuffer_size[0],
+                .height = framebuffer_size[1],
                 .sample_count = global.settings.window.sample_count orelse 1,
                 .color_format = .RGBA8,
                 .depth_format = .DEPTH_STENCIL,
@@ -219,7 +219,7 @@ fn starryMain() !void {
 
         // debug crap
         const framebuffer_sizef = framebufferSizef();
-        sdtx.canvas(framebuffer_sizef.x() / 2, framebuffer_sizef.y() / 2);
+        sdtx.canvas(framebuffer_sizef[0] / 2, framebuffer_sizef[1] / 2);
         sdtx.print("{d:.0} FPS\n", .{averageFps()});
         sdtx.draw();
 
@@ -682,25 +682,25 @@ pub fn isMouseButtonNotPressed(btn: MouseButton) bool {
 
 pub fn mousePosition() zglm.Vec2f {
     const pos = global.window.getCursorPos();
-    return zglm.vec2f(@floatCast(pos[0]), @floatCast(pos[1]));
+    return .{ @floatCast(pos[0]), @floatCast(pos[1]) };
 }
 
 /// Returns the difference between the last frame's mouse position and the current frame's mouse
 /// position.
 pub fn deltaMousePosition() zglm.Vec2f {
-    return zglm.Vec2f.sub(mousePosition(), global.prev_mouse_pos);
+    return mousePosition() - global.prev_mouse_pos;
 }
 
 /// Returns the size of the framebuffer.
 pub fn framebufferSize() zglm.Vec2i {
     const size: [2]c_int = global.window.getFramebufferSize();
-    return zglm.vec2i(@intCast(size[0]), @intCast(size[1]));
+    return .{ @intCast(size[0]), @intCast(size[1]) };
 }
 
 /// Returns the size of the framebuffer but in floats.
 pub fn framebufferSizef() zglm.Vec2f {
     const size: [2]c_int = global.window.getFramebufferSize();
-    return zglm.vec2f(@floatFromInt(size[0]), @floatFromInt(size[1]));
+    return .{ @floatFromInt(size[0]), @floatFromInt(size[1]) };
 }
 
 /// Returns the aspect ratio of the framebuffer.

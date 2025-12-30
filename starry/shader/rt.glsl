@@ -57,24 +57,8 @@ vec4 rayColor(Ray r) {
     return vec4((1.0-a)*vec3(1.0, 1.0, 1.0) + a*vec3(0.5, 0.7, 1.0),1);
 }
 
-layout(binding = 0) uniform fs_uniform {
-    mat4 u_inv_view; // inverted view
-    mat4 u_inv_centered_view; // inverted view with no translation
-    mat4 u_inv_projection; // inverted projection
-    vec2 u_image_size;
-};
-
 void main() {
-    vec2 coords = gl_FragCoord.xy;
-	vec2 screen_pos = coords / u_image_size * 2 - 1;
-
-	Ray ray;
-	ray.origin = (u_inv_view * vec4(0, 0, 0, 1)).xyz;
-	// not normalizing the direction is faster
-	ray.dir =
-	    (u_inv_centered_view * u_inv_projection * vec4(screen_pos, 0, 1)).xyz + 0.0001;
-
-    frag_color = rayColor(ray);
+    frag_color = vec4(fs_uv,0,1);
 }
 @end
 

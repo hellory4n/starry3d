@@ -30,13 +30,13 @@ pub fn __deinit() void {
 pub fn __draw() void {
     sg.applyPipeline(global.pipeline);
 
-    const uniforms = rtshader.FsUniform{
-        .u_inv_view = world.current_camera.viewMatrix().invert().toArray1D(),
-        .u_inv_centered_view = world.current_camera.centeredViewMatrix().invert().toArray1D(),
-        .u_inv_projection = world.current_camera.projectionMatrix().invert().toArray1D(),
-        .u_image_size = app.framebufferSizef().toArray(),
-    };
-    sg.applyUniforms(rtshader.UB_fs_uniform, sg.asRange(&uniforms));
+    // const uniforms = rtshader.FsUniform{
+    //     .u_inv_view = world.current_camera.viewMatrix().invert().toArray1D(),
+    //     .u_inv_centered_view = world.current_camera.centeredViewMatrix().invert().toArray1D(),
+    //     .u_inv_projection = world.current_camera.projectionMatrix().invert().toArray1D(),
+    //     .u_image_size = app.framebufferSizef().toArray(),
+    // };
+    // sg.applyUniforms(rtshader.UB_fs_uniform, sg.asRange(&uniforms));
 
     sg.draw(0, 6, 1);
 }
