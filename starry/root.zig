@@ -2,6 +2,7 @@ const std = @import("std");
 pub const app = @import("app.zig");
 pub const log = @import("log.zig");
 pub const world = @import("world.zig");
+pub const gpu = @import("gpu.zig");
 pub const ScratchAllocator = @import("ScratchAllocator.zig");
 
 pub const version = std.SemanticVersion{
