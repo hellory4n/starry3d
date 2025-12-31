@@ -4,10 +4,10 @@ const zglm = @import("zglm");
 
 pub const std_options = starry.std_options;
 
-const mouse_sensitivity: f32 = 15;
-const player_speed: f32 = 5.0;
-var cam_pitch: f32 = 0;
-var cam_yaw: f32 = 0;
+const mouse_sensitivity: f64 = 30;
+const player_speed: f64 = 5.0;
+var cam_pitch: f64 = 0;
+var cam_yaw: f64 = 0;
 
 fn initApp() !void {
     std.log.info("hi", .{});
@@ -37,7 +37,7 @@ pub fn updateApp(dt: f32) void {
     cam_yaw += mouse[0] * mouse_sensitivity * dt;
     starry.world.current_camera.rotation = .{ zglm.radians(cam_pitch), zglm.radians(cam_yaw), 0 };
 
-    var move: zglm.Vec3f = @splat(0);
+    var move: zglm.Vec3d = @splat(0);
     if (starry.app.isKeyHeld(.w)) {
         move +=
             .{ zglm.sin(zglm.radians(cam_yaw)) * 1, 0, zglm.cos(zglm.radians(cam_yaw)) * -1 };
@@ -62,7 +62,7 @@ pub fn updateApp(dt: f32) void {
     }
 
     starry.world.current_camera.position +=
-        zglm.normalize(move) * @as(zglm.Vec3f, @splat(player_speed)) * @as(zglm.Vec3f, @splat(dt));
+        zglm.normalize(move) * @as(zglm.Vec3d, @splat(player_speed)) * @as(zglm.Vec3d, @splat(dt));
 }
 
 pub fn main() void {

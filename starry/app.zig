@@ -42,7 +42,7 @@ pub const WindowSettings = struct {
     sample_count: ?i32 = null,
     /// Disables VSync so that the renderer can push as many frames as possible, which is useful for
     /// benchmarking and stuff. Only works on desktop.
-    debug_frame_rate: bool = true,
+    debug_frame_rate: bool = builtin.mode == .Debug,
     /// Whether the rendering canvas is full resolution on high-DPI displays
     high_dpi: bool = true,
     /// Whether the window should be resizable (only works on desktop)
@@ -185,9 +185,6 @@ fn starryMain() !void {
 
     // main loop
     while (!global.window.shouldClose()) {
-        glfw.pollEvents();
-        pollInputStates();
-
         if (global.settings.update) |realUpdateFn| {
             // f64 -> f32 because most game code uses f32
             realUpdateFn(@floatCast(deltaTime()));
@@ -231,6 +228,8 @@ fn starryMain() !void {
         global.prev_time = secondsSinceStart();
         global.prev_mouse_pos = mousePosition();
 
+        glfw.pollEvents();
+        pollInputStates();
         global.window.swapBuffers();
     }
 }

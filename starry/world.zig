@@ -11,22 +11,22 @@ pub const Projection = enum { perspective, orthographic };
 
 /// i saw the sun
 pub const Camera = struct {
-    position: zglm.Vec3f = @splat(0),
+    position: zglm.Vec3d = @splat(0),
     /// in radians, X is pitch, Y is yaw, and Z is roll
-    rotation: zglm.Vec3f = @splat(0),
+    rotation: zglm.Vec3d = @splat(0),
     /// in radians, only used for a perspective camera
-    fov: f32 = zglm.radians(45),
+    fov: f64 = zglm.radians(45),
     /// only used for an orthographic camera
-    zoom: f32 = 10,
-    near: f32 = 0.001,
-    far: f32 = 10_000,
+    zoom: f64 = 10,
+    near: f64 = 0.001,
+    far: f64 = 10_000,
     projection: Projection = .perspective,
 
     /// Returns the view matrix for the camera
-    pub fn viewMatrix(cam: Camera) zglm.Mat4x4f {
-        const pos = zglm.identity4x4f().translate(-cam.position);
+    pub fn viewMatrix(cam: Camera) zglm.Mat4x4d {
+        const pos = zglm.identity4x4d().translate(-cam.position);
 
-        const rot = zglm.identity4x4f()
+        const rot = zglm.identity4x4d()
             .rotate(cam.rotation[0], .{ 1, 0, 0 })
             .rotate(cam.rotation[1], .{ 0, 1, 0 })
             .rotate(cam.rotation[2], .{ 0, 0, 1 });
@@ -35,11 +35,11 @@ pub const Camera = struct {
     }
 
     /// Returns the projection matrix for the camera
-    pub fn projectionMatrix(cam: Camera) zglm.Mat4x4f {
+    pub fn projectionMatrix(cam: Camera) zglm.Mat4x4d {
         const aspect = app.aspectRatio();
 
         if (cam.projection == .perspective) {
-            return zglm.perspective(.{
+            return zglm.perspectived(.{
                 .fovy_rad = cam.fov,
                 .aspect_ratio = aspect,
                 .z_near = cam.near,
@@ -54,7 +54,7 @@ pub const Camera = struct {
             const b = -height / 2;
             const t = height / 2;
 
-            return zglm.ortho(.{
+            return zglm.orthod(.{
                 .left = l,
                 .right = r,
                 .bottom = b,
