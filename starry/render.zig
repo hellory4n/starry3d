@@ -2,6 +2,9 @@
 //!
 //! burger
 //! 🟧🟩🟥🟫🟧
+//! fries
+//! 🟨🟨🟨🟨🟥
+
 const std = @import("std");
 const zglm = @import("zglm");
 const sg = @import("sokol").gfx;
