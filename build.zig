@@ -1,6 +1,8 @@
 const std = @import("std");
 const sokol = @import("sokol");
 
+// TODO this sucks
+
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -10,7 +12,6 @@ pub fn build(b: *std.Build) !void {
         .target = target,
     });
     const deps = installStarryDeps(b, starry_mod, target, optimize);
-    try compileShaders(b, starry_mod, deps);
 
     const test_step = b.step("test", "Run Starry tests");
     const tests = b.addTest(.{
@@ -24,13 +25,13 @@ pub fn build(b: *std.Build) !void {
     b.installArtifact(tests);
     test_step.dependOn(&b.addRunArtifact(tests).step);
 
-    sandbox(b, target, optimize, starry_mod, deps.zglm.module("zglm"));
+    sandbox(b, target, optimize, starry_mod, deps.zglm.module("zglm"), deps.zgpu.module("root"));
 }
 
 /// hsit
 const StarryDependencies = struct {
-    sokol: *std.Build.Dependency,
     glfw: *std.Build.Dependency,
+    zgpu: *std.Build.Dependency,
     zglm: *std.Build.Dependency,
 };
 
@@ -40,13 +41,6 @@ fn installStarryDeps(
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
 ) StarryDependencies {
-    const sokol_dep = b.dependency("sokol", .{
-        .target = target,
-        .optimize = optimize,
-        .gl = true,
-    });
-    mod.addImport("sokol", sokol_dep.module("sokol"));
-
     const glfw_dep = b.dependency("zglfw", .{ .target = target, .optimize = optimize });
     mod.addImport("zglfw", glfw_dep.module("root"));
     mod.linkLibrary(glfw_dep.artifact("glfw"));
@@ -54,24 +48,14 @@ fn installStarryDeps(
     const zglm_dep = b.dependency("zglm", .{});
     mod.addImport("zglm", zglm_dep.module("zglm"));
 
+    const zgpu_dep = b.dependency("zgpu", .{});
+    mod.addImport("zgpu", zgpu_dep.module("root"));
+
     return .{
-        .sokol = sokol_dep,
         .glfw = glfw_dep,
+        .zgpu = zgpu_dep,
         .zglm = zglm_dep,
     };
-}
-
-fn compileShaders(b: *std.Build, mod: *std.Build.Module, deps: StarryDependencies) !void {
-    const shdc = deps.sokol.builder.dependency("shdc", .{});
-    const basic_shader = try sokol.shdc.createModule(b, "rt.glsl", deps.sokol.module("sokol"), .{
-        .shdc_dep = shdc,
-        .input = "starry/shader/rt.glsl",
-        .output = "rt.glsl.zig",
-        .slang = .{
-            .glsl430 = true,
-        },
-    });
-    mod.addImport("rt.glsl", basic_shader);
 }
 
 fn sandbox(
@@ -80,6 +64,7 @@ fn sandbox(
     optimize: std.builtin.OptimizeMode,
     starry_mod: *std.Build.Module,
     zglm_mod: *std.Build.Module,
+    zgpu_mod: *std.Build.Module,
 ) void {
     const exe = b.addExecutable(.{
         .name = "sandbox",
@@ -90,6 +75,7 @@ fn sandbox(
             .imports = &.{
                 .{ .name = "starry3d", .module = starry_mod },
                 .{ .name = "zglm", .module = zglm_mod },
+                .{ .name = "zgpu", .module = zgpu_mod },
             },
         }),
     });
@@ -102,4 +88,5 @@ fn sandbox(
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
+    @import("zgpu").addLibraryPathsTo(exe);
 }

@@ -2,13 +2,11 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const glfw = @import("zglfw");
-const sg = @import("sokol").gfx;
-const slog = @import("sokol").log;
-const sdtx = @import("sokol").debugtext;
 const zglm = @import("zglm");
 const log = @import("log.zig");
 const root = @import("root.zig");
-const render = @import("render.zig");
+const gpu = @import("gpu.zig");
+// const render = @import("render.zig");
 const world = @import("world.zig");
 const ScratchAllocator = @import("ScratchAllocator.zig");
 
@@ -105,13 +103,7 @@ fn starryMain() !void {
         log.stlog.info("deinitialized GLFW", .{});
     }
 
-    // TODO we'll need metal on macOS
-    glfw.windowHint(.client_api, .opengl_api);
-    glfw.windowHint(.opengl_profile, .opengl_core_profile);
-    glfw.windowHint(.opengl_forward_compat, true);
-    glfw.windowHint(.context_version_major, 4);
-    glfw.windowHint(.context_version_minor, 3);
-
+    glfw.windowHint(.client_api, .no_api);
     glfw.windowHint(.doublebuffer, true);
     glfw.windowHint(.resizable, global.settings.window.resizable);
     glfw.windowHint(.samples, if (global.settings.window.sample_count) |samples| samples else 0);
@@ -137,42 +129,20 @@ fn starryMain() !void {
         log.stlog.info("destroyed window", .{});
     }
 
-    glfw.makeContextCurrent(global.window);
-    glfw.swapInterval(if (global.settings.window.debug_frame_rate) 0 else 1);
-
-    // from https://github.com/floooh/sokol-samples/blob/master/glfw/glfw_glue.c
-    sg.setup(.{
-        .environment = .{
-            .defaults = .{
-                .color_format = .RGBA8,
-                .depth_format = .DEPTH_STENCIL,
-                .sample_count = global.settings.window.sample_count orelse 1,
-            },
-        },
-        .logger = .{ .func = sokolLog },
-    });
-    log.stlog.info("using {s} graphics backend", .{@tagName(sg.queryBackend())});
+    try gpu.init();
+    log.stlog.info("initialized gpu backend for {s}", .{@tagName(gpu.getBackend())});
     defer {
-        sg.shutdown();
-        log.stlog.info("shutdown graphics backend", .{});
+        gpu.deinit();
+        log.stlog.info("deinitialized gpu backend", .{});
     }
 
-    try render.__init();
-    defer render.__deinit();
+    glfw.swapInterval(if (global.settings.window.debug_frame_rate) 0 else 1);
+
+    // try render.__init();
+    // defer render.__deinit();
 
     global.prev_time = glfw.getTime();
     global.smooth_dt = 1 / 60; // initial guess
-
-    // TODO forcing the debug text thing on all apps isn't ideal
-    // at least make it configurable
-    // or write your own
-    // who knows
-    var fonts = [_]sdtx.FontDesc{.{}} ** 8;
-    fonts[0] = sdtx.fontKc854();
-    sdtx.setup(.{
-        .logger = .{ .func = sokolLog },
-        .fonts = fonts,
-    });
 
     if (global.settings.init) |realInitFn| {
         try realInitFn();
@@ -190,39 +160,10 @@ fn starryMain() !void {
             realUpdateFn(@floatCast(deltaTime()));
         }
 
-        var pass_action = sg.PassAction{};
-        pass_action.colors[0] = .{
-            .load_action = .CLEAR,
-            .clear_value = .{ .r = 0, .g = 0, .b = 0, .a = 1 },
-        };
-        const framebuffer_size = framebufferSize();
-        sg.beginPass(.{
-            .action = pass_action,
-            // from https://github.com/floooh/sokol-samples/blob/master/glfw/glfw_glue.c
-            .swapchain = .{
-                .width = framebuffer_size[0],
-                .height = framebuffer_size[1],
-                .sample_count = global.settings.window.sample_count orelse 1,
-                .color_format = .RGBA8,
-                .depth_format = .DEPTH_STENCIL,
-                .gl = .{
-                    // we just assume here that the GL framebuffer is always 0
-                    .framebuffer = 0,
-                },
-            },
-        });
+        // rendering
+        // render.__draw();
 
-        render.__draw();
-
-        // debug crap
-        const framebuffer_sizef = framebufferSizef();
-        sdtx.canvas(framebuffer_sizef[0] / 2, framebuffer_sizef[1] / 2);
-        sdtx.print("{d:.0} FPS\n", .{averageFps()});
-        sdtx.draw();
-
-        sg.endPass();
-        sg.commit();
-
+        // housekeeping type shit
         const alpha = 0.1; // controls how smooth the smoothing is
         global.smooth_dt = global.smooth_dt * (1.0 - alpha) + deltaTime() * alpha;
         global.prev_time = secondsSinceStart();
@@ -232,178 +173,6 @@ fn starryMain() !void {
         pollInputStates();
         global.window.swapBuffers();
     }
-}
-
-fn sokolLog(
-    tag: [*c]const u8,
-    log_level: u32,
-    log_item_id: u32,
-    msg_or_null: [*c]const u8,
-    _: u32,
-    _: [*c]const u8,
-    _: ?*anyopaque,
-) callconv(.c) void {
-    // slightly evil shit so that you can do at runtime what should be done at compile time
-    const sapp_log = struct {
-        pub fn log(level: u32, log_id: u32, msg: [*c]const u8) void {
-            const scoped = std.log.scoped(.sapp);
-            switch (level) {
-                0, 1 => {
-                    if (msg == null) {
-                        scoped.err("id:{d}", .{log_id});
-                    } else {
-                        scoped.err("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-                2 => {
-                    if (msg == null) {
-                        scoped.warn("id:{d}", .{log_id});
-                    } else {
-                        scoped.warn("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-                else => {
-                    if (msg == null) {
-                        scoped.info("id:{d}", .{log_id});
-                    } else {
-                        scoped.info("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-            }
-        }
-    }.log;
-
-    const saudio_log = struct {
-        pub fn log(level: u32, log_id: u32, msg: [*c]const u8) void {
-            const scoped = std.log.scoped(.saudio);
-            switch (level) {
-                0, 1 => {
-                    if (msg == null) {
-                        scoped.err("id:{d}", .{log_id});
-                    } else {
-                        scoped.err("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-                2 => {
-                    if (msg == null) {
-                        scoped.warn("id:{d}", .{log_id});
-                    } else {
-                        scoped.warn("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-                else => {
-                    if (msg == null) {
-                        scoped.info("id:{d}", .{log_id});
-                    } else {
-                        scoped.info("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-            }
-        }
-    }.log;
-
-    const sg_log = struct {
-        pub fn log(level: u32, log_id: u32, msg: [*c]const u8) void {
-            const scoped = std.log.scoped(.sg);
-            switch (level) {
-                0, 1 => {
-                    if (msg == null) {
-                        scoped.err("id:{d}", .{log_id});
-                    } else {
-                        scoped.err("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-                2 => {
-                    if (msg == null) {
-                        scoped.warn("id:{d}", .{log_id});
-                    } else {
-                        scoped.warn("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-                else => {
-                    if (msg == null) {
-                        scoped.info("id:{d}", .{log_id});
-                    } else {
-                        scoped.info("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-            }
-        }
-    }.log;
-
-    const sglue_log = struct {
-        pub fn log(level: u32, log_id: u32, msg: [*c]const u8) void {
-            const scoped = std.log.scoped(.sglue);
-            switch (level) {
-                0, 1 => {
-                    if (msg == null) {
-                        scoped.err("id:{d}", .{log_id});
-                    } else {
-                        scoped.err("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-                2 => {
-                    if (msg == null) {
-                        scoped.warn("id:{d}", .{log_id});
-                    } else {
-                        scoped.warn("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-                else => {
-                    if (msg == null) {
-                        scoped.info("id:{d}", .{log_id});
-                    } else {
-                        scoped.info("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-            }
-        }
-    }.log;
-
-    const sokol_log = struct {
-        pub fn log(level: u32, log_id: u32, msg: [*c]const u8) void {
-            const scoped = std.log.scoped(.sokol);
-            switch (level) {
-                0, 1 => {
-                    if (msg == null) {
-                        scoped.err("id:{d}", .{log_id});
-                    } else {
-                        scoped.err("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-                2 => {
-                    if (msg == null) {
-                        scoped.warn("id:{d}", .{log_id});
-                    } else {
-                        scoped.warn("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-                else => {
-                    if (msg == null) {
-                        scoped.info("id:{d}", .{log_id});
-                    } else {
-                        scoped.info("(id:{d}) {s}", .{ log_id, msg });
-                    }
-                },
-            }
-        }
-    }.log;
-
-    const taglen = std.mem.indexOfSentinel(u8, 0, tag);
-    const tagstr = tag[0..taglen];
-    const logfn: *const fn (u32, u32, [*c]const u8) void =
-        if (std.mem.eql(u8, tagstr, "sapp"))
-            sapp_log
-        else if (std.mem.eql(u8, tagstr, "saudio"))
-            saudio_log
-        else if (std.mem.eql(u8, tagstr, "sg"))
-            sg_log
-        else if (std.mem.eql(u8, tagstr, "sglue"))
-            sglue_log
-        else
-            sokol_log;
-
-    logfn(log_level, log_item_id, msg_or_null);
 }
 
 /// Keyboard keys. Splendid. Note these values are the same as Sokol which are the same as GLFW.
