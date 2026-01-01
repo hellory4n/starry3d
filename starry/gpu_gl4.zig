@@ -1,7 +1,8 @@
-//! WebGPU implementation for starry.gpu aka Emerson Victor Kyler Gandalf Joel Pablo Daquavious II Sr.
+//! OpenGL 4 implementation for starry.gpu aka Emerson Victor Kyler Gandalf Joel Pablo Daquavious II Sr.
 //! Jr. OBE aka Émerez Víctor Quejador Gandalf Joel Pablo Decavio II Sr. Jr. OBE aka QuejaPalronicador
 //! aka Qurjs fhycmjjjjjjjjjjjjjjjjjç aka QuejaGontificador
 const gpu = @import("gpu.zig");
+const gl = @import("zgl");
 
 var global: struct {} = .{};
 

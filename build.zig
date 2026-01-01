@@ -1,19 +1,41 @@
 const std = @import("std");
-const sokol = @import("sokol");
+const Build = std.Build;
 
-// TODO this sucks
-
-pub fn build(b: *std.Build) !void {
+pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     const starry_mod = b.addModule("starry3d", .{
-        .root_source_file = b.path("starry/root.zig"),
         .target = target,
+        .optimize = optimize,
+        .root_source_file = b.path("starry/root.zig"),
     });
-    const deps = installStarryDeps(b, starry_mod, target, optimize);
 
-    const test_step = b.step("test", "Run Starry tests");
+    // dependencies
+    const zglfw_dep = b.dependency("zglfw", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const zglfw_mod = zglfw_dep.module("root");
+    starry_mod.addImport("zglfw", zglfw_mod);
+    starry_mod.linkLibrary(zglfw_dep.artifact("glfw"));
+
+    const zglm_dep = b.dependency("zglm", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const zglm_mod = zglm_dep.module("zglm");
+    starry_mod.addImport("zglm", zglm_mod);
+
+    const zgl_dep = b.dependency("zgl", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const zgl_mod = zgl_dep.module("zgl");
+    starry_mod.addImport("zgl", zgl_mod);
+
+    // testing it<3
+    const test_step = b.step("test", "Run starry tests");
     const tests = b.addTest(.{
         .name = "starry3d-tests",
         .root_module = b.createModule(.{
@@ -22,71 +44,40 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
         }),
     });
-    b.installArtifact(tests);
     test_step.dependOn(&b.addRunArtifact(tests).step);
 
-    sandbox(b, target, optimize, starry_mod, deps.zglm.module("zglm"), deps.zgpu.module("root"));
+    try sandbox(b, .{
+        .target = target,
+        .optimize = optimize,
+        .starry = starry_mod,
+        .zglm = zglm_mod,
+    });
 }
 
-/// hsit
-const StarryDependencies = struct {
-    glfw: *std.Build.Dependency,
-    zgpu: *std.Build.Dependency,
-    zglm: *std.Build.Dependency,
-};
-
-fn installStarryDeps(
-    b: *std.Build,
-    mod: *std.Build.Module,
-    target: std.Build.ResolvedTarget,
+pub fn sandbox(b: *Build, options: struct {
+    target: Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
-) StarryDependencies {
-    const glfw_dep = b.dependency("zglfw", .{ .target = target, .optimize = optimize });
-    mod.addImport("zglfw", glfw_dep.module("root"));
-    mod.linkLibrary(glfw_dep.artifact("glfw"));
-
-    const zglm_dep = b.dependency("zglm", .{});
-    mod.addImport("zglm", zglm_dep.module("zglm"));
-
-    const zgpu_dep = b.dependency("zgpu", .{});
-    mod.addImport("zgpu", zgpu_dep.module("root"));
-
-    return .{
-        .glfw = glfw_dep,
-        .zgpu = zgpu_dep,
-        .zglm = zglm_dep,
-    };
-}
-
-fn sandbox(
-    b: *std.Build,
-    target: std.Build.ResolvedTarget,
-    optimize: std.builtin.OptimizeMode,
-    starry_mod: *std.Build.Module,
-    zglm_mod: *std.Build.Module,
-    zgpu_mod: *std.Build.Module,
-) void {
-    const exe = b.addExecutable(.{
+    starry: *Build.Module,
+    zglm: *Build.Module,
+}) !void {
+    const sandbox_exe = b.addExecutable(.{
         .name = "sandbox",
         .root_module = b.createModule(.{
+            .target = options.target,
+            .optimize = options.optimize,
             .root_source_file = b.path("sandbox/main.zig"),
-            .target = target,
-            .optimize = optimize,
             .imports = &.{
-                .{ .name = "starry3d", .module = starry_mod },
-                .{ .name = "zglm", .module = zglm_mod },
-                .{ .name = "zgpu", .module = zgpu_mod },
+                .{ .name = "starry3d", .module = options.starry },
+                .{ .name = "zglm", .module = options.zglm },
             },
         }),
     });
-    b.installArtifact(exe);
 
     const run_step = b.step("run-sandbox", "Run sandbox");
-    const run_cmd = b.addRunArtifact(exe);
+    const run_cmd = b.addRunArtifact(sandbox_exe);
     run_step.dependOn(&run_cmd.step);
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
-    @import("zgpu").addLibraryPathsTo(exe);
 }
