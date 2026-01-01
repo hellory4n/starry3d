@@ -103,7 +103,12 @@ fn starryMain() !void {
         log.stlog.info("deinitialized GLFW", .{});
     }
 
-    glfw.windowHint(.client_api, .no_api);
+    glfw.windowHint(.client_api, .opengl_api);
+    glfw.windowHint(.opengl_forward_compat, true);
+    glfw.windowHint(.opengl_profile, .opengl_core_profile);
+    glfw.windowHint(.context_version_major, 4);
+    glfw.windowHint(.context_version_minor, 3);
+
     glfw.windowHint(.doublebuffer, true);
     glfw.windowHint(.resizable, global.settings.window.resizable);
     glfw.windowHint(.samples, if (global.settings.window.sample_count) |samples| samples else 0);
@@ -129,14 +134,15 @@ fn starryMain() !void {
         log.stlog.info("destroyed window", .{});
     }
 
+    glfw.makeContextCurrent(global.window);
+    glfw.swapInterval(if (global.settings.window.debug_frame_rate) 0 else 1);
+
     try gpu.init();
     log.stlog.info("initialized gpu backend for {s}", .{@tagName(gpu.getBackend())});
     defer {
         gpu.deinit();
         log.stlog.info("deinitialized gpu backend", .{});
     }
-
-    glfw.swapInterval(if (global.settings.window.debug_frame_rate) 0 else 1);
 
     // try render.__init();
     // defer render.__deinit();

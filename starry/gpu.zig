@@ -46,7 +46,7 @@ pub fn getBackend() Backend {
 
 pub const BackendError = error{
     InvalidHandle,
-    NoBackendAvailable,
+    DeviceUnsupported,
 };
 
 /// Initializes the GPU backend. Amazing.
