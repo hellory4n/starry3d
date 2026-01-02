@@ -15,9 +15,24 @@ pub fn init() gpu.BackendError!void {
     };
 }
 
-pub fn deinit() void {}
+pub fn deinit() void {
+    // nothing yet
+}
 
 fn glGetProcAddress(p: glfw.GlProc, proc: [:0]const u8) ?gl.binding.FunctionPointer {
     _ = p;
     return glfw.getProcAddress(proc);
+}
+
+pub fn startPass(pass: gpu.RenderPass) void {
+    if (pass.color.load_op == .clear) {
+        if (pass.color.clear_color) |clear_color| {
+            gl.clearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
+        }
+    }
+}
+
+pub fn endPass() void {
+    // TODO i don't think you can emulate the store op in opengl
+    // so this is a noop here
 }

@@ -14,6 +14,7 @@
 //! rasterizer pipeline for example) just because I don't use them.
 const std = @import("std");
 const builtin = @import("builtin");
+const zglm = @import("zglm");
 const bke_gl4 = @import("gpu_gl4.zig");
 
 /// Unfortunately GPU drivers don't natively support the hit graphics API starry dot gee pee you dot zig.
@@ -44,6 +45,14 @@ pub fn getBackend() Backend {
     };
 }
 
+/// Returns true if validation layers are enabled
+pub fn validationEnabled() bool {
+    return switch (builtin.mode) {
+        .Debug, .ReleaseSafe => true,
+        .ReleaseFast, .ReleaseSmall => false,
+    };
+}
+
 pub const BackendError = error{
     InvalidHandle,
     DeviceUnsupported,
@@ -61,6 +70,49 @@ pub fn init() BackendError!void {
 pub fn deinit() void {
     switch (comptime getBackend()) {
         .gl4 => bke_gl4.deinit(),
+        else => @compileError("unsupported backend"),
+    }
+}
+
+/// Describes what happens to a framebuffer, depth buffer, or stencil buffers, before a render pass.
+pub const LoadOp = enum {
+    /// Keep existing contents
+    load,
+    /// All contents reset and set to a constant
+    clear,
+    /// Existing contents are undefined and ignored
+    ignore,
+};
+
+/// Describes what happens to a framebuffer, depth buffer, or stencil buffers, after a render pass.
+pub const StoreOp = enum {
+    /// Rendered contents will be stored in memory and can be read later
+    store,
+    /// Existing contents are undefined and ignored
+    ignore,
+};
+
+/// As the name implies, it is a pass of rendering (or compute who knows)
+pub const RenderPass = struct {
+    color: struct {
+        clear_color: ?zglm.Rgbaf = .{ 0, 0, 0, 1 },
+        load_op: LoadOp = .clear,
+        store_op: StoreOp = .ignore,
+    } = .{},
+};
+
+/// Starts a render pass
+pub fn startPass(pass: RenderPass) void {
+    switch (comptime getBackend()) {
+        .gl4 => bke_gl4.startPass(pass),
+        else => @compileError("unsupported backend"),
+    }
+}
+
+/// Ends a render pass
+pub fn endPass() void {
+    switch (comptime getBackend()) {
+        .gl4 => bke_gl4.endPass(),
         else => @compileError("unsupported backend"),
     }
 }
@@ -100,3 +152,15 @@ pub fn deinit() void {
 //         }
 //     }
 // };
+
+/// temporary shit
+pub fn testRender() void {
+    const gpu = @This();
+
+    gpu.startPass(.{
+        .color = .{
+            .clear_color = .{ 1, 0, 0, 1 },
+        },
+    });
+    gpu.endPass();
+}

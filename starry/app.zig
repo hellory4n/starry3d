@@ -167,6 +167,7 @@ fn starryMain() !void {
         }
 
         // rendering
+        gpu.testRender();
         // render.__draw();
 
         // housekeeping type shit
