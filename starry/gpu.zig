@@ -45,7 +45,8 @@ pub fn getBackend() Backend {
     };
 }
 
-/// Returns true if validation layers are enabled
+/// Returns true if validation layers are enabled. Note that the backend API's own validation layers
+/// are enabled on debug mode.
 pub fn validationEnabled() bool {
     return switch (builtin.mode) {
         .Debug, .ReleaseSafe => true,
@@ -74,6 +75,44 @@ pub fn deinit() void {
     }
 }
 
+/// Describes the limits of a GPU. There can only be one.
+pub const Device = struct {
+    // default values are the ones required by all backend APIs
+    max_image_2d_size: zglm.Vec2i = .{ 1024, 1024 },
+    /// Applies to a single storage buffer block; in bytes
+    max_storage_buffer_size: u64 = 16 * 1024 * 1024,
+    /// How many storage buffers can be bound at the same time, per shader stage
+    max_storage_buffer_bindings: u32 = 8,
+    /// The GPU doesn't have infinite cores unfortunately
+    max_compute_workgroup_dispatch: zglm.Vec3i = .{ 0, 0, 0 },
+};
+
+/// Returns the current GPU being used.
+pub fn queryDevice() Device {
+    return switch (comptime getBackend()) {
+        .gl4 => bke_gl4.queryDevice(),
+        else => @compileError("unsupported backend"),
+    };
+}
+
+/// Returns `BackendError.DeviceUnsupported` if the current device doesn't match the minimum
+/// requirements in `dev`
+pub fn expectDevice(dev: Device) BackendError!void {
+    const cur = queryDevice();
+    if (zglm.any(dev.max_image_2d_size > cur.max_image_2d_size)) {
+        return BackendError.DeviceUnsupported;
+    }
+    if (dev.max_storage_buffer_size > cur.max_storage_buffer_size) {
+        return BackendError.DeviceUnsupported;
+    }
+    if (dev.max_storage_buffer_bindings > cur.max_storage_buffer_bindings) {
+        return BackendError.DeviceUnsupported;
+    }
+    if (zglm.any(dev.max_compute_workgroup_dispatch > cur.max_compute_workgroup_dispatch)) {
+        return BackendError.DeviceUnsupported;
+    }
+}
+
 /// Describes what happens to a framebuffer, depth buffer, or stencil buffers, before a render pass.
 pub const LoadOp = enum {
     /// Keep existing contents
@@ -94,7 +133,7 @@ pub const StoreOp = enum {
 
 /// As the name implies, it is a pass of rendering (or compute who knows)
 pub const RenderPass = struct {
-    color: struct {
+    action: struct {
         clear_color: ?zglm.Rgbaf = .{ 0, 0, 0, 1 },
         load_op: LoadOp = .clear,
         store_op: StoreOp = .ignore,
@@ -116,6 +155,21 @@ pub fn endPass() void {
         else => @compileError("unsupported backend"),
     }
 }
+
+/// The viewport + scissor. Not part of the pipeline since you may want to set this every frame.
+// pub const Viewport = struct {
+//     viewport_pos: zglm.Vec2f = .{ 0, 0 },
+//     viewport_size: zglm.Vec2f,
+//     scissor_pos: ?zglm.Vec2f = null,
+//     scissor_size: ?zglm.Vec2f = null,
+// };
+
+// /// Sets the current viewport. Can be called at any time.
+// pub fn setViewport(viewport: Viewport) void {
+//     switch (comptime getBackend()) {
+//         else => @compileError("unsupported backend"),
+//     }
+// }
 
 // pub const AllocationError = error{
 //     OutOfMemory,
@@ -158,7 +212,7 @@ pub fn testRender() void {
     const gpu = @This();
 
     gpu.startPass(.{
-        .color = .{
+        .action = .{
             .clear_color = .{ 1, 1, 1, 1 },
         },
     });
