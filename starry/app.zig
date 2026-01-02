@@ -6,7 +6,7 @@ const zglm = @import("zglm");
 const log = @import("log.zig");
 const root = @import("root.zig");
 const gpu = @import("gpu.zig");
-// const render = @import("render.zig");
+const render = @import("render.zig");
 const world = @import("world.zig");
 const ScratchAllocator = @import("ScratchAllocator.zig");
 
@@ -78,7 +78,8 @@ pub fn run(comptime settings: Settings) void {
     // the rest of the engine has to be wrapped so that errors are logged properly
     starryMain() catch |err| {
         log.stlog.err("fatal error: {s}", .{@errorName(err)});
-        return;
+        log.__free();
+        @panic(@errorName(err)); // for the stack trace
     };
 }
 
@@ -144,8 +145,8 @@ fn starryMain() !void {
         log.stlog.info("deinitialized gpu backend", .{});
     }
 
-    // try render.__init();
-    // defer render.__deinit();
+    try render.init();
+    defer render.deinit();
 
     global.prev_time = glfw.getTime();
     global.smooth_dt = 1 / 60; // initial guess
@@ -166,9 +167,7 @@ fn starryMain() !void {
             realUpdateFn(@floatCast(deltaTime()));
         }
 
-        // rendering
-        gpu.testRender();
-        // render.__draw();
+        render.draw();
 
         // housekeeping type shit
         const alpha = 0.1; // controls how smooth the smoothing is

@@ -57,6 +57,7 @@ pub fn validationEnabled() bool {
 pub const BackendError = error{
     InvalidHandle,
     DeviceUnsupported,
+    TooManyHandles,
 };
 
 /// Initializes the GPU backend. Amazing.
@@ -113,6 +114,44 @@ pub fn expectDevice(dev: Device) BackendError!void {
     }
 }
 
+pub const ShaderStage = enum { vertex, fragment, compute };
+
+pub const ShaderSettings = struct {
+    glsl_src: []const u8,
+    stage: ShaderStage,
+    label: []const u8 = "shader",
+};
+
+pub const ShaderError = BackendError || error{
+    CompilationFailed,
+    /// linking park
+    LinkingFailed,
+};
+
+/// How many shaders can live at the same time
+pub const max_shaders = 32;
+
+/// A program that runs on the GPU. Linked at pipeline creation.
+pub const Shader = struct {
+    id: u32,
+
+    /// Compiles a shader. Amazing.
+    pub fn init(settings: ShaderSettings) ShaderError!Shader {
+        return switch (comptime getBackend()) {
+            .gl4 => bke_gl4.compileShader(settings),
+            else => @compileError("unsupported backend"),
+        };
+    }
+
+    /// Frees a shader. You can safely call this once it has been linked.
+    pub fn deinit(shader: Shader) void {
+        return switch (comptime getBackend()) {
+            .gl4 => bke_gl4.deinitShader(shader),
+            else => @compileError("unsupported backend"),
+        };
+    }
+};
+
 /// Describes what happens to a framebuffer, depth buffer, or stencil buffers, before a render pass.
 pub const LoadOp = enum {
     /// Keep existing contents
@@ -156,7 +195,7 @@ pub fn endPass() void {
     }
 }
 
-/// The viewport + scissor. Not part of the pipeline since you may want to set this every frame.
+// /// The viewport + scissor. Not part of the pipeline since you may want to set this every frame.
 // pub const Viewport = struct {
 //     viewport_pos: zglm.Vec2f = .{ 0, 0 },
 //     viewport_size: zglm.Vec2f,
@@ -206,15 +245,3 @@ pub fn endPass() void {
 //         }
 //     }
 // };
-
-/// temporary shit
-pub fn testRender() void {
-    const gpu = @This();
-
-    gpu.startPass(.{
-        .action = .{
-            .clear_color = .{ 1, 1, 1, 1 },
-        },
-    });
-    gpu.endPass();
-}
