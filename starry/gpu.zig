@@ -159,7 +159,7 @@ pub fn testRender() void {
 
     gpu.startPass(.{
         .color = .{
-            .clear_color = .{ 1, 0, 0, 1 },
+            .clear_color = .{ 1, 1, 1, 1 },
         },
     });
     gpu.endPass();

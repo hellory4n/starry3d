@@ -15,10 +15,6 @@
             .url = "git+https://github.com/hellory4n/zglm.git#10fbbed7b301900c719386dc553a95eedb7c1144",
             .hash = "zglm-0.2.0-rPnx2Bv4AQCXtQQQIvhQHTB0edfv3iLo5cjK5WGLXnB_",
         },
-        .zgl = .{
-            .url = "git+https://github.com/ziglibs/zgl#6ee54c287f3c4f176bd05a92746828bb791a1ad0",
-            .hash = "zgl-1.1.0-p_NpAJNECgCzUGx0aF5KFsmD5VOwfw8LaOsN0fcoU2bi",
-        },
     },
     .fingerprint = 0x3bc229cbaf2e2060,
     .minimum_zig_version = "0.15.2",

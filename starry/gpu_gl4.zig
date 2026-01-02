@@ -3,31 +3,29 @@
 //! aka Qurjs fhycmjjjjjjjjjjjjjjjjjç aka QuejaGontificador
 const std = @import("std");
 const glfw = @import("zglfw");
-const gl = @import("zgl");
+const c = @cImport({
+    @cInclude("glad.h");
+});
 const gpu = @import("gpu.zig");
 
 var global: struct {} = .{};
 
 pub fn init() gpu.BackendError!void {
-    const proc: glfw.GlProc = undefined;
-    gl.loadExtensions(proc, glGetProcAddress) catch {
+    const version = c.gladLoadGL(@ptrCast(&glfw.getProcAddress));
+    if (version == 0) {
         return gpu.BackendError.DeviceUnsupported;
-    };
+    }
 }
 
 pub fn deinit() void {
     // nothing yet
 }
 
-fn glGetProcAddress(p: glfw.GlProc, proc: [:0]const u8) ?gl.binding.FunctionPointer {
-    _ = p;
-    return glfw.getProcAddress(proc);
-}
-
 pub fn startPass(pass: gpu.RenderPass) void {
     if (pass.color.load_op == .clear) {
         if (pass.color.clear_color) |clear_color| {
-            gl.clearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
+            c.glClear(c.GL_COLOR_BUFFER_BIT);
+            c.glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
         }
     }
 }

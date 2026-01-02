@@ -27,13 +27,6 @@ pub fn build(b: *Build) !void {
     const zglm_mod = zglm_dep.module("zglm");
     starry_mod.addImport("zglm", zglm_mod);
 
-    const zgl_dep = b.dependency("zgl", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const zgl_mod = zgl_dep.module("zgl");
-    starry_mod.addImport("zgl", zgl_mod);
-
     // testing it<3
     const test_step = b.step("test", "Run starry tests");
     const tests = b.addTest(.{
@@ -45,6 +38,10 @@ pub fn build(b: *Build) !void {
         }),
     });
     test_step.dependOn(&b.addRunArtifact(tests).step);
+
+    // glad fuckery
+    starry_mod.addIncludePath(b.path("starry/c"));
+    starry_mod.addCSourceFile(.{ .file = b.path("starry/c/glad.c") });
 
     try sandbox(b, .{
         .target = target,
