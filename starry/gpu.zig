@@ -195,20 +195,103 @@ pub fn endPass() void {
     }
 }
 
-// /// The viewport + scissor. Not part of the pipeline since you may want to set this every frame.
-// pub const Viewport = struct {
-//     viewport_pos: zglm.Vec2f = .{ 0, 0 },
-//     viewport_size: zglm.Vec2f,
-//     scissor_pos: ?zglm.Vec2f = null,
-//     scissor_size: ?zglm.Vec2f = null,
-// };
+/// Projects normalized device coordinates to window coordinates. Not part of the pipeline since you
+/// may want to set this every frame.
+pub const Viewport = struct {
+    pos: zglm.Vec2i = .{ 0, 0 },
+    size: zglm.Vec2i,
+};
 
-// /// Sets the current viewport. Can be called at any time.
-// pub fn setViewport(viewport: Viewport) void {
-//     switch (comptime getBackend()) {
-//         else => @compileError("unsupported backend"),
-//     }
-// }
+/// Sets the current viewport. Can be called at any time.
+pub fn setViewport(viewport: Viewport) void {
+    switch (comptime getBackend()) {
+        .gl4 => bke_gl4.setViewport(viewport),
+        else => @compileError("unsupported backend"),
+    }
+}
+
+/// Crops the viewport to some part of the window. Not part of the pipeline since you may want to
+/// set this every frame.
+pub const Scissor = union(enum) {
+    portion: struct {
+        pos: zglm.Vec2i,
+        size: zglm.Vec2i,
+    },
+    /// Disables cropping
+    window,
+};
+
+/// Sets the current scissor. Can be called at any time.
+pub fn setScissor(scissor: Scissor) void {
+    switch (comptime getBackend()) {
+        .gl4 => bke_gl4.setScissor(scissor),
+        else => @compileError("unsupported backend"),
+    }
+}
+
+pub const Topology = enum {
+    /// Vertices 0, 1, and 2 form a triangle. Vertices 3, 4, and 5 form a triangle. And so on.
+    triangle_list,
+    /// Every group of 3 adjacent vertices forms a triangle. The face direction of the strip is
+    /// determined by the winding of the first triangle. Each successive triangle will have its
+    /// effective face order reversed, so the system compensates for that by testing it in the
+    /// opposite way. A vertex stream of n length will generate n-2 triangles.
+    triangle_strip,
+    /// The first vertex is always held fixed. From there on, every group of 2 adjacent vertices
+    /// form a triangle with the first. So with a vertex stream, you get a list of triangles
+    /// like so: (0, 1, 2) (0, 2, 3), (0, 3, 4), etc. A vertex stream of n length will
+    /// generate n-2 triangles.
+    triangle_fan,
+};
+
+pub const WindingOrder = enum {
+    clockwise,
+    counter_clockwise,
+};
+
+pub const CullMode = enum {
+    front_face,
+    back_face,
+    front_and_back_faces,
+    none,
+};
+
+pub const PipelineSettings = union(enum) {
+    raster: struct {
+        vertex_shader: Shader,
+        fragment_shader: Shader,
+        front_face: WindingOrder = .counter_clockwise,
+        cull: CullMode = .none,
+    },
+};
+
+pub const max_pipelines = 128;
+
+/// BEWARE OF THE GRAPHICS PIPELINE
+pub const Pipeline = struct {
+    id: u32,
+
+    pub fn init(settings: PipelineSettings) ShaderError!Pipeline {
+        return switch (comptime getBackend()) {
+            .gl4 => bke_gl4.initPipeline(settings),
+            else => @compileError("unsupported backend"),
+        };
+    }
+
+    pub fn deinit(pipeline: Pipeline) void {
+        switch (comptime getBackend()) {
+            .gl4 => bke_gl4.deinitPipeline(pipeline),
+            else => @compileError("unsupported backend"),
+        }
+    }
+
+    pub fn apply(pipeline: Pipeline) void {
+        return switch (comptime getBackend()) {
+            .gl4 => bke_gl4.applyPipeline(pipeline),
+            else => @compileError("unsupported backend"),
+        };
+    }
+};
 
 // pub const AllocationError = error{
 //     OutOfMemory,

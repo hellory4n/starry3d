@@ -13,16 +13,29 @@ const log = @import("log.zig").stlog;
 const world = @import("world.zig");
 const rtshader = @import("shader/rt.zig");
 
-var global: struct {} = .{};
+var global: struct {
+    pipeline: gpu.Pipeline = undefined,
+} = .{};
 
 pub fn init() !void {
-    const shader = try gpu.Shader.init(rtshader.vert);
-    defer shader.deinit();
+    const rt_vert_shader = try gpu.Shader.init(rtshader.vert);
+    defer rt_vert_shader.deinit();
+    const rt_frag_shader = try gpu.Shader.init(rtshader.frag);
+    defer rt_frag_shader.deinit();
+
+    global.pipeline = try gpu.Pipeline.init(.{
+        .raster = .{
+            .vertex_shader = rt_vert_shader,
+            .fragment_shader = rt_frag_shader,
+        },
+    });
 
     log.info("initialized renderer", .{});
 }
 
 pub fn deinit() void {
+    global.pipeline.deinit();
+
     log.info("deinitialized renderer", .{});
 }
 
@@ -32,6 +45,8 @@ pub fn draw() void {
             .clear_color = .{ 1, 1, 1, 1 },
         },
     });
+    global.pipeline.apply();
+
     gpu.endPass();
 }
 
