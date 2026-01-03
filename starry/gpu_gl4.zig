@@ -8,6 +8,7 @@ const c = @cImport({
     @cInclude("glad.h");
 });
 const gpu = @import("gpu.zig");
+const handle = @import("handle.zig");
 
 const valog = std.log.scoped(.gl_debug);
 
@@ -18,20 +19,7 @@ var global: struct {
 
     device: gpu.Device = undefined,
     has_device: bool = false,
-
-    current_pipeline: ?gpu.Pipeline = null,
-
-    // mappings from opaque handles to real resources
-    // TODO i think theres a fancy way to handle use after free but i don't care rn
-    // TODO resource system can be shared between backends probably
-    shaders: [gpu.max_shaders]?GlShader = [_]?GlShader{null} ** gpu.max_shaders,
-    pipelines: [gpu.max_pipelines]?GlPipeline = [_]?GlPipeline{null} ** gpu.max_pipelines,
 } = .{};
-
-const GlShader = struct {
-    id: c.GLuint,
-    settings: gpu.ShaderSettings,
-};
 
 const GlPipeline = struct {
     shader_program: c.GLuint,
@@ -95,19 +83,6 @@ fn assertBackendInitialized() void {
 
 pub fn deinit() void {
     assertBackendInitialized();
-
-    // we have garbage collection at home
-    for (global.shaders, 0..) |shader, i| {
-        if (shader != null) {
-            deinitShader(.{ .id = @intCast(i) });
-        }
-    }
-    for (global.pipelines, 0..) |pipeline, i| {
-        if (pipeline != null) {
-            deinitPipeline(.{ .id = @intCast(i) });
-        }
-    }
-
     global.backend_initialized = false;
 }
 
@@ -140,19 +115,9 @@ pub fn queryDevice() gpu.Device {
     return global.device;
 }
 
-pub fn compileShader(settings: gpu.ShaderSettings) gpu.ShaderError!gpu.Shader {
+pub fn compileShader(settings: gpu.ShaderSettings) gpu.ShaderError!handle.Any {
     assertBackendInitialized();
-
-    // find a free slot
-    var shader_idx: u32 = undefined;
-    for (global.shaders, 0..) |slot, i| {
-        if (slot == null) {
-            shader_idx = @intCast(i);
-            break;
-        }
-    } else {
-        return gpu.BackendError.TooManyHandles;
-    }
+    const h = try gpu.resources.shaders.findFree();
 
     const stage: c.GLenum = switch (settings.stage) {
         .vertex => c.GL_VERTEX_SHADER,
@@ -178,32 +143,27 @@ pub fn compileShader(settings: gpu.ShaderSettings) gpu.ShaderError!gpu.Shader {
         return gpu.ShaderError.CompilationFailed;
     }
 
-    global.shaders[shader_idx] = .{
+    gpu.resources.shaders.getSlot(h).* = .{
         .id = id,
         .settings = settings,
     };
-
-    return .{
-        .id = shader_idx,
-    };
+    return h;
 }
 
-pub fn deinitShader(shader: gpu.Shader) void {
+pub fn deinitShader(shader: handle.Any) void {
     assertBackendInitialized();
 
-    if (gpu.validationEnabled()) {
-        if (shader.id >= gpu.max_shaders) {
-            valog.err("invalid shader handle {d}", .{shader.id});
+    c.glDeleteShader((gpu.resources.shaders.getSlot(shader) catch |err| {
+        if (gpu.validationEnabled()) {
+            valog.err("{s}", .{@errorName(err)});
             @trap();
+        } else {
+            valog.warn("{s}", .{@errorName(err)});
         }
-        if (global.shaders[shader.id] == null) {
-            valog.err("invalid shader handle {d}", .{shader.id});
-            @trap();
-        }
-    }
+    }).gl.id);
 
-    c.glDeleteShader(global.shaders[shader.id].?.id);
-    global.shaders[shader.id] = null;
+    // every possible error has just been handled
+    gpu.resources.shaders.freeSlot(shader) catch unreachable;
 }
 
 pub fn startPass(pass: gpu.RenderPass) void {
@@ -252,26 +212,16 @@ pub fn setScissor(scissor: gpu.Scissor) void {
     }
 }
 
-pub fn initPipeline(settings: gpu.PipelineSettings) gpu.ShaderError!gpu.Pipeline {
+pub fn initPipeline(settings: gpu.PipelineSettings) gpu.ShaderError!handle.Any {
     assertBackendInitialized();
-
-    // find a free slot
-    var idx: u32 = undefined;
-    for (global.pipelines, 0..) |slot, i| {
-        if (slot == null) {
-            idx = @intCast(i);
-            break;
-        }
-    } else {
-        return gpu.BackendError.TooManyHandles;
-    }
+    const h = try gpu.resources.shaders.findFree();
 
     if (settings == .raster) {
-        return initRasterPipeline(idx, settings);
+        return initRasterPipeline(h, settings);
     }
 }
 
-fn initRasterPipeline(idx: u32, settings: gpu.PipelineSettings) gpu.ShaderError!gpu.Pipeline {
+fn initRasterPipeline(h: handle.Any, settings: gpu.PipelineSettings) gpu.ShaderError!handle.Any {
     // opengl pipelines only require linking the shader
     const vert_shader = global.shaders[settings.raster.vertex_shader.id] orelse
         return gpu.ShaderError.InvalidHandle;
@@ -310,48 +260,37 @@ fn initRasterPipeline(idx: u32, settings: gpu.PipelineSettings) gpu.ShaderError!
         return gpu.ShaderError.LinkingFailed;
     }
 
-    global.pipelines[idx] = .{
-        .settings = settings,
+    gpu.resources.pipelines.getSlot(h).* = .{
         .shader_program = program,
+        .settings = settings,
     };
-
-    return .{ .id = idx };
+    return h;
 }
 
-pub fn deinitPipeline(pipeline: gpu.Pipeline) void {
+pub fn deinitPipeline(pipeline: handle.Any) void {
     assertBackendInitialized();
 
-    if (gpu.validationEnabled()) {
-        if (pipeline.id >= gpu.max_pipelines) {
-            valog.err("invalid pipeline handle {d}", .{pipeline.id});
+    c.glDeleteProgram(gpu.resources.pipelines.getSlot(pipeline).gl.shader_program);
+    gpu.resources.pipelines.freeSlot(pipeline) catch |err| {
+        if (gpu.validationEnabled()) {
+            valog.err("error freeing shader: ", .{@errorName(err)});
             @trap();
+        } else {
+            valog.warn("error freeing shader: ", .{@errorName(err)});
         }
-        if (global.pipelines[pipeline.id] == null) {
-            valog.err("invalid pipeline handle {d}", .{pipeline.id});
-            @trap();
-        }
-    }
-
-    c.glDeleteProgram(global.pipelines[pipeline.id].?.shader_program);
-    global.pipelines[pipeline.id] = null;
+    };
 }
 
 pub fn applyPipeline(pipeline: gpu.Pipeline) void {
     // TODO get the current opengl state so that it has to do less api calls
     assertBackendInitialized();
 
-    if (gpu.validationEnabled()) {
-        if (pipeline.id >= gpu.max_pipelines) {
-            valog.err("invalid pipeline handle {d}", .{pipeline.id});
+    const pip = gpu.resources.pipelines.getSlot(pipeline) catch |err| {
+        if (gpu.validationEnabled()) {
+            std.log.err("{s}", .{@errorName(err)});
             @trap();
         }
-        if (global.pipelines[pipeline.id] == null) {
-            valog.err("invalid pipeline handle {d}", .{pipeline.id});
-            @trap();
-        }
-    }
-
-    const pip = global.pipelines[pipeline.id].?;
+    };
     global.current_pipeline = pipeline;
     c.glUseProgram(pip.shader_program);
 
