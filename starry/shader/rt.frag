@@ -52,7 +52,7 @@ vec3 unproject(vec3 pos, mat4 inv_mat, vec4 viewport) {
 layout(binding = 0) uniform fs_uniform {
     mat4 u_inv_view_proj_mat;
     vec4 u_viewport; // z/w = image size
-    vec3 u_camera_pos;
+    vec4 u_camera_pos; // w for padding, unused
 };
 
 void main() {
@@ -66,7 +66,7 @@ void main() {
     vec3 world_far = unproject(win_far, u_inv_view_proj_mat, u_viewport);
 
     Ray ray;
-    ray.origin = u_camera_pos;
+    ray.origin = u_camera_pos.xyz;
     ray.dir = normalize(world_far - world_near);
 
     frag_color = rayColor(ray);

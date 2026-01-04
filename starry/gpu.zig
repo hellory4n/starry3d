@@ -117,18 +117,21 @@ pub fn expectDevice(dev: Device) BackendError!void {
 pub const max_shaders = 32;
 /// How many pipelines can live at the same time
 pub const max_pipelines = 128;
+pub const max_uniform_bindslots = 16;
 
-pub const BackendShader = union {
+pub const BackendShader = struct {
+    settings: ShaderSettings,
     gl: struct {
         id: c_uint,
-        settings: ShaderSettings,
+        ubos: [max_uniform_bindslots]?c_uint,
     },
 };
 
-pub const BackendPipeline = union {
+pub const BackendPipeline = struct {
+    settings: PipelineSettings,
     gl: struct {
         shader_program: c_uint,
-        settings: PipelineSettings,
+        ubos: [max_uniform_bindslots]?c_uint,
     },
 };
 
@@ -143,6 +146,10 @@ pub const ShaderSettings = struct {
     glsl_src: []const u8,
     stage: ShaderStage,
     label: []const u8 = "shader",
+    /// OpenGL calls these UBOs
+    uniforms: []struct {
+        bind_slot: u32,
+    } = &.{},
 };
 
 pub const ShaderError = handle.Error || error{
@@ -171,6 +178,15 @@ pub const Shader = struct {
         };
     }
 };
+
+/// Sets an uniform block to random crap. Remember alignment is important, and stuff. Just don't put
+/// a vec3 in there.
+pub fn setUniform(bind_slot: u32, data: []const u8) void {
+    switch (comptime getBackend()) {
+        .gl4 => bke_gl4.setUniform(bind_slot, data),
+        else => @compileError("unsupported backend"),
+    }
+}
 
 /// Describes what happens to a framebuffer, depth buffer, or stencil buffers, before a render pass.
 pub const LoadOp = enum {

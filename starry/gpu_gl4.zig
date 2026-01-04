@@ -17,6 +17,8 @@ var global: struct {
     backend_initialized: bool = false,
     in_render_pass: bool = false,
 
+    current_pipeline: ?gpu.BackendPipeline = null,
+
     device: gpu.Device = undefined,
     has_device: bool = false,
 } = .{};
@@ -117,8 +119,17 @@ pub fn queryDevice() gpu.Device {
 
 pub fn compileShader(settings: gpu.ShaderSettings) gpu.ShaderError!handle.Opaque {
     assertBackendInitialized();
+
+    if (gpu.validationEnabled()) {
+        if (settings.uniforms.len > gpu.max_uniform_bindslots) {
+            valog.err("too many uniforms!", .{});
+            @trap();
+        }
+    }
+
     const h = try gpu.resources.shaders.findFree();
 
+    // compile shader
     const stage: c.GLenum = switch (settings.stage) {
         .vertex => c.GL_VERTEX_SHADER,
         .fragment => c.GL_FRAGMENT_SHADER,
@@ -143,10 +154,19 @@ pub fn compileShader(settings: gpu.ShaderSettings) gpu.ShaderError!handle.Opaque
         return gpu.ShaderError.CompilationFailed;
     }
 
+    // make ubos
+    var ubos = [gpu.max_uniform_bindslots]?c_uint{null} ** gpu.max_uniform_bindslots;
+    for (settings.uniforms, 0..) |_, i| {
+        var ubo: c_uint = undefined;
+        c.glGenBuffers(1, &ubo);
+        ubos[i] = ubo;
+    }
+
     gpu.resources.shaders.setSlot(h, .{
+        .settings = settings,
         .gl = .{
             .id = id,
-            .settings = settings,
+            .ubos = ubos,
         },
     });
     return h;
@@ -226,7 +246,7 @@ pub fn initPipeline(settings: gpu.PipelineSettings) gpu.ShaderError!handle.Opaqu
 }
 
 fn initRasterPipeline(h: handle.Opaque, settings: gpu.PipelineSettings) gpu.ShaderError!handle.Opaque {
-    // opengl pipelines only require linking the shader
+    // shader linking crap
     const vert_shader = gpu.resources.shaders.getSlot(settings.raster.vertex_shader.id) catch
         return gpu.ShaderError.InvalidHandle;
     const frag_shader = gpu.resources.shaders.getSlot(settings.raster.fragment_shader.id) catch
@@ -262,6 +282,19 @@ fn initRasterPipeline(h: handle.Opaque, settings: gpu.PipelineSettings) gpu.Shad
 
         valog.err("creating pipeline failed: {s}", .{info_log[0..len]});
         return gpu.ShaderError.LinkingFailed;
+    }
+
+    // the ubos are pretty important innit mate
+    var ubos = [gpu.max_uniform_bindslots]?c_uint{null} ** gpu.max_uniform_bindslots;
+    for (vert_shader.gl.ubos, 0..) |ubo, i| {
+        if (ubo) |ubo_fr| {
+            ubos[i] = ubo_fr;
+        }
+    }
+    for (vert_shader.gl.ubos, 0..) |ubo, i| {
+        if (ubo) |ubo_fr| {
+            ubos[i] = ubo_fr;
+        }
     }
 
     _ = gpu.resources.pipelines.setSlot(h, .{
@@ -303,6 +336,7 @@ pub fn applyPipeline(pipeline: gpu.Pipeline) void {
             return;
         }
     };
+    global.current_pipeline = pip;
     c.glUseProgram(pip.gl.shader_program);
 
     if (pip.gl.settings == .raster) {
@@ -322,5 +356,15 @@ pub fn applyPipeline(pipeline: gpu.Pipeline) void {
                 .none => unreachable,
             });
         }
+    }
+}
+
+pub fn setUniform(bind_slot: u32, data: []const u8) void {
+    if (global.current_pipeline == null) {
+        if (gpu.validationEnabled()) {
+            valog.err("no pipeline applied at this point", .{});
+            @trap();
+        }
+        return;
     }
 }
