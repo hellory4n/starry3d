@@ -152,20 +152,25 @@ pub const ShaderError = handle.Error || error{
 };
 
 /// A program that runs on the GPU. Linked at pipeline creation.
-pub const Shader = handle.Handle(
-    ShaderSettings,
-    ShaderError,
-    BackendShader,
-    switch (getBackend()) {
-        .gl4 => bke_gl4.compileShader,
-        .invalid => @compileError("unsupported backend"),
-    },
-    switch (getBackend()) {
-        .gl4 => bke_gl4.deinitShader,
-        .invalid => @compileError("unsupported backend"),
-    },
-    resources.shaders,
-);
+pub const Shader = struct {
+    id: handle.Opaque,
+
+    /// Compiles a shader. Amazing.
+    pub fn init(settings: ShaderSettings) ShaderError!Shader {
+        return switch (comptime getBackend()) {
+            .gl4 => .{ .id = try bke_gl4.compileShader(settings) },
+            else => @compileError("unsupported backend"),
+        };
+    }
+
+    /// Frees a shader. You can safely call this once it has been linked.
+    pub fn deinit(shader: Shader) void {
+        return switch (comptime getBackend()) {
+            .gl4 => bke_gl4.deinitShader(shader.id),
+            else => @compileError("unsupported backend"),
+        };
+    }
+};
 
 /// Describes what happens to a framebuffer, depth buffer, or stencil buffers, before a render pass.
 pub const LoadOp = enum {
@@ -281,27 +286,30 @@ pub const PipelineSettings = union(enum) {
 };
 
 /// BEWARE OF THE GRAPHICS PIPELINE
-pub const Pipeline = handle.Handle(
-    PipelineSettings,
-    ShaderError,
-    BackendPipeline,
-    switch (getBackend()) {
-        .gl4 => bke_gl4.initPipeline,
-        .invalid => @compileError("unsupported backend"),
-    },
-    switch (getBackend()) {
-        .gl4 => bke_gl4.deinitPipeline,
-        .invalid => @compileError("unsupported backend"),
-    },
-    resources.pipelines,
-);
+pub const Pipeline = struct {
+    id: handle.Opaque,
 
-pub fn applyPipeline(pipeline: Pipeline) void {
-    switch (comptime getBackend()) {
-        .gl4 => bke_gl4.applyPipeline(pipeline),
-        .invalid => @compileError("unsupported backend"),
+    pub fn init(settings: PipelineSettings) ShaderError!Pipeline {
+        return switch (comptime getBackend()) {
+            .gl4 => .{ .id = try bke_gl4.initPipeline(settings) },
+            else => @compileError("unsupported backend"),
+        };
     }
-}
+
+    pub fn deinit(pipeline: Pipeline) void {
+        switch (comptime getBackend()) {
+            .gl4 => bke_gl4.deinitPipeline(pipeline.id),
+            else => @compileError("unsupported backend"),
+        }
+    }
+
+    pub fn apply(pipeline: Pipeline) void {
+        switch (comptime getBackend()) {
+            .gl4 => bke_gl4.applyPipeline(pipeline),
+            .invalid => @compileError("unsupported backend"),
+        }
+    }
+};
 
 // pub const AllocationError = error{
 //     OutOfMemory,

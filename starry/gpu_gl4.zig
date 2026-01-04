@@ -115,7 +115,7 @@ pub fn queryDevice() gpu.Device {
     return global.device;
 }
 
-pub fn compileShader(settings: gpu.ShaderSettings) gpu.ShaderError!handle.Any {
+pub fn compileShader(settings: gpu.ShaderSettings) gpu.ShaderError!handle.Opaque {
     assertBackendInitialized();
     const h = try gpu.resources.shaders.findFree();
 
@@ -143,24 +143,28 @@ pub fn compileShader(settings: gpu.ShaderSettings) gpu.ShaderError!handle.Any {
         return gpu.ShaderError.CompilationFailed;
     }
 
-    gpu.resources.shaders.getSlot(h).* = .{
-        .id = id,
-        .settings = settings,
-    };
+    gpu.resources.shaders.setSlot(h, .{
+        .gl = .{
+            .id = id,
+            .settings = settings,
+        },
+    });
     return h;
 }
 
-pub fn deinitShader(shader: handle.Any) void {
+pub fn deinitShader(shader: handle.Opaque) void {
     assertBackendInitialized();
 
-    c.glDeleteShader((gpu.resources.shaders.getSlot(shader) catch |err| {
+    const glshader = gpu.resources.shaders.getSlot(shader) catch |err| {
         if (gpu.validationEnabled()) {
             valog.err("{s}", .{@errorName(err)});
             @trap();
         } else {
             valog.warn("{s}", .{@errorName(err)});
+            return;
         }
-    }).gl.id);
+    };
+    c.glDeleteShader(glshader.gl.id);
 
     // every possible error has just been handled
     gpu.resources.shaders.freeSlot(shader) catch unreachable;
@@ -212,7 +216,7 @@ pub fn setScissor(scissor: gpu.Scissor) void {
     }
 }
 
-pub fn initPipeline(settings: gpu.PipelineSettings) gpu.ShaderError!handle.Any {
+pub fn initPipeline(settings: gpu.PipelineSettings) gpu.ShaderError!handle.Opaque {
     assertBackendInitialized();
     const h = try gpu.resources.shaders.findFree();
 
@@ -221,31 +225,31 @@ pub fn initPipeline(settings: gpu.PipelineSettings) gpu.ShaderError!handle.Any {
     }
 }
 
-fn initRasterPipeline(h: handle.Any, settings: gpu.PipelineSettings) gpu.ShaderError!handle.Any {
+fn initRasterPipeline(h: handle.Opaque, settings: gpu.PipelineSettings) gpu.ShaderError!handle.Opaque {
     // opengl pipelines only require linking the shader
-    const vert_shader = global.shaders[settings.raster.vertex_shader.id] orelse
+    const vert_shader = gpu.resources.shaders.getSlot(settings.raster.vertex_shader.id) catch
         return gpu.ShaderError.InvalidHandle;
-    const frag_shader = global.shaders[settings.raster.fragment_shader.id] orelse
+    const frag_shader = gpu.resources.shaders.getSlot(settings.raster.fragment_shader.id) catch
         return gpu.ShaderError.InvalidHandle;
 
     if (gpu.validationEnabled()) {
         // this protects against copy paste errors or some shit
-        if (vert_shader.settings.stage != .vertex) {
+        if (vert_shader.gl.settings.stage != .vertex) {
             valog.err("expected vertex shader, got {s} shader", .{
-                @tagName(vert_shader.settings.stage),
+                @tagName(vert_shader.gl.settings.stage),
             });
         }
 
-        if (frag_shader.settings.stage != .fragment) {
+        if (frag_shader.gl.settings.stage != .fragment) {
             valog.err("expected fragment shader, got {s} shader", .{
-                @tagName(vert_shader.settings.stage),
+                @tagName(vert_shader.gl.settings.stage),
             });
         }
     }
 
     const program = c.glCreateProgram();
-    c.glAttachShader(program, vert_shader.id);
-    c.glAttachShader(program, frag_shader.id);
+    c.glAttachShader(program, vert_shader.gl.id);
+    c.glAttachShader(program, frag_shader.gl.id);
     c.glLinkProgram(program);
 
     var success: c.GLint = undefined;
@@ -260,51 +264,58 @@ fn initRasterPipeline(h: handle.Any, settings: gpu.PipelineSettings) gpu.ShaderE
         return gpu.ShaderError.LinkingFailed;
     }
 
-    gpu.resources.pipelines.getSlot(h).* = .{
-        .shader_program = program,
-        .settings = settings,
-    };
+    _ = gpu.resources.pipelines.setSlot(h, .{
+        .gl = .{
+            .shader_program = program,
+            .settings = settings,
+        },
+    });
     return h;
 }
 
-pub fn deinitPipeline(pipeline: handle.Any) void {
+pub fn deinitPipeline(pipeline: handle.Opaque) void {
     assertBackendInitialized();
 
-    c.glDeleteProgram(gpu.resources.pipelines.getSlot(pipeline).gl.shader_program);
-    gpu.resources.pipelines.freeSlot(pipeline) catch |err| {
+    const glpipeline = gpu.resources.pipelines.getSlot(pipeline) catch |err| {
         if (gpu.validationEnabled()) {
-            valog.err("error freeing shader: ", .{@errorName(err)});
+            valog.err("{s}", .{@errorName(err)});
             @trap();
         } else {
-            valog.warn("error freeing shader: ", .{@errorName(err)});
+            valog.warn("{s}", .{@errorName(err)});
+            return;
         }
     };
+    c.glDeleteProgram(glpipeline.gl.shader_program);
+
+    // every possible error has just been handled
+    gpu.resources.pipelines.freeSlot(pipeline) catch unreachable;
 }
 
 pub fn applyPipeline(pipeline: gpu.Pipeline) void {
     // TODO get the current opengl state so that it has to do less api calls
     assertBackendInitialized();
 
-    const pip = gpu.resources.pipelines.getSlot(pipeline) catch |err| {
+    const pip = gpu.resources.pipelines.getSlot(pipeline.id) catch |err| {
         if (gpu.validationEnabled()) {
             std.log.err("{s}", .{@errorName(err)});
             @trap();
+        } else {
+            return;
         }
     };
-    global.current_pipeline = pipeline;
-    c.glUseProgram(pip.shader_program);
+    c.glUseProgram(pip.gl.shader_program);
 
-    if (pip.settings == .raster) {
-        c.glFrontFace(switch (pip.settings.raster.front_face) {
+    if (pip.gl.settings == .raster) {
+        c.glFrontFace(switch (pip.gl.settings.raster.front_face) {
             .clockwise => c.GL_CW,
             .counter_clockwise => c.GL_CCW,
         });
 
-        if (pip.settings.raster.cull == .none) {
+        if (pip.gl.settings.raster.cull == .none) {
             c.glDisable(c.GL_CULL_FACE);
         } else {
             c.glEnable(c.GL_CULL_FACE);
-            c.glCullFace(switch (pip.settings.raster.cull) {
+            c.glCullFace(switch (pip.gl.settings.raster.cull) {
                 .front_face => c.GL_FRONT,
                 .back_face => c.GL_BACK,
                 .front_and_back_faces => c.GL_FRONT_AND_BACK,
