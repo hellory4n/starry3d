@@ -24,5 +24,6 @@
         "build.zig",
         "build.zig.zon",
         "starry",
+        "reactor",
     },
 }

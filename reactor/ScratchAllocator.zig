@@ -1,8 +1,8 @@
 //! Temporary allocator type shit. It works a lot like a stack, where there's a fixed size buffer
-//! shared by the entire program, and each function can make a new instance of `ScratchAlloc`,
+//! shared by the entire program, and each function can make a new instance of `ScratchAllocator`,
 //! which is then freed at the end, leaving more space for the rest of the program to use. If the
 //! underlying buffer is full, it'll use a backup allocator so that the program doesn't just die.
-//! Probably thread-safe, idk lol.
+//! Each thread has its own buffer, so it's probably thread-safe, idk lol.
 const std = @import("std");
 const mem = std.mem;
 const heap = std.heap;

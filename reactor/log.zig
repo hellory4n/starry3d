@@ -1,7 +1,6 @@
 //! Extends std.log for handsome functionality
 const std = @import("std");
 const builtin = @import("builtin");
-const app = @import("app.zig");
 const ScratchAllocator = @import("ScratchAllocator.zig");
 
 // color constants things
@@ -11,13 +10,11 @@ const color_gray = "\x1b[0;90m";
 const color_yellow = "\x1b[0;93m";
 const color_red = "\x1b[0;91m";
 
-pub const stlog = std.log.scoped(.starry);
-
 /// Adds a new place where the engine and app can dump their crap into. `path` is relative, unless you
 /// make it not relative. You probably should use `app.Settings.logfiles` instead so that it can get
 /// all the logs from when the engine starts.
-pub fn addLogFile(path: []const u8) !void {
-    try __logfiles.append(__alloc, try std.fs.cwd().createFile(path, .{ .read = true }));
+pub fn addLogPath(path: []const u8) !void {
+    try global.logfiles.append(global.alloc, try std.fs.cwd().createFile(path, .{ .read = true }));
 }
 
 /// See `starry.util.std_options` to see how you're supposed to use this
@@ -50,7 +47,7 @@ pub fn logfn(
     // TODO i'd like to add the time here but the stdlib can't format time yet so that's unfortunate
     // TODO print stack trace to files on panic
 
-    for (__logfiles.items) |*file| {
+    for (global.logfiles.items) |*file| {
         // one failed log shouldn't bring down the entire engine
         _ = file.write(prefix) catch |err| {
             std.debug.print("couldn't log with format '{s}': {s}", .{ format, @errorName(err) });
@@ -92,29 +89,27 @@ pub fn logfn(
     };
 }
 
-var __alloc: std.mem.Allocator = undefined;
-var __logfiles: std.ArrayList(std.fs.File) = .{};
+var global: struct {
+    alloc: std.mem.Allocator = undefined,
+    logfiles: std.ArrayList(std.fs.File) = .{},
+} = .{};
 
-pub fn __init(alloc: std.mem.Allocator, settings: app.Settings) void {
-    __alloc = alloc;
+/// Initializes the logging stuff
+pub fn init(
+    alloc: std.mem.Allocator,
+) void {
+    global.alloc = alloc;
 
     if (builtin.os.tag == .windows) {
         _ = std.fs.File.stdout().getOrEnableAnsiEscapeSupport();
         _ = std.fs.File.stderr().getOrEnableAnsiEscapeSupport();
     }
-
-    if (settings.logfiles) |logfiles| {
-        for (logfiles) |path| {
-            addLogFile(path) catch |err| {
-                stlog.err("logfile '{s}' unavailable: {s}", .{ path, @errorName(err) });
-            };
-        }
-    }
 }
 
-pub fn __free() void {
-    for (__logfiles.items) |*file| {
+/// Deinitializes the logging stuff
+pub fn deinit() void {
+    for (global.logfiles.items) |*file| {
         file.close();
     }
-    __logfiles.deinit(__alloc);
+    global.logfiles.deinit(global.alloc);
 }

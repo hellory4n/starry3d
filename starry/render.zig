@@ -6,48 +6,48 @@
 //! 🟨🟨🟨🟨🟥
 
 const std = @import("std");
+const stlog = std.log.scoped(.starry);
 const zglm = @import("zglm");
 const gpu = @import("gpu.zig");
 const app = @import("app.zig");
-const log = @import("log.zig").stlog;
 const world = @import("world.zig");
 const rtshader = @import("shader/rt.zig");
 
 var global: struct {
-    pipeline: gpu.Pipeline = undefined,
+    // pipeline: gpu.Pipeline = undefined,
 } = .{};
 
 pub fn init() !void {
-    const rt_vert_shader = try gpu.Shader.init(rtshader.vert);
-    defer rt_vert_shader.deinit();
-    const rt_frag_shader = try gpu.Shader.init(rtshader.frag);
-    defer rt_frag_shader.deinit();
+    // const rt_vert_shader = try gpu.Shader.init(rtshader.vert);
+    // defer rt_vert_shader.deinit();
+    // const rt_frag_shader = try gpu.Shader.init(rtshader.frag);
+    // defer rt_frag_shader.deinit();
 
-    global.pipeline = try gpu.Pipeline.init(.{
-        .raster = .{
-            .vertex_shader = rt_vert_shader,
-            .fragment_shader = rt_frag_shader,
-        },
-    });
+    // global.pipeline = try gpu.Pipeline.init(.{
+    //     .raster = .{
+    //         .vertex_shader = rt_vert_shader,
+    //         .fragment_shader = rt_frag_shader,
+    //     },
+    // });
 
-    log.info("initialized renderer", .{});
+    stlog.info("initialized renderer", .{});
 }
 
 pub fn deinit() void {
-    global.pipeline.deinit();
+    // global.pipeline.deinit();
 
-    log.info("deinitialized renderer", .{});
+    stlog.info("deinitialized renderer", .{});
 }
 
 pub fn draw() void {
-    gpu.startPass(.{
-        .action = .{
-            .clear_color = .{ 1, 1, 1, 1 },
-        },
-    });
-    global.pipeline.apply();
+    // gpu.startPass(.{
+    //     .action = .{
+    //         .clear_color = .{ 1, 1, 1, 1 },
+    //     },
+    // });
+    // global.pipeline.apply();
 
-    gpu.endPass();
+    // gpu.endPass();
 }
 
 // const RenderState = struct {

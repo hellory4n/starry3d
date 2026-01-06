@@ -4,6 +4,11 @@
 
 The voxel graphics toolkit.
 
+Featuring:
+- starry: the game engine
+- reactor: related libraries that work fine on their own
+- sandbox: the test project
+
 ## FAQ
 
 ### Have you tried \[game engine] you fucking moron

@@ -3,12 +3,11 @@ const std = @import("std");
 const builtin = @import("builtin");
 const glfw = @import("zglfw");
 const zglm = @import("zglm");
-const log = @import("log.zig");
 const root = @import("root.zig");
 const gpu = @import("gpu.zig");
 const render = @import("render.zig");
 const world = @import("world.zig");
-const ScratchAllocator = @import("ScratchAllocator.zig");
+const ScratchAllocator = @import("reactor").ScratchAllocator;
 
 /// Used for creating a Starry application
 pub const Settings = struct {
@@ -27,17 +26,12 @@ pub const Settings = struct {
 
     /// You usually want this to be configurable by the end user
     window: WindowSettings = .{},
-
-    /// List of files which log.
-    logfiles: ?[]const []const u8 = null,
 };
 
 /// You usually want this to be configurable by the end user
 pub const WindowSettings = struct {
     /// The preferred size of the window
     size: zglm.Vec2i = .{ 1280, 720 },
-    /// MSAA sample count
-    sample_count: ?i32 = null,
     /// Disables VSync so that the renderer can push as many frames as possible, which is useful for
     /// benchmarking and stuff. Only works on desktop.
     debug_frame_rate: bool = builtin.mode == .Debug,
@@ -52,7 +46,7 @@ const GlobalState = struct {
     settings: Settings = undefined,
 
     /// for allocating values that last as long as the engine/program does
-    core_alloc: std.heap.GeneralPurposeAllocator(.{}) = undefined,
+    core_alloc: std.mem.Allocator = undefined,
 
     window: *glfw.Window = undefined,
     key_state: [@intFromEnum(Key.last) + 1]InputState =
@@ -62,57 +56,51 @@ const GlobalState = struct {
     prev_mouse_pos: zglm.Vec2f = @splat(0),
 
     prev_time: f64 = 0,
-    smooth_dt: f64 = 0,
+    smooth_dt: f64 = 1 / 60, // initial guess
 };
 var global: GlobalState = .{};
 
 /// Runs the engine, and eventually, your app :)
-pub fn run(comptime settings: Settings) void {
+pub fn run(alloc: std.mem.Allocator, comptime settings: Settings) void {
     global.settings = settings;
-    global.core_alloc = std.heap.GeneralPurposeAllocator(.{}).init;
-    defer _ = global.core_alloc.deinit();
-
-    log.__init(global.core_alloc.allocator(), global.settings);
-    defer log.__free();
+    global.core_alloc = alloc;
+    const stlog = std.log.scoped(.starry);
 
     // the rest of the engine has to be wrapped so that errors are logged properly
     starryMain() catch |err| {
-        log.stlog.err("fatal error: {s}", .{@errorName(err)});
-        log.__free();
+        stlog.err("fatal error: {s}", .{@errorName(err)});
         @panic(@errorName(err)); // for the stack trace
     };
 }
 
 fn starryMain() !void {
     // TODO clean this up
-    log.stlog.info("starry v{d}.{d}.{d}{s}{s}", .{
+    const stlog = std.log.scoped(.starry);
+    stlog.info("starry v{d}.{d}.{d}{s}{s}", .{
         root.version.major,
         root.version.minor,
         root.version.patch,
         if (root.version.pre) |pre| "-" ++ pre else "",
         if (root.version.build) |build| "+" ++ build else "",
     });
-    defer log.stlog.info("deinitialized starry", .{});
+    defer stlog.info("deinitialized starry", .{});
 
-    // glfw is more mature than sokol_app
-    // and stuff
-    // TODO use sokol_app on platforms other than desktop
+    // window fuckery
     try glfw.init();
-    log.stlog.info("initialized GLFW", .{});
+    stlog.info("initialized GLFW", .{});
     defer {
         glfw.terminate();
-        log.stlog.info("deinitialized GLFW", .{});
+        stlog.info("deinitialized GLFW", .{});
     }
 
     glfw.windowHint(.client_api, .opengl_api);
     glfw.windowHint(.opengl_forward_compat, true);
     glfw.windowHint(.opengl_profile, .opengl_core_profile);
     glfw.windowHint(.context_version_major, 4);
-    glfw.windowHint(.context_version_minor, 3);
+    glfw.windowHint(.context_version_minor, 5);
 
     glfw.windowHint(.doublebuffer, true);
     glfw.windowHint(.resizable, global.settings.window.resizable);
-    glfw.windowHint(.samples, if (global.settings.window.sample_count) |samples| samples else 0);
     // TODO idk if high dpi works lmao
     glfw.windowHint(.scale_to_monitor, !global.settings.window.high_dpi);
     glfw.windowHint(.scale_framebuffer, !global.settings.window.high_dpi);
@@ -126,31 +114,33 @@ fn starryMain() !void {
         global.settings.name,
         null,
     );
-    log.stlog.info("created window for {s} on {s}", .{
+    stlog.info("created window for {s} on {s}", .{
         @tagName(glfw.getPlatform()),
         @tagName(builtin.os.tag),
     });
     defer {
         global.window.destroy();
-        log.stlog.info("destroyed window", .{});
+        stlog.info("destroyed window", .{});
     }
 
     glfw.makeContextCurrent(global.window);
     glfw.swapInterval(if (global.settings.window.debug_frame_rate) 0 else 1);
 
+    // idk man
+    global.prev_time = glfw.getTime();
+
+    // rendering fuckery
     try gpu.init();
-    log.stlog.info("initialized gpu backend for {s}", .{@tagName(gpu.getBackend())});
+    stlog.info("initialized gpu backend for {s}", .{@tagName(gpu.getBackend())});
     defer {
         gpu.deinit();
-        log.stlog.info("deinitialized gpu backend", .{});
+        stlog.info("deinitialized gpu backend", .{});
     }
 
     try render.init();
     defer render.deinit();
 
-    global.prev_time = glfw.getTime();
-    global.smooth_dt = 1 / 60; // initial guess
-
+    // Job Done!
     if (global.settings.init) |realInitFn| {
         try realInitFn();
     }
