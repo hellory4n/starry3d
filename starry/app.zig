@@ -7,7 +7,7 @@ const root = @import("root.zig");
 const gpu = @import("gpu.zig");
 const render = @import("render.zig");
 const world = @import("world.zig");
-const ScratchAllocator = @import("reactor").ScratchAllocator;
+const ScratchAllocator = @import("sunshine").ScratchAllocator;
 
 /// Used for creating a Starry application
 pub const Settings = struct {

@@ -1,29 +1,26 @@
 .{
     .name = .starry3d,
     .version = "0.7.0",
-    .dependencies = .{
-        .sokol = .{
-            .url = "git+https://github.com/floooh/sokol-zig.git#4b04f5a54015f0cdf4a9aac35faa03f2a091514f",
-            .hash = "sokol-0.1.0-pb1HKzVmNgDI8LiFXHdBxSmH9KOjSia4W4I4GN-S5gzB",
-            .lazy = true,
-        },
-        .zglfw = .{
-            .url = "git+https://github.com/zig-gamedev/zglfw#15bf6ec59a4e1399d0c753455f69b28f09e41791",
-            .hash = "zglfw-0.10.0-dev-zgVDNHO2IQDy_fSdwY5U4z42rHUuKgt7T9f-qmQ3FnuL",
-        },
-        .zglm = .{
-            .url = "git+https://github.com/hellory4n/zglm.git#10fbbed7b301900c719386dc553a95eedb7c1144",
-            .hash = "zglm-0.2.0-rPnx2Bv4AQCXtQQQIvhQHTB0edfv3iLo5cjK5WGLXnB_",
-        },
-    },
-    .fingerprint = 0x3bc229cbaf2e2060,
     .minimum_zig_version = "0.15.2",
+    .fingerprint = 0x3bc229cbaf2e2060,
+
     .paths = .{
         "LICENSE",
         "README.md",
         "build.zig",
         "build.zig.zon",
         "starry",
-        "reactor",
+        "sunshine",
+    },
+
+    .dependencies = .{
+        .zglfw = .{
+            .url = "git+https://github.com/zig-gamedev/zglfw#d9c06187e8b23e91b2ba6865d265e4213e5e7d09",
+            .hash = "zglfw-0.10.0-dev-zgVDNC64IQCeL-_eVOA27Wa50WVitrJswOZVvgcXmIsy",
+        },
+        .zglm = .{
+            .url = "git+https://github.com/hellory4n/zglm.git#10fbbed7b301900c719386dc553a95eedb7c1144",
+            .hash = "zglm-0.2.0-rPnx2Bv4AQCXtQQQIvhQHTB0edfv3iLo5cjK5WGLXnB_",
+        },
     },
 }

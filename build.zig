@@ -5,10 +5,10 @@ pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const reactor_mod = b.addModule("reactor", .{
+    const sunshine_mod = b.addModule("sunshine", .{
         .target = target,
         .optimize = optimize,
-        .root_source_file = b.path("reactor/root.zig"),
+        .root_source_file = b.path("sunshine/root.zig"),
     });
 
     const starry_mod = b.addModule("starry3d", .{
@@ -16,7 +16,7 @@ pub fn build(b: *Build) !void {
         .optimize = optimize,
         .root_source_file = b.path("starry/root.zig"),
     });
-    starry_mod.addImport("reactor", reactor_mod);
+    starry_mod.addImport("sunshine", sunshine_mod);
 
     // dependencies
     const zglfw_dep = b.dependency("zglfw", .{
@@ -54,7 +54,7 @@ pub fn build(b: *Build) !void {
         .target = target,
         .optimize = optimize,
         .starry = starry_mod,
-        .reactor = reactor_mod,
+        .sunshine = sunshine_mod,
         .zglm = zglm_mod,
     });
 }
@@ -63,7 +63,7 @@ pub fn sandbox(b: *Build, options: struct {
     target: Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
     starry: *Build.Module,
-    reactor: *Build.Module,
+    sunshine: *Build.Module,
     zglm: *Build.Module,
 }) !void {
     const sandbox_exe = b.addExecutable(.{
@@ -74,7 +74,7 @@ pub fn sandbox(b: *Build, options: struct {
             .root_source_file = b.path("sandbox/main.zig"),
             .imports = &.{
                 .{ .name = "starry3d", .module = options.starry },
-                .{ .name = "reactor", .module = options.reactor },
+                .{ .name = "sunshine", .module = options.sunshine },
                 .{ .name = "zglm", .module = options.zglm },
             },
         }),

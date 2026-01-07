@@ -6,7 +6,7 @@ The voxel graphics toolkit.
 
 Featuring:
 - starry: the game engine
-- reactor: related libraries that work fine on their own
+- sunshine: related libraries that work fine on their own
 - sandbox: the test project
 
 ## FAQ

@@ -16,14 +16,14 @@ const std = @import("std");
 const builtin = @import("builtin");
 const zglm = @import("zglm");
 const handle = @import("handle.zig");
-// const bke_gl4 = @import("gpu_gl4.zig");
+const bke_glcore = @import("gpu_glcore.zig");
 
 /// Unfortunately GPU drivers don't natively support the hit graphics API starry dot gee pee you dot zig.
 pub const Backend = enum {
     /// Panics or returns an error if you try to do anything
     invalid,
     /// Desktop OpenGL 4.5
-    gl4,
+    glcore4,
 };
 
 /// Returns the backend being currently used
@@ -40,8 +40,8 @@ pub fn getBackend() Backend {
     }
 
     return switch (builtin.os.tag) {
-        .windows, .linux => .gl4,
-        .freebsd, .openbsd, .netbsd => .gl4,
+        .windows, .linux => .glcore4,
+        .freebsd, .openbsd, .netbsd => .glcore4,
         else => .invalid,
     };
 }
@@ -61,22 +61,25 @@ pub const BackendError = error{
 
 /// Initializes the GPU backend. Amazing.
 pub fn init() BackendError!void {
-    // return switch (comptime getBackend()) {
-    //     .gl4 => bke_gl4.init(),
-    //     else => @compileError("unsupported backend"),
-    // };
+    return switch (comptime getBackend()) {
+        .glcore4 => bke_glcore.init(),
+        else => @compileError("unsupported backend"),
+    };
 }
 
 /// Deinitializes the GPU backend. .gnizamA
 pub fn deinit() void {
-    // switch (comptime getBackend()) {
-    //     .gl4 => bke_gl4.deinit(),
-    //     else => @compileError("unsupported backend"),
-    // }
+    switch (comptime getBackend()) {
+        .glcore4 => bke_glcore.deinit(),
+        else => @compileError("unsupported backend"),
+    }
 }
 
 /// Describes the limits of a GPU. There can only be one.
 pub const Device = struct {
+    vendor_name: []const u8 = "Big Graphics",
+    device_name: []const u8 = "Device McDeviceson",
+
     // default values are the ones required by all backend APIs
     max_image_2d_size: zglm.Vec2i = .{ 1024, 1024 },
     /// Applies to a single storage buffer block; in bytes
@@ -90,7 +93,7 @@ pub const Device = struct {
 /// Returns the current GPU being used.
 pub fn queryDevice() Device {
     return switch (comptime getBackend()) {
-        // .gl4 => bke_gl4.queryDevice(),
+        .glcore4 => bke_glcore.queryDevice(),
         else => @compileError("unsupported backend"),
     };
 }

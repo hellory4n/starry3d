@@ -7,7 +7,7 @@ pub const deinitLog = @import("log.zig").deinit;
 pub const ScratchAllocator = @import("ScratchAllocator.zig");
 
 /// Recommended std options, or something. You have to set it yourself in your own program. (e.g.
-/// `pub const std_options = reactor.std_options`). This is required for the custom logging to
+/// `pub const std_options = sunshine.std_options`). This is required for the custom logging to
 /// work, otherwise it'll just use the default implementation.
 pub const std_options = std.Options{
     .log_level = .debug,

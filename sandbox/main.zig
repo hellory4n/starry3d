@@ -1,6 +1,6 @@
 const std = @import("std");
 const starry = @import("starry3d");
-const reactor = @import("reactor");
+const sunshine = @import("sunshine");
 const zglm = @import("zglm");
 
 const mouse_sensitivity: f64 = 30;
@@ -64,15 +64,15 @@ pub fn updateApp(dt: f32) void {
         zglm.normalize(move) * @as(zglm.Vec3d, @splat(player_speed)) * @as(zglm.Vec3d, @splat(dt));
 }
 
-pub const std_options = reactor.std_options;
+pub const std_options = sunshine.std_options;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
     defer _ = gpa.deinit();
 
-    reactor.initLog(gpa.allocator());
-    defer reactor.deinitLog();
-    try reactor.addLogPath("log.txt");
+    sunshine.initLog(gpa.allocator());
+    defer sunshine.deinitLog();
+    try sunshine.addLogPath("log.txt");
 
     starry.app.run(gpa.allocator(), .{
         .name = "sandbox",
