@@ -51,6 +51,10 @@ pub fn deinit() void {
 
 pub fn draw() void {
     gpu.setViewport(.{ .size = app.framebufferSize() });
+    gpu.setBlend(.{
+        .src_factor = .src_alpha,
+        .dst_factor = .one_minus_src_alpha,
+    });
 
     gpu.startRenderPass(.{
         .frame = .{

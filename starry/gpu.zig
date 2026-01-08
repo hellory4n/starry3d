@@ -263,6 +263,43 @@ pub fn setScissor(v: Scissor) void {
     });
 }
 
+/// See https://docs.gl/gl4/glBlendFunc for the mildly fancy equations that each value does
+pub const BlendScaleFactor = enum {
+    zero,
+    one,
+    src_color,
+    one_minus_src_color,
+    dst_color,
+    one_minus_dst_color,
+    src_alpha,
+    one_minus_src_alpha,
+    dst_alpha,
+    one_minus_dst_alpha,
+    constant_color,
+    one_minus_constant_color,
+    constant_alpha,
+    one_minus_constant_alpha,
+    src_alpha_saturate,
+    src1_color,
+    one_minus_src1_color,
+    src1_alpha,
+    one_minus_src1_alpha,
+};
+
+pub const BlendTest = struct {
+    src_factor: BlendScaleFactor = .one,
+    dst_factor: BlendScaleFactor = .zero,
+    constant_color: ?zglm.Vec4f = null,
+};
+
+pub fn setBlend(v: BlendTest) void {
+    _ = gpubk.cmdQueue(.{
+        .set_blend = .{
+            .blend = v,
+        },
+    });
+}
+
 /// Describes what happens to a framebuffer, depth buffer, or stencil buffers, before a render pass.
 pub const LoadAction = enum {
     /// Keep existing contents
@@ -283,6 +320,7 @@ pub const StoreAction = enum {
 
 /// As the name implies, it is a pass of rendering
 pub const RenderPass = union(enum) {
+    // TODO customizable render targets
     frame: struct {
         clear_color: ?zglm.Rgbaf = .{ 0, 0, 0, 1 },
         load_action: LoadAction = .clear,

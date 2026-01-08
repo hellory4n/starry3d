@@ -29,6 +29,9 @@ pub const Command = union(enum) {
     set_scissor: struct {
         scissor: gpu.Scissor,
     },
+    set_blend: struct {
+        blend: gpu.BlendTest,
+    },
     start_render_pass: struct {
         pass: gpu.RenderPass,
     },

@@ -147,6 +147,7 @@ pub fn submit(cmds: []const ?gpubk.Command) void {
             .apply_pipeline => |args| cmdApplyPipeline(args.pipeline),
             .set_viewport => |args| cmdSetViewport(args.viewport),
             .set_scissor => |args| cmdSetScissor(args.scissor),
+            .set_blend => |args| cmdSetBlend(args.blend),
             .start_render_pass => |args| cmdStartRenderPass(args.pass),
             .end_render_pass => cmdEndRenderPass(),
             .start_compute_pass => cmdStartComputePass(),
@@ -212,7 +213,7 @@ fn cmdDeinitShader(shader: gpu.Shader) void {
     gpubk.resources.shaders.freeSlot(shader.id) catch unreachable;
 }
 
-pub fn cmdCompilePipeline(settings: gpu.PipelineSettings) gpu.Error!gpu.Pipeline {
+fn cmdCompilePipeline(settings: gpu.PipelineSettings) gpu.Error!gpu.Pipeline {
     assertBackendInitialized();
     if (gpu.validationEnabled()) {
         if (settings.raster == null and settings.compute == null) {
@@ -294,7 +295,7 @@ pub fn cmdCompilePipeline(settings: gpu.PipelineSettings) gpu.Error!gpu.Pipeline
     unreachable;
 }
 
-pub fn cmdDeinitPipeline(pipeline: gpu.Pipeline) void {
+fn cmdDeinitPipeline(pipeline: gpu.Pipeline) void {
     assertBackendInitialized();
 
     const glpipeline = gpubk.resources.pipelines.getSlot(pipeline.id) catch |err| {
@@ -312,7 +313,7 @@ pub fn cmdDeinitPipeline(pipeline: gpu.Pipeline) void {
     gpubk.resources.pipelines.freeSlot(pipeline.id) catch unreachable;
 }
 
-pub fn cmdApplyPipeline(pipeline: gpu.Pipeline) void {
+fn cmdApplyPipeline(pipeline: gpu.Pipeline) void {
     // TODO get the current opengl state so that it has to do less api calls
     assertBackendInitialized();
     global.pipeline = pipeline;
@@ -347,15 +348,66 @@ pub fn cmdApplyPipeline(pipeline: gpu.Pipeline) void {
     }
 }
 
-pub fn cmdSetViewport(v: gpu.Viewport) void {
+fn cmdSetViewport(v: gpu.Viewport) void {
     c.glViewport(@intCast(v.pos[0]), @intCast(v.pos[1]), @intCast(v.size[0]), @intCast(v.size[1]));
 }
 
-pub fn cmdSetScissor(v: gpu.Scissor) void {
+fn cmdSetScissor(v: gpu.Scissor) void {
     c.glViewport(@intCast(v.pos[0]), @intCast(v.pos[1]), @intCast(v.size[0]), @intCast(v.size[1]));
 }
 
-pub fn cmdStartRenderPass(pass: gpu.RenderPass) void {
+fn cmdSetBlend(v: gpu.BlendTest) void {
+    c.glEnable(c.GL_BLEND);
+    c.glBlendFunc(
+        switch (v.src_factor) {
+            .constant_alpha => c.GL_CONSTANT_ALPHA,
+            .constant_color => c.GL_CONSTANT_COLOR,
+            .dst_alpha => c.GL_DST_ALPHA,
+            .dst_color => c.GL_DST_COLOR,
+            .one => c.GL_ONE,
+            .one_minus_constant_alpha => c.GL_ONE_MINUS_CONSTANT_ALPHA,
+            .one_minus_constant_color => c.GL_ONE_MINUS_CONSTANT_COLOR,
+            .one_minus_dst_alpha => c.GL_ONE_MINUS_DST_ALPHA,
+            .one_minus_dst_color => c.GL_ONE_MINUS_DST_COLOR,
+            .one_minus_src1_alpha => c.GL_ONE_MINUS_SRC1_ALPHA,
+            .one_minus_src1_color => c.GL_ONE_MINUS_SRC1_COLOR,
+            .one_minus_src_alpha => c.GL_ONE_MINUS_SRC_ALPHA,
+            .one_minus_src_color => c.GL_ONE_MINUS_SRC_COLOR,
+            .src1_alpha => c.GL_SRC1_ALPHA,
+            .src1_color => c.GL_SRC1_COLOR,
+            .src_alpha => c.GL_SRC_ALPHA,
+            .src_alpha_saturate => c.GL_SRC_ALPHA_SATURATE,
+            .src_color => c.GL_SRC_COLOR,
+            .zero => c.GL_ZERO,
+        },
+        switch (v.dst_factor) {
+            .constant_alpha => c.GL_CONSTANT_ALPHA,
+            .constant_color => c.GL_CONSTANT_COLOR,
+            .dst_alpha => c.GL_DST_ALPHA,
+            .dst_color => c.GL_DST_COLOR,
+            .one => c.GL_ONE,
+            .one_minus_constant_alpha => c.GL_ONE_MINUS_CONSTANT_ALPHA,
+            .one_minus_constant_color => c.GL_ONE_MINUS_CONSTANT_COLOR,
+            .one_minus_dst_alpha => c.GL_ONE_MINUS_DST_ALPHA,
+            .one_minus_dst_color => c.GL_ONE_MINUS_DST_COLOR,
+            .one_minus_src1_alpha => c.GL_ONE_MINUS_SRC1_ALPHA,
+            .one_minus_src1_color => c.GL_ONE_MINUS_SRC1_COLOR,
+            .one_minus_src_alpha => c.GL_ONE_MINUS_SRC_ALPHA,
+            .one_minus_src_color => c.GL_ONE_MINUS_SRC_COLOR,
+            .src1_alpha => c.GL_SRC1_ALPHA,
+            .src1_color => c.GL_SRC1_COLOR,
+            .src_alpha => c.GL_SRC_ALPHA,
+            .src_alpha_saturate => c.GL_SRC_ALPHA_SATURATE,
+            .src_color => c.GL_SRC_COLOR,
+            .zero => c.GL_ZERO,
+        },
+    );
+    if (v.constant_color) |constant_color| {
+        c.glBlendColor(constant_color[0], constant_color[1], constant_color[2], constant_color[3]);
+    }
+}
+
+fn cmdStartRenderPass(pass: gpu.RenderPass) void {
     assertBackendInitialized();
     global.in_render_pass = true;
 
@@ -366,7 +418,7 @@ pub fn cmdStartRenderPass(pass: gpu.RenderPass) void {
     }
 }
 
-pub fn cmdEndRenderPass() void {
+fn cmdEndRenderPass() void {
     assertBackendInitialized();
 
     // TODO i don't think you can emulate the store op in opengl
@@ -374,19 +426,19 @@ pub fn cmdEndRenderPass() void {
     global.in_render_pass = true;
 }
 
-pub fn cmdStartComputePass() void {
+fn cmdStartComputePass() void {
     assertBackendInitialized();
     // noop in opengl
     global.in_compute_pass = true;
 }
 
-pub fn cmdEndComputePass() void {
+fn cmdEndComputePass() void {
     assertBackendInitialized();
     // noop in opengl
     global.in_compute_pass = false;
 }
 
-pub fn cmdDraw(base_elem: u32, len: u32, instances: u32) void {
+fn cmdDraw(base_elem: u32, len: u32, instances: u32) void {
     assertBackendInitialized();
     if (!global.in_render_pass) {
         log.err("rendering must be inside a render pass", .{});
