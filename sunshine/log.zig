@@ -38,7 +38,7 @@ pub fn logfn(
     else
         "";
     const prefix = switch (message_level) {
-        .debug => if (lib.len > 0) lib else "",
+        .debug => if (lib.len > 0) lib ++ " " else "",
         .info => if (lib.len > 0) lib ++ " " else "",
         .warn => "warning" ++ lib ++ ": ",
         .err => "error" ++ lib ++ ": ",

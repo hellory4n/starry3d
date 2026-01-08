@@ -1,7 +1,7 @@
 //! Common crap used by GPU backends that isn't meant to be public
 const std = @import("std");
 const log = std.log.scoped(.starrygpu);
-const handle = @import("handle.zig");
+const handle = @import("sunshine").handle;
 const gpu = @import("gpu.zig");
 const bke_glcore = @import("gpu_glcore.zig");
 
@@ -14,11 +14,21 @@ pub const Command = union(enum) {
     deinit_shader: struct {
         shader: gpu.Shader,
     },
+    compile_pipeline: struct {
+        settings: gpu.PipelineSettings,
+    },
+    deinit_pipeline: struct {
+        pipeline: gpu.Pipeline,
+    },
+    apply_pipeline: struct {
+        pipeline: gpu.Pipeline,
+    },
 };
 
 pub const CommandReturn = union(enum) {
     void,
     compile_shader: gpu.Error!gpu.Shader,
+    compile_pipeline: gpu.Error!gpu.Pipeline,
 };
 
 var command_buffer = [_]?Command{null} ** 256;
@@ -65,6 +75,14 @@ pub const BackendShader = struct {
     },
 };
 
+pub const BackendPipeline = struct {
+    settings: gpu.PipelineSettings,
+    gl: struct {
+        program: c_uint,
+    },
+};
+
 pub var resources: struct {
     shaders: handle.Table(BackendShader, gpu.max_shaders) = .{},
+    pipelines: handle.Table(BackendPipeline, gpu.max_pipelines) = .{},
 } = .{};

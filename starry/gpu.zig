@@ -15,7 +15,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const zglm = @import("zglm");
-const handle = @import("handle.zig");
+const handle = @import("sunshine").handle;
 const gpubk = @import("gpu_backend.zig");
 const bk_glcore = @import("gpu_glcore.zig");
 
@@ -122,8 +122,8 @@ pub fn expectDevice(dev: Device) Error!void {
 }
 
 /// Poor man's command buffer
-pub fn submit() Error!void {
-    return gpubk.cmdSubmit();
+pub fn submit() void {
+    gpubk.cmdSubmit();
 }
 
 /// How many shaders can live at the same time
@@ -160,3 +160,79 @@ pub const ShaderSettings = struct {
 };
 
 pub const ShaderStage = enum { vertex, fragment, compute };
+
+/// How many pipelines can live at the same time
+pub const max_pipelines = 128;
+
+/// BEWARE OF THE GRAPHICS PIPELINE
+pub const Pipeline = struct {
+    id: handle.Opaque,
+
+    pub fn init(settings: PipelineSettings) Error!Pipeline {
+        const cmd_idx = gpubk.cmdQueue(.{
+            .compile_pipeline = .{
+                .settings = settings,
+            },
+        });
+        gpubk.cmdSubmit();
+        return gpubk.getCmdReturn(cmd_idx).compile_pipeline;
+    }
+
+    pub fn deinit(pipeline: Pipeline) void {
+        _ = gpubk.cmdQueue(.{
+            .deinit_pipeline = .{
+                .pipeline = pipeline,
+            },
+        });
+        gpubk.cmdSubmit();
+    }
+};
+
+pub fn applyPipeline(pipeline: Pipeline) void {
+    _ = gpubk.cmdQueue(.{
+        .apply_pipeline = .{
+            .pipeline = pipeline,
+        },
+    });
+}
+
+pub const PipelineSettings = struct {
+    raster: ?struct {
+        vertex_shader: Shader,
+        fragment_shader: Shader,
+        topology: Topology = .triangle_list,
+        front_face: WindingOrder = .counter_clockwise,
+        cull: CullMode = .none,
+    } = null,
+    compute: ?struct {
+        shader: Shader,
+    } = null,
+    label: []const u8 = "unknown",
+};
+
+pub const Topology = enum {
+    /// Vertices 0, 1, and 2 form a triangle. Vertices 3, 4, and 5 form a triangle. And so on.
+    triangle_list,
+    /// Every group of 3 adjacent vertices forms a triangle. The face direction of the strip is
+    /// determined by the winding of the first triangle. Each successive triangle will have its
+    /// effective face order reversed, so the system compensates for that by testing it in the
+    /// opposite way. A vertex stream of n length will generate n-2 triangles.
+    triangle_strip,
+    /// The first vertex is always held fixed. From there on, every group of 2 adjacent vertices
+    /// form a triangle with the first. So with a vertex stream, you get a list of triangles
+    /// like so: (0, 1, 2) (0, 2, 3), (0, 3, 4), etc. A vertex stream of n length will
+    /// generate n-2 triangles.
+    triangle_fan,
+};
+
+pub const WindingOrder = enum {
+    clockwise,
+    counter_clockwise,
+};
+
+pub const CullMode = enum {
+    front_face,
+    back_face,
+    front_and_back_faces,
+    none,
+};

@@ -2,7 +2,6 @@ const std = @import("std");
 pub const app = @import("app.zig");
 pub const world = @import("world.zig");
 pub const gpu = @import("gpu.zig");
-pub const handle = @import("handle.zig");
 
 pub const version = std.SemanticVersion{
     .major = 0,

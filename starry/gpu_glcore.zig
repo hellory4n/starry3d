@@ -122,6 +122,7 @@ pub fn queryDevice() gpu.Device {
 
 pub fn submit(cmds: []const ?gpubk.Command) void {
     for (cmds, 0..) |cmd, i| {
+        // hopefully the compiler cares :)
         if (cmd == null) {
             unreachable;
         }
@@ -131,6 +132,11 @@ pub fn submit(cmds: []const ?gpubk.Command) void {
                 gpubk.returnFromCmd(i, .{ .compile_shader = cmdCompileShader(args.settings) });
             },
             .deinit_shader => |args| cmdDeinitShader(args.shader),
+            .compile_pipeline => |args| {
+                gpubk.returnFromCmd(i, .{ .compile_pipeline = cmdCompilePipeline(args.settings) });
+            },
+            .deinit_pipeline => |args| cmdDeinitPipeline(args.pipeline),
+            .apply_pipeline => |args| cmdApplyPipeline(args.pipeline),
         }
     }
 }
@@ -189,4 +195,138 @@ fn cmdDeinitShader(shader: gpu.Shader) void {
 
     // every possible error has just been handled
     gpubk.resources.shaders.freeSlot(shader.id) catch unreachable;
+}
+
+pub fn cmdCompilePipeline(settings: gpu.PipelineSettings) gpu.Error!gpu.Pipeline {
+    assertBackendInitialized();
+    if (gpu.validationEnabled()) {
+        if (settings.raster == null and settings.compute == null) {
+            log.err("pipeline must be raster or compute", .{});
+            @trap();
+        }
+
+        if (settings.raster != null and settings.compute != null) {
+            log.err("pipeline must be raster or compute", .{});
+            @trap();
+        }
+    }
+
+    const h = try gpubk.resources.shaders.findFree();
+
+    if (settings.raster) |raster_pip| {
+        // shader linking crap
+        const vert_shader = gpubk.resources.shaders.getSlot(raster_pip.vertex_shader.id) catch
+            return gpu.Error.InvalidHandle;
+        const frag_shader = gpubk.resources.shaders.getSlot(raster_pip.fragment_shader.id) catch
+            return gpu.Error.InvalidHandle;
+
+        const program = c.glCreateProgram();
+        c.glAttachShader(program, vert_shader.gl.id);
+        c.glAttachShader(program, frag_shader.gl.id);
+        c.glLinkProgram(program);
+
+        var success: c.GLint = undefined;
+        c.glGetProgramiv(program, c.GL_LINK_STATUS, &success);
+
+        if (success == 0) {
+            var info_log: [1024:0]c.GLchar = undefined;
+            c.glGetProgramInfoLog(program, info_log.len, null, &info_log);
+            const len = std.mem.indexOfSentinel(u8, 0, &info_log);
+
+            log.err("creating pipeline '{s}' failed: {s}", .{ settings.label, info_log[0..len] });
+            return gpu.Error.PipelineCompilationFailed;
+        }
+
+        _ = gpubk.resources.pipelines.setSlot(h, .{
+            .settings = settings,
+            .gl = .{
+                .program = program,
+            },
+        });
+        return .{ .id = h };
+    }
+
+    if (settings.compute) |compute_pip| {
+        // shader linking crap
+        const shader = gpubk.resources.shaders.getSlot(compute_pip.shader.id) catch
+            return gpu.Error.InvalidHandle;
+
+        const program = c.glCreateProgram();
+        c.glAttachShader(program, shader.gl.id);
+        c.glLinkProgram(program);
+
+        var success: c.GLint = undefined;
+        c.glGetProgramiv(program, c.GL_LINK_STATUS, &success);
+
+        if (success == 0) {
+            var info_log: [1024:0]c.GLchar = undefined;
+            c.glGetProgramInfoLog(program, info_log.len, null, &info_log);
+            const len = std.mem.indexOfSentinel(u8, 0, &info_log);
+
+            log.err("creating pipeline '{s}' failed: {s}", .{ settings.label, info_log[0..len] });
+            return gpu.Error.PipelineCompilationFailed;
+        }
+
+        _ = gpubk.resources.pipelines.setSlot(h, .{
+            .settings = settings,
+            .gl = .{
+                .program = program,
+            },
+        });
+        return .{ .id = h };
+    }
+
+    unreachable;
+}
+
+pub fn cmdDeinitPipeline(pipeline: gpu.Pipeline) void {
+    assertBackendInitialized();
+
+    const glpipeline = gpubk.resources.pipelines.getSlot(pipeline.id) catch |err| {
+        if (gpu.validationEnabled()) {
+            log.err("{s}", .{@errorName(err)});
+            @trap();
+        } else {
+            log.warn("{s}", .{@errorName(err)});
+            return;
+        }
+    };
+    c.glDeleteProgram(glpipeline.gl.program);
+
+    // every possible error has just been handled
+    gpubk.resources.pipelines.freeSlot(pipeline.id) catch unreachable;
+}
+
+pub fn cmdApplyPipeline(pipeline: gpu.Pipeline) void {
+    // TODO get the current opengl state so that it has to do less api calls
+    assertBackendInitialized();
+
+    const pip = gpubk.resources.pipelines.getSlot(pipeline.id) catch |err| {
+        if (gpu.validationEnabled()) {
+            std.log.err("{s}", .{@errorName(err)});
+            @trap();
+        } else {
+            return;
+        }
+    };
+    c.glUseProgram(pip.gl.program);
+
+    if (pip.settings.raster) |raster_pip| {
+        c.glFrontFace(switch (raster_pip.front_face) {
+            .clockwise => c.GL_CW,
+            .counter_clockwise => c.GL_CCW,
+        });
+
+        if (raster_pip.cull == .none) {
+            c.glDisable(c.GL_CULL_FACE);
+        } else {
+            c.glEnable(c.GL_CULL_FACE);
+            c.glCullFace(switch (raster_pip.cull) {
+                .front_face => c.GL_FRONT,
+                .back_face => c.GL_BACK,
+                .front_and_back_faces => c.GL_FRONT_AND_BACK,
+                .none => unreachable,
+            });
+        }
+    }
 }

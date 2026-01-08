@@ -6,7 +6,7 @@
 //! 🟨🟨🟨🟨🟥
 
 const std = @import("std");
-const stlog = std.log.scoped(.starry);
+const log = std.log.scoped(.starry);
 const zglm = @import("zglm");
 const gpu = @import("gpu.zig");
 const app = @import("app.zig");
@@ -14,7 +14,7 @@ const world = @import("world.zig");
 const rtshader = @import("shader/rt.zig");
 
 var global: struct {
-    // pipeline: gpu.Pipeline = undefined,
+    pipeline: gpu.Pipeline = undefined,
 } = .{};
 
 pub fn init() !void {
@@ -24,6 +24,7 @@ pub fn init() !void {
         .label = "triangle.vert",
     });
     defer vert_shader.deinit();
+
     const frag_shader = try gpu.Shader.init(.{
         .src_glsl = @embedFile("shader/tri.frag"),
         .stage = .fragment,
@@ -31,13 +32,21 @@ pub fn init() !void {
     });
     defer frag_shader.deinit();
 
-    stlog.info("initialized renderer", .{});
+    global.pipeline = try gpu.Pipeline.init(.{
+        .raster = .{
+            .vertex_shader = vert_shader,
+            .fragment_shader = frag_shader,
+        },
+        .label = "triangle pipeline",
+    });
+
+    log.info("initialized renderer", .{});
 }
 
 pub fn deinit() void {
-    // global.pipeline.deinit();
+    global.pipeline.deinit();
 
-    stlog.info("deinitialized renderer", .{});
+    log.info("deinitialized renderer", .{});
 }
 
 pub fn draw() void {
@@ -46,9 +55,10 @@ pub fn draw() void {
     //         .clear_color = .{ 1, 1, 1, 1 },
     //     },
     // });
-    // global.pipeline.apply();
+    gpu.applyPipeline(global.pipeline);
 
     // gpu.endPass();
+    gpu.submit();
 }
 
 // const RenderState = struct {

@@ -4,6 +4,7 @@ pub const logfn = @import("log.zig").logfn;
 pub const addLogPath = @import("log.zig").addLogPath;
 pub const initLog = @import("log.zig").init;
 pub const deinitLog = @import("log.zig").deinit;
+pub const handle = @import("handle.zig");
 pub const ScratchAllocator = @import("ScratchAllocator.zig");
 
 /// Recommended std options, or something. You have to set it yourself in your own program. (e.g.
