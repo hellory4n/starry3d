@@ -315,3 +315,14 @@ pub fn endComputePass() void {
         .end_compute_pass = {},
     });
 }
+
+/// no indices
+pub fn draw(base_elem: u32, len: u32, instances: u32) void {
+    _ = gpubk.cmdQueue(.{
+        .draw = .{
+            .base_idx = base_elem,
+            .len = len,
+            .instances = instances,
+        },
+    });
+}

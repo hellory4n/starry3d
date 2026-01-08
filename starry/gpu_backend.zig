@@ -35,6 +35,11 @@ pub const Command = union(enum) {
     end_render_pass,
     start_compute_pass,
     end_compute_pass,
+    draw: struct {
+        base_idx: u32,
+        len: u32,
+        instances: u32,
+    },
 };
 
 pub const CommandReturn = union(enum) {

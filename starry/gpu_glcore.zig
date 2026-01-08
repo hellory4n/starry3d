@@ -21,6 +21,7 @@ var global: struct {
     in_compute_pass: bool = false,
 
     device: ?gpu.Device = null,
+    pipeline: ?gpu.Pipeline = null,
 } = .{};
 
 pub fn init() gpu.Error!void {
@@ -41,6 +42,11 @@ pub fn init() gpu.Error!void {
 
     // cache the device already so it doesn't have to do more api calls
     _ = queryDevice();
+
+    // dummy vao so it stops bitching with bufferless rendering
+    var vao: c.GLuint = undefined;
+    c.glGenVertexArrays(1, &vao);
+    c.glBindVertexArray(vao);
 }
 
 fn debugCallback(
@@ -145,6 +151,7 @@ pub fn submit(cmds: []const ?gpubk.Command) void {
             .end_render_pass => cmdEndRenderPass(),
             .start_compute_pass => cmdStartComputePass(),
             .end_compute_pass => cmdEndComputePass(),
+            .draw => |args| cmdDraw(args.base_idx, args.len, args.instances),
         }
     }
 }
@@ -308,6 +315,7 @@ pub fn cmdDeinitPipeline(pipeline: gpu.Pipeline) void {
 pub fn cmdApplyPipeline(pipeline: gpu.Pipeline) void {
     // TODO get the current opengl state so that it has to do less api calls
     assertBackendInitialized();
+    global.pipeline = pipeline;
 
     const pip = gpubk.resources.pipelines.getSlot(pipeline.id) catch |err| {
         if (gpu.validationEnabled()) {
@@ -376,4 +384,32 @@ pub fn cmdEndComputePass() void {
     assertBackendInitialized();
     // noop in opengl
     global.in_compute_pass = false;
+}
+
+pub fn cmdDraw(base_elem: u32, len: u32, instances: u32) void {
+    assertBackendInitialized();
+    if (!global.in_render_pass) {
+        log.err("rendering must be inside a render pass", .{});
+        @trap();
+    }
+
+    const pip = gpubk.resources.pipelines.getSlot(global.pipeline.?.id) catch |err| {
+        if (gpu.validationEnabled()) {
+            std.log.err("{s}", .{@errorName(err)});
+            @trap();
+        } else {
+            return;
+        }
+    };
+    const topology: c.GLenum = switch (pip.settings.raster.?.topology) {
+        .triangle_list => c.GL_TRIANGLES,
+        .triangle_strip => c.GL_TRIANGLE_STRIP,
+        .triangle_fan => c.GL_TRIANGLE_FAN,
+    };
+    c.glDrawArraysInstanced(
+        topology,
+        @intCast(base_elem),
+        @intCast(len),
+        @intCast(instances),
+    );
 }

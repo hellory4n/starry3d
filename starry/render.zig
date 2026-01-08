@@ -56,10 +56,12 @@ pub fn draw() void {
         .frame = .{
             .load_action = .clear,
             .store_action = .ignore,
-            .clear_color = .{ 1, 0, 0, 1 },
+            .clear_color = .{ 0, 0, 0, 1 },
         },
     });
     gpu.applyPipeline(global.pipeline);
+
+    gpu.draw(0, 3, 1);
 
     gpu.endRenderPass();
     gpu.submit();
