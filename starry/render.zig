@@ -18,17 +18,18 @@ var global: struct {
 } = .{};
 
 pub fn init() !void {
-    // const rt_vert_shader = try gpu.Shader.init(rtshader.vert);
-    // defer rt_vert_shader.deinit();
-    // const rt_frag_shader = try gpu.Shader.init(rtshader.frag);
-    // defer rt_frag_shader.deinit();
-
-    // global.pipeline = try gpu.Pipeline.init(.{
-    //     .raster = .{
-    //         .vertex_shader = rt_vert_shader,
-    //         .fragment_shader = rt_frag_shader,
-    //     },
-    // });
+    const vert_shader = try gpu.Shader.init(.{
+        .src_glsl = @embedFile("shader/tri.vert"),
+        .stage = .vertex,
+        .label = "triangle.vert",
+    });
+    defer vert_shader.deinit();
+    const frag_shader = try gpu.Shader.init(.{
+        .src_glsl = @embedFile("shader/tri.frag"),
+        .stage = .fragment,
+        .label = "triangle.frag",
+    });
+    defer frag_shader.deinit();
 
     stlog.info("initialized renderer", .{});
 }

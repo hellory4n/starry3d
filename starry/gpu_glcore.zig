@@ -10,8 +10,9 @@ const c = @cImport({
     @cInclude("glad.h");
 });
 const gpu = @import("gpu.zig");
+const gpubk = @import("gpu_backend.zig");
 
-const valog = std.log.scoped(.gl_debug);
+const log = std.log.scoped(.starrygpu);
 
 var global: struct {
     // validation layer stuff
@@ -20,10 +21,10 @@ var global: struct {
     device: ?gpu.Device = null,
 } = .{};
 
-pub fn init() gpu.BackendError!void {
+pub fn init() gpu.Error!void {
     const version = c.gladLoadGL(@ptrCast(&glfw.getProcAddress));
     if (version == 0) {
-        return gpu.BackendError.DeviceUnsupported;
+        return gpu.Error.DeviceUnsupported;
     }
 
     // ReleaseSafe relies only on our own custom validation layers
@@ -56,21 +57,21 @@ fn debugCallback(
 
     switch (severity) {
         c.GL_DEBUG_SEVERITY_HIGH => {
-            valog.err("from OpenGL id({d}): {s}", .{ id, msg });
+            log.err("from OpenGL id({d}): {s}", .{ id, msg });
             @trap();
         },
         c.GL_DEBUG_SEVERITY_MEDIUM, c.GL_DEBUG_SEVERITY_LOW => {
-            valog.warn("from OpenGL id({d}): {s}", .{ id, msg });
+            log.warn("from OpenGL id({d}): {s}", .{ id, msg });
         },
         else => {
-            valog.info("from OpenGL id({d}): {s}", .{ id, msg });
+            log.info("from OpenGL id({d}): {s}", .{ id, msg });
         },
     }
 }
 
 fn assertBackendInitialized() void {
     if (gpu.validationEnabled() and !global.backend_initialized) {
-        valog.err("gpu backend hasn't initialized yet", .{});
+        log.err("gpu backend hasn't initialized yet", .{});
         @trap();
     }
 }
@@ -117,4 +118,75 @@ pub fn queryDevice() gpu.Device {
     global.device.?.max_storage_buffer_bindings = @intCast(storage_buffer_bindings);
 
     return global.device orelse unreachable;
+}
+
+pub fn submit(cmds: []const ?gpubk.Command) void {
+    for (cmds, 0..) |cmd, i| {
+        if (cmd == null) {
+            unreachable;
+        }
+
+        switch (cmd.?) {
+            .compile_shader => |args| {
+                gpubk.returnFromCmd(i, .{ .compile_shader = cmdCompileShader(args.settings) });
+            },
+            .deinit_shader => |args| cmdDeinitShader(args.shader),
+        }
+    }
+}
+
+fn cmdCompileShader(settings: gpu.ShaderSettings) gpu.Error!gpu.Shader {
+    assertBackendInitialized();
+
+    const h = try gpubk.resources.shaders.findFree();
+
+    const stage: c.GLenum = switch (settings.stage) {
+        .vertex => c.GL_VERTEX_SHADER,
+        .fragment => c.GL_FRAGMENT_SHADER,
+        .compute => c.GL_COMPUTE_SHADER,
+    };
+    const id = c.glCreateShader(stage);
+    c.glShaderSource(id, 1, &settings.src_glsl.ptr, null);
+    c.glCompileShader(id);
+
+    var success: c.GLint = undefined;
+    c.glGetShaderiv(id, c.GL_COMPILE_STATUS, &success);
+
+    if (success == 0) {
+        var info_log: [1024:0]c.GLchar = undefined;
+        c.glGetShaderInfoLog(id, info_log.len, null, &info_log);
+        const len = std.mem.indexOfSentinel(u8, 0, &info_log);
+
+        log.err("compiling shader '{s}' failed: {s}", .{
+            settings.label,
+            info_log[0..len],
+        });
+        return gpu.Error.ShaderCompilationFailed;
+    }
+
+    gpubk.resources.shaders.setSlot(h, .{
+        .settings = settings,
+        .gl = .{
+            .id = id,
+        },
+    });
+    return .{ .id = h };
+}
+
+fn cmdDeinitShader(shader: gpu.Shader) void {
+    assertBackendInitialized();
+
+    const glshader = gpubk.resources.shaders.getSlot(shader.id) catch |err| {
+        if (gpu.validationEnabled()) {
+            log.err("{s}", .{@errorName(err)});
+            @trap();
+        } else {
+            log.warn("{s}", .{@errorName(err)});
+            return;
+        }
+    };
+    c.glDeleteShader(glshader.gl.id);
+
+    // every possible error has just been handled
+    gpubk.resources.shaders.freeSlot(shader.id) catch unreachable;
 }
