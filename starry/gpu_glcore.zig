@@ -17,6 +17,8 @@ const log = std.log.scoped(.starrygpu);
 var global: struct {
     // validation layer stuff
     backend_initialized: bool = false,
+    in_render_pass: bool = false,
+    in_compute_pass: bool = false,
 
     device: ?gpu.Device = null,
 } = .{};
@@ -137,6 +139,12 @@ pub fn submit(cmds: []const ?gpubk.Command) void {
             },
             .deinit_pipeline => |args| cmdDeinitPipeline(args.pipeline),
             .apply_pipeline => |args| cmdApplyPipeline(args.pipeline),
+            .set_viewport => |args| cmdSetViewport(args.viewport),
+            .set_scissor => |args| cmdSetScissor(args.scissor),
+            .start_render_pass => |args| cmdStartRenderPass(args.pass),
+            .end_render_pass => cmdEndRenderPass(),
+            .start_compute_pass => cmdStartComputePass(),
+            .end_compute_pass => cmdEndComputePass(),
         }
     }
 }
@@ -329,4 +337,43 @@ pub fn cmdApplyPipeline(pipeline: gpu.Pipeline) void {
             });
         }
     }
+}
+
+pub fn cmdSetViewport(v: gpu.Viewport) void {
+    c.glViewport(@intCast(v.pos[0]), @intCast(v.pos[1]), @intCast(v.size[0]), @intCast(v.size[1]));
+}
+
+pub fn cmdSetScissor(v: gpu.Scissor) void {
+    c.glViewport(@intCast(v.pos[0]), @intCast(v.pos[1]), @intCast(v.size[0]), @intCast(v.size[1]));
+}
+
+pub fn cmdStartRenderPass(pass: gpu.RenderPass) void {
+    assertBackendInitialized();
+    global.in_render_pass = true;
+
+    if (pass.frame.load_action == .clear) {
+        const clear_color = pass.frame.clear_color orelse .{ 0, 0, 0, 1 };
+        c.glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
+        c.glClear(c.GL_COLOR_BUFFER_BIT);
+    }
+}
+
+pub fn cmdEndRenderPass() void {
+    assertBackendInitialized();
+
+    // TODO i don't think you can emulate the store op in opengl
+    // so this is a noop here
+    global.in_render_pass = true;
+}
+
+pub fn cmdStartComputePass() void {
+    assertBackendInitialized();
+    // noop in opengl
+    global.in_compute_pass = true;
+}
+
+pub fn cmdEndComputePass() void {
+    assertBackendInitialized();
+    // noop in opengl
+    global.in_compute_pass = false;
 }

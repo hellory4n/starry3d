@@ -50,14 +50,18 @@ pub fn deinit() void {
 }
 
 pub fn draw() void {
-    // gpu.startPass(.{
-    //     .action = .{
-    //         .clear_color = .{ 1, 1, 1, 1 },
-    //     },
-    // });
+    gpu.setViewport(.{ .size = app.framebufferSize() });
+
+    gpu.startRenderPass(.{
+        .frame = .{
+            .load_action = .clear,
+            .store_action = .ignore,
+            .clear_color = .{ 1, 0, 0, 1 },
+        },
+    });
     gpu.applyPipeline(global.pipeline);
 
-    // gpu.endPass();
+    gpu.endRenderPass();
     gpu.submit();
 }
 

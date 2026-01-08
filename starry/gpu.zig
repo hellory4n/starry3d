@@ -236,3 +236,82 @@ pub const CullMode = enum {
     front_and_back_faces,
     none,
 };
+
+pub const Viewport = struct {
+    pos: zglm.Vec2i = .{ 0, 0 },
+    size: zglm.Vec2i,
+};
+
+pub fn setViewport(v: Viewport) void {
+    _ = gpubk.cmdQueue(.{
+        .set_viewport = .{
+            .viewport = v,
+        },
+    });
+}
+
+pub const Scissor = struct {
+    pos: zglm.Vec2i = .{ 0, 0 },
+    size: zglm.Vec2i,
+};
+
+pub fn setScissor(v: Scissor) void {
+    _ = gpubk.cmdQueue(.{
+        .set_scissor = .{
+            .scissor = v,
+        },
+    });
+}
+
+/// Describes what happens to a framebuffer, depth buffer, or stencil buffers, before a render pass.
+pub const LoadAction = enum {
+    /// Keep existing contents
+    load,
+    /// All contents reset and set to a constant
+    clear,
+    /// Existing contents are undefined and ignored
+    ignore,
+};
+
+/// Describes what happens to a framebuffer, depth buffer, or stencil buffers, after a render pass.
+pub const StoreAction = enum {
+    /// Rendered contents will be stored in memory and can be read later
+    store,
+    /// Existing contents are undefined and ignored
+    ignore,
+};
+
+/// As the name implies, it is a pass of rendering
+pub const RenderPass = union(enum) {
+    frame: struct {
+        clear_color: ?zglm.Rgbaf = .{ 0, 0, 0, 1 },
+        load_action: LoadAction = .clear,
+        store_action: StoreAction = .ignore,
+    },
+};
+
+pub fn startRenderPass(pass: RenderPass) void {
+    _ = gpubk.cmdQueue(.{
+        .start_render_pass = .{
+            .pass = pass,
+        },
+    });
+}
+
+pub fn endRenderPass() void {
+    _ = gpubk.cmdQueue(.{
+        .end_render_pass = {},
+    });
+}
+
+pub fn startComputePass() void {
+    _ = gpubk.cmdQueue(.{
+        .start_compute_pass = {},
+    });
+}
+
+pub fn endComputePass() void {
+    _ = gpubk.cmdQueue(.{
+        .end_compute_pass = {},
+    });
+}

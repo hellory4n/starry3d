@@ -23,6 +23,18 @@ pub const Command = union(enum) {
     apply_pipeline: struct {
         pipeline: gpu.Pipeline,
     },
+    set_viewport: struct {
+        viewport: gpu.Viewport,
+    },
+    set_scissor: struct {
+        scissor: gpu.Scissor,
+    },
+    start_render_pass: struct {
+        pass: gpu.RenderPass,
+    },
+    end_render_pass,
+    start_compute_pass,
+    end_compute_pass,
 };
 
 pub const CommandReturn = union(enum) {
