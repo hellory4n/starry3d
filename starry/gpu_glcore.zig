@@ -6,6 +6,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const glfw = @import("zglfw");
+const zglm = @import("zglm");
 const c = @cImport({
     @cInclude("glad.h");
 });
@@ -152,7 +153,8 @@ pub fn submit(cmds: []const ?gpubk.Command) void {
             .end_render_pass => cmdEndRenderPass(),
             .start_compute_pass => cmdStartComputePass(),
             .end_compute_pass => cmdEndComputePass(),
-            .draw => |args| cmdDraw(args.base_idx, args.len, args.instances),
+            .draw => |args| cmdDraw(args.base_idx, args.count, args.instances),
+            .apply_uniforms => |args| cmdApplyUniforms(args),
         }
     }
 }
@@ -438,7 +440,7 @@ fn cmdEndComputePass() void {
     global.in_compute_pass = false;
 }
 
-fn cmdDraw(base_elem: u32, len: u32, instances: u32) void {
+fn cmdDraw(base_elem: u32, count: u32, instances: u32) void {
     assertBackendInitialized();
     if (!global.in_render_pass) {
         log.err("rendering must be inside a render pass", .{});
@@ -461,7 +463,53 @@ fn cmdDraw(base_elem: u32, len: u32, instances: u32) void {
     c.glDrawArraysInstanced(
         topology,
         @intCast(base_elem),
-        @intCast(len),
+        @intCast(count),
         @intCast(instances),
     );
+}
+
+pub fn cmdApplyUniforms(v: gpubk.ApplyUniformCmd) void {
+    assertBackendInitialized();
+    if (gpu.validationEnabled()) {
+        // do uniforms work on compute shaders? who knows
+        if (!global.in_render_pass and !global.in_compute_pass) {
+            log.err("applyUniforms must be inside a render or compute pass", .{});
+            @trap();
+        }
+        if (global.pipeline == null) {
+            log.err("applyUniforms requires a pipeline to be applied", .{});
+            @trap();
+        }
+    }
+
+    const pip = gpubk.resources.pipelines.getSlot(global.pipeline.?.id) catch |err| {
+        if (gpu.validationEnabled()) {
+            std.log.err("{s}", .{@errorName(err)});
+            @trap();
+        } else {
+            return;
+        }
+    };
+
+    for (v.fields, 0..) |field, i| {
+        if (field == null) {
+            break;
+        }
+
+        // TODO getting the location every frame is slow
+        const loc = c.glGetUniformLocation(pip.gl.program, v.field_names[i].?);
+
+        switch (field.?) {
+            .bool => |val| c.glUniform1i(loc, @intFromBool(val)),
+            .f32 => |val| c.glUniform1f(loc, val),
+            .i32 => |val| c.glUniform1i(loc, val),
+            .vec2f => |val| c.glUniform2f(loc, val[0], val[1]),
+            .vec3f => |val| c.glUniform3f(loc, val[0], val[1], val[2]),
+            .vec4f => |val| c.glUniform4f(loc, val[0], val[1], val[2], val[3]),
+            .vec2i => |val| c.glUniform2i(loc, val[0], val[1]),
+            .vec3i => |val| c.glUniform3i(loc, val[0], val[1], val[2]),
+            .vec4i => |val| c.glUniform4i(loc, val[0], val[1], val[2], val[3]),
+            .mat4x4f => |val| c.glUniformMatrix4fv(loc, 1, 0, &val),
+        }
+    }
 }

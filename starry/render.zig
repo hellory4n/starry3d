@@ -17,6 +17,12 @@ var global: struct {
     pipeline: gpu.Pipeline = undefined,
 } = .{};
 
+const Uniforms = extern struct {
+    u_model: [16]f32 = zglm.Mat4x4f.identity().toArray1D(),
+    u_view: [16]f32 = zglm.Mat4x4f.identity().toArray1D(),
+    u_proj: [16]f32 = zglm.Mat4x4f.identity().toArray1D(),
+};
+
 pub fn init() !void {
     const vert_shader = try gpu.Shader.init(.{
         .src_glsl = @embedFile("shader/tri.vert"),
@@ -64,6 +70,7 @@ pub fn draw() void {
         },
     });
     gpu.applyPipeline(global.pipeline);
+    gpu.applyUniforms(0, Uniforms{});
 
     gpu.draw(0, 3, 1);
 

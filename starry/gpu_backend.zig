@@ -2,6 +2,7 @@
 const std = @import("std");
 const log = std.log.scoped(.starrygpu);
 const handle = @import("sunshine").handle;
+const zglm = @import("zglm");
 const gpu = @import("gpu.zig");
 const bke_glcore = @import("gpu_glcore.zig");
 
@@ -40,9 +41,27 @@ pub const Command = union(enum) {
     end_compute_pass,
     draw: struct {
         base_idx: u32,
-        len: u32,
+        count: u32,
         instances: u32,
     },
+    apply_uniforms: ApplyUniformCmd,
+};
+
+pub const ApplyUniformCmd = struct {
+    bind_slot: u32,
+    fields: [gpu.max_uniform_block_fields]?union(enum) {
+        bool: bool,
+        f32: f32,
+        i32: i32,
+        vec2f: [2]f32,
+        vec3f: [3]f32,
+        vec4f: [4]f32,
+        vec2i: [2]i32,
+        vec3i: [3]i32,
+        vec4i: [4]i32,
+        mat4x4f: [16]f32,
+    } = undefined,
+    field_names: [gpu.max_uniform_block_fields]?[:0]const u8 = undefined,
 };
 
 pub const CommandReturn = union(enum) {

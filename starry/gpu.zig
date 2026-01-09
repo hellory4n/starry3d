@@ -355,12 +355,72 @@ pub fn endComputePass() void {
 }
 
 /// no indices
-pub fn draw(base_elem: u32, len: u32, instances: u32) void {
+pub fn draw(base_elem: u32, count: u32, instances: u32) void {
     _ = gpubk.cmdQueue(.{
         .draw = .{
             .base_idx = base_elem,
-            .len = len,
+            .count = count,
             .instances = instances,
         },
     });
+}
+
+pub const max_uniform_block_fields = 32;
+
+/// I sure love uniforms. `data` must be an extern struct, with the fields matching exactly the
+/// uniform block's field names. Order must also match. API-specific padding is handled internally.
+/// On OpenGL, UBOs aren't supported and `bind_slot` is ignored. You have to use uniform variables.
+/// Since extern structs are used, you have to use arrays for vectors and matrices. Conveniently
+/// vectors can convert to arrays implicitly, and matrices can be converted with `toArray1D`
+pub fn applyUniforms(bind_slot: u32, data: anytype) void {
+    const type_info = @typeInfo(@TypeOf(data));
+    if (type_info != .@"struct") {
+        @compileError("expected struct, got " ++ @typeName(@TypeOf(data)));
+    }
+    if (type_info.@"struct".is_tuple) {
+        @compileError("expected struct, got tuple");
+    }
+    if (type_info.@"struct".layout != .@"extern") {
+        @compileError("struct layout must be extern");
+    }
+    if (type_info.@"struct".fields.len > max_uniform_block_fields) {
+        @compileError("too many uniform block fields!");
+    }
+
+    var cmd: gpubk.Command = .{
+        .apply_uniforms = .{
+            .bind_slot = bind_slot,
+        },
+    };
+    inline for (0..max_uniform_block_fields) |i| {
+        if (type_info.@"struct".fields.len <= i) {
+            cmd.apply_uniforms.fields[i] = null;
+            continue;
+        }
+
+        const field = type_info.@"struct".fields[i];
+        const val: field.type = @field(data, field.name);
+
+        switch (field.type) {
+            bool => cmd.apply_uniforms.fields[i] = .{ .bool = val },
+            f32 => cmd.apply_uniforms.fields[i] = .{ .f32 = val },
+            i32 => cmd.apply_uniforms.fields[i] = .{ .i32 = val },
+            [2]f32 => cmd.apply_uniforms.fields[i] = .{ .vec2f = val },
+            [3]f32 => cmd.apply_uniforms.fields[i] = .{ .vec3f = val },
+            [4]f32 => cmd.apply_uniforms.fields[i] = .{ .vec4f = val },
+            [2]i32 => cmd.apply_uniforms.fields[i] = .{ .vec2i = val },
+            [3]i32 => cmd.apply_uniforms.fields[i] = .{ .vec3i = val },
+            [4]i32 => cmd.apply_uniforms.fields[i] = .{ .vec4i = val },
+            [16]f32 => cmd.apply_uniforms.fields[i] = .{ .mat4x4f = val },
+            else => {
+                @compileError("expected bool, f32, i32, [2]f32, [3]f32, " ++
+                    "[4]f32, [2]i32, [3]i32, [4]i32, or [16]f32, " ++
+                    "got " ++ @typeName(field.type));
+            },
+        }
+
+        cmd.apply_uniforms.field_names[i] = field.name;
+    }
+
+    _ = gpubk.cmdQueue(cmd);
 }
