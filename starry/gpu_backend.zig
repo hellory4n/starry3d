@@ -4,7 +4,6 @@ const log = std.log.scoped(.starrygpu);
 const handle = @import("sunshine").handle;
 const zglm = @import("zglm");
 const gpu = @import("gpu.zig");
-const bke_glcore = @import("gpu_glcore.zig");
 
 // command buffers
 
@@ -99,7 +98,8 @@ pub fn getCmdReturn(idx: usize) CommandReturn {
 
 pub fn cmdSubmit() void {
     switch (comptime gpu.getBackend()) {
-        .glcore4 => bke_glcore.submit(command_buffer[0..command_len]),
+        .glcore4 => @import("gpu_glcore.zig").submit(command_buffer[0..command_len]),
+        .vulkan => log.warn("vulkan cmdSubmit is a noop for now", .{}),
         .invalid => @compileError("unsupported backend"),
     }
     command_len = 0;

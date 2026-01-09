@@ -4,6 +4,14 @@ const Build = std.Build;
 pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const opt_vulkan = b.option(
+        bool,
+        "vulkan",
+        "Enable the experimental Vulkan backend. Useful if you want to suffer.",
+    ) orelse false;
+
+    const options = b.addOptions();
+    options.addOption(bool, "vulkan", opt_vulkan);
 
     const sunshine_mod = b.addModule("sunshine", .{
         .target = target,
@@ -16,6 +24,7 @@ pub fn build(b: *Build) !void {
         .optimize = optimize,
         .root_source_file = b.path("starry/root.zig"),
     });
+    starry_mod.addOptions("build_options", options);
     starry_mod.addImport("sunshine", sunshine_mod);
 
     // dependencies
@@ -46,7 +55,13 @@ pub fn build(b: *Build) !void {
     });
     test_step.dependOn(&b.addRunArtifact(tests).step);
 
-    // glad fuckery
+    // both vulkan and opengl at the same time fuck you
+    const vk_registry = b.lazyDependency("vulkan_headers", .{}).?.path("registry/vk.xml");
+    const vulkan_mod = b.lazyDependency("vulkan", .{
+        .registry = vk_registry,
+    }).?.module("vulkan-zig");
+    starry_mod.addImport("vulkan", vulkan_mod);
+
     starry_mod.addIncludePath(b.path("starry/c"));
     starry_mod.addCSourceFile(.{ .file = b.path("starry/c/glad.c") });
 

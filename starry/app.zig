@@ -1,6 +1,7 @@
 //! Manages the engine/app's lifetime and puts the whole engine together
 const std = @import("std");
 const builtin = @import("builtin");
+const build_options = @import("build_options");
 const glfw = @import("zglfw");
 const zglm = @import("zglm");
 const root = @import("root.zig");
@@ -67,13 +68,13 @@ pub fn run(alloc: std.mem.Allocator, comptime settings: Settings) void {
     const stlog = std.log.scoped(.starry);
 
     // the rest of the engine has to be wrapped so that errors are logged properly
-    starryMain() catch |err| {
+    starryMain(settings) catch |err| {
         stlog.err("fatal error: {s}", .{@errorName(err)});
         @panic(@errorName(err)); // for the stack trace
     };
 }
 
-fn starryMain() !void {
+fn starryMain(comptime settings: Settings) !void {
     // TODO clean this up
     const stlog = std.log.scoped(.starry);
     stlog.info("starry v{d}.{d}.{d}{s}{s}", .{
@@ -93,11 +94,15 @@ fn starryMain() !void {
         stlog.info("deinitialized GLFW", .{});
     }
 
-    glfw.windowHint(.client_api, .opengl_api);
-    glfw.windowHint(.opengl_forward_compat, true);
-    glfw.windowHint(.opengl_profile, .opengl_core_profile);
-    glfw.windowHint(.context_version_major, 4);
-    glfw.windowHint(.context_version_minor, 5);
+    if (build_options.vulkan) {
+        glfw.windowHint(.client_api, .no_api);
+    } else {
+        glfw.windowHint(.client_api, .opengl_api);
+        glfw.windowHint(.opengl_forward_compat, true);
+        glfw.windowHint(.opengl_profile, .opengl_core_profile);
+        glfw.windowHint(.context_version_major, 4);
+        glfw.windowHint(.context_version_minor, 5);
+    }
 
     glfw.windowHint(.doublebuffer, true);
     glfw.windowHint(.resizable, global.settings.window.resizable);
@@ -130,7 +135,7 @@ fn starryMain() !void {
     global.prev_time = glfw.getTime();
 
     // rendering fuckery
-    try gpu.init();
+    try gpu.init(settings);
     stlog.info("initialized gpu backend for {s}", .{@tagName(gpu.getBackend())});
     defer {
         gpu.deinit();

@@ -22,5 +22,13 @@
             .url = "git+https://github.com/hellory4n/zglm.git#10fbbed7b301900c719386dc553a95eedb7c1144",
             .hash = "zglm-0.2.0-rPnx2Bv4AQCXtQQQIvhQHTB0edfv3iLo5cjK5WGLXnB_",
         },
+        .vulkan = .{
+            .url = "https://github.com/Snektron/vulkan-zig/archive/1446b0b994c2362264cc24513d7c7ec31b469c50.tar.gz",
+            .hash = "vulkan-0.0.0-r7Ytx_VDAwAiMl0YSu2UOkVMIGJN7CeIQaxJR-hUSfD6",
+        },
+        .vulkan_headers = .{
+            .url = "https://github.com/KhronosGroup/Vulkan-Headers/archive/v1.3.283.tar.gz",
+            .hash = "N-V-__8AAAkkoQGn5z1yoNVrwqZfnYmZp8AZ5CJgoHRMQI0c",
+        },
     },
 }

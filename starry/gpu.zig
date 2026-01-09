@@ -14,22 +14,28 @@
 //! rasterizer pipeline for example) just because I don't use them.
 const std = @import("std");
 const builtin = @import("builtin");
+const build_options = @import("build_options");
 const zglm = @import("zglm");
 const handle = @import("sunshine").handle;
+const app = @import("app.zig");
 const gpubk = @import("gpu_backend.zig");
-const bk_glcore = @import("gpu_glcore.zig");
 
 /// Unfortunately GPU drivers don't natively support the hit graphics API starry dot gee pee you dot zig.
 pub const Backend = enum {
-    /// Panics or returns an error if you try to do anything
+    /// Verbally insults you trying to compile it
     invalid,
     /// Desktop OpenGL 4.5
     glcore4,
+    vulkan,
 };
 
 /// Returns the backend being currently used
 pub fn getBackend() Backend {
     // TODO compile option for headless builds
+
+    if (build_options.vulkan) {
+        return .vulkan;
+    }
 
     // TODO metal or webgpu support?
     if (builtin.os.tag.isDarwin()) {
@@ -65,9 +71,10 @@ pub const Error = handle.Error || error{
 };
 
 /// Initializes the GPU backend. Amazing.
-pub fn init() Error!void {
+pub fn init(comptime app_settings: app.Settings) Error!void {
     return switch (comptime getBackend()) {
-        .glcore4 => bk_glcore.init(),
+        .glcore4 => @import("gpu_glcore.zig").init(),
+        .vulkan => @import("gpu_vk.zig").init(app_settings),
         else => @compileError("unsupported backend"),
     };
 }
@@ -75,7 +82,8 @@ pub fn init() Error!void {
 /// Deinitializes the GPU backend. .gnizamA
 pub fn deinit() void {
     switch (comptime getBackend()) {
-        .glcore4 => bk_glcore.deinit(),
+        .glcore4 => @import("gpu_glcore.zig").deinit(),
+        .vulkan => @import("gpu_vk.zig").deinit(),
         else => @compileError("unsupported backend"),
     }
 }
@@ -98,7 +106,8 @@ pub const Device = struct {
 /// Returns the current GPU being used.
 pub fn queryDevice() Device {
     return switch (comptime getBackend()) {
-        .glcore4 => bk_glcore.queryDevice(),
+        .glcore4 => @import("gpu_glcore.zig").queryDevice(),
+        .vulkan => @import("gpu_vk.zig").queryDevice(),
         else => @compileError("unsupported backend"),
     };
 }
