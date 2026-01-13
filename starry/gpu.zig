@@ -14,18 +14,19 @@
 //! rasterizer pipeline for example) just because I don't use them.
 const std = @import("std");
 const builtin = @import("builtin");
-const build_options = @import("build_options");
+const build_options = @import("starry3d_options");
 const zglm = @import("zglm");
 const handle = @import("sunshine").handle;
 const app = @import("app.zig");
 const gpubk = @import("gpu_backend.zig");
+const gpubk_vk = @import("gpu_vk.zig");
+const gpubk_d3d11 = @import("gpu_d3d11.zig");
 
 /// Unfortunately GPU drivers don't natively support the hit graphics API starry dot gee pee you dot zig.
 pub const Backend = enum {
     /// Verbally insults you trying to compile it
     invalid,
-    /// Desktop OpenGL 4.5
-    glcore4,
+    direct3d_11,
     vulkan,
 };
 
@@ -37,19 +38,8 @@ pub fn getBackend() Backend {
         return .vulkan;
     }
 
-    // TODO metal or webgpu support?
-    if (builtin.os.tag.isDarwin()) {
-        return .invalid;
-    }
-    // TODO vulkan support?
-    // opengl es support is possible if you make it ass
-    if (builtin.abi.isAndroid()) {
-        return .invalid;
-    }
-
     return switch (builtin.os.tag) {
-        .windows, .linux => .glcore4,
-        .freebsd, .openbsd, .netbsd => .glcore4,
+        .windows => .direct3d_11,
         else => .invalid,
     };
 }
@@ -65,7 +55,8 @@ pub fn validationEnabled() bool {
 
 pub const Error = handle.Error || error{
     DeviceUnsupported,
-    OutOfMemory,
+    OutOfGpuMemory,
+    OutOfCpuMemory,
     ShaderCompilationFailed,
     PipelineCompilationFailed,
 };
@@ -73,8 +64,8 @@ pub const Error = handle.Error || error{
 /// Initializes the GPU backend. Amazing.
 pub fn init(comptime app_settings: app.Settings) Error!void {
     return switch (comptime getBackend()) {
-        .glcore4 => @import("gpu_glcore.zig").init(),
-        .vulkan => @import("gpu_vk.zig").init(app_settings),
+        .vulkan => gpubk_vk.init(app_settings),
+        .direct3d_11 => gpubk_d3d11.init(app_settings),
         else => @compileError("unsupported backend"),
     };
 }
@@ -82,8 +73,8 @@ pub fn init(comptime app_settings: app.Settings) Error!void {
 /// Deinitializes the GPU backend. .gnizamA
 pub fn deinit() void {
     switch (comptime getBackend()) {
-        .glcore4 => @import("gpu_glcore.zig").deinit(),
-        .vulkan => @import("gpu_vk.zig").deinit(),
+        .vulkan => gpubk_vk.deinit(),
+        .direct3d_11 => gpubk_d3d11.deinit(),
         else => @compileError("unsupported backend"),
     }
 }
@@ -106,8 +97,6 @@ pub const Device = struct {
 /// Returns the current GPU being used.
 pub fn queryDevice() Device {
     return switch (comptime getBackend()) {
-        .glcore4 => @import("gpu_glcore.zig").queryDevice(),
-        .vulkan => @import("gpu_vk.zig").queryDevice(),
         else => @compileError("unsupported backend"),
     };
 }
@@ -132,7 +121,9 @@ pub fn expectDevice(dev: Device) Error!void {
 
 /// Poor man's command buffer
 pub fn submit() void {
-    gpubk.cmdSubmit();
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
+    };
 }
 
 /// How many shaders can live at the same time
@@ -143,22 +134,17 @@ pub const Shader = struct {
     id: handle.Opaque,
 
     pub fn init(settings: ShaderSettings) Error!Shader {
-        const cmd_idx = gpubk.cmdQueue(.{
-            .compile_shader = .{
-                .settings = settings,
-            },
-        });
-        gpubk.cmdSubmit();
-        return gpubk.getCmdReturn(cmd_idx).compile_shader;
+        _ = settings;
+        return switch (comptime getBackend()) {
+            else => @compileError("unsupported backend"),
+        };
     }
 
     pub fn deinit(shader: Shader) void {
-        _ = gpubk.cmdQueue(.{
-            .deinit_shader = .{
-                .shader = shader,
-            },
-        });
-        gpubk.cmdSubmit();
+        _ = shader;
+        return switch (comptime getBackend()) {
+            else => @compileError("unsupported backend"),
+        };
     }
 };
 
@@ -178,31 +164,25 @@ pub const Pipeline = struct {
     id: handle.Opaque,
 
     pub fn init(settings: PipelineSettings) Error!Pipeline {
-        const cmd_idx = gpubk.cmdQueue(.{
-            .compile_pipeline = .{
-                .settings = settings,
-            },
-        });
-        gpubk.cmdSubmit();
-        return gpubk.getCmdReturn(cmd_idx).compile_pipeline;
+        _ = settings;
+        return switch (comptime getBackend()) {
+            else => @compileError("unsupported backend"),
+        };
     }
 
     pub fn deinit(pipeline: Pipeline) void {
-        _ = gpubk.cmdQueue(.{
-            .deinit_pipeline = .{
-                .pipeline = pipeline,
-            },
-        });
-        gpubk.cmdSubmit();
+        _ = pipeline;
+        return switch (comptime getBackend()) {
+            else => @compileError("unsupported backend"),
+        };
     }
 };
 
 pub fn applyPipeline(pipeline: Pipeline) void {
-    _ = gpubk.cmdQueue(.{
-        .apply_pipeline = .{
-            .pipeline = pipeline,
-        },
-    });
+    _ = pipeline;
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
+    };
 }
 
 pub const PipelineSettings = struct {
@@ -252,11 +232,10 @@ pub const Viewport = struct {
 };
 
 pub fn setViewport(v: Viewport) void {
-    _ = gpubk.cmdQueue(.{
-        .set_viewport = .{
-            .viewport = v,
-        },
-    });
+    _ = v;
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
+    };
 }
 
 pub const Scissor = struct {
@@ -265,11 +244,10 @@ pub const Scissor = struct {
 };
 
 pub fn setScissor(v: Scissor) void {
-    _ = gpubk.cmdQueue(.{
-        .set_scissor = .{
-            .scissor = v,
-        },
-    });
+    _ = v;
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
+    };
 }
 
 /// See https://docs.gl/gl4/glBlendFunc for the mildly fancy equations that each value does
@@ -302,14 +280,13 @@ pub const BlendTest = struct {
 };
 
 pub fn setBlend(v: BlendTest) void {
-    _ = gpubk.cmdQueue(.{
-        .set_blend = .{
-            .blend = v,
-        },
-    });
+    _ = v;
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
+    };
 }
 
-/// Describes what happens to a framebuffer, depth buffer, or stencil buffers, before a render pass.
+/// Describes what happens to a framebuffer, depth buffer, or stencil buffer, before a render pass.
 pub const LoadAction = enum {
     /// Keep existing contents
     load,
@@ -338,40 +315,38 @@ pub const RenderPass = union(enum) {
 };
 
 pub fn startRenderPass(pass: RenderPass) void {
-    _ = gpubk.cmdQueue(.{
-        .start_render_pass = .{
-            .pass = pass,
-        },
-    });
+    _ = pass;
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
+    };
 }
 
 pub fn endRenderPass() void {
-    _ = gpubk.cmdQueue(.{
-        .end_render_pass = {},
-    });
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
+    };
 }
 
 pub fn startComputePass() void {
-    _ = gpubk.cmdQueue(.{
-        .start_compute_pass = {},
-    });
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
+    };
 }
 
 pub fn endComputePass() void {
-    _ = gpubk.cmdQueue(.{
-        .end_compute_pass = {},
-    });
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
+    };
 }
 
 /// no indices
 pub fn draw(base_elem: u32, count: u32, instances: u32) void {
-    _ = gpubk.cmdQueue(.{
-        .draw = .{
-            .base_idx = base_elem,
-            .count = count,
-            .instances = instances,
-        },
-    });
+    _ = base_elem;
+    _ = count;
+    _ = instances;
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
+    };
 }
 
 pub const max_uniform_block_fields = 32;
@@ -382,54 +357,9 @@ pub const max_uniform_block_fields = 32;
 /// Since extern structs are used, you have to use arrays for vectors and matrices. Conveniently
 /// vectors can convert to arrays implicitly, and matrices can be converted with `toArray1D`
 pub fn applyUniforms(bind_slot: u32, data: anytype) void {
-    const type_info = @typeInfo(@TypeOf(data));
-    if (type_info != .@"struct") {
-        @compileError("expected struct, got " ++ @typeName(@TypeOf(data)));
-    }
-    if (type_info.@"struct".is_tuple) {
-        @compileError("expected struct, got tuple");
-    }
-    if (type_info.@"struct".layout != .@"extern") {
-        @compileError("struct layout must be extern");
-    }
-    if (type_info.@"struct".fields.len > max_uniform_block_fields) {
-        @compileError("too many uniform block fields!");
-    }
-
-    var cmd: gpubk.Command = .{
-        .apply_uniforms = .{
-            .bind_slot = bind_slot,
-        },
+    _ = bind_slot;
+    _ = data;
+    return switch (comptime getBackend()) {
+        else => @compileError("unsupported backend"),
     };
-    inline for (0..max_uniform_block_fields) |i| {
-        if (type_info.@"struct".fields.len <= i) {
-            cmd.apply_uniforms.fields[i] = null;
-            continue;
-        }
-
-        const field = type_info.@"struct".fields[i];
-        const val: field.type = @field(data, field.name);
-
-        switch (field.type) {
-            bool => cmd.apply_uniforms.fields[i] = .{ .bool = val },
-            f32 => cmd.apply_uniforms.fields[i] = .{ .f32 = val },
-            i32 => cmd.apply_uniforms.fields[i] = .{ .i32 = val },
-            [2]f32 => cmd.apply_uniforms.fields[i] = .{ .vec2f = val },
-            [3]f32 => cmd.apply_uniforms.fields[i] = .{ .vec3f = val },
-            [4]f32 => cmd.apply_uniforms.fields[i] = .{ .vec4f = val },
-            [2]i32 => cmd.apply_uniforms.fields[i] = .{ .vec2i = val },
-            [3]i32 => cmd.apply_uniforms.fields[i] = .{ .vec3i = val },
-            [4]i32 => cmd.apply_uniforms.fields[i] = .{ .vec4i = val },
-            [16]f32 => cmd.apply_uniforms.fields[i] = .{ .mat4x4f = val },
-            else => {
-                @compileError("expected bool, f32, i32, [2]f32, [3]f32, " ++
-                    "[4]f32, [2]i32, [3]i32, [4]i32, or [16]f32, " ++
-                    "got " ++ @typeName(field.type));
-            },
-        }
-
-        cmd.apply_uniforms.field_names[i] = field.name;
-    }
-
-    _ = gpubk.cmdQueue(cmd);
 }

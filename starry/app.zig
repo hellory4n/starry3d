@@ -1,7 +1,6 @@
 //! Manages the engine/app's lifetime and puts the whole engine together
 const std = @import("std");
 const builtin = @import("builtin");
-const build_options = @import("build_options");
 const glfw = @import("zglfw");
 const zglm = @import("zglm");
 const root = @import("root.zig");
@@ -94,16 +93,7 @@ fn starryMain(comptime settings: Settings) !void {
         stlog.info("deinitialized GLFW", .{});
     }
 
-    if (build_options.vulkan) {
-        glfw.windowHint(.client_api, .no_api);
-    } else {
-        glfw.windowHint(.client_api, .opengl_api);
-        glfw.windowHint(.opengl_forward_compat, true);
-        glfw.windowHint(.opengl_profile, .opengl_core_profile);
-        glfw.windowHint(.context_version_major, 4);
-        glfw.windowHint(.context_version_minor, 5);
-    }
-
+    glfw.windowHint(.client_api, .no_api);
     glfw.windowHint(.doublebuffer, true);
     glfw.windowHint(.resizable, global.settings.window.resizable);
     // TODO idk if high dpi works lmao
