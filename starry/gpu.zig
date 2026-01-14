@@ -19,27 +19,21 @@ const zglm = @import("zglm");
 const handle = @import("sunshine").handle;
 const app = @import("app.zig");
 const gpubk = @import("gpu_backend.zig");
-const gpubk_vk = @import("gpu_vk.zig");
-const gpubk_d3d11 = @import("gpu_d3d11.zig");
 
 /// Unfortunately GPU drivers don't natively support the hit graphics API starry dot gee pee you dot zig.
 pub const Backend = enum {
     /// Verbally insults you trying to compile it
     invalid,
-    direct3d_11,
     vulkan,
 };
 
 /// Returns the backend being currently used
 pub fn getBackend() Backend {
     // TODO compile option for headless builds
-
-    if (build_options.vulkan) {
-        return .vulkan;
-    }
+    // TODO metal support?
 
     return switch (builtin.os.tag) {
-        .windows => .direct3d_11,
+        .windows, .linux, .freebsd, .openbsd, .netbsd => .vulkan,
         else => .invalid,
     };
 }
@@ -64,8 +58,7 @@ pub const Error = handle.Error || error{
 /// Initializes the GPU backend. Amazing.
 pub fn init(comptime app_settings: app.Settings) Error!void {
     return switch (comptime getBackend()) {
-        .vulkan => gpubk_vk.init(app_settings),
-        .direct3d_11 => gpubk_d3d11.init(app_settings),
+        .vulkan => @import("gpu_vk.zig").init(app_settings),
         else => @compileError("unsupported backend"),
     };
 }
@@ -73,8 +66,7 @@ pub fn init(comptime app_settings: app.Settings) Error!void {
 /// Deinitializes the GPU backend. .gnizamA
 pub fn deinit() void {
     switch (comptime getBackend()) {
-        .vulkan => gpubk_vk.deinit(),
-        .direct3d_11 => gpubk_d3d11.deinit(),
+        .vulkan => @import("gpu_vk.zig").deinit(),
         else => @compileError("unsupported backend"),
     }
 }

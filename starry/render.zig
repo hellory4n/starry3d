@@ -24,58 +24,58 @@ const Uniforms = extern struct {
 };
 
 pub fn init() !void {
-    const vert_shader = try gpu.Shader.init(.{
-        .src_glsl = @embedFile("shader/tri.vert"),
-        .stage = .vertex,
-        .label = "triangle.vert",
-    });
-    defer vert_shader.deinit();
+    // const vert_shader = try gpu.Shader.init(.{
+    //     .src_glsl = @embedFile("shader/tri.vert"),
+    //     .stage = .vertex,
+    //     .label = "triangle.vert",
+    // });
+    // defer vert_shader.deinit();
 
-    const frag_shader = try gpu.Shader.init(.{
-        .src_glsl = @embedFile("shader/tri.frag"),
-        .stage = .fragment,
-        .label = "triangle.frag",
-    });
-    defer frag_shader.deinit();
+    // const frag_shader = try gpu.Shader.init(.{
+    //     .src_glsl = @embedFile("shader/tri.frag"),
+    //     .stage = .fragment,
+    //     .label = "triangle.frag",
+    // });
+    // defer frag_shader.deinit();
 
-    global.pipeline = try gpu.Pipeline.init(.{
-        .raster = .{
-            .vertex_shader = vert_shader,
-            .fragment_shader = frag_shader,
-        },
-        .label = "triangle pipeline",
-    });
+    // global.pipeline = try gpu.Pipeline.init(.{
+    //     .raster = .{
+    //         .vertex_shader = vert_shader,
+    //         .fragment_shader = frag_shader,
+    //     },
+    //     .label = "triangle pipeline",
+    // });
 
     log.info("initialized renderer", .{});
 }
 
 pub fn deinit() void {
-    global.pipeline.deinit();
+    // global.pipeline.deinit();
 
     log.info("deinitialized renderer", .{});
 }
 
 pub fn draw() void {
-    gpu.setViewport(.{ .size = app.framebufferSize() });
-    gpu.setBlend(.{
-        .src_factor = .src_alpha,
-        .dst_factor = .one_minus_src_alpha,
-    });
+    // gpu.setViewport(.{ .size = app.framebufferSize() });
+    // gpu.setBlend(.{
+    //     .src_factor = .src_alpha,
+    //     .dst_factor = .one_minus_src_alpha,
+    // });
 
-    gpu.startRenderPass(.{
-        .frame = .{
-            .load_action = .clear,
-            .store_action = .ignore,
-            .clear_color = .{ 0, 0, 0, 1 },
-        },
-    });
-    gpu.applyPipeline(global.pipeline);
-    gpu.applyUniforms(0, Uniforms{});
+    // gpu.startRenderPass(.{
+    //     .frame = .{
+    //         .load_action = .clear,
+    //         .store_action = .ignore,
+    //         .clear_color = .{ 0, 0, 0, 1 },
+    //     },
+    // });
+    // gpu.applyPipeline(global.pipeline);
+    // gpu.applyUniforms(0, Uniforms{});
 
-    gpu.draw(0, 3, 1);
+    // gpu.draw(0, 3, 1);
 
-    gpu.endRenderPass();
-    gpu.submit();
+    // gpu.endRenderPass();
+    // gpu.submit();
 }
 
 // const RenderState = struct {

@@ -4,14 +4,6 @@ const Build = std.Build;
 pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const opt_vulkan = b.option(
-        bool,
-        "vulkan",
-        "Enable the experimental Vulkan backend. Useful if you want to suffer.",
-    ) orelse false;
-
-    const options = b.addOptions();
-    options.addOption(bool, "vulkan", opt_vulkan);
 
     const sunshine_mod = b.addModule("sunshine", .{
         .target = target,
@@ -24,7 +16,6 @@ pub fn build(b: *Build) !void {
         .optimize = optimize,
         .root_source_file = b.path("starry/root.zig"),
     });
-    starry_mod.addOptions("starry3d_options", options);
     starry_mod.addImport("sunshine", sunshine_mod);
 
     // dependencies
@@ -36,10 +27,10 @@ pub fn build(b: *Build) !void {
     starry_mod.addImport("zglfw", zglfw_mod);
     starry_mod.linkLibrary(zglfw_dep.artifact("glfw"));
 
-    const vk_registry = b.lazyDependency("vulkan_headers", .{}).?.path("registry/vk.xml");
-    const vulkan_mod = b.lazyDependency("vulkan", .{
+    const vk_registry = b.dependency("vulkan_headers", .{}).path("registry/vk.xml");
+    const vulkan_mod = b.dependency("vulkan", .{
         .registry = vk_registry,
-    }).?.module("vulkan-zig");
+    }).module("vulkan-zig");
     starry_mod.addImport("vulkan", vulkan_mod);
 
     const zglm_dep = b.dependency("zglm", .{
