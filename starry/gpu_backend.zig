@@ -6,16 +6,10 @@ const gpu = @import("gpu.zig");
 
 pub const BackendShader = struct {
     settings: gpu.ShaderSettings,
-    gl: struct {
-        id: c_uint,
-    },
 };
 
 pub const BackendPipeline = struct {
     settings: gpu.PipelineSettings,
-    gl: struct {
-        program: c_uint,
-    },
 };
 
 pub var resources: struct {

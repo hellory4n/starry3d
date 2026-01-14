@@ -56,9 +56,9 @@ pub const Error = handle.Error || error{
 };
 
 /// Initializes the GPU backend. Amazing.
-pub fn init(comptime app_settings: app.Settings) Error!void {
+pub fn init(alloc: std.mem.Allocator, comptime app_settings: app.Settings) Error!void {
     return switch (comptime getBackend()) {
-        .vulkan => @import("gpu_vk.zig").init(app_settings),
+        .vulkan => @import("gpu_vk.zig").init(alloc, app_settings),
         else => @compileError("unsupported backend"),
     };
 }

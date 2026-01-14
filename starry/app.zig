@@ -32,9 +32,6 @@ pub const Settings = struct {
 pub const WindowSettings = struct {
     /// The preferred size of the window
     size: zglm.Vec2i = .{ 1280, 720 },
-    /// Disables VSync so that the renderer can push as many frames as possible, which is useful for
-    /// benchmarking and stuff. Only works on desktop.
-    debug_frame_rate: bool = builtin.mode == .Debug,
     /// Whether the rendering canvas is full resolution on high-DPI displays
     high_dpi: bool = true,
     /// Whether the window should be resizable (only works on desktop)
@@ -54,6 +51,7 @@ const GlobalState = struct {
     mouse_state: [@intFromEnum(MouseButton.last) + 1]InputState =
         .{InputState.not_pressed} ** (@intFromEnum(MouseButton.last) + 1),
     prev_mouse_pos: zglm.Vec2f = @splat(0),
+    minimized: bool = false,
 
     prev_time: f64 = 0,
     smooth_dt: f64 = 1 / 60, // initial guess
@@ -94,7 +92,6 @@ fn starryMain(comptime settings: Settings) !void {
     }
 
     glfw.windowHint(.client_api, .no_api);
-    glfw.windowHint(.doublebuffer, true);
     glfw.windowHint(.resizable, global.settings.window.resizable);
     // TODO idk if high dpi works lmao
     glfw.windowHint(.scale_to_monitor, !global.settings.window.high_dpi);
@@ -118,14 +115,19 @@ fn starryMain(comptime settings: Settings) !void {
         stlog.info("destroyed window", .{});
     }
 
-    glfw.makeContextCurrent(global.window);
-    glfw.swapInterval(if (global.settings.window.debug_frame_rate) 0 else 1);
-
     // idk man
     global.prev_time = glfw.getTime();
 
+    // 2050 different callbacks
+    _ = glfw.setWindowIconifyCallback(global.window, struct {
+        pub fn callback(window: *glfw.Window, minimized: glfw.Bool) callconv(.c) void {
+            _ = window;
+            global.minimized = @intFromEnum(minimized) == 1;
+        }
+    }.callback);
+
     // rendering fuckery
-    try gpu.init(settings);
+    try gpu.init(global.core_alloc, settings);
     stlog.info("initialized gpu backend for {s}", .{@tagName(gpu.getBackend())});
     defer {
         gpu.deinit();
@@ -152,7 +154,9 @@ fn starryMain(comptime settings: Settings) !void {
             realUpdateFn(@floatCast(deltaTime()));
         }
 
-        render.draw();
+        if (!isMinimized()) {
+            render.draw();
+        }
 
         // housekeeping type shit
         const alpha = 0.1; // controls how smooth the smoothing is
@@ -538,4 +542,15 @@ pub fn setWindowTitle(title: []const u8) void {
     const title_cstr =
         std.mem.concatWithSentinel(scratch.allocator(), u8, &[_]u8{title}, 0) catch unreachable;
     global.window.setTitle(title_cstr);
+}
+
+/// Returns the "native" handle for the window. Except it actually isn't native, it's using whatever
+/// windowing API the engine is using. You can then get the real native handle from that.
+pub fn nativeHandle() *const anyopaque {
+    return global.window;
+}
+
+/// If true, the window is minimized. Else, it's restored/visible.
+pub fn isMinimized() bool {
+    return global.minimized;
 }

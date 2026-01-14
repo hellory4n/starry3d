@@ -7,100 +7,80 @@ const builtin = @import("builtin");
 const log = std.log.scoped(.starrygpu);
 const glfw = @import("zglfw");
 const vk = @import("vulkan");
+const vkk = @import("vk-kickstart");
 const ScratchAllocator = @import("sunshine").ScratchAllocator;
 const app = @import("app.zig");
 const version = @import("root.zig").version;
 const gpu = @import("gpu.zig");
 const gpubk = @import("gpu_backend.zig");
 
-var ctx: struct {
-    // we have to use these to call vulkan functions i guess
-    vkb: vk.BaseWrapper = undefined,
-    vki: vk.InstanceWrapper = undefined,
-    vkd: vk.DeviceWrapper = undefined,
+const Instance = vk.InstanceProxy;
+const Device = vk.DeviceProxy;
+const Queue = vk.QueueProxy;
+const CommandBuffer = vk.CommandBufferProxy;
 
-    instance: vk.Instance = undefined,
+var ctx: struct {
+    alloc: std.mem.Allocator = undefined,
+    instance: Instance = undefined,
+    debug_messenger: ?vk.DebugUtilsMessengerEXT = null,
+    device: Device = undefined,
+    physical_device: vkk.PhysicalDevice = undefined,
+    surface: vk.SurfaceKHR = undefined,
+    graphics_queue_index: u32 = undefined,
+    present_queue_index: u32 = undefined,
+    graphics_queue: Queue = undefined,
+    present_queue: Queue = undefined,
 } = .{};
 
-pub fn init(comptime settings: app.Settings) gpu.Error!void {
+pub fn init(alloc: std.mem.Allocator, comptime settings: app.Settings) gpu.Error!void {
+    ctx.alloc = alloc;
+
     // vulkan tends to be insalubrious
-    initInstance(settings) catch return gpu.Error.DeviceUnsupported;
+    // so instead we use vk-kickstart to provide a more salubrious experience
+    ctx.instance = vkk.instance.create(
+        ctx.alloc,
+        getInstanceProcAddress,
+        .{
+            .app_name = settings.name,
+            .engine_name = "Starry3D",
+            // apparently 'vk.Version' and 'vk.Version' are different types
+            .app_version = @bitCast(vk.makeApiVersion(
+                0,
+                settings.version.major,
+                settings.version.minor,
+                settings.version.patch,
+            )),
+            .engine_version = @bitCast(vk.makeApiVersion(
+                0,
+                version.major,
+                version.minor,
+                version.patch,
+            )),
+            .required_api_version = @bitCast(vk.API_VERSION_1_3),
+            .enable_validation = gpu.validationEnabled(),
+            .debug_messenger = .{ .enable = false }, // TODO
+            .enabled_validation_features = &.{.best_practices_ext},
+        },
+        null,
+    ) catch |err| {
+        switch (err) {
+            .ValidationLayersNotAvailable => {
+                log.warn("validation layers requested but not available");
+            },
+            else => {
+                log.err("{s}", .{@errorName(err)});
+                return err;
+            },
+        }
+    };
+    errdefer ctx.instance.destroyInstance(null);
+    log.info("created Vulkan instance", .{});
 }
 
 pub fn deinit() void {
     // luckily deinitializing is less insalubrious
-    ctx.vki.destroyInstance(ctx.instance, null);
+    ctx.instance.destroyInstance(null);
     std.log.info("deinitialized Vulkan", .{});
-}
-
-fn initInstance(comptime settings: app.Settings) !void {
-    var scratch = ScratchAllocator.init();
-    defer scratch.deinit();
-    ctx.vkb = vk.BaseWrapper.load(getInstanceProcAddress);
-
-    // usual insalubrious vulkan boilerplate to get an instance
-    const app_info = vk.ApplicationInfo{
-        .p_application_name = settings.name ++ "\x00",
-        .application_version = @bitCast(vk.makeApiVersion(
-            0,
-            settings.version.major,
-            settings.version.minor,
-            settings.version.patch,
-        )),
-        .p_engine_name = "Starry3D",
-        .engine_version = @bitCast(vk.makeApiVersion(0, version.major, version.minor, version.patch)),
-        .api_version = @bitCast(vk.API_VERSION_1_2),
-    };
-
-    // extending it
-    const required_instance_exts = try glfw.getRequiredInstanceExtensions();
-    const extra_instance_exts = [_][*:0]const u8{
-        // required on macOS
-        vk.extensions.khr_portability_enumeration.name,
-        vk.extensions.khr_get_physical_device_properties_2.name,
-    };
-    const instance_exts = try scratch.allocator().alloc(
-        [*:0]const u8,
-        required_instance_exts.len + extra_instance_exts.len,
-    );
-    @memcpy(instance_exts[0..required_instance_exts.len], required_instance_exts);
-    @memcpy(instance_exts[required_instance_exts.len..], &extra_instance_exts);
-
-    // validation layer fuckery
-    const enable_validation_layers = switch (builtin.mode) {
-        .Debug => true,
-        .ReleaseSafe => true,
-        else => false,
-    };
-    var validation_layers_supported: bool = undefined;
-    if (gpu.validationEnabled() and try hasValidationLayers()) {
-        validation_layers_supported = true;
-        log.info("using validation layers", .{});
-    } else if (enable_validation_layers) {
-        log.warn("validation layers requested but not supported", .{});
-    } else {
-        validation_layers_supported = false;
-    }
-    const use_validation_layers = enable_validation_layers and validation_layers_supported;
-    const validation_layers = [_][*:0]const u8{"VK_LAYER_KHRONOS_validation"};
-    // TODO debug messenger or whatever the fuck
-
-    const instance_create_info = vk.InstanceCreateInfo{
-        .p_application_info = &app_info,
-        .pp_enabled_extension_names = instance_exts.ptr,
-        .enabled_extension_count = @intCast(instance_exts.len),
-        .pp_enabled_layer_names = if (use_validation_layers) (&validation_layers).ptr else null,
-        .enabled_layer_count = if (use_validation_layers) 1 else 0,
-        // also required on macOS
-        .flags = .{ .enumerate_portability_bit_khr = true },
-    };
-
-    // unfortunately vulkan-zig makes the boilerplate more esoteric
-    // just look at the vulkan-zig docs i cant be bothered
-    ctx.instance = try ctx.vkb.createInstance(&instance_create_info, null);
-    ctx.vki = vk.InstanceWrapper.load(ctx.instance, ctx.vkb.dispatch.vkGetInstanceProcAddr.?);
-    errdefer ctx.vki.destroyInstance(ctx.instance, null);
-    log.info("initialized Vulkan instance", .{});
 }
 
 /// glfw and vulkan-zig have different definitions of vk.Instance but they're the fucking same

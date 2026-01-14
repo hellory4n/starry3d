@@ -33,6 +33,20 @@ pub fn build(b: *Build) !void {
     }).module("vulkan-zig");
     starry_mod.addImport("vulkan", vulkan_mod);
 
+    const vk_kickstart_mod = b.dependency("vk_kickstart", .{
+        .target = target,
+        .optimize = optimize,
+        .registry = vk_registry,
+        .verbose = true,
+    }).module("vk-kickstart");
+    starry_mod.addImport("vk-kickstart", vk_kickstart_mod);
+
+    const vma_dep = b.dependency("VulkanMemoryAllocator", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    starry_mod.linkLibrary(vma_dep.artifact("VulkanMemoryAllocator"));
+
     const zglm_dep = b.dependency("zglm", .{
         .target = target,
         .optimize = optimize,

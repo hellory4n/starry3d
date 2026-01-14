@@ -27,8 +27,16 @@
             .hash = "vulkan-0.0.0-r7Ytx_VDAwAiMl0YSu2UOkVMIGJN7CeIQaxJR-hUSfD6",
         },
         .vulkan_headers = .{
-            .url = "https://github.com/KhronosGroup/Vulkan-Headers/archive/v1.3.283.tar.gz",
-            .hash = "N-V-__8AAAkkoQGn5z1yoNVrwqZfnYmZp8AZ5CJgoHRMQI0c",
+            .url = "https://github.com/KhronosGroup/Vulkan-Headers/archive/v1.4.338.tar.gz",
+            .hash = "N-V-__8AAMZuLQIcPe--JSv0kn_Ga8tsjgbkaojW0OHW2Rfd",
+        },
+        .vk_kickstart = .{
+            .url = "git+https://github.com/mikastiv/vk-kickstart#ef671882a3d20f70f74e1ddb6808ed1b55078fa4",
+            .hash = "vk_kickstart-0.1.0-YDdE9PE6AQBxwMK3xIEJf-DInDjsOshqn9ARW5sKyimM",
+        },
+        .VulkanMemoryAllocator = .{
+            .url = "git+https://github.com/johan0A/VulkanMemoryAllocator#62b7d55b14f142ec2d25de6d0a12ab2b273df4c3",
+            .hash = "VulkanMemoryAllocator-0.1.2+3.3.0-eK3SgegSAABf1vJhfoXtFCSSRGz0fjsRLshiN30xhhtt",
         },
     },
 }
