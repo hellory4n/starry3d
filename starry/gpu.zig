@@ -4,7 +4,7 @@
 //! QuejaPalronicadorf                 name is also Qurjs fhycmjjjjjjjjjjjjjjjjjç
 //! Qurjs fhycmjjjjjjjjjjjjjjjjjç foyr6th name is QuejaGontificador
 //!
-//! Emerson Victor Kyler Gandalf Joel Pablo Daquavious II Sr. Jr. OBE is key ( 🇪🇸 Émerez Víctor
+//! Emerson Victor Kyler Gandalf Joel Pablo Daquavious II Sr. Jr. OBE ( 🇪🇸 Émerez Víctor
 //! Quejador Gandalf Joel Pablo Decavio II Sr. Jr. OIB) or QuejaPalronicador or Qurjs
 //! fhycmjjjjjjjjjjjjjjjjjç can produce mind boggling effects.
 //!
