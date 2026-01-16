@@ -23,14 +23,30 @@ typedef struct sgpu_version_t {
 
 typedef enum {
     SGPU_OK = 0,
+    SGPU_ERROR_UNKNOWN,
     SGPU_ERROR_OUT_OF_CPU_MEMORY,
+    SGPU_ERROR_OUT_OF_GPU_MEMORY,
+    SGPU_ERROR_INCOMPATIBLE_GPU,
 } sgpu_error_t;
 
 typedef struct sgpu_settings_t {
-    const char* app_name;
-    const char* engine_name;
-    sgpu_version_t app_version;
-    sgpu_version_t engine_version;
+    const char* app_name; // optional
+    const char* engine_name; // optional
+    sgpu_version_t app_version; // optional
+    sgpu_version_t engine_version; // optional
+    // TODO this should be chosen at compile time for a 0.000000000001% performance increase
+    bool validation_enabled;
+
+    struct {
+        const void* userdata; // optional
+        void* win32_handle; // if using d3d11
+
+        int32_t (*get_width)(const void* userdata);
+        int32_t (*get_height)(const void* userdata);
+
+        // TODO MSAA support
+        // TODO swapchains would probably have to be explicit if you want multiple windows
+    } window_system;
 
     /// optional
     struct {

@@ -23,7 +23,15 @@ pub fn build(b: *Build) !void {
     });
     starrygpu_mod.addIncludePath(b.path("starrygpu"));
     starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/starrygpu.c") });
-    starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_d3d11.cc") });
+    // d3d11 backend
+    if (target.result.os.tag == .windows) {
+        starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_d3d11.cc") });
+        starrygpu_mod.linkSystemLibrary("d3d11", .{ .preferred_link_mode = .static });
+        starrygpu_mod.linkSystemLibrary("dxgi", .{ .preferred_link_mode = .static });
+        starrygpu_mod.linkSystemLibrary("d3dcompiler", .{ .preferred_link_mode = .static });
+        starrygpu_mod.linkSystemLibrary("winmm", .{ .preferred_link_mode = .static });
+        starrygpu_mod.linkSystemLibrary("dxguid", .{ .preferred_link_mode = .static });
+    }
 
     // starry
     const starry_mod = b.addModule("starry3d", .{
