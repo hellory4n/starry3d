@@ -7,14 +7,16 @@
 
 const std = @import("std");
 const log = std.log.scoped(.starry);
+const glfw = @import("zglfw");
 const zglm = @import("zglm");
-const gpu = @import("gpu.zig");
+const sgpu = @import("starrygpu");
 const app = @import("app.zig");
 const world = @import("world.zig");
 const rtshader = @import("shader/rt.zig");
 
-var global: struct {
-    pipeline: gpu.Pipeline = undefined,
+var ctx: struct {
+    gpu: sgpu.c.sgpu_ctx_t = undefined,
+    prev_window_size: zglm.Vec2i = @splat(0),
 } = .{};
 
 const Uniforms = extern struct {
@@ -24,6 +26,24 @@ const Uniforms = extern struct {
 };
 
 pub fn init() !void {
+    try sgpu.check(sgpu.c.sgpu_init(.{
+        .app_name = "Balls",
+        .engine_name = "libballs",
+        .app_version = .{ .major = 1, .minor = 0, .patch = 0 },
+        .engine_version = .{ .major = 1, .minor = 0, .patch = 0 },
+
+        .window_system = .{
+            .userdata = app.nativeHandle(),
+            .win32_handle = @ptrCast(@alignCast(
+                glfw.getWin32Window(@ptrCast(@alignCast(
+                    app.nativeHandle(),
+                ))),
+            )),
+            .get_width = getWidthCallback,
+            .get_height = getHeightCallback,
+        },
+    }, &ctx.gpu));
+
     // const vert_shader = try gpu.Shader.init(.{
     //     .src_glsl = @embedFile("shader/tri.vert"),
     //     .stage = .vertex,
@@ -49,18 +69,37 @@ pub fn init() !void {
     log.info("initialized renderer", .{});
 }
 
+fn getWidthCallback(window: ?*const anyopaque) callconv(.c) i32 {
+    _ = window;
+    return app.framebufferSize()[0];
+}
+
+fn getHeightCallback(window: ?*const anyopaque) callconv(.c) i32 {
+    _ = window;
+    return app.framebufferSize()[1];
+}
+
 pub fn deinit() void {
     // global.pipeline.deinit();
 
+    sgpu.c.sgpu_deinit(&ctx.gpu);
     log.info("deinitialized renderer", .{});
 }
 
 pub fn draw() void {
-    // gpu.setViewport(.{ .size = app.framebufferSize() });
-    // gpu.setBlend(.{
-    //     .src_factor = .src_alpha,
-    //     .dst_factor = .one_minus_src_alpha,
-    // });
+    // TODO perhaps move some crap out of here into app.zig
+    sgpu.c.sgpu_set_viewport(&ctx.gpu, .{
+        .width = app.framebufferSize()[0],
+        .height = app.framebufferSize()[1],
+    });
+    sgpu.c.sgpu_start_render_pass(&ctx.gpu, .{
+        .frame = .{
+            .load_action = sgpu.c.SGPU_LOAD_ACTION_CLEAR,
+            .store_action = sgpu.c.SGPU_STORE_ACTION_IGNORE,
+            .clear_color = .{ .r = 1, .g = 0, .b = 0, .a = 1 },
+        },
+    });
+    sgpu.c.sgpu_end_render_pass(&ctx.gpu);
 
     // gpu.startRenderPass(.{
     //     .frame = .{
@@ -76,6 +115,14 @@ pub fn draw() void {
 
     // gpu.endRenderPass();
     // gpu.submit();
+
+    // resizing it rn
+    sgpu.c.sgpu_swap_buffers(&ctx.gpu);
+    if (zglm.any(ctx.prev_window_size != app.framebufferSize())) {
+        sgpu.c.sgpu_flush(&ctx.gpu);
+        sgpu.c.sgpu_recreate_swapchain(&ctx.gpu);
+    }
+    ctx.prev_window_size = app.framebufferSize();
 }
 
 // const RenderState = struct {

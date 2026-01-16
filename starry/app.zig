@@ -3,8 +3,8 @@ const std = @import("std");
 const builtin = @import("builtin");
 const glfw = @import("zglfw");
 const zglm = @import("zglm");
+const sgpu = @import("starrygpu");
 const root = @import("root.zig");
-const gpu = @import("gpu.zig");
 const render = @import("render.zig");
 const world = @import("world.zig");
 const ScratchAllocator = @import("sunshine").ScratchAllocator;
@@ -72,6 +72,8 @@ pub fn run(alloc: std.mem.Allocator, comptime settings: Settings) void {
 }
 
 fn starryMain(comptime settings: Settings) !void {
+    _ = settings;
+
     // TODO clean this up
     const stlog = std.log.scoped(.starry);
     stlog.info("starry v{d}.{d}.{d}{s}{s}", .{
@@ -126,14 +128,6 @@ fn starryMain(comptime settings: Settings) !void {
         }
     }.callback);
 
-    // rendering fuckery
-    try gpu.init(global.core_alloc, settings);
-    stlog.info("initialized gpu backend for {s}", .{@tagName(gpu.getBackend())});
-    defer {
-        gpu.deinit();
-        stlog.info("deinitialized gpu backend", .{});
-    }
-
     try render.init();
     defer render.deinit();
 
@@ -166,7 +160,6 @@ fn starryMain(comptime settings: Settings) !void {
 
         glfw.pollEvents();
         pollInputStates();
-        global.window.swapBuffers();
     }
 }
 
@@ -546,7 +539,7 @@ pub fn setWindowTitle(title: []const u8) void {
 
 /// Returns the "native" handle for the window. Except it actually isn't native, it's using whatever
 /// windowing API the engine is using. You can then get the real native handle from that.
-pub fn nativeHandle() *const anyopaque {
+pub fn nativeHandle() *anyopaque {
     return global.window;
 }
 

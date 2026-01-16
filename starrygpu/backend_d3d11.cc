@@ -2,6 +2,7 @@
 #include "sgpu_internal.h"
 #include "starrygpu.h"
 #include <cstddef>
+#include <new>
 
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
@@ -28,15 +29,16 @@ struct sgpu_d3d11_ctx {
 };
 
 extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ctx) {
-    // questionable for c++ but i don't care
     ctx->d3d11 = sgpu_malloc(ctx, sizeof(sgpu_d3d11_ctx));
     if (!ctx->d3d11) {
         return SGPU_ERROR_OUT_OF_CPU_MEMORY;
     }
-    sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
+    // i fucking love c+++++++++++++++++++
+    sgpu_d3d11_ctx* d3d11_ctx = new (ctx->d3d11) sgpu_d3d11_ctx();
 
     // technically could be a mysterious driver error, who knows
     if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&d3d11_ctx->dxgi_factory)))) {
+        sgpu_error(ctx, "couldn't create dxgi factory");
         return SGPU_ERROR_INCOMPATIBLE_GPU;
     }
 
@@ -52,6 +54,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
             &d3d11_ctx->device,
             nullptr,
             &d3d11_ctx->device_ctx))) {
+        sgpu_error(ctx, "couldn't create device");
         return SGPU_ERROR_INCOMPATIBLE_GPU;
     }
 
@@ -62,7 +65,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
     swapchain_desc.SampleDesc.Count = 1;
     swapchain_desc.SampleDesc.Quality = 0;
     swapchain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapchain_desc.BufferCount = 3;
+    swapchain_desc.BufferCount = 2;
     swapchain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
     swapchain_desc.Scaling = DXGI_SCALING_STRETCH;
     swapchain_desc.Flags = 0;
@@ -78,6 +81,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
             &swapchain_fullscreen_desc,
             NULL,
             &d3d11_ctx->swapchain))) {
+        sgpu_error(ctx, "couldn't create swapchain");
         return SGPU_ERROR_UNKNOWN;
     }
 
@@ -85,6 +89,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
     if (FAILED(d3d11_ctx->swapchain->GetBuffer(
             0,
             IID_PPV_ARGS(&backbuffer)))) {
+        sgpu_error(ctx, "couldn't get swapchain backbuffer");
         return SGPU_ERROR_UNKNOWN;
     }
 
@@ -92,6 +97,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
             backbuffer.Get(),
             nullptr,
             &d3d11_ctx->render_target))) {
+        sgpu_error(ctx, "couldn't create render target view");
         return SGPU_ERROR_UNKNOWN;
     }
 
@@ -99,10 +105,14 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
 }
 
 extern "C" void sgpu_d3d11_deinit(sgpu_ctx_t* ctx) {
+    sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
+    d3d11_ctx->~sgpu_d3d11_ctx();
     sgpu_free(ctx, ctx->d3d11);
 }
 
-extern "C" void sgpu_d3d11_swap_buffers(const sgpu_ctx_t* ctx) {
+extern "C" void sgpu_d3d11_swap_buffers(sgpu_ctx_t* ctx) {
+    sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
+    d3d11_ctx->swapchain->Present(1, 0);
 }
 
 extern "C" sgpu_error_t sgpu_d3d11_recreate_swapchain(sgpu_ctx_t* ctx) {
@@ -115,6 +125,7 @@ extern "C" sgpu_error_t sgpu_d3d11_recreate_swapchain(sgpu_ctx_t* ctx) {
             ctx->settings.window_system.get_height(ctx->settings.window_system.userdata),
             DXGI_FORMAT_B8G8R8A8_UNORM,
             0))) {
+        sgpu_error(ctx, "couldn't resize swapchain");
         return SGPU_ERROR_UNKNOWN;
     }
 
@@ -122,6 +133,7 @@ extern "C" sgpu_error_t sgpu_d3d11_recreate_swapchain(sgpu_ctx_t* ctx) {
     if (FAILED(d3d11_ctx->swapchain->GetBuffer(
             0,
             IID_PPV_ARGS(&backbuffer)))) {
+        sgpu_error(ctx, "couldn't get swapchain backbuffer");
         return SGPU_ERROR_UNKNOWN;
     }
 
@@ -129,13 +141,49 @@ extern "C" sgpu_error_t sgpu_d3d11_recreate_swapchain(sgpu_ctx_t* ctx) {
             backbuffer.Get(),
             nullptr,
             &d3d11_ctx->render_target))) {
+        sgpu_error(ctx, "couldn't recreate render target view");
         return SGPU_ERROR_UNKNOWN;
     }
 
     return SGPU_OK;
 }
 
-extern "C" void sgpu_d3d11_flush(const sgpu_ctx_t* ctx) {
+extern "C" void sgpu_d3d11_flush(sgpu_ctx_t* ctx) {
     sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
     d3d11_ctx->device_ctx->Flush();
+}
+
+extern "C" void sgpu_d3d11_start_render_pass(sgpu_ctx_t* ctx, sgpu_render_pass_t render_pass) {
+    sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
+
+    if (render_pass.frame.load_action == SGPU_LOAD_ACTION_CLEAR) {
+        const float color[] = {
+            render_pass.frame.clear_color.r,
+            render_pass.frame.clear_color.g,
+            render_pass.frame.clear_color.b,
+            render_pass.frame.clear_color.a,
+        };
+        d3d11_ctx->device_ctx->ClearRenderTargetView(d3d11_ctx->render_target.Get(), color);
+    }
+
+    d3d11_ctx->device_ctx->OMSetRenderTargets(1, d3d11_ctx->render_target.GetAddressOf(), NULL);
+}
+
+extern "C" void sgpu_d3d11_end_render_pass(sgpu_ctx_t* ctx) {
+    // noop in d3d11
+    (void)ctx;
+}
+
+extern "C" void sgpu_d3d11_set_viewport(sgpu_ctx_t* ctx, sgpu_viewport_t viewport) {
+    sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
+
+    D3D11_VIEWPORT vp = {};
+    vp.TopLeftX = (float)viewport.top_left_x;
+    vp.TopLeftY = (float)viewport.top_left_y;
+    vp.Width = (float)viewport.width;
+    vp.Height = (float)viewport.height;
+    vp.MinDepth = viewport.min_depth;
+    vp.MaxDepth = viewport.max_depth;
+
+    d3d11_ctx->device_ctx->RSSetViewports(1, &vp);
 }

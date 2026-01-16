@@ -19,6 +19,8 @@ pub fn build(b: *Build) !void {
         .link_libc = true,
         // otherwise you can't even fucking include <cstddef>
         .link_libcpp = true,
+        // seems to fuck with microslop (or wine)
+        .sanitize_c = .off,
         .root_source_file = b.path("starrygpu/root.zig"),
     });
     starrygpu_mod.addIncludePath(b.path("starrygpu"));
@@ -28,7 +30,6 @@ pub fn build(b: *Build) !void {
         starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_d3d11.cc") });
         starrygpu_mod.linkSystemLibrary("d3d11", .{ .preferred_link_mode = .static });
         starrygpu_mod.linkSystemLibrary("dxgi", .{ .preferred_link_mode = .static });
-        starrygpu_mod.linkSystemLibrary("d3dcompiler", .{ .preferred_link_mode = .static });
         starrygpu_mod.linkSystemLibrary("winmm", .{ .preferred_link_mode = .static });
         starrygpu_mod.linkSystemLibrary("dxguid", .{ .preferred_link_mode = .static });
     }
