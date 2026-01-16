@@ -9,10 +9,6 @@ pub const c = @cImport({
     @cInclude("starrygpu.h");
 });
 
-pub fn str(src: []const u8) c.sgpu_string_t {
-    return .{ .ptr = src.ptr, .len = src.len };
-}
-
 pub fn check(err_code: c.sgpu_error_t) !void {
     return switch (err_code) {
         else => {},
@@ -22,8 +18,8 @@ pub fn check(err_code: c.sgpu_error_t) !void {
 test "init ctx" {
     var ctx: c.sgpu_ctx_t = undefined;
     try check(c.sgpu_init(.{
-        .app_name = str("Balls"),
-        .engine_name = str("libballs"),
+        .app_name = "Balls",
+        .engine_name = "libballs",
         .app_version = .{ .major = 1, .minor = 0, .patch = 0 },
         .engine_version = .{ .major = 1, .minor = 0, .patch = 0 },
     }, &ctx));

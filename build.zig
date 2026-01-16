@@ -17,10 +17,13 @@ pub fn build(b: *Build) !void {
         .target = target,
         .optimize = optimize,
         .link_libc = true,
+        // otherwise you can't even fucking include <cstddef>
+        .link_libcpp = true,
         .root_source_file = b.path("starrygpu/root.zig"),
     });
     starrygpu_mod.addIncludePath(b.path("starrygpu"));
     starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/starrygpu.c") });
+    starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_d3d11.cc") });
 
     // starry
     const starry_mod = b.addModule("starry3d", .{
