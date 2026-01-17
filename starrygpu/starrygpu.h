@@ -81,7 +81,22 @@ sgpu_error_t sgpu_init(sgpu_settings_t settings, sgpu_ctx_t* out_ctx);
 /// Deinitializes the graphics context
 void sgpu_deinit(sgpu_ctx_t* ctx);
 
-void sgpu_flush(sgpu_ctx_t* ctx);
+typedef struct sgpu_device_t {
+    const char* vendor_name;
+    const char* device_name;
+
+    uint32_t max_image_2d_size[2];
+    /// Applies to a single storage buffer block; in bytes
+    uint64_t max_storage_buffer_size;
+    /// How many storage buffers can be bound at the same time, per shader stage
+    uint32_t max_storage_buffer_bindings;
+    /// The GPU doesn't have infinite cores unfortunately
+    uint32_t max_compute_workgroup_size[3];
+    uint32_t max_compute_workgroup_threads;
+} sgpu_device_t;
+
+/// Returns info about the GPU being used
+sgpu_device_t sgpu_query_device(sgpu_ctx_t* ctx);
 
 typedef enum sgpu_load_action_t {
     /// Keep existing contents

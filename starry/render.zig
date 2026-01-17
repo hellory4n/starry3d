@@ -142,7 +142,6 @@ pub fn draw() void {
     // resizing it rn
     sgpu.c.sgpu_swap_buffers(&ctx.gpu);
     if (zglm.any(ctx.prev_window_size != app.framebufferSize())) {
-        sgpu.c.sgpu_flush(&ctx.gpu);
         sgpu.c.sgpu_recreate_swapchain(&ctx.gpu);
     }
     ctx.prev_window_size = app.framebufferSize();

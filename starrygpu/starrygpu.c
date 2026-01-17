@@ -32,11 +32,11 @@ void sgpu_deinit(sgpu_ctx_t* ctx) {
     ctx->initialized = false;
 }
 
-void sgpu_flush(sgpu_ctx_t* ctx) {
+sgpu_device_t sgpu_query_device(sgpu_ctx_t* ctx) {
 #ifdef SGPU_D3D11
-    sgpu_d3d11_flush(ctx);
+    return sgpu_d3d11_query_device(ctx);
 #else
-    (void)ctx;
+    return (sgpu_device_t) { 0 };
 #endif
 }
 

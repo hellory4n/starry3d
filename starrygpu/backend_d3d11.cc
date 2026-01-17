@@ -1,8 +1,10 @@
 #include "backend_d3d11.h"
 #include "sgpu_internal.h"
 #include "starrygpu.h"
+#include <cassert>
 #include <cstddef>
 #include <new>
+#include <stringapiset.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
@@ -26,7 +28,21 @@ struct sgpu_d3d11_ctx {
     ComPtr<IDXGIFactory2> dxgi_factory = NULL;
     ComPtr<IDXGISwapChain1> swapchain = NULL;
     ComPtr<ID3D11RenderTargetView> render_target = NULL;
+
+    sgpu_device_t device_info;
+    bool has_device_info;
 };
+
+/// remember to free lol lmao even
+static char* _utf16_to_utf8(const wchar_t* src) {
+    int size = WideCharToMultiByte(CP_UTF8, 0, src, -1, NULL, 0, NULL, NULL);
+    assert(size != 0);
+
+    char* dst = (char*)calloc(size, sizeof(char));
+    int result = WideCharToMultiByte(CP_UTF8, 0, src, -1, dst, size, NULL, NULL);
+    assert(result != 0);
+    return dst;
+}
 
 extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ctx) {
     ctx->d3d11 = new sgpu_d3d11_ctx();
@@ -52,7 +68,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
             1,
             D3D11_SDK_VERSION,
             &d3d11_ctx->device,
-            nullptr,
+            NULL,
             &d3d11_ctx->device_ctx))) {
         sgpu_log_error(ctx, "couldn't create device");
         return SGPU_ERROR_INCOMPATIBLE_GPU;
@@ -95,18 +111,89 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
 
     if (FAILED(d3d11_ctx->device->CreateRenderTargetView(
             backbuffer.Get(),
-            nullptr,
+            NULL,
             &d3d11_ctx->render_target))) {
         sgpu_log_error(ctx, "couldn't create render target view");
         return SGPU_ERROR_UNKNOWN;
     }
+
+    // show any warnings if necessary
+    sgpu_d3d11_query_device(ctx);
 
     return SGPU_OK;
 }
 
 extern "C" void sgpu_d3d11_deinit(sgpu_ctx_t* ctx) {
     sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
+
+    // no im not putting this in the destructor
+    if (d3d11_ctx->has_device_info) {
+        // evil const cast because the user shouldn't change it but microslop
+        // makes us do an allocation
+        free((char*)d3d11_ctx->device_info.vendor_name);
+        free((char*)d3d11_ctx->device_info.device_name);
+    }
+
     delete d3d11_ctx;
+}
+
+extern "C" sgpu_device_t sgpu_d3d11_query_device(sgpu_ctx_t* ctx) {
+    sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
+
+    // no need to query it twice
+    if (d3d11_ctx->has_device_info) {
+        return d3d11_ctx->device_info;
+    }
+
+    // a bit of bullshit
+    ComPtr<IDXGIDevice> dxgi_device;
+    d3d11_ctx->device->QueryInterface(IID_PPV_ARGS(&dxgi_device));
+    ComPtr<IDXGIAdapter> adapter;
+    dxgi_device->GetAdapter(&adapter);
+    DXGI_ADAPTER_DESC desc;
+    adapter->GetDesc(&desc);
+
+    // check optional features
+    // crashing if they don't match might be a bit much so it's just warnings for now
+    D3D11_FEATURE_DATA_THREADING threading = {};
+    d3d11_ctx->device->CheckFeatureSupport(
+        D3D11_FEATURE_THREADING,
+        &threading,
+        sizeof(threading));
+    if (!threading.DriverCommandLists || !threading.DriverConcurrentCreates) {
+        sgpu_log_warn(ctx, "driver doesn't properly support multithreading");
+    }
+
+    D3D11_FEATURE_DATA_DOUBLES doubles = {};
+    d3d11_ctx->device->CheckFeatureSupport(
+        D3D11_FEATURE_DOUBLES,
+        &doubles,
+        sizeof(doubles));
+    if (!doubles.DoublePrecisionFloatShaderOps) {
+        sgpu_log_warn(ctx, "device doesn't support float64s");
+    }
+    // TODO check texture format
+
+    sgpu_device_t dev {};
+    // TODO there must be a way to split the 2 but i don't really care
+    dev.vendor_name = "Unknown";
+    dev.device_name = _utf16_to_utf8(desc.Description);
+
+    // directx makes these fixed
+    dev.max_image_2d_size[0] = D3D11_REQ_TEXTURE1D_U_DIMENSION;
+    dev.max_image_2d_size[1] = D3D11_REQ_TEXTURE1D_U_DIMENSION;
+    // not sure, couldn't find, not gonna trust a clanker, usually 128 mb tho
+    dev.max_storage_buffer_size = 128 * 1024 * 1024;
+    // there's another constant but this one is for read-write storage buffers (which is usually what
+    // you want storage buffers for)
+    dev.max_storage_buffer_bindings = D3D11_PS_CS_UAV_REGISTER_COUNT;
+    dev.max_compute_workgroup_size[0] = D3D11_CS_THREAD_GROUP_MAX_X;
+    dev.max_compute_workgroup_size[1] = D3D11_CS_THREAD_GROUP_MAX_Y;
+    dev.max_compute_workgroup_size[2] = D3D11_CS_THREAD_GROUP_MAX_Z;
+    dev.max_compute_workgroup_threads = D3D11_CS_THREAD_GROUP_MAX_THREADS_PER_GROUP;
+
+    d3d11_ctx->device_info = dev;
+    return dev;
 }
 
 extern "C" void sgpu_d3d11_swap_buffers(sgpu_ctx_t* ctx) {
@@ -116,6 +203,7 @@ extern "C" void sgpu_d3d11_swap_buffers(sgpu_ctx_t* ctx) {
 
 extern "C" sgpu_error_t sgpu_d3d11_recreate_swapchain(sgpu_ctx_t* ctx) {
     sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
+    d3d11_ctx->device_ctx->Flush(); // just in case
     d3d11_ctx->render_target.Reset();
 
     if (FAILED(d3d11_ctx->swapchain->ResizeBuffers(
@@ -138,18 +226,13 @@ extern "C" sgpu_error_t sgpu_d3d11_recreate_swapchain(sgpu_ctx_t* ctx) {
 
     if (FAILED(d3d11_ctx->device->CreateRenderTargetView(
             backbuffer.Get(),
-            nullptr,
+            NULL,
             &d3d11_ctx->render_target))) {
         sgpu_log_error(ctx, "couldn't recreate render target view");
         return SGPU_ERROR_UNKNOWN;
     }
 
     return SGPU_OK;
-}
-
-extern "C" void sgpu_d3d11_flush(sgpu_ctx_t* ctx) {
-    sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
-    d3d11_ctx->device_ctx->Flush();
 }
 
 extern "C" void sgpu_d3d11_start_render_pass(sgpu_ctx_t* ctx, sgpu_render_pass_t render_pass) {
