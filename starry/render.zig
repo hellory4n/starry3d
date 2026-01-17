@@ -42,6 +42,13 @@ pub fn init() !void {
             .get_width = getWidthCallback,
             .get_height = getHeightCallback,
         },
+
+        .logger = .{
+            .debug = logDebugCallback,
+            .info = logInfoCallback,
+            .warn = logWarnCallback,
+            .@"error" = logErrorCallback,
+        },
     }, &ctx.gpu));
 
     // const vert_shader = try gpu.Shader.init(.{
@@ -79,11 +86,27 @@ fn getHeightCallback(window: ?*const anyopaque) callconv(.c) i32 {
     return app.framebufferSize()[1];
 }
 
+fn logDebugCallback(msg: ?[*:0]const u8) callconv(.c) void {
+    std.log.scoped(.starrygpu).debug("{s}", .{msg.?});
+}
+
+fn logInfoCallback(msg: ?[*:0]const u8) callconv(.c) void {
+    std.log.scoped(.starrygpu).info("{s}", .{msg.?});
+}
+
+fn logWarnCallback(msg: ?[*:0]const u8) callconv(.c) void {
+    std.log.scoped(.starrygpu).warn("{s}", .{msg.?});
+}
+
+fn logErrorCallback(msg: ?[*:0]const u8) callconv(.c) void {
+    std.log.scoped(.starrygpu).err("{s}", .{msg.?});
+}
+
 pub fn deinit() void {
     // global.pipeline.deinit();
 
+    log.info("deinitializing renderer", .{});
     sgpu.c.sgpu_deinit(&ctx.gpu);
-    log.info("deinitialized renderer", .{});
 }
 
 pub fn draw() void {

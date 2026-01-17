@@ -9,21 +9,7 @@
 extern "C" {
 #endif
 
-static inline void* sgpu_malloc(sgpu_ctx_t* ctx, size_t size) {
-    if (!ctx->settings.allocator.malloc) {
-        return malloc(size);
-    }
-    return ctx->settings.allocator.malloc(size);
-}
-
-static inline void sgpu_free(sgpu_ctx_t* ctx, void* ptr) {
-    if (!ctx->settings.allocator.free) {
-        return free(ptr);
-    }
-    return ctx->settings.allocator.free(ptr);
-}
-
-static inline void sgpu_debug(sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_debug(sgpu_ctx_t* ctx, const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -37,7 +23,7 @@ static inline void sgpu_debug(sgpu_ctx_t* ctx, const char* fmt, ...) {
     }
 }
 
-static inline void sgpu_log(sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_info(sgpu_ctx_t* ctx, const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -51,7 +37,7 @@ static inline void sgpu_log(sgpu_ctx_t* ctx, const char* fmt, ...) {
     }
 }
 
-static inline void sgpu_warn(sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_warn(sgpu_ctx_t* ctx, const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -65,7 +51,7 @@ static inline void sgpu_warn(sgpu_ctx_t* ctx, const char* fmt, ...) {
     }
 }
 
-static inline void sgpu_error(sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_error(sgpu_ctx_t* ctx, const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];

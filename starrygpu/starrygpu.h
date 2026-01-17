@@ -51,13 +51,6 @@ typedef struct sgpu_settings_t {
 
     /// optional
     struct {
-        /// may return null on error
-        void* (*malloc)(size_t size);
-        void (*free)(void* ptr);
-    } allocator;
-
-    /// optional
-    struct {
         void (*debug)(const char* msg);
         void (*info)(const char* msg);
         void (*warn)(const char* msg);

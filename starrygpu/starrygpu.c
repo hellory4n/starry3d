@@ -12,19 +12,21 @@ sgpu_error_t sgpu_init(sgpu_settings_t settings, sgpu_ctx_t* out_ctx) {
     };
 
 #ifdef SGPU_D3D11
+    sgpu_log_info(&ctx, "using Direct3D 11");
     sgpu_d3d11_init(settings, &ctx);
-    sgpu_log(&ctx, "initialized for Direct3D 11");
 #endif
 
     ctx.initialized = true;
     *out_ctx = ctx;
+    sgpu_log_info(&ctx, "initialized successfully");
     return SGPU_OK;
 }
 
 void sgpu_deinit(sgpu_ctx_t* ctx) {
 #ifdef SGPU_D3D11
+    sgpu_log_info(ctx, "deinitializing Direct3D 11");
     sgpu_d3d11_deinit(ctx);
-    sgpu_log(&ctx, "deinitialized Direct3D 11");
+    sgpu_log_info(ctx, "deinitialized successfully");
 #endif
 
     ctx->initialized = false;

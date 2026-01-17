@@ -29,16 +29,16 @@ struct sgpu_d3d11_ctx {
 };
 
 extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ctx) {
-    ctx->d3d11 = sgpu_malloc(ctx, sizeof(sgpu_d3d11_ctx));
+    ctx->d3d11 = new sgpu_d3d11_ctx();
     if (!ctx->d3d11) {
         return SGPU_ERROR_OUT_OF_CPU_MEMORY;
     }
     // i fucking love c+++++++++++++++++++
-    sgpu_d3d11_ctx* d3d11_ctx = new (ctx->d3d11) sgpu_d3d11_ctx();
+    sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
 
     // technically could be a mysterious driver error, who knows
     if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&d3d11_ctx->dxgi_factory)))) {
-        sgpu_error(ctx, "couldn't create dxgi factory");
+        sgpu_log_error(ctx, "couldn't create dxgi factory");
         return SGPU_ERROR_INCOMPATIBLE_GPU;
     }
 
@@ -54,7 +54,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
             &d3d11_ctx->device,
             nullptr,
             &d3d11_ctx->device_ctx))) {
-        sgpu_error(ctx, "couldn't create device");
+        sgpu_log_error(ctx, "couldn't create device");
         return SGPU_ERROR_INCOMPATIBLE_GPU;
     }
 
@@ -81,7 +81,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
             &swapchain_fullscreen_desc,
             NULL,
             &d3d11_ctx->swapchain))) {
-        sgpu_error(ctx, "couldn't create swapchain");
+        sgpu_log_error(ctx, "couldn't create swapchain");
         return SGPU_ERROR_UNKNOWN;
     }
 
@@ -89,7 +89,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
     if (FAILED(d3d11_ctx->swapchain->GetBuffer(
             0,
             IID_PPV_ARGS(&backbuffer)))) {
-        sgpu_error(ctx, "couldn't get swapchain backbuffer");
+        sgpu_log_error(ctx, "couldn't get swapchain backbuffer");
         return SGPU_ERROR_UNKNOWN;
     }
 
@@ -97,7 +97,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
             backbuffer.Get(),
             nullptr,
             &d3d11_ctx->render_target))) {
-        sgpu_error(ctx, "couldn't create render target view");
+        sgpu_log_error(ctx, "couldn't create render target view");
         return SGPU_ERROR_UNKNOWN;
     }
 
@@ -106,8 +106,7 @@ extern "C" sgpu_error_t sgpu_d3d11_init(sgpu_settings_t settings, sgpu_ctx_t* ct
 
 extern "C" void sgpu_d3d11_deinit(sgpu_ctx_t* ctx) {
     sgpu_d3d11_ctx* d3d11_ctx = (sgpu_d3d11_ctx*)ctx->d3d11;
-    d3d11_ctx->~sgpu_d3d11_ctx();
-    sgpu_free(ctx, ctx->d3d11);
+    delete d3d11_ctx;
 }
 
 extern "C" void sgpu_d3d11_swap_buffers(sgpu_ctx_t* ctx) {
@@ -125,7 +124,7 @@ extern "C" sgpu_error_t sgpu_d3d11_recreate_swapchain(sgpu_ctx_t* ctx) {
             ctx->settings.window_system.get_height(ctx->settings.window_system.userdata),
             DXGI_FORMAT_B8G8R8A8_UNORM,
             0))) {
-        sgpu_error(ctx, "couldn't resize swapchain");
+        sgpu_log_error(ctx, "couldn't resize swapchain");
         return SGPU_ERROR_UNKNOWN;
     }
 
@@ -133,7 +132,7 @@ extern "C" sgpu_error_t sgpu_d3d11_recreate_swapchain(sgpu_ctx_t* ctx) {
     if (FAILED(d3d11_ctx->swapchain->GetBuffer(
             0,
             IID_PPV_ARGS(&backbuffer)))) {
-        sgpu_error(ctx, "couldn't get swapchain backbuffer");
+        sgpu_log_error(ctx, "couldn't get swapchain backbuffer");
         return SGPU_ERROR_UNKNOWN;
     }
 
@@ -141,7 +140,7 @@ extern "C" sgpu_error_t sgpu_d3d11_recreate_swapchain(sgpu_ctx_t* ctx) {
             backbuffer.Get(),
             nullptr,
             &d3d11_ctx->render_target))) {
-        sgpu_error(ctx, "couldn't recreate render target view");
+        sgpu_log_error(ctx, "couldn't recreate render target view");
         return SGPU_ERROR_UNKNOWN;
     }
 
