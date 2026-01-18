@@ -1,6 +1,8 @@
 const std = @import("std");
 const Build = std.Build;
 
+pub const chader = @import("tools/chader/chader.zig");
+
 pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
