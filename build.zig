@@ -1,8 +1,6 @@
 const std = @import("std");
 const Build = std.Build;
 
-pub const chader = @import("tools/chader/chader.zig");
-
 pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -27,14 +25,7 @@ pub fn build(b: *Build) !void {
     });
     starrygpu_mod.addIncludePath(b.path("starrygpu"));
     starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/starrygpu.c") });
-    // d3d11 backend
-    if (target.result.os.tag == .windows) {
-        starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_d3d11.cc") });
-        starrygpu_mod.linkSystemLibrary("d3d11", .{ .preferred_link_mode = .static });
-        starrygpu_mod.linkSystemLibrary("dxgi", .{ .preferred_link_mode = .static });
-        starrygpu_mod.linkSystemLibrary("winmm", .{ .preferred_link_mode = .static });
-        starrygpu_mod.linkSystemLibrary("dxguid", .{ .preferred_link_mode = .static });
-    }
+    starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_gl.c") });
 
     // starry
     const starry_mod = b.addModule("starry3d", .{
@@ -52,26 +43,6 @@ pub fn build(b: *Build) !void {
     const zglfw_mod = zglfw_dep.module("root");
     starry_mod.addImport("zglfw", zglfw_mod);
     starry_mod.linkLibrary(zglfw_dep.artifact("glfw"));
-
-    const vk_registry = b.dependency("vulkan_headers", .{}).path("registry/vk.xml");
-    const vulkan_mod = b.dependency("vulkan", .{
-        .registry = vk_registry,
-    }).module("vulkan-zig");
-    starry_mod.addImport("vulkan", vulkan_mod);
-
-    const vk_kickstart_mod = b.dependency("vk_kickstart", .{
-        .target = target,
-        .optimize = optimize,
-        .registry = vk_registry,
-        .verbose = true,
-    }).module("vk-kickstart");
-    starry_mod.addImport("vk-kickstart", vk_kickstart_mod);
-
-    const vma_dep = b.dependency("VulkanMemoryAllocator", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    starry_mod.linkLibrary(vma_dep.artifact("VulkanMemoryAllocator"));
 
     const zglm_dep = b.dependency("zglm", .{
         .target = target,

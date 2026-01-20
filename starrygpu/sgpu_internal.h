@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-static inline void sgpu_log_debug(sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_debug(const sgpu_ctx_t* ctx, const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -23,7 +23,7 @@ static inline void sgpu_log_debug(sgpu_ctx_t* ctx, const char* fmt, ...) {
     }
 }
 
-static inline void sgpu_log_info(sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_info(const sgpu_ctx_t* ctx, const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -37,7 +37,7 @@ static inline void sgpu_log_info(sgpu_ctx_t* ctx, const char* fmt, ...) {
     }
 }
 
-static inline void sgpu_log_warn(sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_warn(const sgpu_ctx_t* ctx, const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -51,7 +51,7 @@ static inline void sgpu_log_warn(sgpu_ctx_t* ctx, const char* fmt, ...) {
     }
 }
 
-static inline void sgpu_log_error(sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_error(const sgpu_ctx_t* ctx, const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -62,6 +62,14 @@ static inline void sgpu_log_error(sgpu_ctx_t* ctx, const char* fmt, ...) {
         fprintf(stderr, "starrygpu: %s\n", buffer);
     } else {
         ctx->settings.logger.error(buffer);
+    }
+}
+
+static inline void sgpu_trap(const sgpu_ctx_t* ctx) {
+    if (!ctx->settings.logger.trap) {
+        abort();
+    } else {
+        ctx->settings.logger.trap();
     }
 }
 

@@ -93,7 +93,11 @@ fn starryMain(comptime settings: Settings) !void {
         stlog.info("deinitialized GLFW", .{});
     }
 
-    glfw.windowHint(.client_api, .no_api);
+    glfw.windowHint(.client_api, .opengl_api);
+    glfw.windowHint(.opengl_profile, .opengl_core_profile);
+    glfw.windowHint(.context_version_major, 4);
+    glfw.windowHint(.context_version_minor, 5);
+
     glfw.windowHint(.resizable, global.settings.window.resizable);
     // TODO idk if high dpi works lmao
     glfw.windowHint(.scale_to_monitor, !global.settings.window.high_dpi);
@@ -116,6 +120,11 @@ fn starryMain(comptime settings: Settings) !void {
         global.window.destroy();
         stlog.info("destroyed window", .{});
     }
+
+    glfw.makeContextCurrent(global.window);
+    // disable vsync on debug so that you can see the true fps
+    // which is useful for making renderers and shit
+    glfw.swapInterval(if (builtin.mode == .Debug) 1 else 0);
 
     // idk man
     global.prev_time = glfw.getTime();
@@ -160,6 +169,7 @@ fn starryMain(comptime settings: Settings) !void {
 
         glfw.pollEvents();
         pollInputStates();
+        glfw.swapBuffers(global.window);
     }
 }
 

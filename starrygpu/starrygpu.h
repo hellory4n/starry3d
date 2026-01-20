@@ -2,14 +2,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 // select backend
-#ifdef _WIN32
-#define SGPU_D3D11
-#else
-#warning unsupported backend, skill issue, compile to windows for now
+#ifdef __APPLE__
+#warning apple doesn't support opengl 4.5, skill issue
 #endif
+#define SGPU_GL
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +27,8 @@ typedef enum {
     SGPU_ERROR_INCOMPATIBLE_GPU,
 } sgpu_error_t;
 
+typedef void (*sgpu_gl_api_fn)(void);
+
 typedef struct sgpu_settings_t {
     const char* app_name; // optional
     const char* engine_name; // optional
@@ -37,17 +37,13 @@ typedef struct sgpu_settings_t {
     // TODO this should be chosen at compile time for a 0.000000000001% performance increase
     // TODO actually implement this because i can't be bothered rn
     bool validation_enabled;
+    /// The real backend API used may be able to use its own validation layers
+    bool backend_validation_enabled;
 
     struct {
-        const void* userdata; // optional
-        void* win32_handle; // if using d3d11
-
-        int32_t (*get_width)(const void* userdata);
-        int32_t (*get_height)(const void* userdata);
-
-        // TODO MSAA support
-        // TODO swapchains would probably have to be explicit if you want multiple windows
-    } window_system;
+        /// e.g. glfwGetProcAddress
+        sgpu_gl_api_fn (*load_fn)(const char* name);
+    } gl;
 
     /// optional
     struct {
@@ -55,6 +51,8 @@ typedef struct sgpu_settings_t {
         void (*info)(const char* msg);
         void (*warn)(const char* msg);
         void (*error)(const char* msg);
+        /// used for validation layers
+        void (*trap)(void);
     } logger;
 } sgpu_settings_t;
 
@@ -69,7 +67,7 @@ static inline void sgpu_settings_default(sgpu_settings_t* old) {
 
 typedef struct sgpu_ctx_t {
     sgpu_settings_t settings;
-    void* d3d11;
+    void* gl;
 
     /// validation layer stuff
     bool initialized;
@@ -122,14 +120,19 @@ typedef struct sgpu_render_pass_t {
             float r, g, b, a;
         } clear_color;
     } frame;
+    struct {
+        uint32_t width;
+        uint32_t height;
+        struct {
+            /// you can probably just pass 0 here
+            uint32_t framebuffer;
+        } gl;
+    } swapchain;
 } sgpu_render_pass_t;
 
 /// render my pass<3
 void sgpu_start_render_pass(sgpu_ctx_t* ctx, sgpu_render_pass_t render_pass);
 void sgpu_end_render_pass(sgpu_ctx_t* ctx);
-
-void sgpu_swap_buffers(sgpu_ctx_t* ctx);
-void sgpu_recreate_swapchain(sgpu_ctx_t* ctx);
 
 typedef struct sgpu_viewport_t {
     int32_t top_left_x;

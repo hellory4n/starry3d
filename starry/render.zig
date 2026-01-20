@@ -16,7 +16,6 @@ const rtshader = @import("shader/rt.zig");
 
 var ctx: struct {
     gpu: sgpu.c.sgpu_ctx_t = undefined,
-    prev_window_size: zglm.Vec2i = @splat(0),
 } = .{};
 
 const Uniforms = extern struct {
@@ -32,15 +31,8 @@ pub fn init() !void {
         .app_version = .{ .major = 1, .minor = 0, .patch = 0 },
         .engine_version = .{ .major = 1, .minor = 0, .patch = 0 },
 
-        .window_system = .{
-            .userdata = app.nativeHandle(),
-            .win32_handle = @ptrCast(@alignCast(
-                glfw.getWin32Window(@ptrCast(@alignCast(
-                    app.nativeHandle(),
-                ))),
-            )),
-            .get_width = getWidthCallback,
-            .get_height = getHeightCallback,
+        .gl = .{
+            .load_fn = @ptrCast(@alignCast(&glfw.getProcAddress)),
         },
 
         .logger = .{
@@ -138,13 +130,6 @@ pub fn draw() void {
 
     // gpu.endRenderPass();
     // gpu.submit();
-
-    // resizing it rn
-    sgpu.c.sgpu_swap_buffers(&ctx.gpu);
-    if (zglm.any(ctx.prev_window_size != app.framebufferSize())) {
-        sgpu.c.sgpu_recreate_swapchain(&ctx.gpu);
-    }
-    ctx.prev_window_size = app.framebufferSize();
 }
 
 // const RenderState = struct {
