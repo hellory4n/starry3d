@@ -1,9 +1,31 @@
 const std = @import("std");
 const Build = std.Build;
+const imgui = @import("imgui");
 
 pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const opt_imgui = b.option(
+        bool,
+        "imgui",
+        "Compile starry/starrygpu with ImGui (docking) support",
+    ) orelse true;
+
+    // deps
+    const zglfw_dep = b.dependency("zglfw", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const zglm_dep = b.dependency("zglm", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const imgui_dep = b.dependency("imgui", .{
+        .target = target,
+        .optimize = optimize,
+        .platforms = &[_]imgui.Platform{.GLFW},
+        .renderers = &[_]imgui.Renderer{.OpenGL3},
+    });
 
     // sunshine
     const sunshine_mod = b.addModule("sunshine", .{
@@ -17,15 +39,20 @@ pub fn build(b: *Build) !void {
         .target = target,
         .optimize = optimize,
         .link_libc = true,
-        // otherwise you can't even fucking include <cstddef>
-        .link_libcpp = true,
-        // seems to fuck with microslop (or wine)
-        .sanitize_c = .off,
         .root_source_file = b.path("starrygpu/root.zig"),
     });
     starrygpu_mod.addIncludePath(b.path("starrygpu"));
     starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/starrygpu.c") });
     starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_gl.c") });
+
+    if (opt_imgui) {
+        starrygpu_mod.linkLibrary(imgui_dep.artifact("cimgui"));
+        // this is required for opengl to work i guess?
+        // if (starrygpu_mod.import_table.get("gl")) |gl_module| {
+        //     starrygpu_mod.addImport("gl", gl_module);
+        // }
+        starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/imgui_impl_sgpu.c") });
+    }
 
     // starry
     const starry_mod = b.addModule("starry3d", .{
@@ -36,20 +63,10 @@ pub fn build(b: *Build) !void {
     starry_mod.addImport("sunshine", sunshine_mod);
     starry_mod.addImport("starrygpu", starrygpu_mod);
 
-    const zglfw_dep = b.dependency("zglfw", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const zglfw_mod = zglfw_dep.module("root");
-    starry_mod.addImport("zglfw", zglfw_mod);
+    starry_mod.addImport("zglfw", zglfw_dep.module("root"));
+    starry_mod.addImport("zglm", zglm_dep.module("zglm"));
     starry_mod.linkLibrary(zglfw_dep.artifact("glfw"));
-
-    const zglm_dep = b.dependency("zglm", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    const zglm_mod = zglm_dep.module("zglm");
-    starry_mod.addImport("zglm", zglm_mod);
+    starry_mod.linkLibrary(imgui_dep.artifact("cimgui"));
 
     // testing it<3
     const test_step = b.step("test", "Run starry tests");
@@ -74,7 +91,7 @@ pub fn build(b: *Build) !void {
         .optimize = optimize,
         .starry = starry_mod,
         .sunshine = sunshine_mod,
-        .zglm = zglm_mod,
+        .zglm = zglm_dep.module("zglm"),
     });
 }
 
