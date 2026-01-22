@@ -16,6 +16,6 @@ Emerson Victor Kyler Gandalf Joel Pablo Daquavious II Sr. Jr. OBE ( 🇪🇸 Ém
 
 ## fucking
 
-Conveniently every Zig binding for a graphics API seems to have some curious issue that breaks everything, so this is written in C and then used through a thin Zig wrapper.
+Conveniently every Zig binding for a graphics API seems to have some curious issue that breaks everything, so this is written in C and then used through a Zig wrapper. This is probably dumb and stupid.
 
-Supported backends are Direct3D11 and Vulkan. Direct3D11 is intended as more of a sanity check (since it's not cross platform)
+Currently the only supported backend is OpenGL 4.5. I'd like to support Vulkan eventually but it wears me out.

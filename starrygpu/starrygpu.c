@@ -49,6 +49,14 @@ void sgpu_start_render_pass(sgpu_ctx_t* ctx, sgpu_render_pass_t render_pass) {
 #endif
 }
 
+void sgpu_submit(sgpu_ctx_t* ctx) {
+#ifdef SGPU_GL
+    sgpu_gl_submit(ctx);
+#else
+    (void)ctx;
+#endif
+}
+
 void sgpu_end_render_pass(sgpu_ctx_t* ctx) {
 #ifdef SGPU_GL
     sgpu_gl_end_render_pass(ctx);

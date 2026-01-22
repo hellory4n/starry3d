@@ -113,6 +113,12 @@ sgpu_device_t sgpu_gl_query_device(sgpu_ctx_t* ctx) {
     return gl->device_info;
 }
 
+void sgpu_gl_submit(sgpu_ctx_t* ctx) {
+    (void)ctx;
+    // TODO manage an internal command buffer for multithreading
+    // for now this is a noop
+}
+
 void sgpu_gl_start_render_pass(sgpu_ctx_t* ctx, sgpu_render_pass_t pass) {
     (void)ctx;
 

@@ -15,7 +15,7 @@ const world = @import("world.zig");
 const rtshader = @import("shader/rt.zig");
 
 var ctx: struct {
-    gpu: sgpu.c.sgpu_ctx_t = undefined,
+    gpu: sgpu.Context = undefined,
 } = .{};
 
 const Uniforms = extern struct {
@@ -25,7 +25,7 @@ const Uniforms = extern struct {
 };
 
 pub fn init() !void {
-    try sgpu.check(sgpu.c.sgpu_init(.{
+    ctx.gpu = try sgpu.Context.init(.{
         .app_name = "Balls",
         .engine_name = "libballs",
         .app_version = .{ .major = 1, .minor = 0, .patch = 0 },
@@ -34,14 +34,7 @@ pub fn init() !void {
         .gl = .{
             .load_fn = @ptrCast(@alignCast(&glfw.getProcAddress)),
         },
-
-        .logger = .{
-            .debug = logDebugCallback,
-            .info = logInfoCallback,
-            .warn = logWarnCallback,
-            .@"error" = logErrorCallback,
-        },
-    }, &ctx.gpu));
+    });
 
     // const vert_shader = try gpu.Shader.init(.{
     //     .src_glsl = @embedFile("shader/tri.vert"),
@@ -68,53 +61,35 @@ pub fn init() !void {
     log.info("initialized renderer", .{});
 }
 
-fn getWidthCallback(window: ?*const anyopaque) callconv(.c) i32 {
-    _ = window;
-    return app.framebufferSize()[0];
-}
-
-fn getHeightCallback(window: ?*const anyopaque) callconv(.c) i32 {
-    _ = window;
-    return app.framebufferSize()[1];
-}
-
-fn logDebugCallback(msg: ?[*:0]const u8) callconv(.c) void {
-    std.log.scoped(.starrygpu).debug("{s}", .{msg.?});
-}
-
-fn logInfoCallback(msg: ?[*:0]const u8) callconv(.c) void {
-    std.log.scoped(.starrygpu).info("{s}", .{msg.?});
-}
-
-fn logWarnCallback(msg: ?[*:0]const u8) callconv(.c) void {
-    std.log.scoped(.starrygpu).warn("{s}", .{msg.?});
-}
-
-fn logErrorCallback(msg: ?[*:0]const u8) callconv(.c) void {
-    std.log.scoped(.starrygpu).err("{s}", .{msg.?});
-}
-
 pub fn deinit() void {
     // global.pipeline.deinit();
 
     log.info("deinitializing renderer", .{});
-    sgpu.c.sgpu_deinit(&ctx.gpu);
+    ctx.gpu.deinit();
 }
 
 pub fn draw() void {
     // TODO perhaps move some crap out of here into app.zig
-    sgpu.c.sgpu_set_viewport(&ctx.gpu, .{
+    ctx.gpu.setViewport(.{
         .width = app.framebufferSize()[0],
         .height = app.framebufferSize()[1],
+        .top_left_x = 0,
+        .top_left_y = 0,
+        .min_depth = -1,
+        .max_depth = 1,
     });
-    sgpu.c.sgpu_start_render_pass(&ctx.gpu, .{
+    ctx.gpu.startRenderPass(.{
         .frame = .{
-            .load_action = sgpu.c.SGPU_LOAD_ACTION_CLEAR,
-            .store_action = sgpu.c.SGPU_STORE_ACTION_IGNORE,
+            .load_action = .clear,
+            .store_action = .ignore,
             .clear_color = .{ .r = 1, .g = 0, .b = 0, .a = 1 },
         },
+        .swapchain = .{
+            .width = @intCast(app.framebufferSize()[0]),
+            .height = @intCast(app.framebufferSize()[1]),
+        },
     });
-    sgpu.c.sgpu_end_render_pass(&ctx.gpu);
+    ctx.gpu.endRenderPass();
 
     // gpu.startRenderPass(.{
     //     .frame = .{

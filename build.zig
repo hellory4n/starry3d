@@ -1,15 +1,9 @@
 const std = @import("std");
 const Build = std.Build;
-const imgui = @import("imgui");
 
 pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const opt_imgui = b.option(
-        bool,
-        "imgui",
-        "Compile starry/starrygpu with ImGui (docking) support",
-    ) orelse true;
 
     // deps
     const zglfw_dep = b.dependency("zglfw", .{
@@ -19,12 +13,6 @@ pub fn build(b: *Build) !void {
     const zglm_dep = b.dependency("zglm", .{
         .target = target,
         .optimize = optimize,
-    });
-    const imgui_dep = b.dependency("imgui", .{
-        .target = target,
-        .optimize = optimize,
-        .platforms = &[_]imgui.Platform{.GLFW},
-        .renderers = &[_]imgui.Renderer{.OpenGL3},
     });
 
     // sunshine
@@ -45,15 +33,6 @@ pub fn build(b: *Build) !void {
     starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/starrygpu.c") });
     starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_gl.c") });
 
-    if (opt_imgui) {
-        starrygpu_mod.linkLibrary(imgui_dep.artifact("cimgui"));
-        // this is required for opengl to work i guess?
-        // if (starrygpu_mod.import_table.get("gl")) |gl_module| {
-        //     starrygpu_mod.addImport("gl", gl_module);
-        // }
-        starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/imgui_impl_sgpu.c") });
-    }
-
     // starry
     const starry_mod = b.addModule("starry3d", .{
         .target = target,
@@ -66,7 +45,6 @@ pub fn build(b: *Build) !void {
     starry_mod.addImport("zglfw", zglfw_dep.module("root"));
     starry_mod.addImport("zglm", zglm_dep.module("zglm"));
     starry_mod.linkLibrary(zglfw_dep.artifact("glfw"));
-    starry_mod.linkLibrary(imgui_dep.artifact("cimgui"));
 
     // testing it<3
     const test_step = b.step("test", "Run starry tests");

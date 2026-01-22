@@ -96,6 +96,9 @@ typedef struct sgpu_device_t {
 /// Returns info about the GPU being used
 sgpu_device_t sgpu_query_device(sgpu_ctx_t* ctx);
 
+/// Poor man's command buffer
+void sgpu_submit(sgpu_ctx_t* ctx);
+
 typedef enum sgpu_load_action_t {
     /// Keep existing contents
     SGPU_LOAD_ACTION_LOAD,
