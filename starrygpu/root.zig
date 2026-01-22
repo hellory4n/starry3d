@@ -77,45 +77,38 @@ fn defaultLoggerTrap() callconv(.c) void {
     @trap();
 }
 
-pub const Context = struct {
-    /// c context
-    c: c.sgpu_ctx_t,
+/// Initializes the graphics context
+pub fn init(settings: Settings) Error!void {
+    try check(c.sgpu_init(@bitCast(settings)));
+}
 
-    /// Initializes the graphics context
-    pub fn init(settings: Settings) Error!Context {
-        var ctx: c.sgpu_ctx_t = undefined;
-        try check(c.sgpu_init(@bitCast(settings), &ctx));
-        return .{ .c = ctx };
-    }
+/// Deinitializes the graphics context
+pub fn deinit() void {
+    c.sgpu_deinit();
+}
 
-    /// Deinitializes the graphics context
-    pub fn deinit(ctx: *Context) void {
-        c.sgpu_deinit(&ctx.c);
-    }
+/// Returns info about the GPU being used
+pub fn queryDevice() Device {
+    return @bitCast(c.sgpu_query_device());
+}
 
-    /// Returns info about the GPU being used
-    pub fn queryDevice(ctx: *Context) Device {
-        return c.sgpu_query_device(&ctx.c);
-    }
+/// Poor man's command buffer
+pub fn submit() void {
+    return c.sgpu_submit();
+}
 
-    /// Poor man's command buffer
-    pub fn submit(ctx: *Context) void {
-        return c.sgpu_submit(&ctx.c);
-    }
+/// render my pass<3
+pub fn startRenderPass(pass: RenderPass) void {
+    c.sgpu_start_render_pass(@bitCast(pass));
+}
 
-    /// render my pass<3
-    pub fn startRenderPass(ctx: *Context, pass: RenderPass) void {
-        c.sgpu_start_render_pass(&ctx.c, @bitCast(pass));
-    }
+pub fn endRenderPass() void {
+    c.sgpu_end_render_pass();
+}
 
-    pub fn endRenderPass(ctx: *Context) void {
-        c.sgpu_end_render_pass(&ctx.c);
-    }
-
-    pub fn setViewport(ctx: *Context, viewport: Viewport) void {
-        c.sgpu_set_viewport(&ctx.c, @bitCast(viewport));
-    }
-};
+pub fn setViewport(viewport: Viewport) void {
+    c.sgpu_set_viewport(@bitCast(viewport));
+}
 
 pub const Device = extern struct {
     vendor_name_cstr: [*:0]const u8,

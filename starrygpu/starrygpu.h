@@ -25,6 +25,9 @@ typedef enum {
     SGPU_ERROR_OUT_OF_CPU_MEMORY,
     SGPU_ERROR_OUT_OF_GPU_MEMORY,
     SGPU_ERROR_INCOMPATIBLE_GPU,
+    SGPU_ERROR_TOO_MANY_HANDLES,
+    SGPU_ERROR_BROKEN_HANDLE,
+    SGPU_ERROR_SHADER_COMPILATION_FAILED,
 } sgpu_error_t;
 
 typedef void (*sgpu_gl_api_fn)(void);
@@ -65,19 +68,11 @@ static inline void sgpu_settings_default(sgpu_settings_t* old) {
     }
 }
 
-typedef struct sgpu_ctx_t {
-    sgpu_settings_t settings;
-    void* gl;
-
-    /// validation layer stuff
-    bool initialized;
-} sgpu_ctx_t;
-
 /// Initializes the graphics context
-sgpu_error_t sgpu_init(sgpu_settings_t settings, sgpu_ctx_t* out_ctx);
+sgpu_error_t sgpu_init(sgpu_settings_t settings);
 
 /// Deinitializes the graphics context
-void sgpu_deinit(sgpu_ctx_t* ctx);
+void sgpu_deinit(void);
 
 typedef struct sgpu_device_t {
     const char* vendor_name;
@@ -94,10 +89,18 @@ typedef struct sgpu_device_t {
 } sgpu_device_t;
 
 /// Returns info about the GPU being used
-sgpu_device_t sgpu_query_device(sgpu_ctx_t* ctx);
+sgpu_device_t sgpu_query_device(void);
+
+typedef enum sgpu_backend_t {
+    SGPU_BACKEND_UNSUPPORTED,
+    SGPU_BACKEND_GLCORE,
+} sgpu_backend_t;
+
+/// Returns the backend being used
+sgpu_backend_t sgpu_query_backend(void);
 
 /// Poor man's command buffer
-void sgpu_submit(sgpu_ctx_t* ctx);
+void sgpu_submit(void);
 
 typedef enum sgpu_load_action_t {
     /// Keep existing contents
@@ -134,8 +137,8 @@ typedef struct sgpu_render_pass_t {
 } sgpu_render_pass_t;
 
 /// render my pass<3
-void sgpu_start_render_pass(sgpu_ctx_t* ctx, sgpu_render_pass_t render_pass);
-void sgpu_end_render_pass(sgpu_ctx_t* ctx);
+void sgpu_start_render_pass(sgpu_render_pass_t render_pass);
+void sgpu_end_render_pass(void);
 
 typedef struct sgpu_viewport_t {
     int32_t top_left_x;
@@ -146,7 +149,31 @@ typedef struct sgpu_viewport_t {
     float max_depth;
 } sgpu_viewport_t;
 
-void sgpu_set_viewport(sgpu_ctx_t* ctx, sgpu_viewport_t viewport);
+void sgpu_set_viewport(sgpu_viewport_t viewport);
+
+typedef enum sgpu_shader_stage_t {
+    SGPU_SHADER_STAGE_VERTEX,
+    SGPU_SHADER_STAGE_FRAGMENT,
+    SGPU_SHADER_STAGE_COMPUTE,
+} sgpu_shader_stage_t;
+
+typedef struct sgpu_shader_settings_t {
+    /// null-terminated GLSL on OpenGL
+    const char* src;
+    /// doesn't include the null terminator for GLSL
+    size_t src_len;
+    /// defaults to "main", ignored in OpenGL
+    const char* entry_point;
+    sgpu_shader_stage_t stage;
+} sgpu_shader_settings_t;
+
+typedef struct sgpu_shader_t {
+    uint32_t id;
+} sgpu_shader_t;
+
+/// Outputs the shader into out, if compilation succeeds.
+sgpu_error_t sgpu_compile_shader(sgpu_shader_settings_t settings, sgpu_shader_t* out_shader);
+void sgpu_deinit_shader(sgpu_shader_t shader);
 
 #ifdef __cplusplus
 } // extern "C"

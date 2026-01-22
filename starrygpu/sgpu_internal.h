@@ -9,67 +9,89 @@
 extern "C" {
 #endif
 
-static inline void sgpu_log_debug(const sgpu_ctx_t* ctx, const char* fmt, ...) {
+#define SGPU_LENGTHOF(array) sizeof(array) / sizeof(array[0])
+
+typedef struct sgpu_backend_shader_t {
+    sgpu_shader_settings_t settings;
+    union {
+        struct {
+            uint32_t id;
+        } gl;
+    } u;
+    bool occupied;
+} sgpu_backend_shader_t;
+
+typedef struct sgpu_ctx_t {
+    sgpu_settings_t settings;
+    void* gl;
+
+    /// validation layer stuff
+    bool initialized;
+} sgpu_ctx_t;
+
+extern sgpu_ctx_t sgpu_ctx;
+
+static inline void sgpu_log_debug(const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
     vsnprintf(buffer, sizeof(buffer), fmt, arg);
     va_end(arg);
 
-    if (!ctx->settings.logger.debug) {
+    if (!sgpu_ctx.settings.logger.debug) {
         fprintf(stderr, "starrygpu: %s\n", buffer);
     } else {
-        ctx->settings.logger.debug(buffer);
+        sgpu_ctx.settings.logger.debug(buffer);
     }
 }
 
-static inline void sgpu_log_info(const sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_info(const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
     vsnprintf(buffer, sizeof(buffer), fmt, arg);
     va_end(arg);
 
-    if (!ctx->settings.logger.info) {
+    if (!sgpu_ctx.settings.logger.info) {
         fprintf(stderr, "starrygpu: %s\n", buffer);
     } else {
-        ctx->settings.logger.info(buffer);
+        sgpu_ctx.settings.logger.info(buffer);
     }
 }
 
-static inline void sgpu_log_warn(const sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_warn(const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
     vsnprintf(buffer, sizeof(buffer), fmt, arg);
     va_end(arg);
 
-    if (!ctx->settings.logger.warn) {
+    if (!sgpu_ctx.settings.logger.warn) {
         fprintf(stderr, "starrygpu: %s\n", buffer);
     } else {
-        ctx->settings.logger.warn(buffer);
+        sgpu_ctx.settings.logger.warn(buffer);
     }
 }
 
-static inline void sgpu_log_error(const sgpu_ctx_t* ctx, const char* fmt, ...) {
+static inline void sgpu_log_error(const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
     vsnprintf(buffer, sizeof(buffer), fmt, arg);
     va_end(arg);
 
-    if (!ctx->settings.logger.error) {
+    if (!sgpu_ctx.settings.logger.error) {
         fprintf(stderr, "starrygpu: %s\n", buffer);
     } else {
-        ctx->settings.logger.error(buffer);
+        sgpu_ctx.settings.logger.error(buffer);
     }
 }
 
-static inline void sgpu_trap(const sgpu_ctx_t* ctx) {
-    if (!ctx->settings.logger.trap) {
+static inline void sgpu_trap(void) {
+    if (!sgpu_ctx.settings.logger.trap) {
         abort();
     } else {
-        ctx->settings.logger.trap();
+        sgpu_ctx.settings.logger.trap();
     }
 }
 

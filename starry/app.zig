@@ -56,12 +56,12 @@ const GlobalState = struct {
     prev_time: f64 = 0,
     smooth_dt: f64 = 1 / 60, // initial guess
 };
-var global: GlobalState = .{};
+var ctx: GlobalState = .{};
 
 /// Runs the engine, and eventually, your app :)
 pub fn run(alloc: std.mem.Allocator, comptime settings: Settings) void {
-    global.settings = settings;
-    global.core_alloc = alloc;
+    ctx.settings = settings;
+    ctx.core_alloc = alloc;
     const stlog = std.log.scoped(.starry);
 
     // the rest of the engine has to be wrapped so that errors are logged properly
@@ -72,8 +72,6 @@ pub fn run(alloc: std.mem.Allocator, comptime settings: Settings) void {
 }
 
 fn starryMain(comptime settings: Settings) !void {
-    _ = settings;
-
     // TODO clean this up
     const stlog = std.log.scoped(.starry);
     stlog.info("starry v{d}.{d}.{d}{s}{s}", .{
@@ -98,18 +96,18 @@ fn starryMain(comptime settings: Settings) !void {
     glfw.windowHint(.context_version_major, 4);
     glfw.windowHint(.context_version_minor, 5);
 
-    glfw.windowHint(.resizable, global.settings.window.resizable);
+    glfw.windowHint(.resizable, ctx.settings.window.resizable);
     // TODO idk if high dpi works lmao
-    glfw.windowHint(.scale_to_monitor, !global.settings.window.high_dpi);
-    glfw.windowHint(.scale_framebuffer, !global.settings.window.high_dpi);
+    glfw.windowHint(.scale_to_monitor, !ctx.settings.window.high_dpi);
+    glfw.windowHint(.scale_framebuffer, !ctx.settings.window.high_dpi);
 
-    glfw.windowHintString(.x11_class_name, global.settings.name);
-    glfw.windowHintString(.wayland_app_id, global.settings.name);
+    glfw.windowHintString(.x11_class_name, ctx.settings.name);
+    glfw.windowHintString(.wayland_app_id, ctx.settings.name);
 
-    global.window = try glfw.Window.create(
-        @intCast(global.settings.window.size[0]),
-        @intCast(global.settings.window.size[1]),
-        global.settings.name,
+    ctx.window = try glfw.Window.create(
+        @intCast(ctx.settings.window.size[0]),
+        @intCast(ctx.settings.window.size[1]),
+        ctx.settings.name,
         null,
     );
     stlog.info("created window for {s} on {s}", .{
@@ -117,59 +115,89 @@ fn starryMain(comptime settings: Settings) !void {
         @tagName(builtin.os.tag),
     });
     defer {
-        global.window.destroy();
+        ctx.window.destroy();
         stlog.info("destroyed window", .{});
     }
 
-    glfw.makeContextCurrent(global.window);
+    glfw.makeContextCurrent(ctx.window);
     // disable vsync on debug so that you can see the true fps
     // which is useful for making renderers and shit
     glfw.swapInterval(if (builtin.mode == .Debug) 1 else 0);
 
     // idk man
-    global.prev_time = glfw.getTime();
+    ctx.prev_time = glfw.getTime();
 
     // 2050 different callbacks
-    _ = glfw.setWindowIconifyCallback(global.window, struct {
+    _ = glfw.setWindowIconifyCallback(ctx.window, struct {
         pub fn callback(window: *glfw.Window, minimized: glfw.Bool) callconv(.c) void {
             _ = window;
-            global.minimized = @intFromEnum(minimized) == 1;
+            ctx.minimized = @intFromEnum(minimized) == 1;
         }
     }.callback);
+
+    // gpu fuckery
+    try sgpu.init(.{
+        .app_name = settings.name.ptr,
+        .engine_name = "Starry3D",
+        .app_version = .{
+            .major = @intCast(settings.version.major),
+            .minor = @intCast(settings.version.minor),
+            .patch = @intCast(settings.version.patch),
+        },
+        .engine_version = .{
+            .major = @intCast(root.version.major),
+            .minor = @intCast(root.version.minor),
+            .patch = @intCast(root.version.patch),
+        },
+
+        .gl = .{
+            .load_fn = @ptrCast(@alignCast(&glfw.getProcAddress)),
+        },
+    });
+    defer sgpu.deinit();
 
     try render.init();
     defer render.deinit();
 
     // Job Done!
-    if (global.settings.init) |realInitFn| {
+    if (ctx.settings.init) |realInitFn| {
         try realInitFn();
     }
     defer {
-        if (global.settings.deinit) |realDeinitFn| {
+        if (ctx.settings.deinit) |realDeinitFn| {
             realDeinitFn();
         }
     }
 
     // main loop
-    while (!global.window.shouldClose()) {
-        if (global.settings.update) |realUpdateFn| {
-            // f64 -> f32 because most game code uses f32
-            realUpdateFn(@floatCast(deltaTime()));
-        }
+    while (!ctx.window.shouldClose()) {
+        sgpu.setViewport(.{
+            .width = framebufferSize()[0],
+            .height = framebufferSize()[1],
+            .top_left_x = 0,
+            .top_left_y = 0,
+            .min_depth = -1,
+            .max_depth = 1,
+        });
 
         if (!isMinimized()) {
             render.draw();
         }
 
+        if (ctx.settings.update) |realUpdateFn| {
+            // f64 -> f32 because most game code uses f32
+            realUpdateFn(@floatCast(deltaTime()));
+        }
+
         // housekeeping type shit
-        const alpha = 0.1; // controls how smooth the smoothing is
-        global.smooth_dt = global.smooth_dt * (1.0 - alpha) + deltaTime() * alpha;
-        global.prev_time = secondsSinceStart();
-        global.prev_mouse_pos = mousePosition();
+        const alpha = 0.1; // controls how smooth the smoothing is i have a way with words
+        ctx.smooth_dt = ctx.smooth_dt * (1.0 - alpha) + deltaTime() * alpha;
+        ctx.prev_time = secondsSinceStart();
+        ctx.prev_mouse_pos = mousePosition();
 
         glfw.pollEvents();
         pollInputStates();
-        glfw.swapBuffers(global.window);
+        glfw.swapBuffers(ctx.window);
     }
 }
 
@@ -383,89 +411,89 @@ fn pollInputStates() void {
             continue;
         }
 
-        const is_down = global.window.getKey(@enumFromInt(key)) == .press;
-        const was_down = global.key_state[key].isPressed();
+        const is_down = ctx.window.getKey(@enumFromInt(key)) == .press;
+        const was_down = ctx.key_state[key].isPressed();
 
         if (!was_down and is_down) {
-            global.key_state[key] = .just_pressed;
+            ctx.key_state[key] = .just_pressed;
         } else if (was_down and is_down) {
-            global.key_state[key] = .held;
+            ctx.key_state[key] = .held;
         } else if (was_down and !is_down) {
-            global.key_state[key] = .just_released;
+            ctx.key_state[key] = .just_released;
         } else {
-            global.key_state[key] = .not_pressed;
+            ctx.key_state[key] = .not_pressed;
         }
     }
 
     for (@intFromEnum(MouseButton.btn_1)..@intFromEnum(MouseButton.last) + 1) |btn| {
         // glfw and starry keys have the same values
-        const is_down = global.window.getMouseButton(@enumFromInt(btn)) == .press;
-        const was_down = global.mouse_state[btn].isPressed();
+        const is_down = ctx.window.getMouseButton(@enumFromInt(btn)) == .press;
+        const was_down = ctx.mouse_state[btn].isPressed();
 
         if (!was_down and is_down) {
-            global.mouse_state[btn] = .just_pressed;
+            ctx.mouse_state[btn] = .just_pressed;
         } else if (was_down and is_down) {
-            global.mouse_state[btn] = .held;
+            ctx.mouse_state[btn] = .held;
         } else if (was_down and !is_down) {
-            global.mouse_state[btn] = .just_released;
+            ctx.mouse_state[btn] = .just_released;
         } else {
-            global.mouse_state[btn] = .not_pressed;
+            ctx.mouse_state[btn] = .not_pressed;
         }
     }
 }
 
 pub fn isKeyJustPressed(key: Key) bool {
-    return global.key_state[@intFromEnum(key)] == .just_pressed;
+    return ctx.key_state[@intFromEnum(key)] == .just_pressed;
 }
 
 pub fn isKeyJustReleased(key: Key) bool {
-    return global.key_state[@intFromEnum(key)] == .just_released;
+    return ctx.key_state[@intFromEnum(key)] == .just_released;
 }
 
 pub fn isKeyHeld(key: Key) bool {
-    return global.key_state[@intFromEnum(key)].isPressed();
+    return ctx.key_state[@intFromEnum(key)].isPressed();
 }
 
 pub fn isKeyNotPressed(key: Key) bool {
-    return !global.key_state[@intFromEnum(key)].isPressed();
+    return !ctx.key_state[@intFromEnum(key)].isPressed();
 }
 
 pub fn isMouseButtonJustPressed(btn: MouseButton) bool {
-    return global.mouse_state[@intFromEnum(btn)] == .just_pressed;
+    return ctx.mouse_state[@intFromEnum(btn)] == .just_pressed;
 }
 
 pub fn isMouseButtonJustReleased(btn: MouseButton) bool {
-    return global.mouse_state[@intFromEnum(btn)] == .just_released;
+    return ctx.mouse_state[@intFromEnum(btn)] == .just_released;
 }
 
 pub fn isMouseButtonHeld(btn: MouseButton) bool {
-    return global.mouse_state[@intFromEnum(btn)].isPressed();
+    return ctx.mouse_state[@intFromEnum(btn)].isPressed();
 }
 
 pub fn isMouseButtonNotPressed(btn: MouseButton) bool {
-    return !global.mouse_state[@intFromEnum(btn)].isPressed();
+    return !ctx.mouse_state[@intFromEnum(btn)].isPressed();
 }
 
 pub fn mousePosition() zglm.Vec2f {
-    const pos = global.window.getCursorPos();
+    const pos = ctx.window.getCursorPos();
     return .{ @floatCast(pos[0]), @floatCast(pos[1]) };
 }
 
 /// Returns the difference between the last frame's mouse position and the current frame's mouse
 /// position.
 pub fn deltaMousePosition() zglm.Vec2f {
-    return mousePosition() - global.prev_mouse_pos;
+    return mousePosition() - ctx.prev_mouse_pos;
 }
 
 /// Returns the size of the framebuffer.
 pub fn framebufferSize() zglm.Vec2i {
-    const size: [2]c_int = global.window.getFramebufferSize();
+    const size: [2]c_int = ctx.window.getFramebufferSize();
     return .{ @intCast(size[0]), @intCast(size[1]) };
 }
 
 /// Returns the size of the framebuffer but in floats.
 pub fn framebufferSizef() zglm.Vec2f {
-    const size: [2]c_int = global.window.getFramebufferSize();
+    const size: [2]c_int = ctx.window.getFramebufferSize();
     return .{ @floatFromInt(size[0]), @floatFromInt(size[1]) };
 }
 
@@ -477,20 +505,20 @@ pub fn aspectRatio() f32 {
 
 /// Returns true if high DPI is enabled and the app is actually running in a high DPI setting
 pub fn isHighDpi() bool {
-    return global.settings.window.high_dpi and
-        std.mem.eql(f32, global.window.getContentScale(), [2]f32{ 1, 1 });
+    return ctx.settings.window.high_dpi and
+        std.mem.eql(f32, ctx.window.getContentScale(), [2]f32{ 1, 1 });
 }
 
 /// Returns the DPI scaling factor (window pixels to framebuffer pixels)
 pub fn dpiScale() f32 {
     // TODO pretty sure all platforms use the same scale horizontally and vertically but i'm not sure
-    return global.window.getContentScale()[0];
+    return ctx.window.getContentScale()[0];
 }
 
 /// If true, locks the mouse inside the window and enables raw mouse input, otherwise unlocks it.
 pub fn lockMouse(lock: bool) void {
     // setInputMode returning an error is really unlikely
-    _ = global.window.setInputMode(.cursor, if (lock) .disabled else .normal) catch |err| {
+    _ = ctx.window.setInputMode(.cursor, if (lock) .disabled else .normal) catch |err| {
         std.log.err("lockMouse: {s}", .{@errorName(err)});
     };
 }
@@ -498,7 +526,7 @@ pub fn lockMouse(lock: bool) void {
 /// Returns true if the mouse is locked inside the window (this may toggle a few frames later)
 pub fn isMouseLocked() bool {
     // getInputMode returning an error is really unlikely
-    const input_mode = global.window.getInputMode(.cursor) catch |err| {
+    const input_mode = ctx.window.getInputMode(.cursor) catch |err| {
         std.log.err("isMouseLocked: {s}", .{@errorName(err)});
         return false;
     };
@@ -510,17 +538,17 @@ pub fn isMouseLocked() bool {
 
 /// Asks nicely for the app to close (the app can handle it and not actually quit)
 pub fn requestQuit() void {
-    global.window.setShouldClose(true);
+    ctx.window.setShouldClose(true);
 }
 
 /// Cancels a pending quit from `requestQuit`
 pub fn cancelQuit() void {
-    global.window.setShouldClose(false);
+    ctx.window.setShouldClose(false);
 }
 
 /// Truly quits the application (the app doesn't handle the quit event)
 pub fn forceQuit() void {
-    global.window.setShouldClose(true); // TODO make this different
+    ctx.window.setShouldClose(true); // TODO make this different
 }
 
 /// Returns the time in seconds since the app started
@@ -530,12 +558,12 @@ pub fn secondsSinceStart() f64 {
 
 /// Returns the time it took to run the last frame
 pub fn deltaTime() f64 {
-    return secondsSinceStart() - global.prev_time;
+    return secondsSinceStart() - ctx.prev_time;
 }
 
 /// Returns the average/smoothed FPS the app is running at
 pub fn averageFps() f64 {
-    return 1 / global.smooth_dt;
+    return 1 / ctx.smooth_dt;
 }
 
 /// Sets the window title to something else duh
@@ -544,16 +572,16 @@ pub fn setWindowTitle(title: []const u8) void {
     defer scratch.deinit();
     const title_cstr =
         std.mem.concatWithSentinel(scratch.allocator(), u8, &[_]u8{title}, 0) catch unreachable;
-    global.window.setTitle(title_cstr);
+    ctx.window.setTitle(title_cstr);
 }
 
 /// Returns the "native" handle for the window. Except it actually isn't native, it's using whatever
 /// windowing API the engine is using. You can then get the real native handle from that.
 pub fn nativeHandle() *anyopaque {
-    return global.window;
+    return ctx.window;
 }
 
 /// If true, the window is minimized. Else, it's restored/visible.
 pub fn isMinimized() bool {
-    return global.minimized;
+    return ctx.minimized;
 }

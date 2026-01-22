@@ -14,9 +14,7 @@ const app = @import("app.zig");
 const world = @import("world.zig");
 const rtshader = @import("shader/rt.zig");
 
-var ctx: struct {
-    gpu: sgpu.Context = undefined,
-} = .{};
+var ctx: struct {} = .{};
 
 const Uniforms = extern struct {
     u_model: [16]f32 = zglm.Mat4x4f.identity().toArray1D(),
@@ -25,17 +23,6 @@ const Uniforms = extern struct {
 };
 
 pub fn init() !void {
-    ctx.gpu = try sgpu.Context.init(.{
-        .app_name = "Balls",
-        .engine_name = "libballs",
-        .app_version = .{ .major = 1, .minor = 0, .patch = 0 },
-        .engine_version = .{ .major = 1, .minor = 0, .patch = 0 },
-
-        .gl = .{
-            .load_fn = @ptrCast(@alignCast(&glfw.getProcAddress)),
-        },
-    });
-
     // const vert_shader = try gpu.Shader.init(.{
     //     .src_glsl = @embedFile("shader/tri.vert"),
     //     .stage = .vertex,
@@ -64,21 +51,12 @@ pub fn init() !void {
 pub fn deinit() void {
     // global.pipeline.deinit();
 
-    log.info("deinitializing renderer", .{});
-    ctx.gpu.deinit();
+    log.info("deinitialized renderer", .{});
 }
 
 pub fn draw() void {
     // TODO perhaps move some crap out of here into app.zig
-    ctx.gpu.setViewport(.{
-        .width = app.framebufferSize()[0],
-        .height = app.framebufferSize()[1],
-        .top_left_x = 0,
-        .top_left_y = 0,
-        .min_depth = -1,
-        .max_depth = 1,
-    });
-    ctx.gpu.startRenderPass(.{
+    sgpu.startRenderPass(.{
         .frame = .{
             .load_action = .clear,
             .store_action = .ignore,
@@ -89,7 +67,7 @@ pub fn draw() void {
             .height = @intCast(app.framebufferSize()[1]),
         },
     });
-    ctx.gpu.endRenderPass();
+    sgpu.endRenderPass();
 
     // gpu.startRenderPass(.{
     //     .frame = .{
@@ -104,7 +82,7 @@ pub fn draw() void {
     // gpu.draw(0, 3, 1);
 
     // gpu.endRenderPass();
-    // gpu.submit();
+    sgpu.submit();
 }
 
 // const RenderState = struct {

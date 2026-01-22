@@ -13,28 +13,28 @@ typedef struct sgpu_gl_ctx_t {
     bool has_device_info;
 } sgpu_gl_ctx_t;
 
-sgpu_error_t sgpu_gl_init(sgpu_settings_t settings, sgpu_ctx_t* ctx) {
+sgpu_error_t sgpu_gl_init(sgpu_settings_t settings) {
     int version = gladLoadGL(settings.gl.load_fn);
     if (!version) {
-        sgpu_log_error(ctx, "unsupported OpenGL version!");
+        sgpu_log_error("unsupported OpenGL version!");
         if (glGetString) {
-            sgpu_log_error(ctx, "expected v4.5 core, got %s", glGetString(GL_VERSION));
+            sgpu_log_error("expected v4.5 core, got %s", glGetString(GL_VERSION));
         } else {
-            sgpu_log_error(ctx, "expected v4.5 core, got unknown version");
+            sgpu_log_error("expected v4.5 core, got unknown version");
         }
         return SGPU_ERROR_INCOMPATIBLE_GPU;
     }
 
-    ctx->gl = malloc(sizeof(sgpu_gl_ctx_t));
+    sgpu_ctx.gl = malloc(sizeof(sgpu_gl_ctx_t));
 
     if (settings.backend_validation_enabled) {
         glEnable(GL_DEBUG_OUTPUT);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-        glDebugMessageCallback(_sgpu_gl_debug_callback, ctx);
+        glDebugMessageCallback(_sgpu_gl_debug_callback, NULL);
     }
 
     // cache the device already so it doesn't have to do more api calls
-    sgpu_query_device(ctx);
+    sgpu_query_device();
 
     // dummy vao so it stops bitching with bufferless rendering
     GLuint vao;
@@ -49,29 +49,29 @@ static void _sgpu_gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenu
     (void)source;
     (void)type;
     (void)length;
-    const sgpu_ctx_t* ctx = data;
+    (void)data;
 
     switch (severity) {
     case GL_DEBUG_SEVERITY_HIGH:
-        sgpu_log_error(ctx, "OpenGL %i: %s", id, msg);
-        sgpu_trap(ctx);
+        sgpu_log_error("OpenGL %i: %s", id, msg);
+        sgpu_trap();
         break;
 
     case GL_DEBUG_SEVERITY_MEDIUM:
     case GL_DEBUG_SEVERITY_LOW:
-        sgpu_log_warn(ctx, "OpenGL %i: %s", id, msg);
+        sgpu_log_warn("OpenGL %i: %s", id, msg);
         break;
 
     default:
-        sgpu_log_info(ctx, "OpenGL %i: %s", id, msg);
+        sgpu_log_info("OpenGL %i: %s", id, msg);
         break;
     }
 }
 
-void sgpu_gl_deinit(sgpu_ctx_t* ctx) { free(ctx->gl); }
+void sgpu_gl_deinit(void) { free(sgpu_ctx.gl); }
 
-sgpu_device_t sgpu_gl_query_device(sgpu_ctx_t* ctx) {
-    sgpu_gl_ctx_t* gl = ctx->gl;
+sgpu_device_t sgpu_gl_query_device(void) {
+    sgpu_gl_ctx_t* gl = sgpu_ctx.gl;
     // calling opengl is expensive! or smth
     if (gl->has_device_info) {
         return gl->device_info;
@@ -113,15 +113,12 @@ sgpu_device_t sgpu_gl_query_device(sgpu_ctx_t* ctx) {
     return gl->device_info;
 }
 
-void sgpu_gl_submit(sgpu_ctx_t* ctx) {
-    (void)ctx;
+void sgpu_gl_submit(void) {
     // TODO manage an internal command buffer for multithreading
     // for now this is a noop
 }
 
-void sgpu_gl_start_render_pass(sgpu_ctx_t* ctx, sgpu_render_pass_t pass) {
-    (void)ctx;
-
+void sgpu_gl_start_render_pass(sgpu_render_pass_t pass) {
     if (pass.frame.load_action == SGPU_LOAD_ACTION_CLEAR) {
         glClearColor(pass.frame.clear_color.r, pass.frame.clear_color.g, pass.frame.clear_color.b,
             pass.frame.clear_color.a);
@@ -129,14 +126,20 @@ void sgpu_gl_start_render_pass(sgpu_ctx_t* ctx, sgpu_render_pass_t pass) {
     }
 }
 
-void sgpu_gl_end_render_pass(sgpu_ctx_t* ctx) {
-    (void)ctx;
+void sgpu_gl_end_render_pass(void) {
     // TODO i don't think you can emulate the store op in opengl
     // so this is a noop here
 }
 
-void sgpu_gl_set_viewport(sgpu_ctx_t* ctx, sgpu_viewport_t viewport) {
-    (void)ctx;
+void sgpu_gl_set_viewport(sgpu_viewport_t viewport) {
     glViewport(viewport.top_left_x, viewport.top_left_y, viewport.width, viewport.height);
     glDepthRangef(viewport.min_depth, viewport.max_depth);
 }
+
+sgpu_error_t sgpu_gl_compile_shader(sgpu_shader_settings_t settings, sgpu_shader_t* out_shader) {
+    sgpu_log_error("todo lol");
+    sgpu_trap();
+    return SGPU_OK;
+}
+
+void sgpu_gl_deinit_shader(sgpu_shader_t shader) { sgpu_trap(); }
