@@ -28,6 +28,7 @@ typedef enum {
     SGPU_ERROR_TOO_MANY_HANDLES,
     SGPU_ERROR_BROKEN_HANDLE,
     SGPU_ERROR_SHADER_COMPILATION_FAILED,
+    SGPU_ERROR_PIPELINE_COMPILATION_FAILED,
 } sgpu_error_t;
 
 typedef void (*sgpu_gl_api_fn)(void);
@@ -158,6 +159,7 @@ typedef enum sgpu_shader_stage_t {
 } sgpu_shader_stage_t;
 
 typedef struct sgpu_shader_settings_t {
+    const char* label;
     /// null-terminated GLSL on OpenGL
     const char* src;
     /// doesn't include the null terminator for GLSL
@@ -167,6 +169,12 @@ typedef struct sgpu_shader_settings_t {
     sgpu_shader_stage_t stage;
 } sgpu_shader_settings_t;
 
+static inline void sgpu_shader_settings_default(sgpu_shader_settings_t* src) {
+    if (src->label == NULL) {
+        src->label = "a Starry shader";
+    }
+}
+
 typedef struct sgpu_shader_t {
     uint32_t id;
 } sgpu_shader_t;
@@ -174,6 +182,97 @@ typedef struct sgpu_shader_t {
 /// Outputs the shader into out, if compilation succeeds.
 sgpu_error_t sgpu_compile_shader(sgpu_shader_settings_t settings, sgpu_shader_t* out_shader);
 void sgpu_deinit_shader(sgpu_shader_t shader);
+
+typedef enum sgpu_pipeline_type_t {
+    SGPU_PIPELINE_TYPE_RASTER,
+    SGPU_PIPELINE_TYPE_COMPUTE,
+} sgpu_pipeline_type_t;
+
+typedef enum sgpu_topology_t {
+    /// Vertices 0, 1, and 2 form a triangle. Vertices 3, 4, and 5 form a triangle. And so on.
+    SGPU_TOPOLOGY_TRIANGLE_LIST,
+    /// Every group of 3 adjacent vertices forms a triangle. The face direction of the strip is
+    /// determined by the winding of the first triangle. Each successive triangle will have its
+    /// effective face order reversed, so the system compensates for that by testing it in the
+    /// opposite way. A vertex stream of n length will generate n-2 triangles.
+    SGPU_TOPOLOGY_TRIANGLE_STRIP,
+    /// The first vertex is always held fixed. From there on, every group of 2 adjacent vertices
+    /// form a triangle with the first. So with a vertex stream, you get a list of triangles
+    /// like so: (0, 1, 2) (0, 2, 3), (0, 3, 4), etc. A vertex stream of n length will
+    /// generate n-2 triangles.
+    SGPU_TOPOLOGY_TRIANGLE_FAN,
+} sgpu_topology_t;
+
+typedef enum sgpu_winding_order_t {
+    SGPU_WINDING_ORDER_CLOCKWISE,
+    SGPU_WINDING_ORDER_COUNTER_CLOCKWISE,
+} sgpu_winding_order_t;
+
+typedef enum sgpu_cull_mode_t {
+    SGPU_CULL_MODE_FRONT_FACE,
+    SGPU_CULL_MODE_BACK_FACE,
+    SGPU_CULL_MODE_FRONT_AND_BACK_FACES,
+    SGPU_CULL_MODE_NONE,
+} sgpu_cull_mode_t;
+
+typedef struct sgpu_pipeline_settings_t {
+    const char* label;
+    sgpu_pipeline_type_t type;
+    struct {
+        sgpu_shader_t vertex_shader;
+        sgpu_shader_t fragment_shader;
+        sgpu_topology_t topology;
+        sgpu_winding_order_t front_face;
+        sgpu_cull_mode_t cull;
+    } raster;
+    struct {
+        sgpu_shader_t shader;
+    } compute;
+} sgpu_pipeline_settings_t;
+
+typedef struct sgpu_pipeline_t {
+    uint32_t id;
+} sgpu_pipeline_t;
+
+sgpu_error_t sgpu_compile_pipeline(sgpu_pipeline_settings_t settings, sgpu_pipeline_t* out);
+void sgpu_deinit_pipeline(sgpu_pipeline_t pip);
+void sgpu_apply_pipeline(sgpu_pipeline_t pip);
+
+typedef enum sgpu_blend_scale_factor_t {
+    SGPU_BLEND_SCALE_FACTOR_ZERO,
+    SGPU_BLEND_SCALE_FACTOR_ONE,
+    SGPU_BLEND_SCALE_FACTOR_SRC_COLOR,
+    SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC_COLOR,
+    SGPU_BLEND_SCALE_FACTOR_DST_COLOR,
+    SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_DST_COLOR,
+    SGPU_BLEND_SCALE_FACTOR_SRC_ALPHA,
+    SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC_ALPHA,
+    SGPU_BLEND_SCALE_FACTOR_DST_ALPHA,
+    SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_DST_ALPHA,
+    SGPU_BLEND_SCALE_FACTOR_CONSTANT_COLOR,
+    SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_CONSTANT_COLOR,
+    SGPU_BLEND_SCALE_FACTOR_CONSTANT_ALPHA,
+    SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
+    SGPU_BLEND_SCALE_FACTOR_SRC_ALPHA_SATURATE,
+    SGPU_BLEND_SCALE_FACTOR_SRC1_COLOR,
+    SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC1_COLOR,
+    SGPU_BLEND_SCALE_FACTOR_SRC1_ALPHA,
+    SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC1_ALPHA,
+} sgpu_blend_scale_factor_t;
+
+typedef struct sgpu_blend_test_t {
+    sgpu_blend_scale_factor_t src_factor;
+    sgpu_blend_scale_factor_t dst_factor;
+    /// optional
+    struct {
+        float r, g, b, a;
+    } constant_color;
+} sgpu_blend_test_t;
+
+void sgpu_set_blend(sgpu_blend_test_t blend);
+
+/// base draw command with no indices
+void sgpu_draw(uint32_t base_elem, uint32_t count, uint32_t instances);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -93,3 +93,35 @@ void sgpu_deinit_shader(sgpu_shader_t shader) {
     (void)shader;
 #endif
 }
+
+sgpu_error_t sgpu_compile_pipeline(sgpu_pipeline_settings_t settings, sgpu_pipeline_t* out) {
+#ifdef SGPU_GL
+    return sgpu_gl_compile_pipeline(settings, out);
+#else
+    return SGPU_OK;
+#endif
+}
+
+void sgpu_deinit_pipeline(sgpu_pipeline_t pip) {
+#ifdef SGPU_GL
+    sgpu_gl_deinit_pipeline(pip);
+#endif
+}
+
+void sgpu_apply_pipeline(sgpu_pipeline_t pip) {
+#ifdef SGPU_GL
+    sgpu_gl_apply_pipeline(pip);
+#endif
+}
+
+void sgpu_set_blend(sgpu_blend_test_t blend) {
+#ifdef SGPU_GL
+    sgpu_gl_set_blend(blend);
+#endif
+}
+
+void sgpu_draw(uint32_t base_elem, uint32_t count, uint32_t instances) {
+#ifdef SGPU_GL
+    sgpu_gl_draw(base_elem, count, instances);
+#endif
+}

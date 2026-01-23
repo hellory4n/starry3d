@@ -11,6 +11,8 @@ static void _sgpu_gl_debug_callback(GLenum source, GLenum type, GLuint id, GLenu
 typedef struct sgpu_gl_ctx_t {
     sgpu_device_t device_info;
     bool has_device_info;
+
+    sgpu_pipeline_t current_pipeline;
 } sgpu_gl_ctx_t;
 
 sgpu_error_t sgpu_gl_init(sgpu_settings_t settings) {
@@ -137,9 +139,325 @@ void sgpu_gl_set_viewport(sgpu_viewport_t viewport) {
 }
 
 sgpu_error_t sgpu_gl_compile_shader(sgpu_shader_settings_t settings, sgpu_shader_t* out_shader) {
-    sgpu_log_error("todo lol");
-    sgpu_trap();
+    sgpu_shader_settings_default(&settings);
+    sgpu_shader_t handle;
+    SGPU_TRY(sgpu_new_shader_slot(&handle));
+
+    GLenum stage = 0;
+    switch (settings.stage) {
+    case SGPU_SHADER_STAGE_VERTEX:
+        stage = GL_VERTEX_SHADER;
+        break;
+    case SGPU_SHADER_STAGE_FRAGMENT:
+        stage = GL_FRAGMENT_SHADER;
+        break;
+    case SGPU_SHADER_STAGE_COMPUTE:
+        stage = GL_COMPUTE_SHADER;
+        break;
+    }
+
+    GLuint id = glCreateShader(stage);
+    glShaderSource(id, 1, &settings.src, NULL);
+    glCompileShader(id);
+
+    GLint success;
+    glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char info_log[1024] = { 0 };
+        glGetShaderInfoLog(id, SGPU_LENGTHOF(info_log), NULL, info_log);
+        info_log[SGPU_LENGTHOF(info_log) - 1] = '\0';
+
+        sgpu_log_error("compiling shader '%s' failed: %s", settings.label, info_log);
+        return SGPU_ERROR_SHADER_COMPILATION_FAILED;
+    }
+
+    sgpu_backend_shader_t* bkshader;
+    SGPU_TRY(sgpu_get_shader_slot(handle, &bkshader));
+    bkshader->settings = settings;
+    bkshader->u.gl.id = id;
+
+    *out_shader = handle;
     return SGPU_OK;
 }
 
-void sgpu_gl_deinit_shader(sgpu_shader_t shader) { sgpu_trap(); }
+void sgpu_gl_deinit_shader(sgpu_shader_t shader) {
+    sgpu_backend_shader_t* bkshader;
+    if (sgpu_get_shader_slot(shader, &bkshader) != SGPU_OK) {
+        return;
+    }
+
+    glDeleteShader(bkshader->u.gl.id);
+    bkshader->occupied = false;
+}
+
+sgpu_error_t sgpu_gl_compile_pipeline(sgpu_pipeline_settings_t settings, sgpu_pipeline_t* out) {
+    sgpu_pipeline_t handle;
+    SGPU_TRY(sgpu_new_pipeline_slot(&handle));
+
+    if (settings.type == SGPU_PIPELINE_TYPE_RASTER) {
+        // shader linking crap
+        sgpu_backend_shader_t* vert_shader;
+        sgpu_backend_shader_t* frag_shader;
+        SGPU_TRY(sgpu_get_shader_slot(settings.raster.vertex_shader, &vert_shader));
+        SGPU_TRY(sgpu_get_shader_slot(settings.raster.fragment_shader, &frag_shader));
+
+        GLuint program = glCreateProgram();
+        glAttachShader(program, vert_shader->u.gl.id);
+        glAttachShader(program, frag_shader->u.gl.id);
+        glLinkProgram(program);
+
+        GLint success;
+        glGetProgramiv(program, GL_LINK_STATUS, &success);
+        if (!success) {
+            char info_log[1024] = { 0 };
+            glGetProgramInfoLog(program, SGPU_LENGTHOF(info_log), NULL, info_log);
+
+            sgpu_log_error("compiling pipeline '%s' failed: %s", settings.label, info_log);
+            return SGPU_ERROR_PIPELINE_COMPILATION_FAILED;
+        }
+
+        sgpu_backend_pipeline_t* pip;
+        SGPU_TRY(sgpu_get_pipeline_slot(handle, &pip));
+        pip->settings = settings;
+        pip->u.gl.program = program;
+        *out = handle;
+        return SGPU_OK;
+    } else if (settings.type == SGPU_PIPELINE_TYPE_COMPUTE) {
+        // shader linking crap
+        sgpu_backend_shader_t* shader;
+        SGPU_TRY(sgpu_get_shader_slot(settings.raster.vertex_shader, &shader));
+
+        GLuint program = glCreateProgram();
+        glAttachShader(program, shader->u.gl.id);
+        glLinkProgram(program);
+
+        GLint success;
+        glGetProgramiv(program, GL_LINK_STATUS, &success);
+        if (!success) {
+            char info_log[1024] = { 0 };
+            glGetProgramInfoLog(program, SGPU_LENGTHOF(info_log), NULL, info_log);
+
+            sgpu_log_error("compiling pipeline '%s' failed: %s", settings.label, info_log);
+            return SGPU_ERROR_PIPELINE_COMPILATION_FAILED;
+        }
+
+        sgpu_backend_pipeline_t* pip;
+        SGPU_TRY(sgpu_get_pipeline_slot(handle, &pip));
+        pip->settings = settings;
+        pip->u.gl.program = program;
+        *out = handle;
+        return SGPU_OK;
+    }
+
+    SGPU_UNREACHABLE();
+    return SGPU_OK;
+}
+
+void sgpu_gl_deinit_pipeline(sgpu_pipeline_t handle) {
+    sgpu_backend_pipeline_t* pip;
+    if (sgpu_get_pipeline_slot(handle, &pip) != SGPU_OK) {
+        return;
+    }
+
+    glDeleteProgram(pip->u.gl.program);
+    pip->occupied = false;
+}
+
+void sgpu_gl_apply_pipeline(sgpu_pipeline_t handle) {
+    sgpu_backend_pipeline_t* pip;
+    if (sgpu_get_pipeline_slot(handle, &pip) != SGPU_OK) {
+        return;
+    }
+    sgpu_gl_ctx_t* gl_ctx = sgpu_ctx.gl;
+    gl_ctx->current_pipeline = handle;
+
+    glUseProgram(pip->u.gl.program);
+
+    if (pip->settings.type == SGPU_PIPELINE_TYPE_RASTER) {
+        GLenum front_face;
+        switch (pip->settings.raster.front_face) {
+        case SGPU_WINDING_ORDER_CLOCKWISE:
+            front_face = SGPU_WINDING_ORDER_CLOCKWISE;
+            break;
+        case SGPU_WINDING_ORDER_COUNTER_CLOCKWISE:
+            front_face = SGPU_WINDING_ORDER_COUNTER_CLOCKWISE;
+            break;
+        }
+        glFrontFace(front_face);
+
+        if (pip->settings.raster.cull == SGPU_CULL_MODE_NONE) {
+            glDisable(GL_CULL_FACE);
+        } else {
+            glEnable(GL_CULL_FACE);
+
+            GLenum cull_face;
+            switch (pip->settings.raster.cull) {
+            case SGPU_CULL_MODE_FRONT_FACE:
+                cull_face = SGPU_CULL_MODE_FRONT_FACE;
+                break;
+            case SGPU_CULL_MODE_BACK_FACE:
+                cull_face = SGPU_CULL_MODE_BACK_FACE;
+                break;
+            case SGPU_CULL_MODE_FRONT_AND_BACK_FACES:
+                cull_face = SGPU_CULL_MODE_FRONT_AND_BACK_FACES;
+                break;
+            case SGPU_CULL_MODE_NONE:
+                cull_face = SGPU_CULL_MODE_NONE;
+                break;
+            }
+            glCullFace(cull_face);
+        }
+    }
+}
+
+void sgpu_gl_set_blend(sgpu_blend_test_t blend) {
+    GLenum src_factor;
+    switch (blend.src_factor) {
+    case SGPU_BLEND_SCALE_FACTOR_ZERO:
+        src_factor = GL_ZERO;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE:
+        src_factor = GL_ONE;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_SRC_COLOR:
+        src_factor = GL_SRC_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC_COLOR:
+        src_factor = GL_ONE_MINUS_SRC_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_DST_COLOR:
+        src_factor = GL_DST_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_DST_COLOR:
+        src_factor = GL_ONE_MINUS_DST_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_SRC_ALPHA:
+        src_factor = GL_SRC_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC_ALPHA:
+        src_factor = GL_ONE_MINUS_SRC_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_DST_ALPHA:
+        src_factor = GL_DST_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_DST_ALPHA:
+        src_factor = GL_ONE_MINUS_DST_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_CONSTANT_COLOR:
+        src_factor = GL_CONSTANT_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_CONSTANT_COLOR:
+        src_factor = GL_ONE_MINUS_CONSTANT_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_CONSTANT_ALPHA:
+        src_factor = GL_CONSTANT_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_CONSTANT_ALPHA:
+        src_factor = GL_ONE_MINUS_CONSTANT_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_SRC_ALPHA_SATURATE:
+        src_factor = GL_SRC_ALPHA_SATURATE;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_SRC1_COLOR:
+        src_factor = GL_SRC1_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC1_COLOR:
+        src_factor = GL_ONE_MINUS_SRC1_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_SRC1_ALPHA:
+        src_factor = GL_SRC1_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC1_ALPHA:
+        src_factor = GL_ONE_MINUS_SRC1_ALPHA;
+        break;
+    }
+
+    GLenum dst_factor;
+    switch (blend.dst_factor) {
+    case SGPU_BLEND_SCALE_FACTOR_ZERO:
+        dst_factor = GL_ZERO;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE:
+        dst_factor = GL_ONE;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_SRC_COLOR:
+        dst_factor = GL_SRC_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC_COLOR:
+        dst_factor = GL_ONE_MINUS_SRC_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_DST_COLOR:
+        dst_factor = GL_DST_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_DST_COLOR:
+        dst_factor = GL_ONE_MINUS_DST_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_SRC_ALPHA:
+        dst_factor = GL_SRC_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC_ALPHA:
+        dst_factor = GL_ONE_MINUS_SRC_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_DST_ALPHA:
+        dst_factor = GL_DST_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_DST_ALPHA:
+        dst_factor = GL_ONE_MINUS_DST_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_CONSTANT_COLOR:
+        dst_factor = GL_CONSTANT_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_CONSTANT_COLOR:
+        dst_factor = GL_ONE_MINUS_CONSTANT_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_CONSTANT_ALPHA:
+        dst_factor = GL_CONSTANT_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_CONSTANT_ALPHA:
+        dst_factor = GL_ONE_MINUS_CONSTANT_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_SRC_ALPHA_SATURATE:
+        dst_factor = GL_SRC_ALPHA_SATURATE;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_SRC1_COLOR:
+        dst_factor = GL_SRC1_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC1_COLOR:
+        dst_factor = GL_ONE_MINUS_SRC1_COLOR;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_SRC1_ALPHA:
+        dst_factor = GL_SRC1_ALPHA;
+        break;
+    case SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC1_ALPHA:
+        dst_factor = GL_ONE_MINUS_SRC1_ALPHA;
+        break;
+    }
+
+    glEnable(GL_BLEND);
+    glBlendFunc(src_factor, dst_factor);
+    glBlendColor(blend.constant_color.r, blend.constant_color.g, blend.constant_color.b,
+        blend.constant_color.a);
+}
+
+void sgpu_draw(uint32_t base_elem, uint32_t count, uint32_t instances) {
+    sgpu_gl_ctx_t* gl_ctx = sgpu_ctx.gl;
+    sgpu_backend_pipeline_t* pip;
+    if (sgpu_get_pipeline_slot(gl_ctx->current_pipeline, &pip) != SGPU_OK) {
+        return;
+    }
+
+    GLenum topology;
+    switch (pip->settings.raster.topology) {
+    case SGPU_TOPOLOGY_TRIANGLE_LIST:
+        topology = GL_TRIANGLES;
+        break;
+    case SGPU_TOPOLOGY_TRIANGLE_STRIP:
+        topology = GL_TRIANGLE_STRIP;
+        break;
+    case SGPU_TOPOLOGY_TRIANGLE_FAN:
+        topology = GL_TRIANGLE_FAN;
+        break;
+    }
+
+    glDrawArraysInstanced(topology, base_elem, count, instances);
+}
