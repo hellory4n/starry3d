@@ -1,5 +1,6 @@
 #pragma once
 #include "starrygpu.h"
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -14,9 +15,9 @@ extern "C" {
 
 #define SGPU_TRY(x)                                                                                \
     do {                                                                                           \
-        sgpu_error_t err = (x);                                                                    \
-        if (err != SGPU_OK) {                                                                      \
-            return err;                                                                            \
+        sgpu_error_t _err = (x);                                                                   \
+        if (_err != SGPU_OK) {                                                                     \
+            return _err;                                                                           \
         }                                                                                          \
     } while (false)
 
@@ -25,6 +26,12 @@ extern "C" {
         sgpu_log_error("what the fuck?");                                                          \
         sgpu_trap();                                                                               \
     } while (false)
+
+#ifdef __GNUC__
+#define SGPU_ATTR_PRINTF(fmtidx, argidx) __attribute__((format(printf, fmtidx, argidx)))
+#else
+#define SGPU_ATTR_PRINTF(fmtidx, argidx)
+#endif
 
 typedef struct sgpu_backend_shader_t {
     sgpu_shader_settings_t settings;
@@ -65,7 +72,7 @@ extern sgpu_ctx_t sgpu_ctx;
 
 // TODO error on dangling handle (it's not that hard i just can't be bothered)
 
-sgpu_error_t sgpu_get_shader_slot(sgpu_shader_t handle, sgpu_backend_shader_t** out) {
+static inline sgpu_error_t sgpu_get_shader_slot(sgpu_shader_t handle, sgpu_backend_shader_t** out) {
     if (handle.id > SGPU_LENGTHOF(sgpu_ctx.shaders)) {
         *out = NULL;
         return SGPU_ERROR_BROKEN_HANDLE;
@@ -87,7 +94,8 @@ static inline sgpu_error_t sgpu_new_shader_slot(sgpu_shader_t* out) {
     return SGPU_ERROR_TOO_MANY_HANDLES;
 }
 
-sgpu_error_t sgpu_get_pipeline_slot(sgpu_pipeline_t handle, sgpu_backend_pipeline_t** out) {
+static inline sgpu_error_t sgpu_get_pipeline_slot(
+    sgpu_pipeline_t handle, sgpu_backend_pipeline_t** out) {
     if (handle.id > SGPU_LENGTHOF(sgpu_ctx.pipelines)) {
         *out = NULL;
         return SGPU_ERROR_BROKEN_HANDLE;
@@ -109,7 +117,7 @@ static inline sgpu_error_t sgpu_new_pipeline_slot(sgpu_pipeline_t* out) {
     return SGPU_ERROR_TOO_MANY_HANDLES;
 }
 
-static inline void sgpu_log_debug(const char* fmt, ...) {
+SGPU_ATTR_PRINTF(1, 2) static inline void sgpu_log_debug(const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -123,7 +131,7 @@ static inline void sgpu_log_debug(const char* fmt, ...) {
     }
 }
 
-static inline void sgpu_log_info(const char* fmt, ...) {
+SGPU_ATTR_PRINTF(1, 2) static inline void sgpu_log_info(const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -137,7 +145,7 @@ static inline void sgpu_log_info(const char* fmt, ...) {
     }
 }
 
-static inline void sgpu_log_warn(const char* fmt, ...) {
+SGPU_ATTR_PRINTF(1, 2) static inline void sgpu_log_warn(const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -151,7 +159,7 @@ static inline void sgpu_log_warn(const char* fmt, ...) {
     }
 }
 
-static inline void sgpu_log_error(const char* fmt, ...) {
+SGPU_ATTR_PRINTF(1, 2) static inline void sgpu_log_error(const char* fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char buffer[256];
@@ -171,6 +179,18 @@ static inline void sgpu_trap(void) {
     } else {
         sgpu_ctx.settings.logger.trap();
     }
+}
+
+static inline void sgpu_print_dev(sgpu_device_t dev) {
+    sgpu_log_info("using device '%s' by '%s'", dev.device_name, dev.vendor_name);
+    sgpu_log_info(
+        "- max_image_2d_size = %ux%u", dev.max_image_2d_size[0], dev.max_image_2d_size[1]);
+    sgpu_log_info(
+        "- max_storage_buffer_size = %" PRIu64 "MB", dev.max_storage_buffer_size / 1024 / 1024);
+    sgpu_log_info("- max_storage_buffer_bindings = %u", dev.max_storage_buffer_bindings);
+    sgpu_log_info("- max_compute_workgroup_size = %ux%ux%u", dev.max_compute_workgroup_size[0],
+        dev.max_compute_workgroup_size[1], dev.max_compute_workgroup_size[2]);
+    sgpu_log_info("- max_compute_workgroup_threads = %u", dev.max_compute_workgroup_threads);
 }
 
 #ifdef __cplusplus

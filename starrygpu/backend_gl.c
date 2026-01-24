@@ -27,7 +27,7 @@ sgpu_error_t sgpu_gl_init(sgpu_settings_t settings) {
         return SGPU_ERROR_INCOMPATIBLE_GPU;
     }
 
-    sgpu_ctx.gl = malloc(sizeof(sgpu_gl_ctx_t));
+    sgpu_ctx.gl = calloc(1, sizeof(sgpu_gl_ctx_t));
 
     if (settings.backend_validation_enabled) {
         glEnable(GL_DEBUG_OUTPUT);
@@ -36,7 +36,8 @@ sgpu_error_t sgpu_gl_init(sgpu_settings_t settings) {
     }
 
     // cache the device already so it doesn't have to do more api calls
-    sgpu_query_device();
+    sgpu_device_t dev = sgpu_query_device();
+    sgpu_print_dev(dev);
 
     // dummy vao so it stops bitching with bufferless rendering
     GLuint vao;
@@ -136,6 +137,15 @@ void sgpu_gl_end_render_pass(void) {
 void sgpu_gl_set_viewport(sgpu_viewport_t viewport) {
     glViewport(viewport.top_left_x, viewport.top_left_y, viewport.width, viewport.height);
     glDepthRangef(viewport.min_depth, viewport.max_depth);
+}
+
+void sgpu_gl_set_scissor(sgpu_scissor_t scissor) {
+    if (scissor.enabled) {
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(scissor.top_left_x, scissor.top_left_y, scissor.width, scissor.height);
+    } else {
+        glDisable(GL_SCISSOR_TEST);
+    }
 }
 
 sgpu_error_t sgpu_gl_compile_shader(sgpu_shader_settings_t settings, sgpu_shader_t* out_shader) {
@@ -277,10 +287,10 @@ void sgpu_gl_apply_pipeline(sgpu_pipeline_t handle) {
         GLenum front_face;
         switch (pip->settings.raster.front_face) {
         case SGPU_WINDING_ORDER_CLOCKWISE:
-            front_face = SGPU_WINDING_ORDER_CLOCKWISE;
+            front_face = GL_CW;
             break;
         case SGPU_WINDING_ORDER_COUNTER_CLOCKWISE:
-            front_face = SGPU_WINDING_ORDER_COUNTER_CLOCKWISE;
+            front_face = GL_CCW;
             break;
         }
         glFrontFace(front_face);
@@ -439,7 +449,7 @@ void sgpu_gl_set_blend(sgpu_blend_test_t blend) {
         blend.constant_color.a);
 }
 
-void sgpu_draw(uint32_t base_elem, uint32_t count, uint32_t instances) {
+void sgpu_gl_draw(uint32_t base_elem, uint32_t count, uint32_t instances) {
     sgpu_gl_ctx_t* gl_ctx = sgpu_ctx.gl;
     sgpu_backend_pipeline_t* pip;
     if (sgpu_get_pipeline_slot(gl_ctx->current_pipeline, &pip) != SGPU_OK) {

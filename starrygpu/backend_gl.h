@@ -13,6 +13,7 @@ void sgpu_gl_submit(void);
 void sgpu_gl_start_render_pass(sgpu_render_pass_t pass);
 void sgpu_gl_end_render_pass(void);
 void sgpu_gl_set_viewport(sgpu_viewport_t viewport);
+void sgpu_gl_set_scissor(sgpu_scissor_t scissor);
 void sgpu_gl_set_blend(sgpu_blend_test_t blend);
 
 sgpu_error_t sgpu_gl_compile_shader(sgpu_shader_settings_t settings, sgpu_shader_t* out_shader);

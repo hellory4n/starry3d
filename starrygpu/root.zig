@@ -92,6 +92,10 @@ pub fn queryDevice() Device {
     return @bitCast(c.sgpu_query_device());
 }
 
+pub fn queryBackend() Backend {
+    return @enumFromInt(c.sgpu_query_backend());
+}
+
 /// Poor man's command buffer
 pub fn submit() void {
     return c.sgpu_submit();
@@ -108,6 +112,43 @@ pub fn endRenderPass() void {
 
 pub fn setViewport(viewport: Viewport) void {
     c.sgpu_set_viewport(@bitCast(viewport));
+}
+
+pub fn setScissor(scissor: Scissor) void {
+    c.sgpu_set_scissor(@bitCast(scissor));
+}
+
+pub fn compileShader(settings: ShaderSettings) Error!Shader {
+    var handle: c.sgpu_shader_t = undefined;
+    try check(c.sgpu_compile_shader(@bitCast(settings), &handle));
+    return @bitCast(handle);
+}
+
+pub fn deinitShader(shader: Shader) void {
+    c.sgpu_deinit_shader(@bitCast(shader));
+}
+
+pub fn compilePipeline(settings: PipelineSettings) Error!Pipeline {
+    var handle: c.sgpu_pipeline_t = undefined;
+    try check(c.sgpu_compile_pipeline(@bitCast(settings), &handle));
+    return @bitCast(handle);
+}
+
+pub fn deinitPipeline(pip: Pipeline) void {
+    c.sgpu_deinit_pipeline(@bitCast(pip));
+}
+
+pub fn applyPipeline(pip: Pipeline) void {
+    c.sgpu_apply_pipeline(@bitCast(pip));
+}
+
+pub fn setBlend(blend: BlendTest) void {
+    c.sgpu_set_blend(@bitCast(blend));
+}
+
+/// Base draw command with no indices
+pub fn draw(base_elem: u32, count: u32, instances: u32) void {
+    c.sgpu_draw(base_elem, count, instances);
 }
 
 pub const Device = extern struct {
@@ -133,6 +174,11 @@ pub const Device = extern struct {
         const len = std.mem.indexOfSentinel(u8, 0, dev.device_name_cstr);
         return dev.device_name_cstr[0..len];
     }
+};
+
+pub const Backend = enum(c_uint) {
+    unsupported = c.SGPU_BACKEND_UNSUPPORTED,
+    glcore = c.SGPU_BACKEND_GLCORE,
 };
 
 pub const LoadAction = enum(c_uint) {
@@ -179,4 +225,115 @@ pub const Viewport = extern struct {
     height: i32,
     min_depth: f32,
     max_depth: f32,
+};
+
+pub const Scissor = extern struct {
+    top_left_x: i32,
+    top_left_y: i32,
+    width: i32,
+    height: i32,
+    enabled: bool,
+};
+
+pub const ShaderStage = enum(c_uint) {
+    vertex = c.SGPU_SHADER_STAGE_VERTEX,
+    fragment = c.SGPU_SHADER_STAGE_FRAGMENT,
+    compute = c.SGPU_SHADER_STAGE_COMPUTE,
+};
+
+pub const ShaderSettings = extern struct {
+    label: ?[*:0]const u8 = "a Starry shader",
+    src: [*:0]const u8,
+    /// doesn't include the null terminator
+    src_len: usize,
+    entry_point: ?[*:0]const u8 = "main",
+    stage: ShaderStage,
+};
+
+pub const Shader = extern struct {
+    id: u32,
+};
+
+pub const PipelineType = enum(c_uint) {
+    raster = c.SGPU_PIPELINE_TYPE_RASTER,
+    compute = c.SGPU_PIPELINE_TYPE_COMPUTE,
+};
+
+pub const Topology = enum(c_uint) {
+    /// Vertices 0, 1, and 2 form a triangle. Vertices 3, 4, and 5 form a triangle. And so on.
+    triangle_list = c.SGPU_TOPOLOGY_TRIANGLE_LIST,
+    /// Every group of 3 adjacent vertices forms a triangle. The face direction of the strip is
+    /// determined by the winding of the first triangle. Each successive triangle will have its
+    /// effective face order reversed, so the system compensates for that by testing it in the
+    /// opposite way. A vertex stream of n length will generate n-2 triangles.
+    triangle_strip = c.SGPU_TOPOLOGY_TRIANGLE_STRIP,
+    /// The first vertex is always held fixed. From there on, every group of 2 adjacent vertices
+    /// form a triangle with the first. So with a vertex stream, you get a list of triangles
+    /// like so: (0, 1, 2) (0, 2, 3), (0, 3, 4), etc. A vertex stream of n length will
+    /// generate n-2 triangles.
+    triangle_fan = c.SGPU_TOPOLOGY_TRIANGLE_FAN,
+};
+
+pub const WindingOrder = enum(c_uint) {
+    clockwise = c.SGPU_WINDING_ORDER_CLOCKWISE,
+    counter_clockwise = c.SGPU_WINDING_ORDER_COUNTER_CLOCKWISE,
+};
+
+pub const CullMode = enum(c_uint) {
+    none = c.SGPU_CULL_MODE_NONE,
+    front_face = c.SGPU_CULL_MODE_FRONT_FACE,
+    back_face = c.SGPU_CULL_MODE_BACK_FACE,
+    front_and_back_faces = c.SGPU_CULL_MODE_FRONT_AND_BACK_FACES,
+};
+
+pub const PipelineSettings = extern struct {
+    label: ?[*:0]const u8 = "a Starry pipeline",
+    type: PipelineType,
+    raster: extern struct {
+        vertex_shader: Shader,
+        fragment_shader: Shader,
+        topology: Topology = .triangle_list,
+        front_face: WindingOrder = .counter_clockwise,
+        cull: CullMode = .none,
+    } = undefined,
+    compute: extern struct {
+        shader: Shader,
+    } = undefined,
+};
+
+pub const Pipeline = extern struct {
+    id: u32,
+};
+
+pub const BlendScaleFactor = enum(c_uint) {
+    zero = c.SGPU_BLEND_SCALE_FACTOR_ZERO,
+    one = c.SGPU_BLEND_SCALE_FACTOR_ONE,
+    src_color = c.SGPU_BLEND_SCALE_FACTOR_SRC_COLOR,
+    one_minus_src_color = c.SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC_COLOR,
+    dst_color = c.SGPU_BLEND_SCALE_FACTOR_DST_COLOR,
+    one_minus_dst_color = c.SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_DST_COLOR,
+    src_alpha = c.SGPU_BLEND_SCALE_FACTOR_SRC_ALPHA,
+    one_minus_src_alpha = c.SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC_ALPHA,
+    dst_alpha = c.SGPU_BLEND_SCALE_FACTOR_DST_ALPHA,
+    one_minus_dst_alpha = c.SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_DST_ALPHA,
+    constant_color = c.SGPU_BLEND_SCALE_FACTOR_CONSTANT_COLOR,
+    one_minus_constant_color = c.SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_CONSTANT_COLOR,
+    constant_alpha = c.SGPU_BLEND_SCALE_FACTOR_CONSTANT_ALPHA,
+    one_minus_constant_alpha = c.SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
+    src_alpha_saturate = c.SGPU_BLEND_SCALE_FACTOR_SRC_ALPHA_SATURATE,
+    src1_color = c.SGPU_BLEND_SCALE_FACTOR_SRC1_COLOR,
+    one_minus_src1_color = c.SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC1_COLOR,
+    src1_alpha = c.SGPU_BLEND_SCALE_FACTOR_SRC1_ALPHA,
+    one_minus_src1_alpha = c.SGPU_BLEND_SCALE_FACTOR_ONE_MINUS_SRC1_ALPHA,
+};
+
+pub const BlendTest = extern struct {
+    src_factor: BlendScaleFactor,
+    dst_factor: BlendScaleFactor,
+    constant_color: extern struct {
+        r: f32 = 0,
+        g: f32 = 0,
+        b: f32 = 0,
+        a: f32 = 0,
+    } = .{},
 };

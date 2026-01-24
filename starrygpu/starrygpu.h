@@ -152,6 +152,16 @@ typedef struct sgpu_viewport_t {
 
 void sgpu_set_viewport(sgpu_viewport_t viewport);
 
+typedef struct sgpu_scissor_t {
+    int32_t top_left_x;
+    int32_t top_left_y;
+    int32_t width;
+    int32_t height;
+    bool enabled;
+} sgpu_scissor_t;
+
+void sgpu_set_scissor(sgpu_scissor_t scissor);
+
 typedef enum sgpu_shader_stage_t {
     SGPU_SHADER_STAGE_VERTEX,
     SGPU_SHADER_STAGE_FRAGMENT,
@@ -172,6 +182,9 @@ typedef struct sgpu_shader_settings_t {
 static inline void sgpu_shader_settings_default(sgpu_shader_settings_t* src) {
     if (src->label == NULL) {
         src->label = "a Starry shader";
+    }
+    if (src->entry_point == NULL) {
+        src->entry_point = "main";
     }
 }
 
@@ -209,10 +222,10 @@ typedef enum sgpu_winding_order_t {
 } sgpu_winding_order_t;
 
 typedef enum sgpu_cull_mode_t {
+    SGPU_CULL_MODE_NONE,
     SGPU_CULL_MODE_FRONT_FACE,
     SGPU_CULL_MODE_BACK_FACE,
     SGPU_CULL_MODE_FRONT_AND_BACK_FACES,
-    SGPU_CULL_MODE_NONE,
 } sgpu_cull_mode_t;
 
 typedef struct sgpu_pipeline_settings_t {

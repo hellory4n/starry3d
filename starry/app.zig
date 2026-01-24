@@ -83,6 +83,11 @@ fn starryMain(comptime settings: Settings) !void {
     });
     defer stlog.info("deinitialized starry", .{});
 
+    // renderdoc consider unshitting yourself
+    if (builtin.mode == .Debug and builtin.os.tag == .linux and sgpu.queryBackend() == .glcore) {
+        try glfw.initHint(.platform, glfw.Platform.x11);
+    }
+
     // window fuckery
     try glfw.init();
     stlog.info("initialized GLFW", .{});

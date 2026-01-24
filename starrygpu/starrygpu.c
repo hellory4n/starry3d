@@ -77,6 +77,12 @@ void sgpu_set_viewport(sgpu_viewport_t viewport) {
 #endif
 }
 
+void sgpu_set_scissor(sgpu_scissor_t scissor) {
+#ifdef SGPU_GL
+    sgpu_gl_set_scissor(scissor);
+#endif
+}
+
 sgpu_error_t sgpu_compile_shader(sgpu_shader_settings_t settings, sgpu_shader_t* out_shader) {
 #ifdef SGPU_GL
     return sgpu_gl_compile_shader(settings, out_shader);
