@@ -27,8 +27,7 @@ pub fn deinit(scratch: *ScratchAllocator) void {
         return;
     }
 
-    // TODO there must be a better way to do this
-    @memset(scratch_buffer[@intCast(scratch.start_pos)..], 0xaa);
+    @memset(scratch_buffer[@intCast(scratch.start_pos)..], undefined);
     scratch_alloc.end_index = @intCast(scratch.start_pos);
     scratch.start_pos = -1;
 
@@ -86,7 +85,7 @@ fn implAlloc(ctx: *anyopaque, len: usize, alignment: mem.Alignment, ret_addr: us
 }
 
 fn implFree(_: *anyopaque, memory: []u8, _: mem.Alignment, _: usize) void {
-    @memset(memory, 0xaa);
+    @memset(memory, undefined);
 }
 
 /// `resize()` is unsupported, this is just for compatibility with the `Allocator` interface
@@ -99,8 +98,7 @@ fn implRemap(_: *anyopaque, _: []u8, _: mem.Alignment, _: usize, _: usize) ?[*]u
     return null;
 }
 
-// TODO 256 kb might be too few
-const scratch_size: usize = 256 * 1024;
+const scratch_size: usize = 1 * 1024 * 1024;
 threadlocal var scratch_buffer: [scratch_size]u8 = .{0} ** scratch_size;
 threadlocal var scratch_alloc: heap.FixedBufferAllocator = undefined;
 threadlocal var scratch_alloc_initialized = false;
