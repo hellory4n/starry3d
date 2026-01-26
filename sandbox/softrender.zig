@@ -5,35 +5,48 @@ const sunshine = @import("sunshine");
 
 /// one thread per pixel is stupid, one thread per a few pixels is less
 const tile_size = 16;
+
 const image_width = 1366;
 const image_height = 768;
 const image_size = @Vector(2, u32){ image_width, image_height };
 
-var backbuffer: [image_width][image_height]@Vector(4, u8) =
-    std.mem.zeroes([image_width][image_height]@Vector(4, u8));
+/// the image size won't always be divisible by the tile size,
+/// however having a consistent tile size is important for simd stuff,
+/// and branching in the middle of rendering to check for bounds is slow
+/// so just make the buffer a little bigger and ignore that extra part later :)
+fn realImageSize() @Vector(2, u32) {
+    if (zglm.any(image_size % @as(@Vector(2, u32), @splat(tile_size)) !=
+        @as(@Vector(2, u32), @splat(0))))
+    {
+        return image_size + @as(@Vector(2, u32), @splat(tile_size * 2));
+    }
+    return image_size;
+}
+
+var backbuffer: [realImageSize()[0]][realImageSize()[1]]@Vector(4, u8) =
+    std.mem.zeroes([realImageSize()[0]][realImageSize()[1]]@Vector(4, u8));
 
 // TODO it's Late as of writing so there may be overdraw
 
-fn colorTile(pos: @Vector(2, u32), size: @Vector(2, u32)) void {
+fn colorTile(pos: @Vector(2, u32)) void {
     @setFloatMode(.optimized);
-    var x: u32 = pos[0];
-    var y: u32 = pos[1];
 
-    while (y < y + size[1] and y < image_height) : (y += 1) {
-        x = pos[0];
-        while (x < x + size[0] and x < image_width) : (x += 1) {
-            // useful for hypermegaultramega optimization
-            if (builtin.mode == .Debug or builtin.mode == .ReleaseSafe) {
-                if (zglm.all(backbuffer[x][y] != @Vector(4, u8){ 0, 0, 0, 0 })) {
-                    std.log.warn("overdrawing {d}x{d}", .{ x, y });
-                }
+    // has to be inline to be vectorized
+    // also eliminates branches probably
+    inline for (0..tile_size) |y| inline for (0..tile_size) |x| {
+        const pixel = pos + @Vector(2, u32){ x, y };
+
+        // useful for hypermegaultramega optimization
+        if (builtin.mode == .Debug or builtin.mode == .ReleaseSafe) {
+            if (zglm.all(backbuffer[x][y] != @Vector(4, u8){ 0, 0, 0, 0 })) {
+                std.log.warn("overdrawing {d}x{d}", .{ pixel[0], pixel[1] });
             }
-
-            const r = @as(f32, @floatFromInt(x)) / @as(f32, image_width);
-            const g = @as(f32, @floatFromInt(y)) / @as(f32, image_height);
-            backbuffer[x][y] = .{ @intFromFloat(r * 255), @intFromFloat(g * 255), 0, 1 };
         }
-    }
+
+        const r = @min(1, @as(f32, @floatFromInt(pixel[0])) / @as(f32, image_width));
+        const g = @min(1, @as(f32, @floatFromInt(pixel[1])) / @as(f32, image_height));
+        backbuffer[pixel[0]][pixel[1]] = .{ @intFromFloat(r * 255), @intFromFloat(g * 255), 0, 1 };
+    };
 }
 
 pub fn render() !void {
@@ -59,16 +72,10 @@ pub fn render() !void {
 
     var x: u32 = 0;
     var y: u32 = 0;
-    while (y + tile_size < image_height) : (y += tile_size) {
+    while (y < image_height) : (y += tile_size) {
         x = 0;
-        while (x + tile_size < image_width) : (x += tile_size) {
-            thread_pool.spawnWg(&wg, colorTile, .{
-                @Vector(2, u32){ x, y },
-                @min(
-                    @Vector(2, u32){ tile_size, tile_size },
-                    image_size - @Vector(2, u32){ x, y },
-                ),
-            });
+        while (x < image_width) : (x += tile_size) {
+            thread_pool.spawnWg(&wg, colorTile, .{@Vector(2, u32){ x, y }});
         }
     }
 
