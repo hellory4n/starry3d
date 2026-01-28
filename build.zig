@@ -23,28 +23,43 @@ pub fn build(b: *Build) !void {
     });
 
     // starrygpu
-    const starrygpu_mod = b.addModule("starrygpu", .{
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
-        .root_source_file = b.path("starrygpu/root.zig"),
-    });
-    starrygpu_mod.addIncludePath(b.path("starrygpu"));
-    starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/starrygpu.c") });
-    starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_gl.c") });
+    // const starrygpu_mod = b.addModule("starrygpu", .{
+    //     .target = target,
+    //     .optimize = optimize,
+    //     .link_libc = true,
+    //     .root_source_file = b.path("starrygpu/root.zig"),
+    // });
+    // starrygpu_mod.addIncludePath(b.path("starrygpu"));
+    // starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/starrygpu.c") });
+    // starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_gl.c") });
 
-    // starry
+    // main starry engine
     const starry_mod = b.addModule("starry3d", .{
         .target = target,
         .optimize = optimize,
         .root_source_file = b.path("starry/root.zig"),
     });
     starry_mod.addImport("sunshine", sunshine_mod);
-    starry_mod.addImport("starrygpu", starrygpu_mod);
+    // starry_mod.addImport("starrygpu", starrygpu_mod);
 
     starry_mod.addImport("zglfw", zglfw_dep.module("root"));
     starry_mod.addImport("zglm", zglm_dep.module("zglm"));
     starry_mod.linkLibrary(zglfw_dep.artifact("glfw"));
+
+    // starry renderer
+    // compiled separately because debug mode is too slow to be usable
+    // i think that's the only way to force the optimize mode on a specific file?
+    const starryrender_mod = b.createModule(.{
+        .target = target,
+        .optimize = if (optimize == .Debug) .ReleaseSafe else optimize,
+        .root_source_file = b.path("starry/render.zig"),
+    });
+    starryrender_mod.addImport("starry3d", starry_mod);
+    starryrender_mod.addImport("sunshine", sunshine_mod);
+    starryrender_mod.addImport("zglfw", zglfw_dep.module("root"));
+    starryrender_mod.addImport("zglm", zglm_dep.module("zglm"));
+    starryrender_mod.linkLibrary(zglfw_dep.artifact("glfw"));
+    starry_mod.addImport("starry3d_render", starryrender_mod);
 
     // testing it<3
     const test_step = b.step("test", "Run starry tests");
@@ -52,16 +67,16 @@ pub fn build(b: *Build) !void {
         .name = "sunshine-tests",
         .root_module = sunshine_mod,
     });
-    const starrygpu_tests = b.addTest(.{
-        .name = "starrygpu-tests",
-        .root_module = starrygpu_mod,
-    });
+    // const starrygpu_tests = b.addTest(.{
+    //     .name = "starrygpu-tests",
+    //     .root_module = starrygpu_mod,
+    // });
     const starry_tests = b.addTest(.{
         .name = "starry3d-tests",
         .root_module = starry_mod,
     });
     test_step.dependOn(&b.addRunArtifact(sunshine_tests).step);
-    test_step.dependOn(&b.addRunArtifact(starrygpu_tests).step);
+    // test_step.dependOn(&b.addRunArtifact(starrygpu_tests).step);
     test_step.dependOn(&b.addRunArtifact(starry_tests).step);
 
     try sandbox(b, .{

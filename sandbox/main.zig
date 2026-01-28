@@ -67,18 +67,17 @@ pub fn updateApp(dt: f32) void {
 pub const std_options = sunshine.std_options;
 
 pub fn main() !void {
-    try @import("softrender.zig").render();
-    // var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
-    // defer _ = gpa.deinit();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}).init;
+    defer _ = gpa.deinit();
 
-    // sunshine.initLog(gpa.allocator());
-    // defer sunshine.deinitLog();
-    // try sunshine.addLogPath("log.txt");
+    sunshine.initLog(gpa.allocator());
+    defer sunshine.deinitLog();
+    try sunshine.addLogPath("log.txt");
 
-    // starry.app.run(gpa.allocator(), .{
-    //     .name = "sandbox",
-    //     .init = initApp,
-    //     .deinit = deinitApp,
-    //     .update = updateApp,
-    // });
+    starry.app.run(gpa.allocator(), .{
+        .name = "sandbox",
+        .init = initApp,
+        .deinit = deinitApp,
+        .update = updateApp,
+    });
 }

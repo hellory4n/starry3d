@@ -3,9 +3,8 @@ const std = @import("std");
 const builtin = @import("builtin");
 const glfw = @import("zglfw");
 const zglm = @import("zglm");
-const sgpu = @import("starrygpu");
+const render = @import("starry3d_render");
 const root = @import("root.zig");
-const render = @import("render.zig");
 const world = @import("world.zig");
 const ScratchAllocator = @import("sunshine").ScratchAllocator;
 
@@ -65,13 +64,13 @@ pub fn run(alloc: std.mem.Allocator, comptime settings: Settings) void {
     const stlog = std.log.scoped(.starry);
 
     // the rest of the engine has to be wrapped so that errors are logged properly
-    starryMain(settings) catch |err| {
+    starryMain() catch |err| {
         stlog.err("fatal error: {s}", .{@errorName(err)});
         @panic(@errorName(err)); // for the stack trace
     };
 }
 
-fn starryMain(comptime settings: Settings) !void {
+fn starryMain() !void {
     // TODO clean this up
     const stlog = std.log.scoped(.starry);
     stlog.info("starry v{d}.{d}.{d}{s}{s}", .{
@@ -84,7 +83,7 @@ fn starryMain(comptime settings: Settings) !void {
     defer stlog.info("deinitialized starry", .{});
 
     // renderdoc consider unshitting yourself
-    if (builtin.mode == .Debug and builtin.os.tag == .linux and sgpu.queryBackend() == .glcore) {
+    if (builtin.mode == .Debug and builtin.os.tag == .linux) {
         try glfw.initHint(.platform, glfw.Platform.x11);
     }
 
@@ -98,8 +97,8 @@ fn starryMain(comptime settings: Settings) !void {
 
     glfw.windowHint(.client_api, .opengl_api);
     glfw.windowHint(.opengl_profile, .opengl_core_profile);
-    glfw.windowHint(.context_version_major, 4);
-    glfw.windowHint(.context_version_minor, 5);
+    glfw.windowHint(.context_version_major, 3);
+    glfw.windowHint(.context_version_minor, 3);
 
     glfw.windowHint(.resizable, ctx.settings.window.resizable);
     // TODO idk if high dpi works lmao
@@ -140,27 +139,6 @@ fn starryMain(comptime settings: Settings) !void {
         }
     }.callback);
 
-    // gpu fuckery
-    try sgpu.init(.{
-        .app_name = settings.name.ptr,
-        .engine_name = "Starry3D",
-        .app_version = .{
-            .major = @intCast(settings.version.major),
-            .minor = @intCast(settings.version.minor),
-            .patch = @intCast(settings.version.patch),
-        },
-        .engine_version = .{
-            .major = @intCast(root.version.major),
-            .minor = @intCast(root.version.minor),
-            .patch = @intCast(root.version.patch),
-        },
-
-        .gl = .{
-            .load_fn = @ptrCast(@alignCast(&glfw.getProcAddress)),
-        },
-    });
-    defer sgpu.deinit();
-
     try render.init();
     defer render.deinit();
 
@@ -176,17 +154,8 @@ fn starryMain(comptime settings: Settings) !void {
 
     // main loop
     while (!ctx.window.shouldClose()) {
-        sgpu.setViewport(.{
-            .width = framebufferSize()[0],
-            .height = framebufferSize()[1],
-            .top_left_x = 0,
-            .top_left_y = 0,
-            .min_depth = -1,
-            .max_depth = 1,
-        });
-
         if (!isMinimized()) {
-            render.draw();
+            try render.render();
         }
 
         if (ctx.settings.update) |realUpdateFn| {
