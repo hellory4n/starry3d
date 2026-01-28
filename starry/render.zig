@@ -12,8 +12,12 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const zglm = @import("zglm");
+const glfw = @import("zglfw");
 const sunshine = @import("sunshine");
 const starry = @import("starry3d");
+const c = @cImport({
+    @cInclude("glad.h");
+});
 
 comptime {
     if (builtin.mode == .Debug) {
@@ -46,8 +50,8 @@ var ctx: struct {
     qgpu: *QuasiGpu = undefined,
     prev_image_size: @Vector(2, u32) = @splat(0),
 
-    backbuffer: [][4]f32 = undefined,
-    frontbuffer: [][4]f32 = undefined,
+    backbuffer: [][4]f16 = undefined,
+    frontbuffer: [][4]f16 = undefined,
 } = .{};
 
 // std.atomic.Value(T) is annoying
@@ -63,6 +67,7 @@ const QuasiGpu = struct {
     /// in pixels, (-1,-1) == no value because this is an extern struct apparently
     pending_tile: std.atomic.Value(Tile),
     rendering: std.atomic.Value(bool),
+    tiles_rendered: std.atomic.Value(i32),
     alloc: std.mem.Allocator,
 
     pub fn init(alloc: std.mem.Allocator) !*QuasiGpu {
@@ -74,6 +79,7 @@ const QuasiGpu = struct {
             .threads = try alloc.alloc(std.Thread, thread_count),
             .pending_tile = .init(null_tile),
             .rendering = .init(true),
+            .tiles_rendered = .init(0),
             .alloc = alloc,
         };
 
@@ -100,6 +106,7 @@ const QuasiGpu = struct {
             const pending_tile = qgpu.pending_tile.load(.acquire);
             if (pending_tile.x != null_tile.x or pending_tile.y != pending_tile.y) {
                 shader(.{ @intCast(pending_tile.x), @intCast(pending_tile.y) });
+                _ = qgpu.tiles_rendered.fetchAdd(1, .release);
             }
         }
     }
@@ -108,20 +115,25 @@ const QuasiGpu = struct {
         while (qgpu.pending_tile.load(.acquire).x == null_tile.x and
             qgpu.pending_tile.load(.acquire).y == null_tile.y and
             qgpu.rendering.load(.acquire))
-        {} else {
-            qgpu.pending_tile.store(.{ .x = @intCast(pos[0]), .y = @intCast(pos[1]) }, .release);
-        }
+        {}
+        qgpu.pending_tile.store(.{ .x = @intCast(pos[0]), .y = @intCast(pos[1]) }, .release);
     }
 
     pub fn render(qgpu: *QuasiGpu) void {
         var x: u32 = 0;
         var y: u32 = 0;
+        var expected_tile_count: u32 = 0;
         while (y < imageSize()[1]) : (y += tile_size) {
             x = 0;
+            expected_tile_count += 1;
             while (x < imageSize()[0]) : (x += tile_size) {
+                expected_tile_count += 1;
                 qgpu.submit(.{ x, y });
             }
         }
+
+        while (qgpu.tiles_rendered.load(.acquire) != expected_tile_count) {}
+        std.mem.swap([][4]f16, &ctx.frontbuffer, &ctx.backbuffer);
     }
 };
 
@@ -139,18 +151,97 @@ fn shader(start: @Vector(2, u32)) void {
     };
 }
 
-fn setPixel(pos: @Vector(2, u32), color: zglm.Rgbaf) void {
+fn setPixel(pos: @Vector(2, u32), color: @Vector(4, f16)) void {
     const idx = pos[0] * imageSize()[1] + pos[1];
     ctx.backbuffer[idx] = color;
 }
 
+pub const GlError = error{
+    LoadFailed,
+    ShaderCompilationFailed,
+    ShaderLinkingFailed,
+};
+
 pub fn init() !void {
     ctx.scratch = sunshine.ScratchAllocator.init();
     const alloc = ctx.scratch.allocator();
-    ctx.backbuffer = try alloc.alloc([4]f32, storedImageSize()[0] * storedImageSize()[1]);
-    ctx.frontbuffer = try alloc.alloc([4]f32, storedImageSize()[0] * storedImageSize()[1]);
+    ctx.backbuffer = try alloc.alloc([4]f16, storedImageSize()[0] * storedImageSize()[1]);
+    ctx.frontbuffer = try alloc.alloc([4]f16, storedImageSize()[0] * storedImageSize()[1]);
     ctx.qgpu = try .init(alloc);
     ctx.prev_image_size = imageSize();
+
+    const version = c.gladLoadGL(@ptrCast(&glfw.getProcAddress));
+    if (version == 0) {
+        std.log.scoped(.starry).err("couldn't initialize opengl", .{});
+        return GlError.LoadFailed;
+    }
+
+    // dummy vao so it stops bitching
+    var vao: c.GLuint = undefined;
+    c.glGenVertexArrays(1, &vao);
+    c.glBindVertexArray(vao);
+
+    const vert_shader: c.GLuint = c.glCreateShader(c.GL_VERTEX_SHADER);
+    const vert_shader_src: [*:0]const u8 = @embedFile("shader/blit.vert");
+    c.glShaderSource(vert_shader, 1, &vert_shader_src, null);
+    c.glCompileShader(vert_shader);
+    defer c.glDeleteShader(vert_shader);
+
+    var success: c.GLint = undefined;
+    c.glGetShaderiv(vert_shader, c.GL_COMPILE_STATUS, &success);
+    if (success == 0) {
+        var info_log_cstr: [1024:0]u8 = undefined;
+        c.glGetShaderInfoLog(vert_shader, info_log_cstr.len, null, &info_log_cstr);
+        const info_log = info_log_cstr[0..std.mem.indexOfSentinel(u8, 0, @ptrCast(&info_log_cstr))];
+
+        std.log.err("compiling vertex shader failed: {s}", .{info_log});
+        return GlError.ShaderCompilationFailed;
+    }
+
+    const frag_shader = c.glCreateShader(c.GL_FRAGMENT_SHADER);
+    const frag_shader_src: [*:0]const u8 = @embedFile("shader/blit.frag");
+    c.glShaderSource(frag_shader, 1, &frag_shader_src, null);
+    c.glCompileShader(frag_shader);
+    defer c.glDeleteShader(frag_shader);
+
+    c.glGetShaderiv(frag_shader, c.GL_COMPILE_STATUS, &success);
+    if (success == 0) {
+        var info_log_cstr: [1024:0]u8 = undefined;
+        c.glGetShaderInfoLog(frag_shader, info_log_cstr.len, null, &info_log_cstr);
+        const info_log = info_log_cstr[0..std.mem.indexOfSentinel(u8, 0, @ptrCast(&info_log_cstr))];
+
+        std.log.err("compiling fragment shader failed: {s}", .{info_log});
+        return GlError.ShaderCompilationFailed;
+    }
+
+    const shader_program = c.glCreateProgram();
+    c.glAttachShader(shader_program, vert_shader);
+    c.glAttachShader(shader_program, frag_shader);
+    c.glLinkProgram(shader_program);
+
+    c.glGetProgramiv(shader_program, c.GL_LINK_STATUS, &success);
+    if (success == 0) {
+        var info_log_cstr: [1024:0]u8 = undefined;
+        c.glGetProgramInfoLog(shader_program, info_log_cstr.len, null, &info_log_cstr);
+        const info_log = info_log_cstr[0..std.mem.indexOfSentinel(u8, 0, @ptrCast(&info_log_cstr))];
+
+        std.log.err("linking shader failed: {s}", .{info_log});
+        return GlError.ShaderLinkingFailed;
+    }
+
+    c.glUseProgram(shader_program);
+
+    const border_color = [4]f32{ 0, 0, 0, 1 };
+    c.glTexParameterfv(c.GL_TEXTURE_2D, c.GL_TEXTURE_BORDER_COLOR, &border_color);
+    c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_WRAP_S, c.GL_CLAMP_TO_BORDER);
+    c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_WRAP_T, c.GL_CLAMP_TO_BORDER);
+    c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MIN_FILTER, c.GL_NEAREST);
+    c.glTexParameteri(c.GL_TEXTURE_2D, c.GL_TEXTURE_MAG_FILTER, c.GL_NEAREST);
+
+    var texture: c.GLuint = undefined;
+    c.glGenTextures(1, &texture);
+    c.glActiveTexture(c.GL_TEXTURE0);
+    c.glBindTexture(c.GL_TEXTURE_2D, texture);
 }
 
 pub fn deinit() void {
@@ -164,6 +255,21 @@ pub fn render() !void {
     ctx.prev_image_size = imageSize();
 
     ctx.qgpu.render();
+
+    c.glClearColor(0, 0, 0, 1);
+    c.glClear(c.GL_COLOR_BUFFER_BIT);
+    c.glTexImage2D(
+        c.GL_TEXTURE_2D,
+        0,
+        c.GL_RGBA16F,
+        @intCast(imageSize()[0]),
+        @intCast(imageSize()[1]),
+        0,
+        c.GL_RGBA,
+        c.GL_FLOAT,
+        ctx.frontbuffer.ptr,
+    );
+    c.glDrawArrays(c.GL_TRIANGLES, 0, 6);
 }
 
 pub fn remakeSwapchain() !void {

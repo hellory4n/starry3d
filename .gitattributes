@@ -1,3 +1,4 @@
 starrygpu/lib/* linguist-vendored
+starry/c/* linguist-vendored
 *.h linguist-language=C
 * text=auto eol=lf

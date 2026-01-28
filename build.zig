@@ -22,17 +22,6 @@ pub fn build(b: *Build) !void {
         .root_source_file = b.path("sunshine/root.zig"),
     });
 
-    // starrygpu
-    // const starrygpu_mod = b.addModule("starrygpu", .{
-    //     .target = target,
-    //     .optimize = optimize,
-    //     .link_libc = true,
-    //     .root_source_file = b.path("starrygpu/root.zig"),
-    // });
-    // starrygpu_mod.addIncludePath(b.path("starrygpu"));
-    // starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/starrygpu.c") });
-    // starrygpu_mod.addCSourceFile(.{ .file = b.path("starrygpu/backend_gl.c") });
-
     // main starry engine
     const starry_mod = b.addModule("starry3d", .{
         .target = target,
@@ -40,7 +29,6 @@ pub fn build(b: *Build) !void {
         .root_source_file = b.path("starry/root.zig"),
     });
     starry_mod.addImport("sunshine", sunshine_mod);
-    // starry_mod.addImport("starrygpu", starrygpu_mod);
 
     starry_mod.addImport("zglfw", zglfw_dep.module("root"));
     starry_mod.addImport("zglm", zglm_dep.module("zglm"));
@@ -54,6 +42,8 @@ pub fn build(b: *Build) !void {
         .optimize = if (optimize == .Debug) .ReleaseSafe else optimize,
         .root_source_file = b.path("starry/render.zig"),
     });
+    starryrender_mod.addIncludePath(b.path("starry/c"));
+    starryrender_mod.addCSourceFile(.{ .file = b.path("starry/c/glad.c") });
     starryrender_mod.addImport("starry3d", starry_mod);
     starryrender_mod.addImport("sunshine", sunshine_mod);
     starryrender_mod.addImport("zglfw", zglfw_dep.module("root"));
@@ -67,16 +57,11 @@ pub fn build(b: *Build) !void {
         .name = "sunshine-tests",
         .root_module = sunshine_mod,
     });
-    // const starrygpu_tests = b.addTest(.{
-    //     .name = "starrygpu-tests",
-    //     .root_module = starrygpu_mod,
-    // });
     const starry_tests = b.addTest(.{
         .name = "starry3d-tests",
         .root_module = starry_mod,
     });
     test_step.dependOn(&b.addRunArtifact(sunshine_tests).step);
-    // test_step.dependOn(&b.addRunArtifact(starrygpu_tests).step);
     test_step.dependOn(&b.addRunArtifact(starry_tests).step);
 
     try sandbox(b, .{
