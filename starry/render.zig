@@ -106,14 +106,15 @@ const QuasiGpu = struct {
             const pending_tile = qgpu.pending_tile.load(.acquire);
             if (pending_tile.x != null_tile.x or pending_tile.y != pending_tile.y) {
                 shader(.{ @intCast(pending_tile.x), @intCast(pending_tile.y) });
+                qgpu.pending_tile.store(null_tile, .release);
                 _ = qgpu.tiles_rendered.fetchAdd(1, .release);
             }
         }
     }
 
     fn submit(qgpu: *QuasiGpu, pos: @Vector(2, u32)) void {
-        while (qgpu.pending_tile.load(.acquire).x == null_tile.x and
-            qgpu.pending_tile.load(.acquire).y == null_tile.y and
+        while (qgpu.pending_tile.load(.acquire).x != null_tile.x and
+            qgpu.pending_tile.load(.acquire).y != null_tile.y and
             qgpu.rendering.load(.acquire))
         {}
         qgpu.pending_tile.store(.{ .x = @intCast(pos[0]), .y = @intCast(pos[1]) }, .release);
@@ -125,14 +126,14 @@ const QuasiGpu = struct {
         var expected_tile_count: u32 = 0;
         while (y < imageSize()[1]) : (y += tile_size) {
             x = 0;
-            expected_tile_count += 1;
             while (x < imageSize()[0]) : (x += tile_size) {
                 expected_tile_count += 1;
                 qgpu.submit(.{ x, y });
             }
         }
 
-        while (qgpu.tiles_rendered.load(.acquire) != expected_tile_count) {}
+        // swapping my chain
+        while (qgpu.tiles_rendered.load(.acquire) < expected_tile_count) {}
         std.mem.swap([][4]f16, &ctx.frontbuffer, &ctx.backbuffer);
     }
 };
@@ -242,21 +243,26 @@ pub fn init() !void {
     c.glGenTextures(1, &texture);
     c.glActiveTexture(c.GL_TEXTURE0);
     c.glBindTexture(c.GL_TEXTURE_2D, texture);
+
+    std.log.scoped(.starry).info("initialized renderer", .{});
 }
 
 pub fn deinit() void {
+    ctx.qgpu.deinit();
     ctx.scratch.deinit();
+    std.log.scoped(.starry).info("deinitialized renderer", .{});
 }
 
 pub fn render() !void {
     if (zglm.any(ctx.prev_image_size != imageSize())) {
+        c.glViewport(0, 0, @intCast(imageSize()[0]), @intCast(imageSize()[1]));
         try remakeSwapchain();
     }
     ctx.prev_image_size = imageSize();
 
     ctx.qgpu.render();
 
-    c.glClearColor(0, 0, 0, 1);
+    c.glClearColor(1, 1, 1, 1);
     c.glClear(c.GL_COLOR_BUFFER_BIT);
     c.glTexImage2D(
         c.GL_TEXTURE_2D,
@@ -266,7 +272,7 @@ pub fn render() !void {
         @intCast(imageSize()[1]),
         0,
         c.GL_RGBA,
-        c.GL_FLOAT,
+        c.GL_HALF_FLOAT,
         ctx.frontbuffer.ptr,
     );
     c.glDrawArrays(c.GL_TRIANGLES, 0, 6);

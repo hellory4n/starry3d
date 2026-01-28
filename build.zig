@@ -93,6 +93,7 @@ pub fn sandbox(b: *Build, options: struct {
             },
         }),
     });
+    b.installArtifact(sandbox_exe);
 
     const run_step = b.step("run-sandbox", "Run sandbox");
     const run_cmd = b.addRunArtifact(sandbox_exe);

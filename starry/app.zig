@@ -154,9 +154,7 @@ fn starryMain() !void {
 
     // main loop
     while (!ctx.window.shouldClose()) {
-        if (!isMinimized()) {
-            try render.render();
-        }
+        try render.render();
 
         if (ctx.settings.update) |realUpdateFn| {
             // f64 -> f32 because most game code uses f32
