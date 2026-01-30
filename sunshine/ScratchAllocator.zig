@@ -2,7 +2,8 @@
 //! shared by the entire program, and each function can make a new instance of `ScratchAllocator`,
 //! which is then freed at the end, leaving more space for the rest of the program to use. If the
 //! underlying buffer is full, it'll use a backup allocator so that the program doesn't just die.
-//! Each thread has its own buffer, so it's probably thread-safe, idk lol.
+//! Each thread has its own buffer, so it's probably thread-safe, idk lol. Just don't share data
+//! across threads.
 const std = @import("std");
 const mem = std.mem;
 const heap = std.heap;
@@ -10,7 +11,7 @@ const testing = std.testing;
 
 pub const ScratchAllocator = @This();
 
-start_pos: isize = -1,
+start_pos: ?usize = -1,
 fallback_alloc: heap.ArenaAllocator = undefined,
 fallback_backing_alloc: heap.GeneralPurposeAllocator(.{}) = undefined, // catchy
 created_fallback: bool = false,
@@ -18,18 +19,18 @@ created_fallback: bool = false,
 pub fn init() ScratchAllocator {
     globalInit();
     return ScratchAllocator{
-        .start_pos = @intCast(scratch_alloc.end_index),
+        .start_pos = scratch_alloc.end_index,
     };
 }
 
 pub fn deinit(scratch: *ScratchAllocator) void {
-    if (scratch.start_pos == -1) {
+    if (scratch.start_pos == null) {
         return;
     }
 
-    @memset(scratch_buffer[@intCast(scratch.start_pos)..], undefined);
-    scratch_alloc.end_index = @intCast(scratch.start_pos);
-    scratch.start_pos = -1;
+    @memset(scratch_buffer[scratch.start_pos.?..], undefined);
+    scratch_alloc.end_index = scratch.start_pos;
+    scratch.start_pos = null;
 
     if (scratch.created_fallback) {
         scratch.fallback_alloc.deinit();
@@ -40,7 +41,7 @@ pub fn deinit(scratch: *ScratchAllocator) void {
 /// allocating it rn
 pub fn allocator(scratch: *ScratchAllocator) mem.Allocator {
     // making it idiot proof
-    if (scratch.start_pos == -1) {
+    if (scratch.start_pos == null) {
         @panic("idiot you didn't initialize with ScratchAllocator.init()");
     }
 
