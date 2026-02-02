@@ -53,22 +53,68 @@ pub const World = struct {
             },
         }
     }
+
+    /// returns the voxel at that position if available
+    fn getVoxelPtr(world: *World, pos: @Vector(3, i32)) ?*PackedVoxel {
+        const region = world.regions.get(pos) orelse return null;
+        const brick_idx = pos % region_size_vec;
+        const brick = region.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
+
+        const voxel_idx = pos % brick_size_vec;
+        return &brick.voxels[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]];
+    }
+
+    /// places a voxel (allocating memory if necessary) and returns its pointer
+    fn putVoxel(world: *World, pos: @Vector(3, i32)) !*PackedVoxel {
+        var region = world.regions.get(pos);
+        if (region == null) {
+            region = try Region.init();
+            world.regions.put(pos, region);
+        }
+
+        const brick_idx = pos % region_size_vec;
+        const brick = region.?.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
+
+        const voxel_idx = pos % brick_size_vec;
+        return &brick.voxels[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]];
+    }
+
+    /// reallocates a voxel for new props. note this isn't necessary if the props are the
+    /// same, and only the values changes.
+    fn replaceVoxel(world: *World, pos: @Vector(3, i32)) *PackedVoxel {}
 };
 
 const brick_size = 8;
+const brick_size_vec = @as(@Vector(3, i32), @splat(brick_size));
 const region_size = 16;
+const region_size_vec = @as(@Vector(3, i32), @splat(region_size));
 
 const Region = struct {
     arena: std.heap.ArenaAllocator,
-    bricks: [region_size][region_size][region_size]?*Brick,
+    bricks: [region_size][region_size][region_size]Brick = .{
+        [_]Brick{.{}} ** region_size,
+        [_]Brick{.{}} ** region_size,
+        [_]Brick{.{}} ** region_size,
+    },
+
+    pub fn init() !Region {
+        return .{
+            .arena = std.heap.ArenaAllocator.init(std.heap.page_allocator),
+            .bricks = .{},
+        };
+    }
+
+    pub fn deinit(region: *Region) void {
+        region.arena.deinit();
+    }
 };
 
 const Brick = struct {
-    // TODO is this necessary?
-    solid: packed struct {
-        v: [brick_size][brick_size][brick_size]bool,
+    voxels: [brick_size][brick_size][brick_size]?PackedVoxel = .{
+        [_]?PackedVoxel{null} ** brick_size,
+        [_]?PackedVoxel{null} ** brick_size,
+        [_]?PackedVoxel{null} ** brick_size,
     },
-    voxels: [brick_size][brick_size][brick_size]?*PackedVoxel,
 };
 
 /// a dumb tagged union would take up too much space, instead do evil bit fuckery
@@ -209,3 +255,8 @@ pub const PropSettings = struct {
         };
     }
 };
+
+pub const Prop = struct {};
+
+/// Only used for the public API. See the World functions.
+pub const Voxel = []const PropData;
