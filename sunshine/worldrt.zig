@@ -69,6 +69,7 @@ pub const World = struct {
         var iter = world.regions.valueIterator();
         while (iter.next()) |region| {
             region.*.deinit();
+            world.allocator.destroy(region.*);
         }
         world.regions.deinit();
     }
@@ -199,8 +200,7 @@ pub const OptionalProp = union(enum) {
 };
 
 test "get/set/remove voxels and props" {
-    // should be testing.allocator but that's also busted apparently
-    var world = try World.init(std.heap.page_allocator);
+    var world = try World.init(testing.allocator);
     defer world.deinit();
 
     var colorof = world.getVoxelProp(.{ 1, 2, 3 }, tag_color);

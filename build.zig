@@ -4,6 +4,10 @@ const Build = std.Build;
 pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const opt_benchmark = b.option(bool, "benchmark", "Enables running benchmark tests") orelse false;
+
+    const options = b.addOptions();
+    options.addOption(bool, "benchmark", opt_benchmark);
 
     // deps
     const zglfw_dep = b.dependency("zglfw", .{
@@ -21,6 +25,7 @@ pub fn build(b: *Build) !void {
         .optimize = optimize,
         .root_source_file = b.path("sunshine/root.zig"),
     });
+    sunshine_mod.addOptions("starry3d_options", options);
 
     // main starry engine
     const starry_mod = b.addModule("starry3d", .{

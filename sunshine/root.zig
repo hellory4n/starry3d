@@ -1,4 +1,6 @@
 const std = @import("std");
+const builtin = @import("builtin");
+const build_options = @import("starry3d_options");
 
 pub const logfn = @import("log.zig").logfn;
 pub const addLogPath = @import("log.zig").addLogPath;
@@ -30,4 +32,12 @@ pub fn fileExists(path: []const u8) !bool {
 
 test {
     std.testing.refAllDecls(@This());
+
+    if (build_options.benchmark) {
+        if (builtin.mode != .ReleaseFast) {
+            std.testing.log_level = .debug;
+            std.log.warn("running {s} benchmarks", .{@tagName(builtin.mode)});
+        }
+        std.testing.refAllDecls(@import("benchmark.zig"));
+    }
 }
