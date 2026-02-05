@@ -3,9 +3,8 @@
 //!
 //! If you're interested in the inner details just read this post except it's slightly outdated
 //! because I changed some of the naming and props aren't whatever bytes you want anymore
-//! because that's questionable since Zig doesn't have a stable ABI unless you use the C ABI
-//! which is kinda dogwater to use with Zig also other languages exist and they have their own
-//! ABI fuckery just read the post
+//! because that's questionable now it's only 32 bit ints or floats or whatever the fuck fits
+//! in 32 bits
 //! https://hellory4n.substack.com/p/the-grand-voxel-world-runtime
 //!
 //! All coordinates are right handed (+Y up, -Z forward) and in individual voxel resolution
@@ -16,91 +15,36 @@
 //! Also don't use this directly for rendering. It'll run like shit.
 
 const std = @import("std");
+const testing = std.testing;
 
-/// The runtime in question. This is also how you interact with anything in the world.
-pub const World = struct {
-    regions: std.AutoHashMap(@Vector(3, i32), *Region),
-    prop_tags: std.AutoHashMap(Tag, PropSettings),
-    allocator: std.mem.Allocator,
-
-    pub fn init(allocator: std.mem.Allocator) !World {
-        return .{
-            .regions = try .init(allocator),
-            .prop_tags = try .init(allocator),
-            .allocator = allocator,
-        };
-    }
-
-    pub fn deinit(world: *World) void {
-        world.regions.deinit();
-        world.prop_tags.deinit();
-    }
-
-    /// Adds a new type of prop so that you can prop all over the place
-    pub fn addPropTag(
-        world: *World,
-        settings: PropSettings,
-        /// you probably want .keep_old_version unless you're doing something weird
-        if_already_exists: enum { always_overwrite, keep_old },
-    ) !void {
-        switch (if_already_exists) {
-            .always_overwrite => world.prop_tags.put(settings.tag, settings),
-            .keep_old => {
-                const exists = world.prop_tags.get(settings.tag) == null;
-                if (exists) {
-                    world.prop_tags.put(settings.tag, settings);
-                }
-            },
-        }
-    }
-
-    /// returns the voxel at that position if available
-    fn getVoxelPtr(world: *World, pos: @Vector(3, i32)) ?*PackedVoxel {
-        const region = world.regions.get(pos) orelse return null;
-        const brick_idx = pos % region_size_vec;
-        const brick = region.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
-
-        const voxel_idx = pos % brick_size_vec;
-        return &brick.voxels[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]];
-    }
-
-    /// places a voxel (allocating memory if necessary) and returns its pointer
-    fn putVoxel(world: *World, pos: @Vector(3, i32)) !*PackedVoxel {
-        var region = world.regions.get(pos);
-        if (region == null) {
-            region = try Region.init();
-            world.regions.put(pos, region);
-        }
-
-        const brick_idx = pos % region_size_vec;
-        const brick = region.?.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
-
-        const voxel_idx = pos % brick_size_vec;
-        return &brick.voxels[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]];
-    }
-
-    /// reallocates a voxel for new props. note this isn't necessary if the props are the
-    /// same, and only the values changes.
-    fn replaceVoxel(world: *World, pos: @Vector(3, i32)) *PackedVoxel {}
-};
+pub const Tag = u16;
+/// Color is pretty important for voxels so it gets the so very special 0 index
+pub const tag_color = 0;
 
 const brick_size = 8;
 const brick_size_vec = @as(@Vector(3, i32), @splat(brick_size));
-const region_size = 16;
+const region_size = 8;
 const region_size_vec = @as(@Vector(3, i32), @splat(region_size));
 
+/// Voxel props are stored in an SoA for Fast, limited to 32 bits for Fast and Small
+const Brick = struct {
+    pub const PropList = struct {
+        tag: Tag,
+        data: [brick_size][brick_size][brick_size]u32,
+    };
+
+    solid: [brick_size][brick_size][brick_size]bool = @splat(@splat(@splat(false))),
+    data: std.ArrayList(PropList) = .empty,
+};
+
+/// Allocates bricks together for Fast and data-oriented Dee Oh Dee design (fast)
 const Region = struct {
     arena: std.heap.ArenaAllocator,
-    bricks: [region_size][region_size][region_size]Brick = .{
-        [_]Brick{.{}} ** region_size,
-        [_]Brick{.{}} ** region_size,
-        [_]Brick{.{}} ** region_size,
-    },
+    bricks: [region_size][region_size][region_size]Brick = @splat(@splat(@splat(.{}))),
 
-    pub fn init() !Region {
+    pub fn init(allocator: std.mem.Allocator) Region {
         return .{
-            .arena = std.heap.ArenaAllocator.init(std.heap.page_allocator),
-            .bricks = .{},
+            .arena = std.heap.ArenaAllocator.init(allocator),
         };
     }
 
@@ -109,154 +53,189 @@ const Region = struct {
     }
 };
 
-const Brick = struct {
-    voxels: [brick_size][brick_size][brick_size]?PackedVoxel = .{
-        [_]?PackedVoxel{null} ** brick_size,
-        [_]?PackedVoxel{null} ** brick_size,
-        [_]?PackedVoxel{null} ** brick_size,
-    },
-};
+/// The titular world runtime
+pub const World = struct {
+    regions: std.AutoHashMap(@Vector(3, i32), *Region),
+    allocator: std.mem.Allocator,
 
-/// a dumb tagged union would take up too much space, instead do evil bit fuckery
-const PackedVoxel = struct {
-    data: []u8,
+    pub fn init(allocator: std.mem.Allocator) !World {
+        return .{
+            .allocator = allocator,
+            .regions = .init(allocator),
+        };
+    }
 
-    pub fn getTag(vox: PackedVoxel, world: *const World, tag: Tag) ?PropData {
-        // poor man's parser
-        // hopefully not horrible for performance :))))))))))))))
-        var i: usize = 0;
-        while (i < vox.data.len) : (i += 1) {
-            const cur_tag: Tag = @bitCast(vox.data[i .. i + 1]);
-            const prop_settings = world.prop_tags.get(cur_tag) orelse return null;
-            const typeof = prop_settings.typeof();
-            const sizeof = typeof.sizeof();
+    pub fn deinit(world: *World) void {
+        var iter = world.regions.valueIterator();
+        while (iter.next()) |region| {
+            region.*.deinit();
+        }
+        world.regions.deinit();
+    }
 
-            if (cur_tag == tag) {
-                if (typeof == .void) {
-                    return .{ .void = {} };
-                }
+    /// Returns a prop from a voxel at a specified position. The returned data may be interpreted any way you'd like (through `@bitCast`) as long as it fits in 32 bits.
+    pub fn getVoxelProp(world: *const World, pos: @Vector(3, i32), tag: Tag) OptionalProp {
+        const region_idx = @divFloor(pos, region_size_vec);
 
-                // fuck alignment
-                const payload = vox.data[i + 1 .. i + 1 + sizeof].ptr;
-                return switch (typeof) {
-                    .void => unreachable, // just handled that
-                    .bool => .{ .bool = @as(*const bool, @ptrCast(payload)).* },
-                    .i8 => .{ .i8 = @as(*const i8, @ptrCast(payload)).* },
-                    .i16 => .{ .i16 = @as(*const i16, @ptrCast(payload)).* },
-                    .i32 => .{ .i32 = @as(*const i32, @ptrCast(payload)).* },
-                    .i64 => .{ .i64 = @as(*const i64, @ptrCast(payload)).* },
-                    .u8 => .{ .u8 = @as(*const u8, @ptrCast(payload)).* },
-                    .u16 => .{ .u16 = @as(*const u16, @ptrCast(payload)).* },
-                    .u32 => .{ .u32 = @as(*const u32, @ptrCast(payload)).* },
-                    .u64 => .{ .u64 = @as(*const u64, @ptrCast(payload)).* },
-                    .f16 => .{ .f16 = @as(*const f16, @ptrCast(payload)).* },
-                    .f32 => .{ .f32 = @as(*const f32, @ptrCast(payload)).* },
-                    .f64 => .{ .f64 = @as(*const f64, @ptrCast(payload)).* },
-                    .isize => .{ .isize = @as(*const isize, @ptrCast(payload)).* },
-                    .usize => .{ .usize = @as(*const usize, @ptrCast(payload)).* },
-                };
-            }
-
-            i += sizeof - 1;
+        const region = world.regions.get(region_idx);
+        if (region == null) {
+            return .unloaded;
         }
 
-        return null;
+        const brick_idx: @Vector(3, u32) = @intCast(@mod(pos, region_size_vec));
+        const brick = region.?.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
+
+        const voxel_idx: @Vector(3, u32) = @intCast(@mod(pos, brick_size_vec));
+        if (!brick.solid[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]]) {
+            return .empty;
+        }
+
+        // hashing is overkill here i think tbh ong icl fr
+        for (brick.data.items) |list| {
+            if (list.tag == tag) {
+                return .{ .exists = list.data[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]] };
+            }
+        }
+        return .no_such_prop;
+    }
+
+    /// Note this returns false if the voxel is unloaded/out of bounds. If you need to check that,
+    /// use `isVoxelLoaded`. It also returns true if the voxel has no color prop, which shouldn't
+    /// matter unless you're doing something weird.
+    pub fn isVoxelSolid(world: *const World, pos: @Vector(3, i32)) bool {
+        const region_idx = @divFloor(pos, region_size_vec);
+
+        const region = world.regions.get(region_idx);
+        if (region == null) {
+            return false;
+        }
+
+        const brick_idx: @Vector(3, u32) = @intCast(@mod(pos, region_size_vec));
+        const brick = region.?.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
+
+        const voxel_idx: @Vector(3, u32) = @intCast(@mod(pos, brick_size_vec));
+        return brick.solid[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]];
+    }
+
+    /// Note this returns true if the voxel is empty. If you need to check that,
+    /// use `isVoxelSolid`.
+    pub fn isVoxelLoaded(world: *const World, pos: @Vector(3, i32)) bool {
+        const region_idx = @divFloor(pos, region_size_vec);
+
+        const region = world.regions.get(region_idx);
+        return region != null;
+    }
+
+    /// Sets a prop for a voxel, and places it in the world if it's not there yet.
+    pub fn setVoxelProp(world: *World, pos: @Vector(3, i32), tag: Tag, val: u32) !void {
+        const region_idx = @divFloor(pos, region_size_vec);
+
+        var region = world.regions.get(region_idx);
+        if (region == null) {
+            region = try world.allocator.create(Region);
+            region.?.* = Region.init(world.allocator);
+            try world.regions.put(region_idx, region.?);
+        }
+
+        const brick_idx: @Vector(3, u32) = @intCast(@mod(pos, region_size_vec));
+        const brick = &region.?.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
+
+        const voxel_idx: @Vector(3, u32) = @intCast(@mod(pos, brick_size_vec));
+        brick.solid[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]] = true;
+
+        // hashing is overkill here i think tbh ong icl fr
+        for (brick.data.items) |*list| {
+            if (list.tag == tag) {
+                list.data[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]] = val;
+            }
+        }
+
+        // no list, add one
+        // this also means that bricks only store the props they use(d), which is nice
+        const alloc = region.?.arena.allocator();
+        // i think appending just 1 item instead of doubling capacity (like an array list usually does)
+        // is fine since adding new tags is relatively rare and it saves up space except it's an arena
+        // fuck shit
+        try brick.data.append(alloc, .{
+            .tag = tag,
+            .data = @splat(@splat(@splat(0))),
+        });
+
+        const list = &brick.data.items[brick.data.items.len - 1];
+        list.data[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]] = val;
+    }
+
+    /// Brutally murders the voxel in cold blood. Poor voxel.
+    pub fn removeVoxel(world: *World, pos: @Vector(3, i32)) void {
+        const region_idx = @divFloor(pos, region_size_vec);
+
+        const region = world.regions.get(region_idx);
+        if (region == null) {
+            return;
+        }
+
+        const brick_idx: @Vector(3, u32) = @intCast(@mod(pos, region_size_vec));
+        const brick = &region.?.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
+
+        const voxel_idx: @Vector(3, u32) = @intCast(@mod(pos, brick_size_vec));
+        brick.solid[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]] = false;
     }
 };
 
-pub const Tag = i16;
+/// null isn't enough
+pub const OptionalProp = union(enum) {
+    exists: u32,
+    no_such_prop,
+    empty,
+    unloaded,
 
-pub fn isProp(tag: Tag) bool {
-    return tag.val >= 0;
-}
-
-pub fn isPrefab(tag: Tag) bool {
-    return tag.val < 0;
-}
-
-pub const PropType = enum {
-    void,
-    bool,
-    i8,
-    i16,
-    i32,
-    i64,
-    u8,
-    u16,
-    u32,
-    u64,
-    f16,
-    f32,
-    f64,
-    isize,
-    usize,
-
-    pub fn sizeof(ptype: PropType) usize {
-        return switch (ptype) {
-            .void => @sizeOf(void),
-            .bool => @sizeOf(bool),
-            .i8 => @sizeOf(i8),
-            .i16 => @sizeOf(i16),
-            .i32 => @sizeOf(i32),
-            .i64 => @sizeOf(i64),
-            .u8 => @sizeOf(u8),
-            .u16 => @sizeOf(u16),
-            .u32 => @sizeOf(u32),
-            .u64 => @sizeOf(u64),
-            .f16 => @sizeOf(f16),
-            .f32 => @sizeOf(f32),
-            .f64 => @sizeOf(f64),
-            .isize => @sizeOf(isize),
-            .usize => @sizeOf(usize),
+    /// Literally just `nullable orelse whatever` but with this custom union which has several types of null
+    pub fn orElse(optprop: OptionalProp, altval: u32) u32 {
+        return switch (optprop) {
+            .exists => |val| val,
+            else => altval,
         };
     }
 };
 
-pub const PropData = union(enum) {
-    void: void,
-    bool: bool,
-    i8: i8,
-    i16: i16,
-    i32: i32,
-    i64: i64,
-    u8: u8,
-    u16: u16,
-    u32: u32,
-    u64: u64,
-    f16: f16,
-    f32: f32,
-    f64: f64,
-    isize: isize,
-    usize: usize,
-};
+test "get/set/remove voxels and props" {
+    // should be testing.allocator but that's also busted apparently
+    var world = try World.init(std.heap.page_allocator);
+    defer world.deinit();
 
-pub const PropSettings = struct {
-    tag: Tag,
-    default: PropData,
+    var colorof = world.getVoxelProp(.{ 1, 2, 3 }, tag_color);
+    try testing.expectEqual(.unloaded, colorof);
 
-    pub fn typeof(settings: PropSettings) PropType {
-        // mate
-        return switch (settings.default) {
-            .void => .void,
-            .bool => .bool,
-            .i8 => .i8,
-            .i16 => .i16,
-            .i32 => .i32,
-            .i64 => .i64,
-            .u8 => .u8,
-            .u16 => .u16,
-            .u32 => .u32,
-            .u64 => .u64,
-            .f16 => .f16,
-            .f32 => .f32,
-            .f64 => .f64,
-            .isize => .isize,
-            .usize => .usize,
-        };
-    }
-};
+    const mystery_tag = 61;
+    try world.setVoxelProp(.{ 1, 2, 3 }, mystery_tag, 76816425);
+    try testing.expect(world.isVoxelLoaded(.{ 1, 2, 3 }));
+    try testing.expect(world.isVoxelSolid(.{ 1, 2, 3 }));
 
-pub const Prop = struct {};
+    colorof = world.getVoxelProp(.{ 1, 2, 3 }, tag_color);
+    try testing.expectEqual(.no_such_prop, colorof);
 
-/// Only used for the public API. See the World functions.
-pub const Voxel = []const PropData;
+    world.removeVoxel(.{ 1, 2, 3 });
+    colorof = world.getVoxelProp(.{ 1, 2, 3 }, tag_color);
+    try testing.expectEqual(.empty, colorof);
+
+    try world.setVoxelProp(.{ 1, 2, 3 }, tag_color, 0xff0000ff);
+    colorof = world.getVoxelProp(.{ 1, 2, 3 }, tag_color);
+    try testing.expectEqual(OptionalProp{ .exists = 0xff0000ff }, colorof);
+
+    colorof = world.getVoxelProp(.{ -1, -2, -3 }, tag_color);
+    try testing.expectEqual(.unloaded, colorof);
+
+    // since it's negative it has to make a new region since that's how math works
+    try world.setVoxelProp(.{ -1, -2, -3 }, tag_color, 0x00ff00ff);
+    colorof = world.getVoxelProp(.{ -1, -2, -3 }, tag_color);
+    try testing.expectEqual(OptionalProp{ .exists = 0x00ff00ff }, colorof);
+
+    // sanity check
+    colorof = world.getVoxelProp(.{ 1, 2, 3 }, tag_color);
+    try testing.expectEqual(OptionalProp{ .exists = 0xff0000ff }, colorof);
+
+    // another sanity check
+    try world.setVoxelProp(.{ 1, 2, 4 }, tag_color, 0x0000ffff);
+    colorof = world.getVoxelProp(.{ 1, 2, 4 }, tag_color);
+    try testing.expectEqual(OptionalProp{ .exists = 0x0000ffff }, colorof);
+}

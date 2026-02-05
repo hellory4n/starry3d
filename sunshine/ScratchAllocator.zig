@@ -11,7 +11,7 @@ const testing = std.testing;
 
 pub const ScratchAllocator = @This();
 
-start_pos: ?usize = -1,
+start_pos: ?usize = null,
 fallback_alloc: heap.ArenaAllocator = undefined,
 fallback_backing_alloc: heap.GeneralPurposeAllocator(.{}) = undefined, // catchy
 created_fallback: bool = false,
@@ -29,7 +29,7 @@ pub fn deinit(scratch: *ScratchAllocator) void {
     }
 
     @memset(scratch_buffer[scratch.start_pos.?..], undefined);
-    scratch_alloc.end_index = scratch.start_pos;
+    scratch_alloc.end_index = scratch.start_pos.?;
     scratch.start_pos = null;
 
     if (scratch.created_fallback) {
