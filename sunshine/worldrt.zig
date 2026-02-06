@@ -16,15 +16,16 @@
 
 const std = @import("std");
 const testing = std.testing;
+const zglm = @import("zglm");
 
 pub const Tag = u16;
 /// Color is pretty important for voxels so it gets the so very special 0 index
 pub const tag_color = 0;
 
 const brick_size = 8;
-const brick_size_vec = @as(@Vector(3, i32), @splat(brick_size));
+const brick_size_vec = @as(zglm.Vec3i, @splat(brick_size));
 const region_size = 8;
-const region_size_vec = @as(@Vector(3, i32), @splat(region_size));
+const region_size_vec = @as(zglm.Vec3i, @splat(region_size));
 
 /// Voxel props are stored in an SoA for Fast, limited to 32 bits for Fast and Small
 const Brick = struct {
@@ -53,9 +54,42 @@ const Region = struct {
     }
 };
 
+/// Takes a color (or other prop) (null if the voxel is empty) + a position, and returns
+/// a new color (or other prop), or, returns null to remove the voxel. Basically a
+/// shader but for voxels. Optionally the caller can pass a 64 bit parameter (plenty of
+/// space for bit fucking), or 0 if it's not passed in
+pub const Brush = fn (pos: zglm.Vec3i, src: ?u32, params: u64) callconv(.@"inline") ?u32;
+
+/// Like null but for brush parameters
+pub const nullparams = 0;
+
+fn checkParams(comptime T: type) void {
+    switch (@typeInfo(T)) {
+        .@"struct" => |s| {
+            if (s.layout != .@"packed") {
+                @compileError("struct must be packed");
+            }
+
+            if (s.backing_integer.? != u64 and s.backing_integer.? != i64) {
+                @compileError("struct must be 64 bits");
+            }
+        },
+
+        // this is just so null works
+        .comptime_int => {},
+
+        else => @compileError("type '" ++ @typeName(T) ++ "' can't be used as brush parameters"),
+    }
+}
+
+// TODO
+// - fill brush (use a packed struct for the params)
+// - World.fill(brush: *const Brush, params: anytype) void
+//      - work in groups of 8, then discard the areas out of bounds
+
 /// The titular world runtime
 pub const World = struct {
-    regions: std.AutoHashMap(@Vector(3, i32), *Region),
+    regions: std.AutoHashMap(zglm.Vec3i, *Region),
     allocator: std.mem.Allocator,
 
     pub fn init(allocator: std.mem.Allocator) !World {
@@ -75,7 +109,7 @@ pub const World = struct {
     }
 
     /// Returns a prop from a voxel at a specified position. The returned data may be interpreted any way you'd like (through `@bitCast`) as long as it fits in 32 bits.
-    pub fn getVoxelProp(world: *const World, pos: @Vector(3, i32), tag: Tag) OptionalProp {
+    pub fn getVoxelProp(world: *const World, pos: zglm.Vec3i, tag: Tag) OptionalProp {
         const region_idx = @divFloor(pos, region_size_vec);
 
         const region = world.regions.get(region_idx);
@@ -83,10 +117,10 @@ pub const World = struct {
             return .unloaded;
         }
 
-        const brick_idx: @Vector(3, u32) = @intCast(@mod(pos, region_size_vec));
+        const brick_idx: zglm.Vec3iu = @intCast(@mod(pos, region_size_vec));
         const brick = region.?.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
 
-        const voxel_idx: @Vector(3, u32) = @intCast(@mod(pos, brick_size_vec));
+        const voxel_idx: zglm.Vec3iu = @intCast(@mod(pos, brick_size_vec));
         if (!brick.solid[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]]) {
             return .empty;
         }
@@ -103,7 +137,7 @@ pub const World = struct {
     /// Note this returns false if the voxel is unloaded/out of bounds. If you need to check that,
     /// use `isVoxelLoaded`. It also returns true if the voxel has no color prop, which shouldn't
     /// matter unless you're doing something weird.
-    pub fn isVoxelSolid(world: *const World, pos: @Vector(3, i32)) bool {
+    pub fn isVoxelSolid(world: *const World, pos: zglm.Vec3i) bool {
         const region_idx = @divFloor(pos, region_size_vec);
 
         const region = world.regions.get(region_idx);
@@ -111,16 +145,16 @@ pub const World = struct {
             return false;
         }
 
-        const brick_idx: @Vector(3, u32) = @intCast(@mod(pos, region_size_vec));
+        const brick_idx: zglm.Vec3iu = @intCast(@mod(pos, region_size_vec));
         const brick = region.?.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
 
-        const voxel_idx: @Vector(3, u32) = @intCast(@mod(pos, brick_size_vec));
+        const voxel_idx: zglm.Vec3iu = @intCast(@mod(pos, brick_size_vec));
         return brick.solid[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]];
     }
 
     /// Note this returns true if the voxel is empty. If you need to check that,
     /// use `isVoxelSolid`.
-    pub fn isVoxelLoaded(world: *const World, pos: @Vector(3, i32)) bool {
+    pub fn isVoxelLoaded(world: *const World, pos: zglm.Vec3i) bool {
         const region_idx = @divFloor(pos, region_size_vec);
 
         const region = world.regions.get(region_idx);
@@ -128,7 +162,7 @@ pub const World = struct {
     }
 
     /// Sets a prop for a voxel, and places it in the world if it's not there yet.
-    pub fn setVoxelProp(world: *World, pos: @Vector(3, i32), tag: Tag, val: u32) !void {
+    pub fn setVoxelProp(world: *World, pos: zglm.Vec3i, tag: Tag, val: u32) !void {
         const region_idx = @divFloor(pos, region_size_vec);
 
         var region = world.regions.get(region_idx);
@@ -138,10 +172,10 @@ pub const World = struct {
             try world.regions.put(region_idx, region.?);
         }
 
-        const brick_idx: @Vector(3, u32) = @intCast(@mod(pos, region_size_vec));
+        const brick_idx: zglm.Vec3i = @intCast(@mod(pos, region_size_vec));
         const brick = &region.?.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
 
-        const voxel_idx: @Vector(3, u32) = @intCast(@mod(pos, brick_size_vec));
+        const voxel_idx: zglm.Vec3iu = @intCast(@mod(pos, brick_size_vec));
         brick.solid[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]] = true;
 
         // hashing is overkill here i think tbh ong icl fr
@@ -167,7 +201,7 @@ pub const World = struct {
     }
 
     /// Brutally murders the voxel in cold blood. Poor voxel.
-    pub fn removeVoxel(world: *World, pos: @Vector(3, i32)) void {
+    pub fn removeVoxel(world: *World, pos: zglm.Vec3i) void {
         const region_idx = @divFloor(pos, region_size_vec);
 
         const region = world.regions.get(region_idx);
@@ -175,11 +209,28 @@ pub const World = struct {
             return;
         }
 
-        const brick_idx: @Vector(3, u32) = @intCast(@mod(pos, region_size_vec));
+        const brick_idx: zglm.Vec3iu = @intCast(@mod(pos, region_size_vec));
         const brick = &region.?.bricks[brick_idx[0]][brick_idx[1]][brick_idx[2]];
 
-        const voxel_idx: @Vector(3, u32) = @intCast(@mod(pos, brick_size_vec));
+        const voxel_idx: zglm.Vec3iu = @intCast(@mod(pos, brick_size_vec));
         brick.solid[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]] = false;
+    }
+
+    /// Fills a cubic area with a brush. `brush` must be an inline function. `brush_params`
+    /// must either be a packed struct of 64 bits, or `nullparams` (for when the brush doesn't
+    /// take in parameters)
+    pub fn fill(
+        world: *World,
+        start: zglm.Vec3i,
+        end: zglm.Vec3i,
+        brush: *const Brush,
+        brush_params: anytype,
+    ) !void {
+        checkParams(@TypeOf(brush_params));
+        const params: u64 = @bitCast(brush_params);
+
+        var fill_thingy = FillThingy{};
+        try fill_thingy.run(world, start, end, brush, params);
     }
 };
 
@@ -196,6 +247,35 @@ pub const OptionalProp = union(enum) {
             .exists => |val| val,
             else => altval,
         };
+    }
+};
+
+/// tricky stuff
+const FillThingy = struct {
+    // TODO there's probably a way to have to fetch this less times but idk
+    region: *Region = undefined,
+    region_idx: zglm.Vec3i = undefined,
+
+    pub fn run(
+        fill: *FillThingy,
+        world: *World,
+        start: zglm.Vec3i,
+        end: zglm.Vec3i,
+        brush: *const Brush,
+        brush_params: u64,
+    ) !void {}
+
+    fn forEachBrick(fill: *FillThingy, world: *World, pos: zglm.Vec3i) !void {
+        const this_region_idx = @divFloor(pos, region_size_vec);
+        if (this_region_idx != fill.region_idx) {
+            fill.region_idx = this_region_idx;
+            fill.region = world.regions.get(fill.region_idx);
+            if (fill.region == null) {
+                fill.region = try world.allocator.create(Region);
+                fill.region.?.* = Region.init(world.allocator);
+                try world.regions.put(fill.region_idx, fill.region.?);
+            }
+        }
     }
 };
 

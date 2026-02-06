@@ -66,6 +66,6 @@ test "can this run bad apple in realtime?" {
     const avg_time = @divFloor(set_all_black_time + invert_all_time, 2);
     std.log.info("average time: {d} µs", .{avg_time});
     std.log.info("can this run bad apple in realtime? {s}", .{
-        if (avg_time <= BadApple.timeRequiredMicro()) "yes" else "no",
+        if (avg_time <= BadApple.timeRequiredMicro()) "maybe" else "no",
     });
 }

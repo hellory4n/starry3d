@@ -26,6 +26,7 @@ pub fn build(b: *Build) !void {
         .root_source_file = b.path("sunshine/root.zig"),
     });
     sunshine_mod.addOptions("starry3d_options", options);
+    sunshine_mod.addImport("zglm", zglm_dep.module("zglm"));
 
     // main starry engine
     const starry_mod = b.addModule("starry3d", .{
