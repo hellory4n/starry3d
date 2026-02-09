@@ -1,5 +1,4 @@
-//! Blazingly fast next-gen voxel storage for CPU usage that will touch you in places. The 'rt'
-//! is runtime, not raytracing. If it was raytracing I'd just call it "raytracing".
+//! Blazingly fast next-gen voxel storage for CPU usage that will touch you in places.
 //!
 //! If you're interested in the inner details just read this post except it's slightly outdated
 //! because I changed some of the naming and props aren't whatever bytes you want anymore

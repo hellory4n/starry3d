@@ -2,7 +2,7 @@
 
 const std = @import("std");
 const testing = std.testing;
-const world = @import("worldrt.zig");
+const world = @import("world.zig");
 
 test "can this run bad apple in realtime?" {
     testing.log_level = .debug; // otherwise it busts
