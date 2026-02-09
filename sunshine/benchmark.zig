@@ -6,31 +6,36 @@ const world = @import("worldrt.zig");
 
 test "can this run bad apple in realtime?" {
     testing.log_level = .debug; // otherwise it busts
-    var w = try world.World.init(testing.allocator);
-    defer w.deinit();
 
     // this isnt ffmpeg so i think this is more than enough for most simulation stuff
     // noinline so the optimizer doesn't do smth too goofy, idk
     const BadApple = struct {
-        pub fn width() u32 {
+        pub noinline fn width() u32 {
             return 480;
         }
 
-        pub fn height() u32 {
+        pub noinline fn height() u32 {
             return 360;
         }
 
-        pub fn timeRequiredMicro() i64 {
+        pub noinline fn timeRequiredMicro() i64 {
             const nvnfjbn: f32 = (1 / 30) * 1000 * 1000;
             return @intFromFloat(nvnfjbn);
         }
 
-        pub fn getPixel(x: u32, y: u32) u32 {
+        pub noinline fn getPixel(x: u32, y: u32) u32 {
             _ = x;
             _ = y;
             return 0x000000ff;
         }
     };
+
+    var w = try world.World.init(
+        testing.allocator,
+        .{ 0, 0, 0 },
+        .{ @intCast(BadApple.width()), 1, @intCast(BadApple.height()) },
+    );
+    defer w.deinit();
 
     const set_all_black_start = std.time.microTimestamp();
     for (0..BadApple.height()) |y| for (0..BadApple.width()) |x| {
