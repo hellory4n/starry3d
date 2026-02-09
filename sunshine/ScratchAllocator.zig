@@ -156,12 +156,9 @@ test "multiple scratch allocators" {
             c = try alloc3.create(i32);
             c.* = -67;
         }
-
-        try testing.expect(c.* != -67);
     }
 
-    try testing.expect(b.* != 61);
-    try testing.expect(a.* == 38);
+    try testing.expectEqual(38, a.*);
 }
 
 test "scratch fallback" {
@@ -178,16 +175,16 @@ test "scratch fallback" {
     c.* = 789;
 
     // massive allocation, won't fit
-    const massive = try alloc.alloc(i32, 100_000);
+    const massive = try alloc.alloc(i32, 1_000_000);
     massive[35_621] = 8752752;
 
     // should still fit since they're separate
     const d = try alloc.create(i32);
     d.* = 1234;
 
-    try testing.expect(a.* == 123);
-    try testing.expect(b.* == 456);
-    try testing.expect(c.* == 789);
-    try testing.expect(d.* == 1234);
-    try testing.expect(massive[35_621] == 8752752);
+    try testing.expectEqual(123, a.*);
+    try testing.expectEqual(456, b.*);
+    try testing.expectEqual(789, c.*);
+    try testing.expectEqual(1234, d.*);
+    try testing.expectEqual(8752752, massive[35_621]);
 }

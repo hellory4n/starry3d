@@ -33,7 +33,7 @@ test "can this run bad apple in realtime?" {
     var w = try world.World.init(
         testing.allocator,
         .{ 0, 0, 0 },
-        .{ @intCast(BadApple.width()), 1, @intCast(BadApple.height()) },
+        .{ @intCast(BadApple.width()), @intCast(BadApple.height()), 1 },
     );
     defer w.deinit();
 

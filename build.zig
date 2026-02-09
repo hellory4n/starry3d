@@ -4,7 +4,31 @@ const Build = std.Build;
 pub fn build(b: *Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const opt_benchmark = b.option(bool, "benchmark", "Enables running benchmark tests") orelse false;
+    const opt_strip = b.option(
+        bool,
+        "strip",
+        "Omit debug symbols",
+    );
+    const opt_omit_frame_pointer = b.option(
+        bool,
+        "omit-frame-pointer",
+        "Omit the stack frame pointer",
+    ) orelse false;
+    const opt_valgrind = b.option(
+        bool,
+        "valgrind",
+        "Include valgrind client requests",
+    );
+    const opt_llvm = b.option(
+        bool,
+        "llvm",
+        "Force-enable LLVM",
+    );
+    const opt_benchmark = b.option(
+        bool,
+        "benchmark",
+        "Enables running benchmark tests",
+    ) orelse false;
 
     const options = b.addOptions();
     options.addOption(bool, "benchmark", opt_benchmark);
@@ -24,6 +48,10 @@ pub fn build(b: *Build) !void {
         .target = target,
         .optimize = optimize,
         .root_source_file = b.path("sunshine/root.zig"),
+
+        .strip = opt_strip,
+        .omit_frame_pointer = opt_omit_frame_pointer,
+        .valgrind = opt_valgrind,
     });
     sunshine_mod.addOptions("starry3d_options", options);
     sunshine_mod.addImport("zglm", zglm_dep.module("zglm"));
@@ -33,6 +61,10 @@ pub fn build(b: *Build) !void {
         .target = target,
         .optimize = optimize,
         .root_source_file = b.path("starry/root.zig"),
+
+        .strip = opt_strip,
+        .omit_frame_pointer = opt_omit_frame_pointer,
+        .valgrind = opt_valgrind,
     });
     starry_mod.addImport("sunshine", sunshine_mod);
 
@@ -62,10 +94,12 @@ pub fn build(b: *Build) !void {
     const sunshine_tests = b.addTest(.{
         .name = "sunshine-tests",
         .root_module = sunshine_mod,
+        .use_llvm = opt_llvm,
     });
     const starry_tests = b.addTest(.{
         .name = "starry3d-tests",
         .root_module = starry_mod,
+        .use_llvm = opt_llvm,
     });
     test_step.dependOn(&b.addRunArtifact(sunshine_tests).step);
     test_step.dependOn(&b.addRunArtifact(starry_tests).step);
@@ -76,6 +110,7 @@ pub fn build(b: *Build) !void {
         .starry = starry_mod,
         .sunshine = sunshine_mod,
         .zglm = zglm_dep.module("zglm"),
+        .opt_llvm = opt_llvm,
     });
 }
 
@@ -85,9 +120,11 @@ pub fn sandbox(b: *Build, options: struct {
     starry: *Build.Module,
     sunshine: *Build.Module,
     zglm: *Build.Module,
+    opt_llvm: ?bool,
 }) !void {
     const sandbox_exe = b.addExecutable(.{
         .name = "sandbox",
+        .use_llvm = options.opt_llvm,
         .root_module = b.createModule(.{
             .target = options.target,
             .optimize = options.optimize,
