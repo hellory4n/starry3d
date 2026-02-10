@@ -4,31 +4,31 @@ const std = @import("std");
 const testing = std.testing;
 const world = @import("world.zig");
 
-test "can this run bad apple in realtime?" {
-    testing.log_level = .debug; // otherwise it busts
+// this isnt ffmpeg so i think this is more than enough for most simulation stuff
+// noinline so the optimizer doesn't do smth too goofy, idk
+const BadApple = struct {
+    pub noinline fn width() u32 {
+        return 480;
+    }
 
-    // this isnt ffmpeg so i think this is more than enough for most simulation stuff
-    // noinline so the optimizer doesn't do smth too goofy, idk
-    const BadApple = struct {
-        pub noinline fn width() u32 {
-            return 480;
-        }
+    pub noinline fn height() u32 {
+        return 360;
+    }
 
-        pub noinline fn height() u32 {
-            return 360;
-        }
+    pub noinline fn timeRequiredMicro() i64 {
+        const nvnfjbn: f32 = (1 / 30) * 1000 * 1000;
+        return @intFromFloat(nvnfjbn);
+    }
 
-        pub noinline fn timeRequiredMicro() i64 {
-            const nvnfjbn: f32 = (1 / 30) * 1000 * 1000;
-            return @intFromFloat(nvnfjbn);
-        }
+    pub noinline fn getPixel(x: u32, y: u32) u32 {
+        _ = x;
+        _ = y;
+        return 0x000000ff;
+    }
+};
 
-        pub noinline fn getPixel(x: u32, y: u32) u32 {
-            _ = x;
-            _ = y;
-            return 0x000000ff;
-        }
-    };
+test "realtime bad apple (brushless)" {
+    testing.log_level = .debug;
 
     var w = try world.World.init(
         testing.allocator,

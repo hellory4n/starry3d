@@ -1,7 +1,6 @@
 //! Premade brushes for the world runtime
 
 const zglm = @import("zglm");
-const world = @import("worldrt.zig");
 
 // TODO more
 
@@ -15,7 +14,7 @@ pub inline fn eraser(pos: zglm.Vec3i, src: ?u32, params: u64) ?u32 {
 
 pub const FillParams = packed struct(u64) {
     color: u32,
-    _padding: u32,
+    _padding: u32 = undefined,
 };
 
 /// Fills every voxel in its path with a color (FillParams)

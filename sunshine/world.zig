@@ -45,26 +45,7 @@ pub const Brush = fn (pos: zglm.Vec3i, src: ?u32, params: u64) callconv(.@"inlin
 /// Like null but for brush parameters
 pub const nullparams = 0;
 
-fn checkParams(comptime T: type) void {
-    switch (@typeInfo(T)) {
-        .@"struct" => |s| {
-            if (s.layout != .@"packed") {
-                @compileError("struct must be packed");
-            }
-
-            if (s.backing_integer.? != u64 and s.backing_integer.? != i64) {
-                @compileError("struct must be 64 bits");
-            }
-        },
-
-        // this is just so null works
-        .comptime_int => {},
-
-        else => @compileError("type '" ++ @typeName(T) ++ "' can't be used as brush parameters"),
-    }
-}
-
-pub const InitError = std.mem.Allocator.Error || error{WorldTooLarge};
+pub const InitError = std.mem.Allocator.Error || error{ WorldTooLarge, StartMustBeSmallerThanEnd };
 pub const EditError = std.mem.Allocator.Error || error{OutOfBounds};
 
 /// The basic world runtime, from which chunking and streaming can be implemented on top of.
@@ -87,6 +68,11 @@ pub const World = struct {
         // signed-unsigned conversions break at that point
         if (zglm.any(size >= @as(zglm.Vec3iu, @splat(zglm.maxInt(i32))))) {
             return InitError.WorldTooLarge;
+        }
+        // sanity check
+        // also to make sure some calculations don't break
+        if (zglm.any(start >= end)) {
+            return InitError.StartMustBeSmallerThanEnd;
         }
 
         // some padding so simd stuff doesn't have to check for bounds
@@ -111,18 +97,21 @@ pub const World = struct {
         world.arena.deinit();
     }
 
-    fn getBrick(world: *const World, pos: zglm.Vec3i) ?*Brick {
+    fn getBrickPos(world: *const World, pos: zglm.Vec3i) zglm.Vec3iu {
         const upos = pos + @as(zglm.Vec3i, @intCast(@abs(world.start)));
-        const bpos: zglm.Vec3iu = @intCast(upos / brick_size_vec);
-        const idx = bpos[0] * (world.size[1] * world.size[2]) + bpos[1] * world.size[2] + bpos[2];
-        return world.bricks[idx];
+        return @intCast(upos / brick_size_vec);
+    }
+
+    fn getBrickIdx(world: *const World, pos: zglm.Vec3iu) usize {
+        return pos[0] * (world.size[1] * world.size[2]) + pos[1] * world.size[2] + pos[2];
+    }
+
+    fn getBrick(world: *const World, pos: zglm.Vec3i) ?*Brick {
+        return world.bricks[world.getBrickIdx(world.getBrickPos(pos))];
     }
 
     fn getBrickPtr(world: *const World, pos: zglm.Vec3i) *?*Brick {
-        const upos = pos + @as(zglm.Vec3i, @intCast(@abs(world.start)));
-        const bpos: zglm.Vec3iu = @intCast(upos / brick_size_vec);
-        const idx = bpos[0] * (world.size[1] * world.size[2]) + bpos[1] * world.size[2] + bpos[2];
-        return &world.bricks[idx];
+        return &world.bricks[world.getBrickIdx(world.getBrickPos(pos))];
     }
 
     /// Returns a prop from a voxel at a specified position. The returned data may be interpreted any way you'd like (through `@bitCast`) as long as it fits in 32 bits.
@@ -224,23 +213,126 @@ pub const World = struct {
         brick.?.solid[voxel_idx[0]][voxel_idx[1]][voxel_idx[2]] = false;
     }
 
-    // /// Fills a cubic area with a brush. `brush` must be an inline function. `brush_params`
-    // /// must either be a packed struct of 64 bits, or `nullparams` (for when the brush doesn't
-    // /// take in parameters)
-    // pub fn fill(
-    //     world: *World,
-    //     start: zglm.Vec3i,
-    //     end: zglm.Vec3i,
-    //     tag: Tag,
-    //     brush: *const Brush,
-    //     brush_params: anytype,
-    // ) !void {
-    //     checkParams(@TypeOf(brush_params));
-    //     const params: u64 = @bitCast(brush_params);
+    /// Fills a cubic area with a brush. `brush` must be an inline function. `brush_params`
+    /// must either be a packed struct of 64 bits, or `nullparams` (for when the brush doesn't
+    /// take in parameters)
+    pub fn fill(
+        world: *World,
+        v: struct {
+            start: zglm.Vec3i,
+            end: zglm.Vec3i,
+            tag: Tag,
+            brush: *const Brush,
+            /// use @bitCast to pass structs here
+            brush_params: u64 = nullparams,
+        },
+    ) !void {
+        const start_brick_pos = world.getBrickPos(v.start);
+        const end_brick_pos = world.getBrickPos(v.end);
 
-    //     var fill_thingy = FillThingy{};
-    //     try fill_thingy.run(world, start, end, brush, params);
-    // }
+        // tag prediction
+        // basically, bricks can have tags be at any index, which would usually make us
+        // always have to loop over them to access a tag
+        // however we can reasonably assume that most world editing will be done through
+        // brushes, and therefore many bricks will share tag indexes
+        // so we can try to predict a tag index to not have to loop over the brick
+        var tag_idx_prediction: usize = 0;
+
+        var cur_brick_pos = start_brick_pos;
+        // never nesting my ass
+        while (cur_brick_pos[2] <= end_brick_pos[2]) : (cur_brick_pos[2] += brick_size) {
+            while (cur_brick_pos[1] <= end_brick_pos[1]) : (cur_brick_pos[1] += brick_size) {
+                while (cur_brick_pos[0] <= end_brick_pos[0]) : (cur_brick_pos[0] += brick_size) {
+                    const brick = &world.bricks[world.getBrickIdx(cur_brick_pos)];
+                    if (brick.* == null) {
+                        brick.* = try world.arena.allocator().create(Brick);
+                    }
+
+                    // TODO if we ever want to parallelize this we can't share the idx prediction
+                    world.fillBrick(
+                        v.start,
+                        v.end,
+                        brick.*.?,
+                        cur_brick_pos,
+                        v.tag,
+                        &tag_idx_prediction,
+                        v.brush,
+                        v.brush_params,
+                    );
+                }
+            }
+        }
+    }
+
+    fn fillBrick(
+        world: *World,
+        start: zglm.Vec3i,
+        end: zglm.Vec3i,
+        brick: *Brick,
+        brick_pos: zglm.Vec3iu,
+        tag: Tag,
+        tag_idx_prediction: *usize,
+        brush: *const Brush,
+        brush_params: u64,
+    ) void {
+        if (tag_idx_prediction.* >= brick.data.items.len) {
+            @branchHint(.unlikely);
+            // why not lmao
+            tag_idx_prediction.* = brick.data.items.len - 1;
+        }
+
+        var prop_list = &brick.data.items[tag_idx_prediction.*];
+        if (prop_list.tag != tag) {
+            @branchHint(.unlikely);
+            for (brick.data.items, 0..) |*list, i| {
+                if (list.tag == tag) {
+                    prop_list = list;
+                    tag_idx_prediction.* = i;
+                }
+            }
+        }
+
+        // keep a copy so that we can discard the parts outside of the fill region
+        // since that's faster than checking bounds every time
+        const old_data = prop_list.data;
+        const old_solid_mask = brick.solid;
+
+        const working_pos_start = @as(zglm.Vec3i, @intCast(brick_pos)) + world.start;
+        const working_pos_end = working_pos_start + brick_size_vec;
+
+        for (0..brick_size) |z| for (0..brick_size) |y| for (0..brick_size) |x| {
+            const voxpos = working_pos_start + zglm.Vec3i{ @intCast(x), @intCast(y), @intCast(z) };
+            var srcvox: ?u32 = null;
+            if (brick.solid[x][y][z]) {
+                @branchHint(.unpredictable);
+                srcvox = prop_list.data[x][y][z];
+            }
+
+            const crap = brush(voxpos, srcvox, brush_params);
+            if (crap) |val| {
+                @branchHint(.unpredictable);
+                prop_list.data[x][y][z] = val;
+            } else {
+                brick.solid[x][y][z] = false;
+            }
+        };
+
+        // the aforementioned discarding
+        if (zglm.any(working_pos_start < start) or zglm.any(working_pos_end > end)) {
+            @branchHint(.unlikely);
+
+            for (0..brick_size) |x| for (0..brick_size) |y| {
+                const positions = std.simd.iota(i32, brick_size);
+
+                const lt_mask = positions < @as(@Vector(brick_size, i32), @splat(start[2]));
+                const gt_mask = positions > @as(@Vector(brick_size, i32), @splat(start[2]));
+                const inside_mask = lt_mask | gt_mask;
+
+                brick.solid[x][y] = @select(bool, inside_mask, brick.solid[x][y], old_solid_mask[x][y]);
+                prop_list.data[x][y] = @select(u32, inside_mask, prop_list.data[x][y], old_data[x][y]);
+            };
+        }
+    }
 };
 
 /// null isn't enough
@@ -296,4 +388,42 @@ test "get/set/remove voxels and props" {
     try world.setVoxelProp(.{ 1, 2, 4 }, tag_color, 0x0000ffff);
     colorof = world.getVoxelProp(.{ 1, 2, 4 }, tag_color);
     try testing.expectEqual(OptionalProp{ .exists = 0x0000ffff }, colorof);
+}
+
+test "brushes" {
+    var world = try World.init(testing.allocator, .{ -512, -64, -512 }, .{ 512, 64, 512 });
+    defer world.deinit();
+    const brush = @import("brushes.zig");
+
+    try world.fill(.{
+        .start = .{ -50, 0, -50 },
+        .end = .{ 50, 1, 50 },
+        .tag = tag_color,
+        .brush = brush.fill,
+        .brush_params = @bitCast(brush.FillParams{ .color = 0xff0000ff }),
+    });
+    var colorof = world.getVoxelProp(.{ -50, 0, -49 }, tag_color);
+    try testing.expectEqual(OptionalProp{ .exists = 0xff0000ff }, colorof);
+    colorof = world.getVoxelProp(.{ -51, 0, -49 }, tag_color);
+    try testing.expectEqual(.empty, colorof);
+
+    try world.fill(.{
+        .start = .{ 0, 0, -50 },
+        .end = .{ 0, 1, 50 },
+        .tag = tag_color,
+        .brush = brush.invert,
+    });
+    colorof = world.getVoxelProp(.{ 1, 0, 2 }, tag_color);
+    try testing.expectEqual(OptionalProp{ .exists = 0x00ffffff }, colorof);
+    colorof = world.getVoxelProp(.{ -50, 0, -49 }, tag_color);
+    try testing.expectEqual(OptionalProp{ .exists = 0xff0000ff }, colorof);
+
+    try world.fill(.{
+        .start = .{ -50, 0, -50 },
+        .end = .{ 50, 1, 50 },
+        .tag = tag_color,
+        .brush = brush.eraser,
+    });
+    colorof = world.getVoxelProp(.{ -50, 0, -49 }, tag_color);
+    try testing.expectEqual(.empty, colorof);
 }
