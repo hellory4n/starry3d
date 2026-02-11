@@ -246,10 +246,11 @@ pub const World = struct {
                     const brick = &world.bricks[world.getBrickIdx(cur_brick_pos)];
                     if (brick.* == null) {
                         brick.* = try world.arena.allocator().create(Brick);
+                        brick.*.?.* = .{};
                     }
 
                     // TODO if we ever want to parallelize this we can't share the idx prediction
-                    world.fillBrick(
+                    try world.fillBrick(
                         v.start,
                         v.end,
                         brick.*.?,
@@ -274,20 +275,38 @@ pub const World = struct {
         tag_idx_prediction: *usize,
         brush: *const Brush,
         brush_params: u64,
-    ) void {
-        if (tag_idx_prediction.* >= brick.data.items.len) {
-            @branchHint(.unlikely);
-            // why not lmao
-            tag_idx_prediction.* = brick.data.items.len - 1;
-        }
+    ) !void {
+        var prop_list: *Brick.PropList = undefined;
 
-        var prop_list = &brick.data.items[tag_idx_prediction.*];
-        if (prop_list.tag != tag) {
+        // can't predict if there's nothing to predict
+        if (brick.data.items.len == 0) {
             @branchHint(.unlikely);
-            for (brick.data.items, 0..) |*list, i| {
-                if (list.tag == tag) {
-                    prop_list = list;
-                    tag_idx_prediction.* = i;
+            const alloc = world.arena.allocator();
+            // i think appending just 1 item instead of doubling capacity (like an array list
+            // usually does) is fine since adding new tags is relatively rare and it saves up
+            // space except it's an arena fuck shit
+            try brick.data.append(alloc, .{
+                .tag = tag,
+                .data = @splat(@splat(@splat(0))),
+            });
+
+            prop_list = &brick.data.items[brick.data.items.len - 1];
+        } else {
+            @branchHint(.unlikely);
+            if (tag_idx_prediction.* >= brick.data.items.len) {
+                @branchHint(.unlikely);
+                // why not lmao
+                tag_idx_prediction.* = brick.data.items.len - 1;
+            }
+
+            prop_list = &brick.data.items[tag_idx_prediction.*];
+            if (prop_list.tag != tag) {
+                @branchHint(.unlikely);
+                for (brick.data.items, 0..) |*list, i| {
+                    if (list.tag == tag) {
+                        prop_list = list;
+                        tag_idx_prediction.* = i;
+                    }
                 }
             }
         }
