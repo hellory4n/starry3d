@@ -2,7 +2,53 @@ const std = @import("std");
 const Build = std.Build;
 
 pub fn build(b: *Build) !void {
-    const target = b.standardTargetOptions(.{});
+    const target = b.standardTargetOptions(.{
+        .whitelist = &.{
+            std.Target.Query{
+                .cpu_arch = .x86_64,
+                .os_tag = .windows,
+                .os_version_min = .{ .windows = .win10 },
+                // force avx instructions
+                .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64_v3 },
+            },
+            std.Target.Query{
+                .cpu_arch = .x86_64,
+                .os_tag = .linux,
+                // force avx instructions
+                .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64_v3 },
+            },
+
+            // not really supported/tested but you can try it if you want lmao
+            std.Target.Query{
+                .cpu_arch = .aarch64,
+                .os_tag = .linux,
+            },
+            std.Target.Query{
+                .cpu_arch = .aarch64,
+                .os_tag = .windows,
+            },
+            std.Target.Query{
+                .cpu_arch = .aarch64,
+                .os_tag = .macos,
+            },
+            std.Target.Query{
+                .cpu_arch = .x86_64,
+                .os_tag = .macos,
+            },
+            std.Target.Query{
+                .cpu_arch = .x86_64,
+                .os_tag = .freebsd,
+            },
+            std.Target.Query{
+                .cpu_arch = .x86_64,
+                .os_tag = .openbsd,
+            },
+            std.Target.Query{
+                .cpu_arch = .x86_64,
+                .os_tag = .netbsd,
+            },
+        },
+    });
     const optimize = b.standardOptimizeOption(.{});
     const opt_strip = b.option(
         bool,
@@ -52,9 +98,12 @@ pub fn build(b: *Build) !void {
         .strip = opt_strip,
         .omit_frame_pointer = opt_omit_frame_pointer,
         .valgrind = opt_valgrind,
+        .link_libc = true,
     });
     sunshine_mod.addOptions("starry3d_options", options);
     sunshine_mod.addImport("zglm", zglm_dep.module("zglm"));
+    sunshine_mod.addIncludePath(b.path("include"));
+    sunshine_mod.addCSourceFile(.{ .file = b.path("include/stb_image_write.c") });
 
     // main starry engine
     const starry_mod = b.addModule("starry3d", .{

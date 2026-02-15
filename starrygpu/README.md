@@ -18,4 +18,6 @@ Emerson Victor Kyler Gandalf Joel Pablo Daquavious II Sr. Jr. OBE ( 🇪🇸 Ém
 
 Conveniently every Zig binding for a graphics API seems to have some curious issue that breaks everything, so this is written in C and then used through a Zig wrapper. This is probably dumb and stupid.
 
+# it is
+
 Currently the only supported backend is OpenGL 4.5. I'd like to support Vulkan eventually but it wears me out.

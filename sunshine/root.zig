@@ -8,6 +8,7 @@ pub const initLog = @import("log.zig").init;
 pub const deinitLog = @import("log.zig").deinit;
 pub const handle = @import("handle.zig");
 pub const world = @import("world.zig");
+pub const png_slice = @import("png_slice.zig");
 pub const ScratchAllocator = @import("ScratchAllocator.zig");
 
 /// Recommended std options, or something. You have to set it yourself in your own program. (e.g.
@@ -28,6 +29,12 @@ pub fn fileExists(path: []const u8) !bool {
         }
     };
     return true;
+}
+
+/// directory in which tests output crap, remember to close it
+pub fn testOut() !std.fs.Dir {
+    if (!builtin.is_test) @compileError("nuh uh");
+    return std.fs.cwd().makeOpenPath("testout", .{});
 }
 
 test {
