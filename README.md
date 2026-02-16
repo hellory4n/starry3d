@@ -2,13 +2,14 @@
 
 # Starry3D
 
-The voxel graphics toolkit.
+The voxel graphics toolkit
 
-Featuring:
-- starry: the game engine
-- starrygpu: the gpu api
-- sunshine: related libraries that work fine on their own
-- sandbox: the test project
+Engines can be massive. For these we have many directories:
+- `starrylib/`: standalone functionality that doesn't depend on the runtime
+- `starryrt/`: the big heavy runtime
+- `sandbox/`: test project for the engine
+
+Only `lib/` and `runtime/` are needed for a game to run. Conveniently both only depend on the `core:` and `vendor:` packages, so you can just paste them into a new Odin project.
 
 ## FAQ
 
@@ -28,7 +29,3 @@ No.
 ### Where's the documentation?
 
 Can't be bothered to write real documentation when the engine changes every picosecond.
-
-### Why Zig?
-
-I like Zig.
