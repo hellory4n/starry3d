@@ -1,6 +1,9 @@
 # if you have OS-specific or editor-specific files to ignore,
 # put them in your global ~/.gitignore
 
+*.bin
+*.exe
+
 # engine garbage
 log.txt
 

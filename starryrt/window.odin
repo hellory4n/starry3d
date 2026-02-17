@@ -16,7 +16,8 @@ Graphics_Context :: enum {
 }
 
 // must be run before creating any window
-init_window_subsystem :: proc() {
+init_window_subsystem :: proc()
+{
 	// renderdoc consider unshitting yourself
 	when ODIN_OS == .Linux && ODIN_DEBUG {
 		glfw.InitHint(glfw.PLATFORM, glfw.PLATFORM_X11)
@@ -29,7 +30,8 @@ init_window_subsystem :: proc() {
 	log.infof("initialized GLFW %s", glfw.GetVersionString())
 }
 
-free_window_subsystem :: proc() {
+free_window_subsystem :: proc()
+{
 	glfw.Terminate()
 	log.info("deinitialized GLFW")
 }
@@ -41,7 +43,8 @@ open_window :: proc(
 	height: int = 600,
 	resizable: bool = true,
 	high_dpi: bool = true,
-) -> Window {
+) -> Window
+{
 	title_cstr := strings.clone_to_cstring(title)
 
 	if init_ctx_for == .OPENGL4 {
@@ -78,7 +81,8 @@ open_window :: proc(
 	return Window{glfw = window}
 }
 
-close_window :: proc(window: ^Window) {
+close_window :: proc(window: ^Window)
+{
 	if window.glfw == nil {
 		return
 	}
@@ -86,15 +90,18 @@ close_window :: proc(window: ^Window) {
 	window.glfw = nil
 }
 
-is_window_closing :: proc(window: Window) -> bool {
+is_window_closing :: proc(window: Window) -> bool
+{
 	return bool(glfw.WindowShouldClose(window.glfw))
 }
 
-poll_events :: proc(window: ^Window) {
+poll_events :: proc(window: ^Window)
+{
 	glfw.PollEvents()
 }
 
-swap_gl_buffers :: proc(window: Window) {
+swap_gl_buffers :: proc(window: Window)
+{
 	// afaik this is only for opengl
 	// every other graphics api has an explicit swapchain
 	glfw.SwapBuffers(window.glfw)

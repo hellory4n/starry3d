@@ -3,22 +3,25 @@ package sandbox
 import "../starryrt"
 import "core:fmt"
 
-app_init :: proc() {
+app_init :: proc()
+{
 	fmt.println("hehe")
 }
 
-app_free :: proc() {
+app_free :: proc()
+{
 	fmt.println("hihi")
 }
 
-app_update :: proc(dt: f32) {}
+app_update :: proc(dt: f32)
+{  }
 
-main :: proc() {
+main :: proc()
+{
 	starryrt.run(
 		app_name = "sandbox",
 		init_fn = app_init,
 		free_fn = app_free,
 		update_fn = app_update,
-		log_to_file = false,
 	)
 }

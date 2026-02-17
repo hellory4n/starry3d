@@ -27,7 +27,8 @@ run :: proc(
 	width: int = 800,
 	height: int = 600,
 	log_to_file: bool = true,
-) {
+)
+{
 	// officially supported platforms:
 	// - linux x64
 	// - windows x64
@@ -39,10 +40,14 @@ run :: proc(
 		log.warnf("architecture '%s' not officially supported", ODIN_ARCH_STRING)
 	}
 
+	term_options :: log.Options{.Time, .Terminal_Color}
+	log_options :: log.Options{.Time, .Level, .Procedure, .Thread_Id}
+
 	log_to_file := log_to_file
 	file_logger: log.Logger
 	logtxt: os.Handle
 	err: os.Error
+
 	if log_to_file {
 		logtxt, err = os.open("log.txt", os.O_CREATE, 0o644)
 		if err != nil {
@@ -52,19 +57,31 @@ run :: proc(
 			file_logger = log.create_file_logger(
 				logtxt,
 				lowest = .Debug when ODIN_DEBUG else .Info,
+				opt = log_options,
 			)
 		}
 	}
 	defer if err != nil {
+		log.destroy_file_logger(file_logger)
 		os.close(logtxt)
 	}
 
-	console_logger := log.create_console_logger(lowest = .Debug when ODIN_DEBUG else .Info)
+	console_logger := log.create_console_logger(
+		lowest = .Debug when ODIN_DEBUG else .Info,
+		opt = term_options,
+	)
+	defer log.destroy_console_logger(console_logger)
+
+	logger: log.Logger
 	if log_to_file {
-		context.logger = log.create_multi_logger(console_logger, file_logger)
+		logger = log.create_multi_logger(console_logger, file_logger)
 	} else {
-		context.logger = console_logger
+		logger = console_logger
 	}
+	defer if log_to_file {
+		log.destroy_file_logger(file_logger)
+	}
+	context.logger = logger
 
 	log.infof("starry engine %s", VERSION_STR)
 	defer log.infof("deinitialized starry")
