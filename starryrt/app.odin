@@ -49,7 +49,7 @@ run :: proc(
 	err: os.Error
 
 	if log_to_file {
-		logtxt, err = os.open("log.txt", os.O_CREATE, 0o644)
+		logtxt, err = os.open("log.txt", os.O_CREATE | os.O_WRONLY, 0o644)
 		if err != nil {
 			fmt.printfln("couldn't open log.txt: %s", os.error_string(err))
 			log_to_file = false
@@ -62,8 +62,8 @@ run :: proc(
 		}
 	}
 	defer if err != nil {
+		// also closes the file
 		log.destroy_file_logger(file_logger)
-		os.close(logtxt)
 	}
 
 	console_logger := log.create_console_logger(
@@ -79,7 +79,7 @@ run :: proc(
 		logger = console_logger
 	}
 	defer if log_to_file {
-		log.destroy_file_logger(file_logger)
+		log.destroy_multi_logger(logger)
 	}
 	context.logger = logger
 
