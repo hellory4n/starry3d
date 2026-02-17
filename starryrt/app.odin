@@ -40,6 +40,7 @@ run :: proc(
 		log.warnf("architecture '%s' not officially supported", ODIN_ARCH_STRING)
 	}
 
+	// a bunch of logging shit
 	term_options :: log.Options{.Time, .Terminal_Color}
 	log_options :: log.Options{.Time, .Level, .Procedure, .Thread_Id}
 
@@ -82,6 +83,7 @@ run :: proc(
 		log.destroy_multi_logger(logger)
 	}
 	context.logger = logger
+	// logging shit done
 
 	log.infof("starry engine %s", VERSION_STR)
 	defer log.infof("deinitialized starry")
@@ -95,7 +97,16 @@ run :: proc(
 		width = width,
 		height = height,
 	)
-	defer close_window(&global.main_window)
+	log.infof(
+		"created window for %s on %s %s",
+		window_system(),
+		ODIN_ARCH_STRING,
+		ODIN_OS_STRING,
+	)
+	defer {
+		close_window(&global.main_window)
+		log.infof("closed main window")
+	}
 
 	init_fn()
 	defer free_fn()
@@ -106,4 +117,10 @@ run :: proc(
 		poll_events(&global.main_window)
 		swap_gl_buffers(global.main_window)
 	}
+}
+
+// returns the main (and probably only) window
+main_window :: proc() -> ^Window
+{
+	return &global.main_window
 }

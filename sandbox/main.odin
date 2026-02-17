@@ -14,7 +14,11 @@ app_free :: proc()
 }
 
 app_update :: proc(dt: f32)
-{  }
+{
+	if starryrt.is_mouse_button_just_pressed(starryrt.main_window(), .LEFT) {
+		fmt.println("Fuh")
+	}
+}
 
 main :: proc()
 {
