@@ -4,12 +4,12 @@
 
 The voxel graphics toolkit
 
+See the [development setup](./docs/dev_setup.md) for build instructions.
+
 Engines can be massive. For these we have many directories:
 - `starrylib/`: standalone functionality that doesn't depend on the runtime
 - `starryrt/`: the big heavy runtime
 - `sandbox/`: test project for the engine
-
-Only `lib/` and `runtime/` are needed for a game to run. Conveniently both only depend on the `core:` and `vendor:` packages, so you can just paste them into a new Odin project.
 
 ## FAQ
 

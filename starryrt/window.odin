@@ -3,7 +3,6 @@ package starryrt
 import "../starrylib"
 import "core:c"
 import "core:log"
-import "core:math"
 import glm "core:math/linalg/glsl"
 import "core:strings"
 import "vendor:glfw"
@@ -16,10 +15,6 @@ Window :: struct {
 	mouse_state:      #sparse[Mouse_Button]Input_State,
 	prev_mouse:       glm.vec2,
 	high_dpi_enabled: bool,
-}
-
-Graphics_Context :: enum {
-	OPENGL4,
 }
 
 // must be run before creating any window
@@ -45,7 +40,7 @@ free_window_subsystem :: proc()
 
 open_window :: proc(
 	title: string,
-	init_ctx_for: Graphics_Context,
+	init_ctx_for: Gpu_Backend,
 	width: int = 800,
 	height: int = 600,
 	resizable: bool = true,
