@@ -1,6 +1,7 @@
 package starryrt
 
 import "../starrylib"
+import "base:runtime"
 import "core:c"
 import "core:log"
 import glm "core:math/linalg/glsl"
@@ -28,6 +29,15 @@ init_window_subsystem :: proc()
 	if !glfw.Init() {
 		log.panicf("couldn't initialize GLFW")
 	}
+
+	glfw.SetErrorCallback(
+		proc "c" (error: i32, description: cstring)
+		{
+			context = runtime.default_context()
+			// context.logger = logger // TODO can't be bothered to make this work
+			log.errorf("GLFW [%d]: %s", error, description)
+		},
+	)
 
 	log.infof("initialized GLFW %s", glfw.GetVersionString())
 }
@@ -72,13 +82,14 @@ open_window :: proc(
 		log.panicf("couldn't create window: %s", errstr)
 	}
 
-	// TODO this breaks down with multiple windows but idrc
 	if init_ctx_for == .OPENGL4 {
+		// TODO this breaks down with multiple windows but idrc
 		glfw.MakeContextCurrent(window)
+
+		// disable vsync on debug so that you can see the true fps
+		// which is useful for making renderers and shit
+		glfw.SwapInterval(0 when ODIN_DEBUG else 1)
 	}
-	// disable vsync on debug so that you can see the true fps
-	// which is useful for making renderers and shit
-	glfw.SwapInterval(1 when ODIN_DEBUG else 0)
 
 	return Window{glfw = window, high_dpi_enabled = high_dpi}
 }
@@ -382,6 +393,12 @@ framebuffer_sizei :: proc(window: ^Window) -> glm.ivec2
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
 	return glm.ivec2{i32(x), i32(y)}
+}
+
+framebuffer_sizeu :: proc(window: ^Window) -> glm.uvec2
+{
+	x, y := glfw.GetFramebufferSize(window.glfw)
+	return glm.uvec2{u32(x), u32(y)}
 }
 
 framebuffer_sizef :: proc(window: ^Window) -> glm.vec2

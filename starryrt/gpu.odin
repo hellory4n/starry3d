@@ -12,12 +12,18 @@ when DEFAULT_BACKEND == .OPENGL4 {
 
 Gpu_Error :: enum {
 	OK,
+	OUT_OF_CPU_MEMORY,
 	OUT_OF_GPU_MEMORY,
 	INCOMPATIBLE_GPU,
 	TOO_MANY_HANDLES,
 	BROKEN_HANDLE,
 	SHADER_COMPILATION_FAILED,
 	PIPELINE_COMPILATION_FAILED,
+	WINDOW_ERROR,
+	INVALID_ADDRESS,
+	HARDWARE_ERROR,
+	DRIVER_ERROR,
+	UNKNOWN,
 }
 
 gpu_error_string :: proc(err: Gpu_Error) -> string
@@ -37,18 +43,109 @@ gpu_error_string :: proc(err: Gpu_Error) -> string
 		return "shader compilation failed"
 	case .PIPELINE_COMPILATION_FAILED:
 		return "pipeline compilation failed"
+	case .OUT_OF_CPU_MEMORY:
+		return "out of CPU memory"
+	case .WINDOW_ERROR:
+		return "window system error"
+	case .INVALID_ADDRESS:
+		return "invalid error"
+	case .HARDWARE_ERROR:
+		return "hardware error"
+	case .DRIVER_ERROR:
+		return "driver error"
+	case .UNKNOWN:
+		return "unknown"
 	}
 	unreachable()
 }
 
 // gpu context crapfrick
-when DEFAULT_BACKEND == .VULKAN {
-	Gpu :: struct {
-		using _: Vulkan_Gpu,
+Gpu :: struct {
+	using vk: Vk_Gpu,
+}
+VALIDATION_ENABLED :: ODIN_DEBUG
+
+Gpu_Info :: struct {
+	vendor_name:                   string,
+	device_name:                   string,
+	// in pixels
+	max_image_2d_size:             [2]u32,
+	// applies to a single storage buffer block; in bytes
+	max_storage_buffer_size:       u64,
+	// how many storage buffers can be bound at the same time, per shader stage
+	max_storage_buffer_bindings:   u32,
+	// the GPU doesn't have infinite cores unfortunately
+	max_compute_workgroup_size:    [3]u32,
+	max_compute_workgroup_threads: u32,
+}
+
+@(require_results)
+init_gpu :: proc(
+	window: ^Window,
+	app_name: string = "",
+	engine_name: string = "",
+	app_version: [3]u32 = {0, 0, 0},
+	engine_version: [3]u32 = {0, 0, 0},
+	min_required_device: Maybe(Gpu_Info) = nil,
+) -> (
+	gpu: Gpu,
+	err: Gpu_Error,
+)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_init_gpu(
+			window,
+			app_name,
+			engine_name,
+			app_version,
+			engine_version,
+			min_required_device,
+		)
+	} else {
+		#panic("TODO")
 	}
 }
-when DEFAULT_BACKEND == .OPENGL4 {
-	Gpu :: struct {}
+
+free_gpu :: proc(gpu: ^Gpu)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		vk_free_gpu(gpu)
+	} else {
+		#panic("TODO")
+	}
+}
+
+// get info about the selected device
+// gpu_query :: proc() -> Gpu_Info
+// {
+// 	when DEFAULT_BACKEND == .VULKAN {
+// 		return vk_gpu_query()
+// 	} else {
+// 		#panic("TODO")
+// 	}
+// }
+
+Swapchain :: struct {
+	using vk: Vk_Swapchain,
+}
+
+// swap my chain<3
+init_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gpu_Error)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_init_swapchain(gpu, size)
+	} else {
+		#panic("TODO")
+	}
+}
+
+free_swapchain :: proc(swapchain: ^Swapchain)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		vk_free_swapchain(swapchain)
+	} else {
+		#panic("TODO")
+	}
 }
 
 // - init & free gpu ctx

@@ -2,6 +2,7 @@ package starryrt
 
 import "core:fmt"
 import "core:log"
+import "core:mem"
 import "core:os"
 
 VERSION_NUM :: 00_08_00 // 0.8.0
@@ -27,6 +28,7 @@ run :: proc(
 	width: int = 800,
 	height: int = 600,
 	log_to_file: bool = true,
+	app_version: [3]u32 = {0, 0, 0},
 )
 {
 	// officially supported platforms:
@@ -83,7 +85,35 @@ run :: proc(
 		log.destroy_multi_logger(logger)
 	}
 	context.logger = logger
-	// logging shit done
+
+	// we have valgrind at home
+	when ODIN_DEBUG {
+		track: mem.Tracking_Allocator
+		mem.tracking_allocator_init(&track, context.allocator)
+		context.allocator = mem.tracking_allocator(&track)
+
+		defer {
+			if len(track.allocation_map) > 0 {
+				log.errorf(
+					"=== %v allocations not freed: ===",
+					len(track.allocation_map),
+				)
+				for _, entry in track.allocation_map {
+					log.debugf("%v bytes @ %v", entry.size, entry.location)
+				}
+			}
+			if len(track.bad_free_array) > 0 {
+				log.errorf(
+					"=== %v incorrect frees: ===",
+					len(track.bad_free_array),
+				)
+				for entry in track.bad_free_array {
+					log.debugf("%p @ %v", entry.memory, entry.location)
+				}
+			}
+			mem.tracking_allocator_destroy(&track)
+		}
+	}
 
 	log.infof("starry engine %s", VERSION_STR)
 	defer log.infof("deinitialized starry")
@@ -93,7 +123,7 @@ run :: proc(
 
 	global.main_window = open_window(
 		title = app_name,
-		init_ctx_for = .OPENGL4,
+		init_ctx_for = .VULKAN,
 		width = width,
 		height = height,
 	)
@@ -108,11 +138,20 @@ run :: proc(
 		log.infof("closed main window")
 	}
 
+	renderer := init_render_subsystem(
+		&global.main_window,
+		app_name = app_name,
+		app_version = app_version,
+	)
+	defer free_render_subsytem(&renderer)
+
 	init_fn()
 	defer free_fn()
 
 	for !is_window_closing(global.main_window) {
 		update_fn(dt = 1)
+
+		render_loop(&renderer)
 
 		poll_events(&global.main_window)
 		swap_gl_buffers(global.main_window)
