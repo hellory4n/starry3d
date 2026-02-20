@@ -66,17 +66,26 @@ Gpu :: struct {
 VALIDATION_ENABLED :: ODIN_DEBUG
 
 Gpu_Info :: struct {
-	vendor_name:                   string,
-	device_name:                   string,
+	name:                          string,
+	// note that gpus may have multiple types of memory, this may be shared with this cpu, and,
+	// most importantly, that it's not very nice to use all the memory at once
+	total_vram:                    u64,
 	// in pixels
 	max_image_2d_size:             [2]u32,
-	// applies to a single storage buffer block; in bytes
+	// applies to a single storage buffer block; in bytes.
+	// note that in vulkan, this doesn't apply if `shader_64bit_addresses` is enabled
 	max_storage_buffer_size:       u64,
-	// how many storage buffers can be bound at the same time, per shader stage
+	// how many storage buffers can be bound at the same time
 	max_storage_buffer_bindings:   u32,
 	// the GPU doesn't have infinite cores unfortunately
 	max_compute_workgroup_size:    [3]u32,
 	max_compute_workgroup_threads: u32,
+	// can float64s be used in shaders
+	shader_f64:                    bool,
+	// can int64s be used in shaders
+	shader_i64:                    bool,
+	// can int16s be used in shaders
+	shader_i16:                    bool,
 }
 
 @(require_results)
@@ -116,14 +125,14 @@ free_gpu :: proc(gpu: ^Gpu)
 }
 
 // get info about the selected device
-// gpu_query :: proc() -> Gpu_Info
-// {
-// 	when DEFAULT_BACKEND == .VULKAN {
-// 		return vk_gpu_query()
-// 	} else {
-// 		#panic("TODO")
-// 	}
-// }
+query_gpu_info :: proc(gpu: ^Gpu) -> Gpu_Info
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_query_gpu_info(gpu)
+	} else {
+		#panic("TODO")
+	}
+}
 
 Swapchain :: struct {
 	using vk: Vk_Swapchain,

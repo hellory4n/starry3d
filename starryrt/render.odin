@@ -4,6 +4,7 @@ import "core:log"
 
 Renderer :: struct {
 	gpu:       Gpu,
+	gpu_info:  Gpu_Info,
 	swapchain: Swapchain,
 }
 
@@ -27,6 +28,9 @@ init_render_subsystem :: proc(
 		log.panicf("couldn't initialize GPU: %s", gpu_error_string(err))
 	}
 	log.infof("initialized GPU context for %s", DEFAULT_BACKEND)
+
+	render.gpu_info = query_gpu_info(&render.gpu)
+	log.infof("using %#v", render.gpu_info)
 
 	render.swapchain, err = init_swapchain(&render.gpu, framebuffer_sizeu(window))
 	if err != .OK {

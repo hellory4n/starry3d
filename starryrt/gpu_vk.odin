@@ -209,7 +209,6 @@ vk_init_gpu :: proc(
 )
 {
 	// TODO it'd be nice to print the GPU info when it's incompatible
-	// but idk if vkbootstrap gives that information
 
 	// instance fuckery
 	instance_builder := vkb.create_instance_builder()
@@ -305,8 +304,34 @@ vk_free_gpu :: proc(gpu: ^Gpu)
 	gpu^ = {}
 }
 
-// vk_gpu_query :: proc() -> Gpu_Info
-// {  }
+vk_query_gpu_info :: proc(gpu: ^Gpu) -> (info: Gpu_Info)
+{
+	info.name = gpu.vkb.physical_device.name
+
+	for i: u32 = 0; i < gpu.vkb.physical_device.memory_properties.memoryHeapCount; i += 1 {
+		info.total_vram += u64(
+			gpu.vkb.physical_device.memory_properties.memoryHeaps[i].size,
+		)
+	}
+
+	info.max_image_2d_size.x = gpu.vkb.physical_device.properties.limits.maxImageDimension2D
+	info.max_image_2d_size.y = gpu.vkb.physical_device.properties.limits.maxImageDimension2D
+	info.max_storage_buffer_size = u64(
+		gpu.vkb.physical_device.properties.limits.maxStorageBufferRange,
+	)
+	info.max_storage_buffer_bindings =
+		gpu.vkb.physical_device.properties.limits.maxDescriptorSetStorageBuffers
+	info.max_compute_workgroup_size =
+		gpu.vkb.physical_device.properties.limits.maxComputeWorkGroupCount
+	info.max_compute_workgroup_threads =
+		gpu.vkb.physical_device.properties.limits.maxComputeWorkGroupInvocations
+
+	info.shader_f64 = bool(gpu.vkb.physical_device.features.shaderFloat64)
+	info.shader_i64 = bool(gpu.vkb.physical_device.features.shaderInt64)
+	info.shader_i16 = bool(gpu.vkb.physical_device.features.shaderInt16)
+
+	return info
+}
 
 Vk_Swapchain :: struct {
 	swapchain:   vk.SwapchainKHR,
@@ -361,4 +386,5 @@ vk_free_swapchain :: proc(swapchain: ^Swapchain)
 	vkb.destroy_swapchain(swapchain.vkb.swapchain)
 	delete(swapchain.image_views)
 	delete(swapchain.images)
+	swapchain^ = {}
 }
