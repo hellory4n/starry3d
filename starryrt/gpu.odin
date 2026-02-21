@@ -161,7 +161,6 @@ Command_Port_Type :: enum {
 	GRAPHICS_AND_TRANSFER,
 	COMPUTE_AND_TRANSFER,
 	TRANSFER_ONLY,
-	PRESENT_ONLY,
 }
 
 // port/queue used for submitting commands
@@ -197,7 +196,7 @@ Command_Buffer_Lifespan :: enum {
 new_command_buffer :: proc(
 	gpu: ^Gpu,
 	port: Command_Port_Type,
-	lifespan: Command_Buffer_Lifespan,
+	lifespan: Command_Buffer_Lifespan = .REUSED,
 ) -> (
 	cmds: Command_Buffer,
 	err: Gpu_Error,
@@ -233,6 +232,70 @@ wait_for_gpu :: proc(gpu: ^Gpu)
 {
 	when DEFAULT_BACKEND == .VULKAN {
 		vk_wait_for_gpu(gpu)
+	} else {
+		#panic("TODO")
+	}
+}
+
+// signals to the CPU when the GPU is done doing something
+Fence :: struct {
+	using vk: Vk_Fence,
+}
+
+new_fence :: proc(gpu: ^Gpu) -> (fence: Fence, err: Gpu_Error)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_new_fence(gpu)
+	} else {
+		#panic("TODO")
+	}
+}
+
+free_fence :: proc(gpu: ^Gpu, fence: ^Fence)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		vk_free_fence(gpu, fence)
+	} else {
+		#panic("TODO")
+	}
+}
+
+wait_for_fence :: proc(gpu: ^Gpu, fence: ^Fence, timeout_ns: u64 = 1e9) -> (err: Gpu_Error)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_wait_for_fence(gpu, fence, timeout_ns)
+	} else {
+		#panic("TODO")
+	}
+}
+
+is_fence_running :: proc(gpu: ^Gpu, fence: ^Fence) -> bool
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_is_fence_running(gpu, fence)
+	} else {
+		#panic("TODO")
+	}
+}
+
+// for synchronizing the GPU with other parts of itself
+Semaphore :: struct {
+	using vk: Vk_Semaphore,
+}
+
+new_semaphore :: proc(gpu: ^Gpu) -> (semaphore: Semaphore, err: Gpu_Error)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_new_semaphore(gpu)
+	} else {
+		#panic("TODO")
+	}
+}
+
+free_semaphore :: proc(gpu: ^Gpu, semaphore: ^Semaphore)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		vk_free_semaphore(gpu, semaphore)
 	} else {
 		#panic("TODO")
 	}

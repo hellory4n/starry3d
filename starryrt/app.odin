@@ -119,7 +119,7 @@ run :: proc(
 		}
 	}
 
-	log.infof("starry engine %s", VERSION_STR)
+	log.infof("starry engine %s %s", VERSION_STR, "debug" when ODIN_DEBUG else "")
 	defer log.infof("deinitialized starry")
 
 	init_window_subsystem()
@@ -146,11 +146,14 @@ run :: proc(
 		log.infof("closed main window")
 	}
 
-	renderer := init_render_subsystem(
+	renderer, render_err := init_render_subsystem(
 		&global.main_window,
 		app_name = app_name,
 		app_version = app_version,
 	)
+	if render_err != .OK {
+		log.panicf(gpu_error_string(render_err))
+	}
 	defer free_render_subsytem(&renderer)
 
 	init_proc()
@@ -161,7 +164,10 @@ run :: proc(
 		// just avoids having to convert too many times
 		update_proc(f32(delta_time()))
 
-		render_loop(&renderer)
+		render_err = render_loop(&renderer)
+		if render_err != .OK {
+			log.panicf(gpu_error_string(render_err))
+		}
 
 		global.prev_time = global.second_count
 		global.second_count = glfw.GetTime()

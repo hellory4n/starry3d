@@ -23,7 +23,6 @@ Vk_Gpu :: struct {
 	graphics_queue_family: u32,
 	compute_queue_family:  u32,
 	transfer_queue_family: u32,
-	present_queue_family:  u32,
 	vkb:                   struct {
 		instance:        ^vkb.Instance,
 		physical_device: ^vkb.Physical_Device,
@@ -310,11 +309,6 @@ vk_new_gpu :: proc(
 		err = vkb_error_to_gpu_error(vkb_err)
 		return
 	}
-	gpu.present_queue_family, vkb_err = vkb.device_get_queue_index(gpu.vkb.device, .Present)
-	if vkb_err != nil {
-		err = vkb_error_to_gpu_error(vkb_err)
-		return
-	}
 
 	return
 }
@@ -435,8 +429,6 @@ vk_get_command_port :: proc(
 		vkb_queue_type = .Compute
 	case .TRANSFER_ONLY:
 		vkb_queue_type = .Transfer
-	case .PRESENT_ONLY:
-		vkb_queue_type = .Present
 	}
 
 	vkb_err: vkb.Error
@@ -471,8 +463,6 @@ vk_new_command_buffer :: proc(
 		queue_family_idx = gpu.compute_queue_family
 	case .TRANSFER_ONLY:
 		queue_family_idx = gpu.transfer_queue_family
-	case .PRESENT_ONLY:
-		queue_family_idx = gpu.present_queue_family
 	}
 
 	cmd_pool_info := vk.CommandPoolCreateInfo {
@@ -514,4 +504,85 @@ vk_clear_command_buffer :: proc(gpu: ^Gpu, cmds: ^Command_Buffer)
 vk_wait_for_gpu :: proc(gpu: ^Gpu)
 {
 	vk.DeviceWaitIdle(gpu.device)
+}
+
+Vk_Fence :: struct {
+	fence: vk.Fence,
+}
+
+vk_new_fence :: proc(gpu: ^Gpu) -> (fence: Fence, err: Gpu_Error)
+{
+	fence_info := vk.FenceCreateInfo {
+		sType = .FENCE_CREATE_INFO,
+		flags = {.SIGNALED},
+	}
+	vk_err := vk.CreateFence(gpu.device, &fence_info, nil, &fence.fence)
+	if !is_vk_ok(vk_err) {
+		err = vk_error_to_gpu_error(vk_err)
+		return
+	}
+	return
+}
+
+vk_free_fence :: proc(gpu: ^Gpu, fence: ^Fence)
+{
+	vk.DestroyFence(gpu.device, fence.fence, nil)
+}
+
+vk_wait_for_fence :: proc(gpu: ^Gpu, fence: ^Fence, timeout_ns: u64 = 1e9) -> (err: Gpu_Error)
+{
+	vk_err := vk.WaitForFences(gpu.device, 1, &fence.fence, true, timeout_ns)
+	if !is_vk_ok(vk_err) {
+		err = vk_error_to_gpu_error(vk_err)
+		return
+	}
+
+	// reset immediately otherwise you can't do shit with it
+	// TODO is this stupid?
+	vk_err = vk.ResetFences(gpu.device, 1, &fence.fence)
+	if !is_vk_ok(vk_err) {
+		err = vk_error_to_gpu_error(vk_err)
+		return
+	}
+
+	return
+}
+
+vk_is_fence_running :: proc(gpu: ^Gpu, fence: ^Fence) -> bool
+{
+	// TODO no idea if this works
+	vk_err := vk.WaitForFences(gpu.device, 1, &fence.fence, true, 0)
+	if vk_err == .NOT_READY || vk_err == .TIMEOUT {
+		return true
+	} else if vk_err == .SUCCESS {
+		return false
+	} else if !is_vk_ok(vk_err) {
+		return false
+	} else {
+		// idk lol
+		return false
+	}
+}
+
+Vk_Semaphore :: struct {
+	semaphore: vk.Semaphore,
+}
+
+vk_new_semaphore :: proc(gpu: ^Gpu) -> (semaphore: Semaphore, err: Gpu_Error)
+{
+	semaphore_info := vk.SemaphoreCreateInfo {
+		sType = .SEMAPHORE_CREATE_INFO,
+		flags = {},
+	}
+	vk_err := vk.CreateSemaphore(gpu.device, &semaphore_info, nil, &semaphore.semaphore)
+	if !is_vk_ok(vk_err) {
+		err = vk_error_to_gpu_error(vk_err)
+		return
+	}
+	return
+}
+
+vk_free_semaphore :: proc(gpu: ^Gpu, semaphore: ^Semaphore)
+{
+	vk.DestroySemaphore(gpu.device, semaphore.semaphore, nil)
 }
