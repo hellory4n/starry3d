@@ -3,10 +3,9 @@ package starryrt
 import "core:log"
 
 Renderer_Frame :: struct {
-	cmds:                Command_Buffer,
-	swapchain_semaphore: Semaphore,
-	render_semaphore:    Semaphore,
-	render_fence:        Fence,
+	cmds:             Command_Buffer,
+	render_semaphore: Semaphore,
+	render_fence:     Fence,
 }
 
 Renderer :: struct {
@@ -54,8 +53,6 @@ init_render_subsystem :: proc(
 	render.frames[1].cmds = new_command_buffer(&render.gpu, .GRAPHICS_AND_TRANSFER) or_return
 	log.infof("created command buffers")
 
-	render.frames[0].swapchain_semaphore = new_semaphore(&render.gpu) or_return
-	render.frames[1].swapchain_semaphore = new_semaphore(&render.gpu) or_return
 	render.frames[0].render_semaphore = new_semaphore(&render.gpu) or_return
 	render.frames[1].render_semaphore = new_semaphore(&render.gpu) or_return
 	render.frames[0].render_fence = new_fence(&render.gpu) or_return
@@ -73,11 +70,9 @@ free_render_subsytem :: proc(render: ^Renderer)
 	free_fence(&render.gpu, &render.frames[1].render_fence)
 	free_semaphore(&render.gpu, &render.frames[0].render_semaphore)
 	free_semaphore(&render.gpu, &render.frames[1].render_semaphore)
-	free_semaphore(&render.gpu, &render.frames[0].swapchain_semaphore)
-	free_semaphore(&render.gpu, &render.frames[1].swapchain_semaphore)
 	free_command_buffer(&render.gpu, &render.frames[0].cmds)
 	free_command_buffer(&render.gpu, &render.frames[1].cmds)
-	free_swapchain(&render.swapchain)
+	free_swapchain(&render.gpu, &render.swapchain)
 	free_gpu(&render.gpu)
 
 	log.infof("freed renderer")

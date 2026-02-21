@@ -148,14 +148,16 @@ new_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gp
 	}
 }
 
-free_swapchain :: proc(swapchain: ^Swapchain)
+free_swapchain :: proc(gpu: ^Gpu, swapchain: ^Swapchain)
 {
 	when DEFAULT_BACKEND == .VULKAN {
-		vk_free_swapchain(swapchain)
+		vk_free_swapchain(gpu, swapchain)
 	} else {
 		#panic("TODO")
 	}
 }
+
+swap_buffers :: proc(gpu: ^Gpu, swapchain: ^Swapchain)
 
 Command_Port_Type :: enum {
 	GRAPHICS_AND_TRANSFER,
