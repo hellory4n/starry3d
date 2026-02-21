@@ -89,7 +89,7 @@ Gpu_Info :: struct {
 }
 
 @(require_results)
-init_gpu :: proc(
+new_gpu :: proc(
 	window: ^Window,
 	app_name: string = "",
 	engine_name: string = "",
@@ -102,7 +102,7 @@ init_gpu :: proc(
 )
 {
 	when DEFAULT_BACKEND == .VULKAN {
-		return vk_init_gpu(
+		return vk_new_gpu(
 			window,
 			app_name,
 			engine_name,
@@ -139,10 +139,10 @@ Swapchain :: struct {
 }
 
 // swap my chain<3
-init_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gpu_Error)
+new_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gpu_Error)
 {
 	when DEFAULT_BACKEND == .VULKAN {
-		return vk_init_swapchain(gpu, size)
+		return vk_new_swapchain(gpu, size)
 	} else {
 		#panic("TODO")
 	}
@@ -157,12 +157,83 @@ free_swapchain :: proc(swapchain: ^Swapchain)
 	}
 }
 
-// - init & free gpu ctx
-// - choose device at startup
-// - command buffer
-// - swapchain
-// - render passes
-// - shaders
-// - pipelines
-// - gpu malloc
-// - buffer views
+Command_Port_Type :: enum {
+	GRAPHICS_AND_TRANSFER,
+	COMPUTE_AND_TRANSFER,
+	TRANSFER_ONLY,
+	PRESENT_ONLY,
+}
+
+// port/queue used for submitting commands
+Command_Port :: struct {
+	type:     Command_Port_Type,
+	using vk: Vk_Command_Port,
+}
+
+get_command_port :: proc(
+	gpu: ^Gpu,
+	type: Command_Port_Type,
+) -> (
+	port: Command_Port,
+	err: Gpu_Error,
+)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_get_command_port(gpu, type)
+	} else {
+		#panic("TODO")
+	}
+}
+
+Command_Buffer :: struct {
+	using vk: Vk_Command_Buffer,
+}
+
+Command_Buffer_Lifespan :: enum {
+	SHORT_LIVED,
+	REUSED,
+}
+
+new_command_buffer :: proc(
+	gpu: ^Gpu,
+	port: Command_Port_Type,
+	lifespan: Command_Buffer_Lifespan,
+) -> (
+	cmds: Command_Buffer,
+	err: Gpu_Error,
+)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_new_command_buffer(gpu, port, lifespan)
+	} else {
+		#panic("TODO")
+	}
+}
+
+free_command_buffer :: proc(gpu: ^Gpu, cmds: ^Command_Buffer)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		vk_free_command_buffer(gpu, cmds)
+	} else {
+		#panic("TODO")
+	}
+}
+
+clear_command_buffer :: proc(gpu: ^Gpu, cmds: ^Command_Buffer)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		vk_clear_command_buffer(gpu, cmds)
+	} else {
+		#panic("TODO")
+	}
+}
+
+// blocks this thread until the gpu is done running commands
+wait_for_gpu :: proc(gpu: ^Gpu)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		vk_wait_for_gpu(gpu)
+	} else {
+		#panic("TODO")
+	}
+}

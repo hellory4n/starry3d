@@ -16,16 +16,20 @@ REQUIRED_VULKAN_13_FEATURES :: vk.PhysicalDeviceVulkan13Features {
 }
 
 Vk_Gpu :: struct {
-	instance:        vk.Instance,
-	physical_device: vk.PhysicalDevice,
-	surface:         vk.SurfaceKHR,
-	device:          vk.Device,
-	vkb:             struct {
+	instance:              vk.Instance,
+	physical_device:       vk.PhysicalDevice,
+	surface:               vk.SurfaceKHR,
+	device:                vk.Device,
+	graphics_queue_family: u32,
+	compute_queue_family:  u32,
+	transfer_queue_family: u32,
+	present_queue_family:  u32,
+	vkb:                   struct {
 		instance:        ^vkb.Instance,
 		physical_device: ^vkb.Physical_Device,
 		device:          ^vkb.Device,
 	},
-	device_info:     Gpu_Info,
+	device_info:           Gpu_Info,
 }
 
 @(private)
@@ -196,7 +200,7 @@ vkb_error_to_gpu_error :: proc(src: vkb.Error) -> Gpu_Error
 	unreachable()
 }
 
-vk_init_gpu :: proc(
+vk_new_gpu :: proc(
 	window: ^Window,
 	app_name: string,
 	engine_name: string,
@@ -246,7 +250,7 @@ vk_init_gpu :: proc(
 
 	// surface fuckery
 	vk_err := glfw.CreateWindowSurface(gpu.instance, window.glfw, nil, &gpu.surface)
-	if vk_err != .SUCCESS {
+	if !is_vk_ok(vk_err) {
 		err = vk_error_to_gpu_error(vk_err)
 		return
 	}
@@ -289,6 +293,28 @@ vk_init_gpu :: proc(
 		vkb.destroy_device(gpu.vkb.device)
 	}
 	gpu.device = gpu.vkb.device.device
+
+	// queue fuckery
+	gpu.graphics_queue_family, vkb_err = vkb.device_get_queue_index(gpu.vkb.device, .Graphics)
+	if vkb_err != nil {
+		err = vkb_error_to_gpu_error(vkb_err)
+		return
+	}
+	gpu.compute_queue_family, vkb_err = vkb.device_get_queue_index(gpu.vkb.device, .Compute)
+	if vkb_err != nil {
+		err = vkb_error_to_gpu_error(vkb_err)
+		return
+	}
+	gpu.transfer_queue_family, vkb_err = vkb.device_get_queue_index(gpu.vkb.device, .Transfer)
+	if vkb_err != nil {
+		err = vkb_error_to_gpu_error(vkb_err)
+		return
+	}
+	gpu.present_queue_family, vkb_err = vkb.device_get_queue_index(gpu.vkb.device, .Present)
+	if vkb_err != nil {
+		err = vkb_error_to_gpu_error(vkb_err)
+		return
+	}
 
 	return
 }
@@ -344,7 +370,7 @@ Vk_Swapchain :: struct {
 	},
 }
 
-vk_init_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gpu_Error)
+vk_new_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gpu_Error)
 {
 	builder := vkb.create_swapchain_builder(gpu.vkb.device)
 	defer vkb.destroy_swapchain_builder(builder)
@@ -387,4 +413,105 @@ vk_free_swapchain :: proc(swapchain: ^Swapchain)
 	delete(swapchain.image_views)
 	delete(swapchain.images)
 	swapchain^ = {}
+}
+
+Vk_Command_Port :: struct {
+	queue: vk.Queue,
+}
+
+vk_get_command_port :: proc(
+	gpu: ^Gpu,
+	type: Command_Port_Type,
+) -> (
+	port: Command_Port,
+	err: Gpu_Error,
+)
+{
+	vkb_queue_type: vkb.Queue_Type
+	switch type {
+	case .GRAPHICS_AND_TRANSFER:
+		vkb_queue_type = .Graphics
+	case .COMPUTE_AND_TRANSFER:
+		vkb_queue_type = .Compute
+	case .TRANSFER_ONLY:
+		vkb_queue_type = .Transfer
+	case .PRESENT_ONLY:
+		vkb_queue_type = .Present
+	}
+
+	vkb_err: vkb.Error
+	port.queue, vkb_err = vkb.device_get_queue(gpu.vkb.device, vkb_queue_type)
+	if vkb_err != nil {
+		err = vkb_error_to_gpu_error(vkb_err)
+		return
+	}
+
+	return
+}
+
+Vk_Command_Buffer :: struct {
+	buffer: vk.CommandBuffer,
+	pool:   vk.CommandPool,
+}
+
+vk_new_command_buffer :: proc(
+	gpu: ^Gpu,
+	port: Command_Port_Type,
+	lifespan: Command_Buffer_Lifespan,
+) -> (
+	cmds: Command_Buffer,
+	err: Gpu_Error,
+)
+{
+	queue_family_idx: u32
+	switch port {
+	case .GRAPHICS_AND_TRANSFER:
+		queue_family_idx = gpu.graphics_queue_family
+	case .COMPUTE_AND_TRANSFER:
+		queue_family_idx = gpu.compute_queue_family
+	case .TRANSFER_ONLY:
+		queue_family_idx = gpu.transfer_queue_family
+	case .PRESENT_ONLY:
+		queue_family_idx = gpu.present_queue_family
+	}
+
+	cmd_pool_info := vk.CommandPoolCreateInfo {
+		sType            = .COMMAND_POOL_CREATE_INFO,
+		flags            = vk.CommandPoolCreateFlags{.TRANSIENT} if lifespan == .SHORT_LIVED else {},
+		queueFamilyIndex = queue_family_idx,
+	}
+	vk_err := vk.CreateCommandPool(gpu.device, &cmd_pool_info, nil, &cmds.pool)
+	if !is_vk_ok(vk_err) {
+		err = vk_error_to_gpu_error(vk_err)
+		return
+	}
+
+	cmd_alloc_info := vk.CommandBufferAllocateInfo {
+		sType              = .COMMAND_BUFFER_ALLOCATE_INFO,
+		commandPool        = cmds.pool,
+		commandBufferCount = 1,
+		level              = .PRIMARY,
+	}
+	vk_err = vk.AllocateCommandBuffers(gpu.device, &cmd_alloc_info, &cmds.buffer)
+	if !is_vk_ok(vk_err) {
+		err = vk_error_to_gpu_error(vk_err)
+		return
+	}
+
+	return
+}
+
+vk_free_command_buffer :: proc(gpu: ^Gpu, cmds: ^Command_Buffer)
+{
+	vk.DestroyCommandPool(gpu.device, cmds.pool, nil)
+}
+
+vk_clear_command_buffer :: proc(gpu: ^Gpu, cmds: ^Command_Buffer)
+{
+	vk.ResetCommandPool(gpu.device, cmds.pool, {})
+}
+
+vk_wait_for_gpu :: proc(gpu: ^Gpu)
+{
+	vk.DeviceWaitIdle(gpu.device)
 }

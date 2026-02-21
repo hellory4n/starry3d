@@ -17,7 +17,7 @@ init_render_subsystem :: proc(
 )
 {
 	err: Gpu_Error
-	render.gpu, err = init_gpu(
+	render.gpu, err = new_gpu(
 		window,
 		app_name = app_name,
 		engine_name = "Starry3D",
@@ -32,7 +32,7 @@ init_render_subsystem :: proc(
 	render.gpu_info = query_gpu_info(&render.gpu)
 	log.infof("using %#v", render.gpu_info)
 
-	render.swapchain, err = init_swapchain(&render.gpu, framebuffer_sizeu(window))
+	render.swapchain, err = new_swapchain(&render.gpu, framebuffer_sizeu(window))
 	if err != .OK {
 		log.panicf("couldn't initialize GPU: %s", gpu_error_string(err))
 	}

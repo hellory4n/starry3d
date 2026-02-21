@@ -4,6 +4,7 @@ import "core:fmt"
 import "core:log"
 import "core:mem"
 import "core:os"
+import "vendor:glfw"
 
 VERSION_NUM :: 00_08_00 // 0.8.0
 VERSION_STR :: "v0.8.0-dev"
@@ -15,16 +16,19 @@ VERSION_PATCH :: 0
 // starryrt.run() will then manage that state properly
 @(private)
 global: struct {
-	main_window: Window,
+	main_window:  Window,
+	frame_count:  u64,
+	second_count: f64,
+	prev_time:    f64,
 }
 
 // takes over control of the application and runs the app with the engine. may allocate,
 // may exit, may panic, all that fun stuff.
 run :: proc(
 	app_name: string,
-	init_fn: proc(),
-	free_fn: proc(),
-	update_fn: proc(dt: f32),
+	init_proc: proc(),
+	free_proc: proc(),
+	update_proc: proc(dt: f32),
 	width: int = 800,
 	height: int = 600,
 	log_to_file: bool = true,
@@ -121,6 +125,10 @@ run :: proc(
 	init_window_subsystem()
 	defer free_window_subsystem()
 
+	// this doesn't really have to depend on glfw who cares
+	global.second_count = glfw.GetTime()
+	global.prev_time = global.second_count
+
 	global.main_window = open_window(
 		title = app_name,
 		init_ctx_for = .VULKAN,
@@ -145,13 +153,19 @@ run :: proc(
 	)
 	defer free_render_subsytem(&renderer)
 
-	init_fn()
-	defer free_fn()
+	init_proc()
+	defer free_proc()
 
 	for !is_window_closing(global.main_window) {
-		update_fn(dt = 1)
+		// f32 is used more often in games in than f64
+		// just avoids having to convert too many times
+		update_proc(f32(delta_time()))
 
 		render_loop(&renderer)
+
+		global.prev_time = global.second_count
+		global.second_count = glfw.GetTime()
+		global.frame_count += 1
 
 		poll_events(&global.main_window)
 		swap_gl_buffers(global.main_window)
@@ -162,4 +176,22 @@ run :: proc(
 main_window :: proc() -> ^Window
 {
 	return &global.main_window
+}
+
+// returns the number of frames since the engine started
+frames :: proc() -> u64
+{
+	return global.frame_count
+}
+
+// returns the number of seconds since the engine started
+seconds :: proc() -> f64
+{
+	return global.second_count
+}
+
+// returns how long it took for the last frame to run
+delta_time :: proc() -> f64
+{
+	return global.second_count - global.prev_time
 }
