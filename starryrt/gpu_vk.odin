@@ -199,6 +199,7 @@ vkb_error_to_gpu_error :: proc(src: vkb.Error) -> Gpu_Error
 	unreachable()
 }
 
+@(private)
 vk_new_gpu :: proc(
 	window: ^Window,
 	app_name: string,
@@ -313,6 +314,7 @@ vk_new_gpu :: proc(
 	return
 }
 
+@(private)
 vk_free_gpu :: proc(gpu: ^Gpu)
 {
 	vk.DestroySurfaceKHR(gpu.instance, gpu.surface, nil)
@@ -324,6 +326,7 @@ vk_free_gpu :: proc(gpu: ^Gpu)
 	gpu^ = {}
 }
 
+@(private)
 vk_query_gpu_info :: proc(gpu: ^Gpu) -> (info: Gpu_Info)
 {
 	info.name = gpu.vkb.physical_device.name
@@ -357,6 +360,7 @@ Vk_Command_Port :: struct {
 	queue: vk.Queue,
 }
 
+@(private)
 vk_get_command_port :: proc(
 	gpu: ^Gpu,
 	type: Command_Port_Type,
@@ -390,6 +394,7 @@ Vk_Command_Buffer :: struct {
 	pool:   vk.CommandPool,
 }
 
+@(private)
 vk_new_command_buffer :: proc(
 	gpu: ^Gpu,
 	port: Command_Port_Type,
@@ -435,16 +440,19 @@ vk_new_command_buffer :: proc(
 	return
 }
 
+@(private)
 vk_free_command_buffer :: proc(gpu: ^Gpu, cmds: ^Command_Buffer)
 {
 	vk.DestroyCommandPool(gpu.device, cmds.pool, nil)
 }
 
+@(private)
 vk_clear_command_buffer :: proc(gpu: ^Gpu, cmds: ^Command_Buffer)
 {
 	vk.ResetCommandPool(gpu.device, cmds.pool, {})
 }
 
+@(private)
 vk_start_commands :: proc(
 	gpu: ^Gpu,
 	cmds: ^Command_Buffer,
@@ -476,6 +484,7 @@ vk_start_commands :: proc(
 	return
 }
 
+@(private)
 vk_end_commands :: proc(gpu: ^Gpu, cmds: ^Command_Buffer) -> (err: Gpu_Error)
 {
 	vk_err := vk.EndCommandBuffer(cmds.buffer)
@@ -486,6 +495,7 @@ vk_end_commands :: proc(gpu: ^Gpu, cmds: ^Command_Buffer) -> (err: Gpu_Error)
 	return
 }
 
+@(private)
 vk_submit_commands :: proc(
 	gpu: ^Gpu,
 	cmds: ^Command_Buffer,
@@ -508,6 +518,7 @@ vk_submit_commands :: proc(
 	}
 }
 
+@(private)
 vk_wait_for_gpu :: proc(gpu: ^Gpu)
 {
 	vk.DeviceWaitIdle(gpu.device)
@@ -517,6 +528,7 @@ Vk_Fence :: struct {
 	fence: vk.Fence,
 }
 
+@(private)
 vk_new_fence :: proc(gpu: ^Gpu) -> (fence: Fence, err: Gpu_Error)
 {
 	fence_info := vk.FenceCreateInfo {
@@ -531,11 +543,13 @@ vk_new_fence :: proc(gpu: ^Gpu) -> (fence: Fence, err: Gpu_Error)
 	return
 }
 
+@(private)
 vk_free_fence :: proc(gpu: ^Gpu, fence: ^Fence)
 {
 	vk.DestroyFence(gpu.device, fence.fence, nil)
 }
 
+@(private)
 vk_wait_for_fence :: proc(gpu: ^Gpu, fence: ^Fence, timeout_ns: u64 = 1e9) -> (err: Gpu_Error)
 {
 	vk_err := vk.WaitForFences(gpu.device, 1, &fence.fence, true, timeout_ns)
@@ -555,6 +569,7 @@ vk_wait_for_fence :: proc(gpu: ^Gpu, fence: ^Fence, timeout_ns: u64 = 1e9) -> (e
 	return
 }
 
+@(private)
 vk_is_fence_running :: proc(gpu: ^Gpu, fence: ^Fence) -> bool
 {
 	// TODO no idea if this works
@@ -575,6 +590,7 @@ Vk_Semaphore :: struct {
 	semaphore: vk.Semaphore,
 }
 
+@(private)
 vk_new_semaphore :: proc(gpu: ^Gpu) -> (semaphore: Semaphore, err: Gpu_Error)
 {
 	semaphore_info := vk.SemaphoreCreateInfo {
@@ -589,6 +605,7 @@ vk_new_semaphore :: proc(gpu: ^Gpu) -> (semaphore: Semaphore, err: Gpu_Error)
 	return
 }
 
+@(private)
 vk_free_semaphore :: proc(gpu: ^Gpu, semaphore: ^Semaphore)
 {
 	vk.DestroySemaphore(gpu.device, semaphore.semaphore, nil)
@@ -651,6 +668,7 @@ Vk_Swapchain :: struct {
 	next_image_idx: u32,
 }
 
+@(private)
 vk_new_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gpu_Error)
 {
 	builder := vkb.create_swapchain_builder(gpu.vkb.device)
@@ -689,6 +707,7 @@ vk_new_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err:
 	return
 }
 
+@(private)
 vk_free_swapchain :: proc(gpu: ^Gpu, swapchain: ^Swapchain)
 {
 	vk_free_semaphore(gpu, &swapchain.semaphore)
@@ -699,6 +718,7 @@ vk_free_swapchain :: proc(gpu: ^Gpu, swapchain: ^Swapchain)
 	swapchain^ = {}
 }
 
+@(private)
 vk_next_swapchain_image :: proc(
 	gpu: ^Gpu,
 	swapchain: ^Swapchain,
@@ -726,6 +746,7 @@ vk_next_swapchain_image :: proc(
 	return
 }
 
+@(private)
 vk_cmd_start_render_pass :: proc(
 	cmd: ^Command_Buffer,
 	color_target: Gpu_Image,
@@ -757,6 +778,7 @@ vk_cmd_start_render_pass :: proc(
 	}
 }
 
+@(private)
 vk_cmd_end_render_pass :: proc(cmd: ^Command_Buffer, color_target: Gpu_Image)
 {
 	vk_transition_image(cmd.buffer, color_target.image, .GENERAL, .PRESENT_SRC_KHR)

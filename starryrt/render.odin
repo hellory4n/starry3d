@@ -22,6 +22,7 @@ render_frame :: proc(renderer: ^Renderer) -> ^Renderer_Frame
 	return &renderer.frames[frames() % 2]
 }
 
+@(private)
 init_render_subsystem :: proc(
 	window: ^Window,
 	app_name: string,
@@ -62,6 +63,7 @@ init_render_subsystem :: proc(
 	return
 }
 
+@(private)
 free_render_subsytem :: proc(render: ^Renderer)
 {
 	wait_for_gpu(&render.gpu)
@@ -78,6 +80,7 @@ free_render_subsytem :: proc(render: ^Renderer)
 	log.infof("freed renderer")
 }
 
+@(private)
 render_loop :: proc(render: ^Renderer) -> (err: Gpu_Error)
 {
 	frame := render_frame(render)

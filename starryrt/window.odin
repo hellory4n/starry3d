@@ -19,6 +19,7 @@ Window :: struct {
 }
 
 // must be run before creating any window
+@(private)
 init_window_subsystem :: proc()
 {
 	// renderdoc consider unshitting yourself
@@ -42,6 +43,7 @@ init_window_subsystem :: proc()
 	log.infof("initialized GLFW %s", glfw.GetVersionString())
 }
 
+@(private)
 free_window_subsystem :: proc()
 {
 	glfw.Terminate()
