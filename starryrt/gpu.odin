@@ -134,31 +134,6 @@ query_gpu_info :: proc(gpu: ^Gpu) -> Gpu_Info
 	}
 }
 
-Swapchain :: struct {
-	using vk: Vk_Swapchain,
-}
-
-// swap my chain<3
-new_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gpu_Error)
-{
-	when DEFAULT_BACKEND == .VULKAN {
-		return vk_new_swapchain(gpu, size)
-	} else {
-		#panic("TODO")
-	}
-}
-
-free_swapchain :: proc(gpu: ^Gpu, swapchain: ^Swapchain)
-{
-	when DEFAULT_BACKEND == .VULKAN {
-		vk_free_swapchain(gpu, swapchain)
-	} else {
-		#panic("TODO")
-	}
-}
-
-swap_buffers :: proc(gpu: ^Gpu, swapchain: ^Swapchain)
-
 Command_Port_Type :: enum {
 	GRAPHICS_AND_TRANSFER,
 	COMPUTE_AND_TRANSFER,
@@ -228,6 +203,33 @@ clear_command_buffer :: proc(gpu: ^Gpu, cmds: ^Command_Buffer)
 		#panic("TODO")
 	}
 }
+
+start_commands :: proc(
+	gpu: ^Gpu,
+	cmds: ^Command_Buffer,
+	used_once: bool = true, // as in this specific state of commands is submitted once
+	used_simultaneously: bool = false,
+) -> (
+	err: Gpu_Error,
+)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_start_commands(gpu, cmds, used_once, used_simultaneously)
+	} else {
+		#panic("TODO")
+	}
+}
+
+end_commands :: proc(gpu: ^Gpu, cmds: ^Command_Buffer) -> (err: Gpu_Error)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_end_commands(gpu, cmds)
+	} else {
+		#panic("TODO")
+	}
+}
+
+submit_commands :: proc(gpu: ^Gpu, cmds: ^Command_Buffer, port: Command_Port) -> (err: Gpu_Error)
 
 // blocks this thread until the gpu is done running commands
 wait_for_gpu :: proc(gpu: ^Gpu)
@@ -302,3 +304,49 @@ free_semaphore :: proc(gpu: ^Gpu, semaphore: ^Semaphore)
 		#panic("TODO")
 	}
 }
+
+Gpu_Image :: struct {
+	using vk: Vk_Gpu_Image,
+}
+
+Swapchain :: struct {
+	using vk: Vk_Swapchain,
+}
+
+// swap my chain<3
+new_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gpu_Error)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_new_swapchain(gpu, size)
+	} else {
+		#panic("TODO")
+	}
+}
+
+free_swapchain :: proc(gpu: ^Gpu, swapchain: ^Swapchain)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		vk_free_swapchain(gpu, swapchain)
+	} else {
+		#panic("TODO")
+	}
+}
+
+next_swapchain_image :: proc(gpu: ^Gpu, swapchain: ^Swapchain) -> (img: Gpu_Image, err: Gpu_Error)
+{
+	when DEFAULT_BACKEND == .VULKAN {
+		return vk_next_swapchain_image(gpu, swapchain)
+	} else {
+		#panic("TODO")
+	}
+}
+
+present_swapchain :: proc(gpu: ^Gpu, swapchain: ^Swapchain)
+
+cmd_start_render_pass :: proc(
+	cmd: ^Command_Buffer,
+	color_target: Gpu_Image,
+	clear_color: Maybe([4]f32) = nil, // nil = keep existing contents
+)
+
+cmd_end_render_pass :: proc(cmd: ^Command_Buffer, color_target: Gpu_Image)

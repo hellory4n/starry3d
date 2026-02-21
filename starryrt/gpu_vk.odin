@@ -353,67 +353,6 @@ vk_query_gpu_info :: proc(gpu: ^Gpu) -> (info: Gpu_Info)
 	return info
 }
 
-Vk_Swapchain :: struct {
-	swapchain:      vk.SwapchainKHR,
-	extent:         vk.Extent2D,
-	format:         vk.Format,
-	images:         []vk.Image,
-	image_views:    []vk.ImageView,
-	vkb:            struct {
-		swapchain: ^vkb.Swapchain,
-	},
-	semaphore:      Semaphore,
-	next_image_idx: u32,
-}
-
-vk_new_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gpu_Error)
-{
-	builder := vkb.create_swapchain_builder(gpu.vkb.device)
-	defer vkb.destroy_swapchain_builder(builder)
-
-	vkb.swapchain_builder_set_desired_format(
-		builder,
-		{format = .B8G8R8_UNORM, colorSpace = .SRGB_NONLINEAR},
-	)
-	vkb.swapchain_builder_set_desired_present_mode(builder, .MAILBOX)
-	vkb.swapchain_builder_set_desired_extent(builder, size.x, size.y)
-	vkb.swapchain_builder_set_image_usage_flags(builder, {.TRANSFER_DST, .COLOR_ATTACHMENT})
-
-	vkb_err: vkb.Error
-	swapchain.vkb.swapchain, vkb_err = vkb.swapchain_builder_build(builder)
-	if vkb_err != nil {
-		err = vkb_error_to_gpu_error(vkb_err)
-		return
-	}
-	swapchain.swapchain = swapchain.vkb.swapchain.swapchain // insanity
-	swapchain.extent = swapchain.vkb.swapchain.extent
-
-	swapchain.images, vkb_err = vkb.swapchain_get_images(swapchain.vkb.swapchain)
-	if vkb_err != nil {
-		err = vkb_error_to_gpu_error(vkb_err)
-		return
-	}
-	swapchain.image_views, vkb_err = vkb.swapchain_get_image_views(swapchain.vkb.swapchain)
-	if vkb_err != nil {
-		err = vkb_error_to_gpu_error(vkb_err)
-		return
-	}
-
-	swapchain.semaphore = vk_new_semaphore(gpu) or_return
-
-	return
-}
-
-vk_free_swapchain :: proc(gpu: ^Gpu, swapchain: ^Swapchain)
-{
-	vk_free_semaphore(gpu, &swapchain.semaphore)
-	vkb.swapchain_destroy_image_views(swapchain.vkb.swapchain, swapchain.image_views)
-	vkb.destroy_swapchain(swapchain.vkb.swapchain)
-	delete(swapchain.image_views)
-	delete(swapchain.images)
-	swapchain^ = {}
-}
-
 Vk_Command_Port :: struct {
 	queue: vk.Queue,
 }
@@ -506,7 +445,7 @@ vk_clear_command_buffer :: proc(gpu: ^Gpu, cmds: ^Command_Buffer)
 	vk.ResetCommandPool(gpu.device, cmds.pool, {})
 }
 
-vk_begin_commands :: proc(
+vk_start_commands :: proc(
 	gpu: ^Gpu,
 	cmds: ^Command_Buffer,
 	used_once: bool = true, // as in this specific state of commands is submitted once
@@ -537,84 +476,36 @@ vk_begin_commands :: proc(
 	return
 }
 
-vk_end_commands :: proc(gpu: ^Gpu, cmds: ^Command_Buffer)
+vk_end_commands :: proc(gpu: ^Gpu, cmds: ^Command_Buffer) -> (err: Gpu_Error)
 {
 	vk_err := vk.EndCommandBuffer(cmds.buffer)
 	if !is_vk_ok(vk_err) {
 		err = vk_error_to_gpu_error(vk_err)
 		return
 	}
+	return
 }
 
-vk_cmd_swap_buffers :: proc(
+vk_submit_commands :: proc(
 	gpu: ^Gpu,
-	cmd: ^Command_Buffer,
-	swapchain: ^Swapchain,
+	cmds: ^Command_Buffer,
+	port: ^Command_Port,
+	signal_semaphore: ^Semaphore,
+	wait_semaphore: ^Semaphore,
 ) -> (
 	err: Gpu_Error,
 )
 {
-	vk_err := vk.AcquireNextImageKHR(
-		gpu.device,
-		swapchain.swapchain,
-		1e9,
-		swapchain.semaphore.semaphore,
-		0,
-		&swapchain.next_image_idx,
-	)
-	if !is_vk_ok(vk_err) {
-		err = vk_error_to_gpu_error(vk_err)
-		return
+	cmd_info := vk.CommandBufferSubmitInfo {
+		sType         = .COMMAND_BUFFER_SUBMIT_INFO,
+		commandBuffer = cmds.buffer,
 	}
-
-	vk_transition_image(
-		cmd.buffer,
-		swapchain.images[swapchain.next_image_idx],
-		.UNDEFINED,
-		.GENERAL,
-	)
-
-	return
-}
-
-@(private)
-vk_transition_image :: proc(
-	cmd: vk.CommandBuffer,
-	image: vk.Image,
-	current_layout: vk.ImageLayout,
-	new_layout: vk.ImageLayout,
-)
-{
-	// TODO learn wtf is this shit
-	image_barrier := vk.ImageMemoryBarrier2 {
-		sType = .IMAGE_MEMORY_BARRIER_2,
+	signal_info := vk.SemaphoreSubmitInfo {
+		sType     = .SEMAPHORE_SUBMIT_INFO,
+		semaphore = signal_semaphore.semaphore,
+		stageMask = {.ALL_GRAPHICS}, // FIXME most definitely wrong but im tired
+		value     = 1,
 	}
-
-	image_barrier.srcStageMask = {.ALL_COMMANDS}
-	image_barrier.srcAccessMask = {.MEMORY_WRITE}
-	image_barrier.dstStageMask = {.ALL_COMMANDS}
-	image_barrier.dstAccessMask = {.MEMORY_WRITE, .MEMORY_READ}
-
-	image_barrier.oldLayout = current_layout
-	image_barrier.newLayout = new_layout
-
-	aspect_mask: vk.ImageAspectFlags =
-		{.DEPTH} if new_layout == .DEPTH_ATTACHMENT_OPTIMAL else {.COLOR}
-
-	image_barrier.subresourceRange = vk.ImageSubresourceRange {
-		aspectMask = aspect_mask,
-		levelCount = vk.REMAINING_MIP_LEVELS,
-		layerCount = vk.REMAINING_ARRAY_LAYERS,
-	}
-	image_barrier.image = image
-
-	dep_info := vk.DependencyInfo {
-		sType                   = .DEPENDENCY_INFO,
-		imageMemoryBarrierCount = 1,
-		pImageMemoryBarriers    = &image_barrier,
-	}
-
-	vk.CmdPipelineBarrier2(cmd, &dep_info)
 }
 
 vk_wait_for_gpu :: proc(gpu: ^Gpu)
@@ -701,4 +592,172 @@ vk_new_semaphore :: proc(gpu: ^Gpu) -> (semaphore: Semaphore, err: Gpu_Error)
 vk_free_semaphore :: proc(gpu: ^Gpu, semaphore: ^Semaphore)
 {
 	vk.DestroySemaphore(gpu.device, semaphore.semaphore, nil)
+}
+
+Vk_Gpu_Image :: struct {
+	image: vk.Image,
+}
+
+@(private)
+vk_transition_image :: proc(
+	cmd: vk.CommandBuffer,
+	image: vk.Image,
+	current_layout: vk.ImageLayout,
+	new_layout: vk.ImageLayout,
+)
+{
+	// TODO learn wtf is this shit
+	image_barrier := vk.ImageMemoryBarrier2 {
+		sType = .IMAGE_MEMORY_BARRIER_2,
+	}
+
+	image_barrier.srcStageMask = {.ALL_COMMANDS}
+	image_barrier.srcAccessMask = {.MEMORY_WRITE}
+	image_barrier.dstStageMask = {.ALL_COMMANDS}
+	image_barrier.dstAccessMask = {.MEMORY_WRITE, .MEMORY_READ}
+
+	image_barrier.oldLayout = current_layout
+	image_barrier.newLayout = new_layout
+
+	aspect_mask: vk.ImageAspectFlags =
+		{.DEPTH} if new_layout == .DEPTH_ATTACHMENT_OPTIMAL else {.COLOR}
+
+	image_barrier.subresourceRange = vk.ImageSubresourceRange {
+		aspectMask = aspect_mask,
+		levelCount = vk.REMAINING_MIP_LEVELS,
+		layerCount = vk.REMAINING_ARRAY_LAYERS,
+	}
+	image_barrier.image = image
+
+	dep_info := vk.DependencyInfo {
+		sType                   = .DEPENDENCY_INFO,
+		imageMemoryBarrierCount = 1,
+		pImageMemoryBarriers    = &image_barrier,
+	}
+
+	vk.CmdPipelineBarrier2(cmd, &dep_info)
+}
+
+Vk_Swapchain :: struct {
+	swapchain:      vk.SwapchainKHR,
+	extent:         vk.Extent2D,
+	format:         vk.Format,
+	images:         []vk.Image,
+	image_views:    []vk.ImageView,
+	vkb:            struct {
+		swapchain: ^vkb.Swapchain,
+	},
+	semaphore:      Semaphore,
+	next_image_idx: u32,
+}
+
+vk_new_swapchain :: proc(gpu: ^Gpu, size: [2]u32) -> (swapchain: Swapchain, err: Gpu_Error)
+{
+	builder := vkb.create_swapchain_builder(gpu.vkb.device)
+	defer vkb.destroy_swapchain_builder(builder)
+
+	vkb.swapchain_builder_set_desired_format(
+		builder,
+		{format = .B8G8R8_UNORM, colorSpace = .SRGB_NONLINEAR},
+	)
+	vkb.swapchain_builder_set_desired_present_mode(builder, .MAILBOX)
+	vkb.swapchain_builder_set_desired_extent(builder, size.x, size.y)
+	vkb.swapchain_builder_set_image_usage_flags(builder, {.TRANSFER_DST, .COLOR_ATTACHMENT})
+
+	vkb_err: vkb.Error
+	swapchain.vkb.swapchain, vkb_err = vkb.swapchain_builder_build(builder)
+	if vkb_err != nil {
+		err = vkb_error_to_gpu_error(vkb_err)
+		return
+	}
+	swapchain.swapchain = swapchain.vkb.swapchain.swapchain // insanity
+	swapchain.extent = swapchain.vkb.swapchain.extent
+
+	swapchain.images, vkb_err = vkb.swapchain_get_images(swapchain.vkb.swapchain)
+	if vkb_err != nil {
+		err = vkb_error_to_gpu_error(vkb_err)
+		return
+	}
+	swapchain.image_views, vkb_err = vkb.swapchain_get_image_views(swapchain.vkb.swapchain)
+	if vkb_err != nil {
+		err = vkb_error_to_gpu_error(vkb_err)
+		return
+	}
+
+	swapchain.semaphore = vk_new_semaphore(gpu) or_return
+
+	return
+}
+
+vk_free_swapchain :: proc(gpu: ^Gpu, swapchain: ^Swapchain)
+{
+	vk_free_semaphore(gpu, &swapchain.semaphore)
+	vkb.swapchain_destroy_image_views(swapchain.vkb.swapchain, swapchain.image_views)
+	vkb.destroy_swapchain(swapchain.vkb.swapchain)
+	delete(swapchain.image_views)
+	delete(swapchain.images)
+	swapchain^ = {}
+}
+
+vk_next_swapchain_image :: proc(
+	gpu: ^Gpu,
+	swapchain: ^Swapchain,
+) -> (
+	img: Gpu_Image,
+	err: Gpu_Error,
+)
+{
+	vk_err := vk.AcquireNextImageKHR(
+		gpu.device,
+		swapchain.swapchain,
+		1e9,
+		swapchain.semaphore.semaphore,
+		0,
+		&swapchain.next_image_idx,
+	)
+	if !is_vk_ok(vk_err) {
+		err = vk_error_to_gpu_error(vk_err)
+		return
+	}
+
+	img = Gpu_Image {
+		image = swapchain.images[swapchain.next_image_idx],
+	}
+	return
+}
+
+vk_cmd_start_render_pass :: proc(
+	cmd: ^Command_Buffer,
+	color_target: Gpu_Image,
+	clear_color: Maybe([4]f32) = nil,
+)
+{
+	vk_transition_image(cmd.buffer, color_target.image, .UNDEFINED, .GENERAL)
+
+	if clear_color != nil {
+		clear_color_fr := clear_color.([4]f32)
+		clear_color_frfr := vk.ClearColorValue {
+			float32 = clear_color_fr,
+		}
+
+		clear_range := vk.ImageSubresourceRange {
+			aspectMask = {.COLOR},
+			levelCount = vk.REMAINING_MIP_LEVELS,
+			layerCount = vk.REMAINING_ARRAY_LAYERS,
+		}
+
+		vk.CmdClearColorImage(
+			cmd.buffer,
+			color_target.image,
+			.GENERAL,
+			&clear_color_frfr,
+			1,
+			&clear_range,
+		)
+	}
+}
+
+vk_cmd_end_render_pass :: proc(cmd: ^Command_Buffer, color_target: Gpu_Image)
+{
+	vk_transition_image(cmd.buffer, color_target.image, .GENERAL, .PRESENT_SRC_KHR)
 }
