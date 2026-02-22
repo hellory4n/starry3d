@@ -506,16 +506,17 @@ vk_submit_commands :: proc(
 	err: Gpu_Error,
 )
 {
-	cmd_info := vk.CommandBufferSubmitInfo {
-		sType         = .COMMAND_BUFFER_SUBMIT_INFO,
-		commandBuffer = cmds.buffer,
-	}
-	signal_info := vk.SemaphoreSubmitInfo {
-		sType     = .SEMAPHORE_SUBMIT_INFO,
-		semaphore = signal_semaphore.semaphore,
-		stageMask = {.ALL_GRAPHICS}, // FIXME most definitely wrong but im tired
-		value     = 1,
-	}
+	// cmd_info := vk.CommandBufferSubmitInfo {
+	// 	sType         = .COMMAND_BUFFER_SUBMIT_INFO,
+	// 	commandBuffer = cmds.buffer,
+	// }
+	// signal_info := vk.SemaphoreSubmitInfo {
+	// 	sType     = .SEMAPHORE_SUBMIT_INFO,
+	// 	semaphore = signal_semaphore.semaphore,
+	// 	stageMask = {.ALL_GRAPHICS}, // FIXME most definitely wrong but im tired
+	// 	value     = 1,
+	// }
+	return
 }
 
 @(private)

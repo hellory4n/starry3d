@@ -146,14 +146,11 @@ run :: proc(
 		log.infof("closed main window")
 	}
 
-	renderer, render_err := init_render_subsystem(
+	renderer := init_render_subsystem(
 		&global.main_window,
 		app_name = app_name,
 		app_version = app_version,
 	)
-	if render_err != .OK {
-		log.panicf(gpu_error_string(render_err))
-	}
 	defer free_render_subsytem(&renderer)
 
 	init_proc()
@@ -164,10 +161,7 @@ run :: proc(
 		// just avoids having to convert too many times
 		update_proc(f32(delta_time()))
 
-		render_err = render_loop(&renderer)
-		if render_err != .OK {
-			log.panicf(gpu_error_string(render_err))
-		}
+		render_loop(&renderer)
 
 		global.prev_time = global.second_count
 		global.second_count = glfw.GetTime()
