@@ -146,12 +146,8 @@ run :: proc(
 		log.infof("closed main window")
 	}
 
-	renderer := init_render_subsystem(
-		&global.main_window,
-		app_name = app_name,
-		app_version = app_version,
-	)
-	defer free_render_subsytem(&renderer)
+	init_render_subsystem(&global.main_window, app_name = app_name, app_version = app_version)
+	defer free_render_subsytem()
 
 	init_proc()
 	defer free_proc()
@@ -161,7 +157,7 @@ run :: proc(
 		// just avoids having to convert too many times
 		update_proc(f32(delta_time()))
 
-		render_loop(&renderer)
+		render_loop()
 
 		global.prev_time = global.second_count
 		global.second_count = glfw.GetTime()

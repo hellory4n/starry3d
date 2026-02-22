@@ -4,7 +4,6 @@ import "../starrylib"
 import "base:runtime"
 import "core:c"
 import "core:log"
-import glm "core:math/linalg/glsl"
 import "core:strings"
 import "vendor:glfw"
 
@@ -14,7 +13,8 @@ Window :: struct {
 	glfw:             glfw.WindowHandle,
 	key_state:        #sparse[Key]Input_State,
 	mouse_state:      #sparse[Mouse_Button]Input_State,
-	prev_mouse:       glm.vec2,
+	prev_mouse:       [2]f32,
+	prev_window_size: [2]i32,
 	high_dpi_enabled: bool,
 }
 
@@ -60,6 +60,7 @@ open_window :: proc(
 ) -> Window
 {
 	title_cstr := strings.clone_to_cstring(title)
+	defer delete(title_cstr)
 
 	if init_ctx_for == .OPENGL4 {
 		glfw.WindowHint(glfw.CLIENT_API, glfw.OPENGL_API)
@@ -297,6 +298,7 @@ Input_State :: enum {
 poll_events :: proc(window: ^Window)
 {
 	window.prev_mouse = mouse_position(window)
+	window.prev_window_size = framebuffer_sizei(window)
 	glfw.PollEvents()
 
 	// glfw has 2 input states: pressed and not pressed
@@ -339,14 +341,14 @@ poll_events :: proc(window: ^Window)
 }
 
 // aligned to the top left of the screen
-mouse_position :: proc(window: ^Window) -> glm.vec2
+mouse_position :: proc(window: ^Window) -> [2]f32
 {
 	x, y := glfw.GetCursorPos(window.glfw)
-	return glm.vec2{f32(x), f32(y)}
+	return {f32(x), f32(y)}
 }
 
 // returns how much the mouse position changed in the last frame
-delta_mouse_position :: proc(window: ^Window) -> glm.vec2
+delta_mouse_position :: proc(window: ^Window) -> [2]f32
 {
 	return mouse_position(window) - window.prev_mouse
 }
@@ -391,22 +393,37 @@ is_mouse_button_not_pressed :: proc(window: ^Window, btn: Mouse_Button) -> bool
 	return !is_mouse_button_held(window, btn)
 }
 
-framebuffer_sizei :: proc(window: ^Window) -> glm.ivec2
+framebuffer_sizei :: proc(window: ^Window) -> [2]i32
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
-	return glm.ivec2{i32(x), i32(y)}
+	return {i32(x), i32(y)}
 }
 
-framebuffer_sizeu :: proc(window: ^Window) -> glm.uvec2
+framebuffer_sizeu :: proc(window: ^Window) -> [2]u32
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
-	return glm.uvec2{u32(x), u32(y)}
+	return {u32(x), u32(y)}
 }
 
-framebuffer_sizef :: proc(window: ^Window) -> glm.vec2
+framebuffer_sizef :: proc(window: ^Window) -> [2]f32
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
-	return glm.vec2{f32(x), f32(y)}
+	return {f32(x), f32(y)}
+}
+
+delta_framebuffer_sizei :: proc(window: ^Window) -> [2]i32
+{
+	return window.prev_window_size
+}
+
+delta_framebuffer_sizeu :: proc(window: ^Window) -> [2]u32
+{
+	return {u32(window.prev_window_size.x), u32(window.prev_window_size.y)}
+}
+
+delta_framebuffer_sizef :: proc(window: ^Window) -> [2]f32
+{
+	return {f32(window.prev_window_size.x), f32(window.prev_window_size.y)}
 }
 
 aspect_ratio :: proc(window: ^Window) -> f32
