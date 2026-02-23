@@ -16,7 +16,7 @@ VERSION_PATCH :: 0
 // starryrt.run() will then manage that state properly
 @(private)
 global: struct {
-	main_window:  Window,
+	main_window:  ^Window,
 	frame_count:  u64,
 	second_count: f64,
 	prev_time:    f64,
@@ -129,12 +129,7 @@ run :: proc(
 	global.second_count = glfw.GetTime()
 	global.prev_time = global.second_count
 
-	global.main_window = open_window(
-		title = app_name,
-		init_ctx_for = .VULKAN,
-		width = width,
-		height = height,
-	)
+	global.main_window = open_window(title = app_name, width = width, height = height)
 	log.infof(
 		"created window for %s on %s %s",
 		window_system(),
@@ -142,11 +137,11 @@ run :: proc(
 		ODIN_OS_STRING,
 	)
 	defer {
-		close_window(&global.main_window)
+		close_window(global.main_window)
 		log.infof("closed main window")
 	}
 
-	init_render_subsystem(&global.main_window, app_name = app_name, app_version = app_version)
+	init_render_subsystem(global.main_window, app_name = app_name, app_version = app_version)
 	defer free_render_subsytem()
 
 	init_proc()
@@ -163,7 +158,7 @@ run :: proc(
 		global.second_count = glfw.GetTime()
 		global.frame_count += 1
 
-		poll_events(&global.main_window)
+		poll_events(global.main_window)
 		swap_gl_buffers(global.main_window)
 	}
 }
@@ -171,7 +166,7 @@ run :: proc(
 // returns the main (and probably only) window
 main_window :: proc() -> ^Window
 {
-	return &global.main_window
+	return global.main_window
 }
 
 // returns the number of frames since the engine started

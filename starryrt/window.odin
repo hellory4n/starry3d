@@ -14,8 +14,8 @@ Window :: struct {
 	key_state:        #sparse[Key]Input_State,
 	mouse_state:      #sparse[Mouse_Button]Input_State,
 	prev_mouse:       [2]f32,
-	prev_window_size: [2]i32,
 	high_dpi_enabled: bool,
+	pending_resize:   bool,
 }
 
 // must be run before creating any window
@@ -52,17 +52,18 @@ free_window_subsystem :: proc()
 
 open_window :: proc(
 	title: string,
-	init_ctx_for: Gpu_Backend,
 	width: int = 800,
 	height: int = 600,
 	resizable: bool = true,
 	high_dpi: bool = true,
-) -> Window
+	setup_gl_ctx: bool = false,
+	allocator := context.allocator,
+) -> ^Window
 {
-	title_cstr := strings.clone_to_cstring(title)
-	defer delete(title_cstr)
+	title_cstr := strings.clone_to_cstring(title, context.temp_allocator)
+	defer delete(title_cstr, context.temp_allocator)
 
-	if init_ctx_for == .OPENGL4 {
+	if setup_gl_ctx {
 		glfw.WindowHint(glfw.CLIENT_API, glfw.OPENGL_API)
 		glfw.WindowHint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 		glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 4)
@@ -79,39 +80,54 @@ open_window :: proc(
 	glfw.WindowHintString(glfw.X11_CLASS_NAME, title_cstr)
 	glfw.WindowHintString(glfw.WAYLAND_APP_ID, title_cstr)
 
-	window := glfw.CreateWindow(c.int(width), c.int(height), title_cstr, nil, nil)
-	if window == nil {
+	glfw_window := glfw.CreateWindow(c.int(width), c.int(height), title_cstr, nil, nil)
+	if glfw_window == nil {
 		errstr, _ := glfw.GetError()
 		log.panicf("couldn't create window: %s", errstr)
 	}
 
-	if init_ctx_for == .OPENGL4 {
+	if setup_gl_ctx {
 		// TODO this breaks down with multiple windows but idrc
-		glfw.MakeContextCurrent(window)
+		glfw.MakeContextCurrent(glfw_window)
 
 		// disable vsync on debug so that you can see the true fps
 		// which is useful for making renderers and shit
 		glfw.SwapInterval(0 when ODIN_DEBUG else 1)
 	}
 
-	return Window{glfw = window, high_dpi_enabled = high_dpi}
+	window := new(Window, allocator)
+	window.glfw = glfw_window
+	window.high_dpi_enabled = high_dpi
+	glfw.SetWindowUserPointer(glfw_window, window)
+
+	glfw.SetFramebufferSizeCallback(
+		glfw_window,
+		proc "c" (glfw_window: glfw.WindowHandle, width, height: i32)
+		{
+			window := cast(^Window)glfw.GetWindowUserPointer(glfw_window)
+			window.pending_resize = true
+		},
+	)
+
+	return window
 }
 
-close_window :: proc(window: ^Window)
+close_window :: proc(window: ^Window, allocator := context.allocator)
 {
 	if window.glfw == nil {
 		return
 	}
 	glfw.DestroyWindow(window.glfw)
 	window.glfw = nil
+	free(window, allocator)
 }
 
-is_window_closing :: proc(window: Window) -> bool
+is_window_closing :: proc(window: ^Window) -> bool
 {
 	return bool(glfw.WindowShouldClose(window.glfw))
 }
 
-swap_gl_buffers :: proc(window: Window)
+swap_gl_buffers :: proc(window: ^Window)
 {
 	// afaik this is only for opengl
 	// every other graphics api has an explicit swapchain
@@ -146,7 +162,7 @@ window_system :: proc() -> Window_System
 	}
 }
 
-// keyboard keys on your keyboard which is key. Values are the same as GLFW.
+// keyboard keys on your keyboard which is key. values are the same as GLFW.
 Key :: enum u32 {
 	INVALID         = 0,
 	SPACE           = 32,
@@ -298,7 +314,6 @@ Input_State :: enum {
 poll_events :: proc(window: ^Window)
 {
 	window.prev_mouse = mouse_position(window)
-	window.prev_window_size = framebuffer_sizei(window)
 	glfw.PollEvents()
 
 	// glfw has 2 input states: pressed and not pressed
@@ -409,21 +424,6 @@ framebuffer_sizef :: proc(window: ^Window) -> [2]f32
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
 	return {f32(x), f32(y)}
-}
-
-delta_framebuffer_sizei :: proc(window: ^Window) -> [2]i32
-{
-	return window.prev_window_size
-}
-
-delta_framebuffer_sizeu :: proc(window: ^Window) -> [2]u32
-{
-	return {u32(window.prev_window_size.x), u32(window.prev_window_size.y)}
-}
-
-delta_framebuffer_sizef :: proc(window: ^Window) -> [2]f32
-{
-	return {f32(window.prev_window_size.x), f32(window.prev_window_size.y)}
 }
 
 aspect_ratio :: proc(window: ^Window) -> f32

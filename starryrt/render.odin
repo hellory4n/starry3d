@@ -8,12 +8,15 @@ import "vendor:wgpu/glfwglue"
 // has to be static otherwise callback stuff could get fucky
 @(private = "file")
 render: struct {
-	ctx:      runtime.Context, // used in callbacks
-	instance: wgpu.Instance,
-	surface:  wgpu.Surface,
-	adapter:  wgpu.Adapter,
-	device:   wgpu.Device,
-	queue:    wgpu.Queue,
+	ctx:             runtime.Context, // used in callbacks
+	instance:        wgpu.Instance,
+	surface:         wgpu.Surface,
+	adapter:         wgpu.Adapter,
+	device:          wgpu.Device,
+	queue:           wgpu.Queue,
+	shader:          wgpu.ShaderModule,
+	pipeline_layout: wgpu.PipelineLayout,
+	pipeline:        wgpu.RenderPipeline,
 }
 
 @(private)
@@ -87,6 +90,38 @@ init_render_subsystem :: proc(window: ^Window, app_name: string, app_version: [3
 	reconfigure_surface(size = framebuffer_sizeu(window))
 	render.queue = wgpu.DeviceGetQueue(render.device)
 
+	render.shader = wgpu.DeviceCreateShaderModule(
+		render.device,
+		&{
+			nextInChain = &wgpu.ShaderSourceWGSL {
+				sType = .ShaderSourceWGSL,
+				code = #load("shader/triangle.wgsl", string),
+			},
+		},
+	)
+	log.infof("compiled triangle shader")
+
+	render.pipeline_layout = wgpu.DeviceCreatePipelineLayout(render.device, &{})
+	render.pipeline = wgpu.DeviceCreateRenderPipeline(
+		render.device,
+		&{
+			layout = render.pipeline_layout,
+			vertex = {module = render.shader, entryPoint = "main_vert"},
+			fragment = &{
+				module = render.shader,
+				entryPoint = "main_frag",
+				targetCount = 1,
+				targets = &wgpu.ColorTargetState {
+					format = .BGRA8Unorm,
+					writeMask = wgpu.ColorWriteMaskFlags_All,
+				},
+			},
+			primitive = {topology = .TriangleList, cullMode = .None},
+			multisample = {count = 1, mask = 0xFFFFFFFF},
+		},
+	)
+	log.infof("compiled render pipeline")
+
 	return
 }
 
@@ -108,6 +143,9 @@ reconfigure_surface :: proc(size: [2]u32)
 @(private)
 free_render_subsytem :: proc()
 {
+	wgpu.RenderPipelineRelease(render.pipeline)
+	wgpu.PipelineLayoutRelease(render.pipeline_layout)
+	wgpu.ShaderModuleRelease(render.shader)
 	wgpu.QueueRelease(render.queue)
 	wgpu.DeviceRelease(render.device)
 	wgpu.AdapterRelease(render.adapter)
@@ -135,12 +173,14 @@ render_loop :: proc()
 	}
 
 	// apparently that's not enough for it to resize properly
-	if delta_framebuffer_sizei(main_window()) != framebuffer_sizei(main_window()) {
+	if main_window().pending_resize {
 		if surface_texture.texture != nil {
 			wgpu.TextureRelease(surface_texture.texture)
 		}
 		wgpu.SurfaceUnconfigure(render.surface)
 		reconfigure_surface(framebuffer_sizeu(main_window()))
+
+		main_window().pending_resize = false
 		return // skip this frame
 	}
 
@@ -160,9 +200,18 @@ render_loop :: proc()
 				loadOp = .Clear,
 				storeOp = .Store,
 				depthSlice = wgpu.DEPTH_SLICE_UNDEFINED,
-				clearValue = {1, 0, 0, 1},
+				clearValue = {0, 0, 0, 0},
 			},
 		},
+	)
+
+	wgpu.RenderPassEncoderSetPipeline(render_pass, render.pipeline)
+	wgpu.RenderPassEncoderDraw(
+		render_pass,
+		vertexCount = 3,
+		instanceCount = 1,
+		firstVertex = 0,
+		firstInstance = 0,
 	)
 
 	wgpu.RenderPassEncoderEnd(render_pass)
