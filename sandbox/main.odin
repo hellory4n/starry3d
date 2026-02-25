@@ -15,6 +15,7 @@ app_free :: proc()
 
 app_update :: proc(dt: f32)
 {
+	starryrt.debug_text_print("It's giving thanks.\nI support the death penalty.")
 	if starryrt.is_mouse_button_just_pressed(starryrt.main_window(), .LEFT) {
 		fmt.println("Fuh")
 	}

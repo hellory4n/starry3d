@@ -1,8 +1,5 @@
 # Development setup
 
-> [!NOTE]
-> This is intended for people who want to build the library, either for other projects or to contribute.
-
 ## Prerequisites
 
 You need these installed:
@@ -15,24 +12,16 @@ You need these installed:
         - Debian, Ubuntu, etc: `sudo apt install libwayland-dev libxkbcommon-dev xorg-dev`
         - Fedora: `sudo dnf install wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
         - Arch: `sudo pacman -S glfw` should pull all other dependencies
-- [Vulkan SDK](https://vulkan.lunarg.com/sdk/home)
+- [Vulkan SDK](https://vulkan.lunarg.com/sdk/home) on Linux
 - [Just](https://github.com/casey/just)
-- [Premake 5](https://premake.github.io)
-
-## Building C libraries
-
-Starry depends on a few C libraries. You can build all of them with `just -f build_clibs.just`, and it should do everything automatically.
-
-If necessary you can rebuild specific libraries or set variables to something else. Just look at `just --help`.
 
 ## Odin libraries
 
 After building the C libraries, you can use Just again to run specific projects. For example `just run-sandbox`
 
-Including Starry in new projects is a bit more involved. There are 2 main projects:
-- `starryrt`: the big heavy engine and runtime
-- `starrylib`: general utilities that work without the runtime
+Including Starry in new projects is a bit more involved. There are 2 packages:
+- `starryrt/`: the big heavy engine and runtime
+- `starrylib/`: general utilities that work without the runtime
+- `thirdparty/`: any dependencies used by starryrt
 
-`starrylib` only depends on `core:*`, so it can be just copied and pasted into a new project.
-
-As for `starryrt`, it depends on the C libraries as well as other libraries in `thirdparty/`. Everything not prefixed with `c-` is an Odin package and should be able to be copied and pasted as well. You probably want to copy `build_clibs.just` as well, to not have to rely on pre-compiled binaries for the C libraries.
+Starrylib can be used by any project by just copy and pasting it, since it only depends on `core:*`. If you want the full engine, you need to copy both `starryrt/`, `starrylib/`, and `thirdparty/`.
