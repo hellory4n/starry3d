@@ -115,7 +115,7 @@ init_render_subsystem :: proc(window: ^Window, app_name: string, app_version: [3
 	reconfigure_surface(size = framebuffer_sizeu(window))
 	render.queue = wgpu.DeviceGetQueue(render.device)
 
-	render.debug_text_shader = wgpu.DeviceCreateShaderModule(
+	render.voxel_shader = wgpu.DeviceCreateShaderModule(
 		render.device,
 		&{
 			nextInChain = &wgpu.ShaderSourceWGSL {
@@ -139,21 +139,37 @@ init_render_subsystem :: proc(window: ^Window, app_name: string, app_version: [3
 
 	render.debug_text_vertex_buffer = wgpu.DeviceCreateBuffer(
 		render.device,
-		&{usage = {.Vertex, .CopyDst}, size = size_of(Debug_Text_Vertex) * 256},
+		&{
+			usage = {.Vertex, .CopyDst},
+			size  = 4 * 1024 * 1024, // absurd worst case guess based on nothing
+		},
 	)
 
 	render.voxel_pipeline_layout = wgpu.DeviceCreatePipelineLayout(render.device, &{})
 	render.voxel_pipeline = wgpu.DeviceCreateRenderPipeline(
 		render.device,
 		&{
+			label = "voxel",
 			layout = render.voxel_pipeline_layout,
-			vertex = {module = render.debug_text_shader, entryPoint = "main_vert"},
+			vertex = {module = render.voxel_shader, entryPoint = "main_vert"},
 			fragment = &{
-				module = render.debug_text_shader,
+				module = render.voxel_shader,
 				entryPoint = "main_frag",
 				targetCount = 1,
 				targets = &wgpu.ColorTargetState {
 					format = .BGRA8Unorm,
+					blend = &{
+						alpha = {
+							srcFactor = .SrcAlpha,
+							dstFactor = .OneMinusSrcAlpha,
+							operation = .Add,
+						},
+						color = {
+							srcFactor = .SrcAlpha,
+							dstFactor = .OneMinusSrcAlpha,
+							operation = .Add,
+						},
+					},
 					writeMask = wgpu.ColorWriteMaskFlags_All,
 				},
 			},
@@ -190,6 +206,7 @@ init_render_subsystem :: proc(window: ^Window, app_name: string, app_version: [3
 			mipLevelCount = 1,
 			sampleCount = 1,
 			viewFormats = raw_data(view_formats),
+			size = atlas_texture_size,
 		},
 	)
 
@@ -216,6 +233,7 @@ init_render_subsystem :: proc(window: ^Window, app_name: string, app_version: [3
 			magFilter = .Nearest,
 			minFilter = .Nearest,
 			mipmapFilter = .Nearest,
+			maxAnisotropy = 1,
 		},
 	)
 
@@ -261,12 +279,12 @@ init_render_subsystem :: proc(window: ^Window, app_name: string, app_version: [3
 
 	debug_text_attributes := []wgpu.VertexAttribute {
 		{
-			format = .Sint32x2,
+			format = .Float32x2,
 			offset = u64(offset_of(Debug_Text_Vertex, position)),
 			shaderLocation = 0,
 		},
 		{
-			format = .Sint32x2,
+			format = .Float32x2,
 			offset = u64(offset_of(Debug_Text_Vertex, uv)),
 			shaderLocation = 1,
 		},
@@ -284,10 +302,12 @@ init_render_subsystem :: proc(window: ^Window, app_name: string, app_version: [3
 			attributes = raw_data(debug_text_attributes),
 		},
 	}
+	// hehe
 
 	render.debug_text_pipeline = wgpu.DeviceCreateRenderPipeline(
 		render.device,
 		&{
+			label = "debug text",
 			layout = render.debug_text_pipeline_layout,
 			vertex = {
 				module = render.debug_text_shader,
@@ -301,6 +321,18 @@ init_render_subsystem :: proc(window: ^Window, app_name: string, app_version: [3
 				targetCount = 1,
 				targets = &wgpu.ColorTargetState {
 					format = .BGRA8Unorm,
+					blend = &{
+						alpha = {
+							srcFactor = .SrcAlpha,
+							dstFactor = .OneMinusSrcAlpha,
+							operation = .Add,
+						},
+						color = {
+							srcFactor = .SrcAlpha,
+							dstFactor = .OneMinusSrcAlpha,
+							operation = .Add,
+						},
+					},
 					writeMask = wgpu.ColorWriteMaskFlags_All,
 				},
 			},
@@ -343,6 +375,7 @@ free_render_subsytem :: proc()
 
 	wgpu.RenderPipelineRelease(render.voxel_pipeline)
 	wgpu.PipelineLayoutRelease(render.voxel_pipeline_layout)
+	wgpu.ShaderModuleRelease(render.voxel_shader)
 
 	wgpu.QueueRelease(render.queue)
 	wgpu.DeviceRelease(render.device)
@@ -391,9 +424,24 @@ render_loop :: proc()
 	cmd := wgpu.DeviceCreateCommandEncoder(render.device, nil)
 	defer wgpu.CommandEncoderRelease(cmd)
 
+	render_voxels(cmd, frame)
+	render_debug_text(cmd, frame)
+
+	// Job Done!
+	cmd_buffer := wgpu.CommandEncoderFinish(cmd, nil)
+	defer wgpu.CommandBufferRelease(cmd_buffer)
+
+	wgpu.QueueSubmit(render.queue, {cmd_buffer})
+	wgpu.SurfacePresent(render.surface)
+}
+
+@(private = "file")
+render_voxels :: proc(cmd: wgpu.CommandEncoder, frame: wgpu.TextureView)
+{
 	render_pass := wgpu.CommandEncoderBeginRenderPass(
 		cmd,
 		&{
+			label = "voxel",
 			colorAttachmentCount = 1,
 			colorAttachments = &wgpu.RenderPassColorAttachment {
 				view = frame,
@@ -405,23 +453,6 @@ render_loop :: proc()
 		},
 	)
 
-	render_voxels(render_pass)
-	render_debug_text(render_pass)
-
-	wgpu.RenderPassEncoderEnd(render_pass)
-	wgpu.RenderPassEncoderRelease(render_pass)
-
-	// Job Done!
-	cmd_buffer := wgpu.CommandEncoderFinish(cmd, nil)
-	defer wgpu.CommandBufferRelease(cmd_buffer)
-
-	wgpu.QueueSubmit(render.queue, {cmd_buffer})
-	wgpu.SurfacePresent(render.surface)
-}
-
-@(private = "file")
-render_voxels :: proc(render_pass: wgpu.RenderPassEncoder)
-{
 	wgpu.RenderPassEncoderSetPipeline(render_pass, render.voxel_pipeline)
 	wgpu.RenderPassEncoderDraw(
 		render_pass,
@@ -431,35 +462,69 @@ render_voxels :: proc(render_pass: wgpu.RenderPassEncoder)
 		firstInstance = 0,
 	)
 
-	// TODO copy mesh, render it, clear mesh immediately after because imgui
-	// TODO load texture atlas
-	// TODO update shader
+	wgpu.RenderPassEncoderEnd(render_pass)
+	wgpu.RenderPassEncoderRelease(render_pass)
 }
 
 @(private = "file")
-render_debug_text :: proc(render_pass: wgpu.RenderPassEncoder)
+render_debug_text :: proc(cmd: wgpu.CommandEncoder, frame: wgpu.TextureView)
 {
-	wgpu.RenderPassEncoderSetPipeline(render_pass, render.debug_text_pipeline)
-	wgpu.RenderPassEncoderSetBindGroup(render_pass, 0, render.debug_text_bind_group)
-
-	if len(render.debug_text_mesh) > 0 {
-		wgpu.QueueWriteBuffer(
-			render.queue,
-			render.debug_text_vertex_buffer,
-			bufferOffset = 0,
-			data = raw_data(render.debug_text_mesh),
-			size = len(render.debug_text_mesh) * size_of(Debug_Text_Vertex),
-		)
-		clear(&render.debug_text_mesh)
-
-		wgpu.RenderPassEncoderDraw(
-			render_pass,
-			vertexCount = u32(len(render.debug_text_mesh)),
-			instanceCount = 1,
-			firstVertex = 0,
-			firstInstance = 0,
-		)
+	if len(render.debug_text_mesh) == 0 {
+		return
 	}
+
+	wgpu.QueueWriteBuffer(
+		render.queue,
+		render.debug_text_vertex_buffer,
+		bufferOffset = 0,
+		data = raw_data(render.debug_text_mesh),
+		size = len(render.debug_text_mesh) * size_of(Debug_Text_Vertex),
+	)
+
+	wgpu.QueueWriteBuffer(
+		render.queue,
+		render.debug_text_vertex_buffer,
+		bufferOffset = 0,
+		data = raw_data(render.debug_text_mesh),
+		size = len(render.debug_text_mesh) * size_of(Debug_Text_Vertex),
+	)
+	clear(&render.debug_text_mesh)
+	render.debug_text_cursor = {0, 0}
+
+	render_pass := wgpu.CommandEncoderBeginRenderPass(
+		cmd,
+		&{
+			label = "debug text",
+			colorAttachmentCount = 1,
+			colorAttachments = &wgpu.RenderPassColorAttachment {
+				view = frame,
+				loadOp = .Load,
+				storeOp = .Store,
+				depthSlice = wgpu.DEPTH_SLICE_UNDEFINED,
+			},
+		},
+	)
+
+	wgpu.RenderPassEncoderSetBindGroup(render_pass, 0, render.debug_text_bind_group)
+	wgpu.RenderPassEncoderSetVertexBuffer(
+		render_pass,
+		slot = 0,
+		buffer = render.debug_text_vertex_buffer,
+		offset = 0,
+		size = wgpu.BufferGetSize(render.debug_text_vertex_buffer),
+	)
+	wgpu.RenderPassEncoderSetPipeline(render_pass, render.debug_text_pipeline)
+
+	wgpu.RenderPassEncoderDraw(
+		render_pass,
+		vertexCount = u32(len(render.debug_text_mesh)),
+		instanceCount = 1,
+		firstVertex = 0,
+		firstInstance = 0,
+	)
+
+	wgpu.RenderPassEncoderEnd(render_pass)
+	wgpu.RenderPassEncoderRelease(render_pass)
 }
 
 DEBUG_TEXT_CHAR_SIZE :: [2]i32{8, 16}

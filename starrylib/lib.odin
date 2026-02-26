@@ -33,7 +33,7 @@ vector_cast :: #force_inline proc(
 	$N: int,
 	$Dst: typeid,
 	src: [N]$Src,
-) -> [2]Dst where intrinsics.type_is_numeric(Dst),
+) -> [N]Dst where intrinsics.type_is_numeric(Dst),
 	intrinsics.type_is_numeric(Src)
 {
 	result: [N]Dst

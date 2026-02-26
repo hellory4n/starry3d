@@ -5,9 +5,9 @@ struct Vert_Input {
 }
 
 struct Vert_Output {
-	@builtin(position) pos: vec4f,
+	@builtin(position) position: vec4f,
 	@location(0) base_uv: vec2f,
-	@location(1) char: i32,
+	@location(1) @interpolate(flat) char: i32,
 }
 
 struct Frag_Input {
@@ -22,9 +22,9 @@ struct Frag_Output {
 @vertex
 fn main_vert(in: Vert_Input) -> Vert_Output {
 	var out = Vert_Output();
-	out.pos = vec4f(in.position, 0, 1);
+	out.position = vec4f(in.position, 0, 1);
 	out.base_uv = in.uv;
-	out.char = out.char;
+	out.char = in.char;
 	return out;
 }
 
@@ -35,17 +35,19 @@ var u_atlas_sampler: sampler;
 
 @fragment
 fn main_frag(in: Frag_Input) -> Frag_Output {
-	let uv = (CHARS[in.char] + in.base_uv) / IMAGE_SIZE;
+	// let uv = (CHARS[in.char] + in.base_uv) / IMAGE_SIZE;
 
-	var out = Frag_Output();
-	out.color = textureSample(u_atlas_texture, u_atlas_sampler, uv);
-	return out;
+	// var out = Frag_Output();
+	// out.color = textureSample(u_atlas_texture, u_atlas_sampler, uv);
+	// return out;
+	return Frag_Output(vec4f(1, 0, 0, 1));
 }
 
 // hardcoding my beloved
 const IMAGE_SIZE = vec2f(128, 96);
 const CHAR_SIZE = vec2f(8, 16);
 const UNKNOWN_CHAR = vec2f(15, 5) * CHAR_SIZE;
+// TODO this definitely doesn't have to be hardcoded
 const CHARS = array(
 	// ctrl chars
 	UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR, UNKNOWN_CHAR,
