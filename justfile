@@ -21,3 +21,7 @@ build-all: build-sandbox
 @run-sandbox:
 	@# run sandbox
 	odin run sandbox {{_CFLAGS}}
+
+@test:
+	@# test starrylib
+	odin test starrylib {{_CFLAGS}}
