@@ -17,7 +17,10 @@ BRICK_SIZE_VECI :: [3]i32{BRICK_SIZE, BRICK_SIZE, BRICK_SIZE}
 @(private)
 Prop_List :: struct {
 	tag:  Tag,
-	data: [BRICK_SIZE][BRICK_SIZE][BRICK_SIZE]Payload,
+	data: [BRICK_SIZE][BRICK_SIZE][BRICK_SIZE]struct {
+		payload: Payload,
+		set:     bool,
+	},
 }
 
 @(private)
@@ -51,10 +54,15 @@ new_empty_model :: proc(
 	err: Init_Model_Error,
 )
 {
+	// so it's inclusive
+	end := end
+	end += {1, 1, 1}
+
 	model.allocator = allocator
 	model.start = start
 	model.end = end
 	model.size = glm.abs(start) + glm.abs(end)
+	model.size_with_padding = model.size
 
 	if glm.any(glm.greaterThanEqual(start, end)) {
 		err = .START_MUST_BE_SMALLER_THAN_END
@@ -63,13 +71,13 @@ new_empty_model :: proc(
 
 	// padding so simd stuff doesn't have to check for bounds
 	if glm.any(glm.notEqual(model.size % BRICK_SIZE_VECI, [3]i32{0, 0, 0})) {
-		model.size_with_padding = model.size + BRICK_SIZE_VECI
+		model.size_with_padding += BRICK_SIZE_VECI
 	}
 
 	alloc_error: mem.Allocator_Error
 	model.bricks, alloc_error = make(
 		[]^Brick,
-		model.size.x * model.size.y * model.size.z,
+		model.size_with_padding.x * model.size_with_padding.y * model.size_with_padding.z,
 		allocator,
 	)
 	if alloc_error == .Out_Of_Memory {
@@ -83,6 +91,7 @@ new_empty_model :: proc(
 free_model :: proc(model: ^Model)
 {
 	for brick in model.bricks {
+		delete(brick.data)
 		free(brick, model.allocator)
 	}
 	delete(model.bricks, model.allocator)
@@ -128,90 +137,66 @@ Get_Voxel_Error :: enum {
 	OUT_OF_BOUNDS,
 }
 
-// returns a prop from a voxel at the specified position. the returned data may be interpreted any
-// way you'd like (through `transmute`) as long as it fits in 32 bits.
+// returns a prop from a voxel at the specified position. if for whatever reason it's unable to
+// get the data (out of bounds, empty voxel, or undefined tag), the default value will be
+// returned instead. the returned data may be interpreted any way you'd like (through
+// `transmute`) as long as it fits in 32 bits.
 get_voxel_raw :: proc(
 	model: ^Model,
 	pos: [3]i32,
 	tag: Tag,
+	default: Payload,
 ) -> (
 	payload: Payload,
-	err: Get_Voxel_Error,
+	solid: bool,
 )
 {
 	if is_out_of_bounds(model, pos) {
-		err = .OUT_OF_BOUNDS
-		return
+		return default, false
 	}
 	brick := _get_brick(model, pos)
 	if brick == nil {
-		err = .EMPTY_VOXEL
-		return
+		return default, false
 	}
-	voxel_idx := pos % BRICK_SIZE_VECI
+	voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
 
 	if (!brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z]) {
-		err = .EMPTY_VOXEL
-		return
+		return default, false
 	}
 
 	// hashing is overkill here i think tbh ong icl fr
 	for list in brick.data {
 		if list.tag == tag {
-			payload = list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z]
-			return
+			crap := list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z]
+			return crap.payload if crap.set else default, true
 		}
 	}
-
-	err = .NO_SUCH_PROP
-	return
-}
-
-// returns a prop from a voxel at the specified position, or, a default value if it's not
-// available. the returned data may be interpreted any way you'd like (through `transmute`)
-// as long as it fits in 32 bits.
-get_voxel_raw_orelse :: proc(model: ^Model, pos: [3]i32, tag: Tag, default: Payload) -> Payload
-{
-	val, err := get_voxel_raw(model, pos, tag)
-	return val if err == .OK else default
+	return default, true
 }
 
 // returns a prop from a voxel at the specified position, reinterpreted as T (must be 32-bits).
+// if for whatever reason it's unable to get the data (out of bounds, empty voxel, or
+// undefined tag), the default value will be returned instead.
 get_voxel_transmute :: proc(
 	model: ^Model,
+	$T: typeid,
 	pos: [3]i32,
 	tag: Tag,
-	$T: typeid,
+	default: T,
 ) -> (
 	payload: T,
-	err: Get_Voxel_Error,
+	solid: bool,
 ) where size_of(T) ==
 	size_of(Payload)
 {
-	raw: u32
-	raw, err = get_voxel_raw(model, pos, tag)
-	payload = transmute(T)raw
-	return
-}
-
-get_voxel_transmute_orelse :: proc(
-	model: ^Model,
-	pos: [3]i32,
-	tag: Tag,
-	$T: typeid,
-	default: T,
-) -> T where size_of(T) ==
-	size_of(Payload)
-{
-	val, err := get_voxel_transmute(model, pos, tag, T)
-	return val if err == .OK else default
+	val: Payload
+	val, solid = get_voxel_raw(model, pos, tag, transmute(Payload)default)
+	return transmute(T)val, solid
 }
 
 get_voxel :: proc {
 	get_voxel_raw,
-	get_voxel_raw_orelse,
 	get_voxel_transmute,
-	get_voxel_transmute_orelse,
 }
 
 Set_Voxel_Error :: enum {
@@ -243,15 +228,23 @@ set_voxel :: proc(
 			err = .OUT_OF_MEMORY
 			return
 		}
+
+		brick.data, alloc_error = make([dynamic]Prop_List, model.allocator)
+		if alloc_error == .Out_Of_Memory {
+			err = .OUT_OF_MEMORY
+			return
+		}
+
 		_get_brick_ptr(model, pos)^ = brick
 	}
 
-	voxel_idx := pos % BRICK_SIZE_VECI
+	voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
 	brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] = true
 
 	for &list in brick.data {
 		if list.tag == tag {
-			list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z] = transmute(u32)value
+			list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z].payload = transmute(u32)value
+			list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z].set = true
 		}
 	}
 
@@ -264,7 +257,8 @@ set_voxel :: proc(
 	}
 
 	list := &brick.data[len(brick.data) - 1]
-	list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z] = value
+	list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z].payload = value
+	list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z].set = true
 	return
 }
 
@@ -282,21 +276,26 @@ remove_voxel :: proc(model: ^Model, pos: [3]i32) -> (was_solid: bool)
 		return
 	}
 
-	voxel_idx := pos % BRICK_SIZE_VECI
+	voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
 	brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] = false
 	return true
 }
 
 is_voxel_solid :: proc(model: ^Model, pos: [3]i32) -> bool
 {
-	_, err := get_voxel(model, pos, 0)
-	switch err {
-	case .OK:
-	case .NO_SUCH_PROP:
-		return true
-	case .EMPTY_VOXEL:
-	case .OUT_OF_BOUNDS:
+	if is_out_of_bounds(model, pos) {
 		return false
 	}
-	unreachable()
+	brick := _get_brick(model, pos)
+	if brick == nil {
+		return false
+	}
+
+	voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
+	return brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z]
+}
+
+is_voxel_empty :: proc(model: ^Model, pos: [3]i32) -> bool
+{
+	return !is_voxel_solid(model, pos)
 }
