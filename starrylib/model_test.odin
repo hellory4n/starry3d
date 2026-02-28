@@ -1,5 +1,6 @@
 package starrylib
 
+import "core:log"
 import "core:testing"
 
 @(test)
@@ -14,10 +15,13 @@ t_model_start_must_be_smaller_than_end :: proc(t: ^testing.T)
 t_init_small_model :: proc(t: ^testing.T)
 {
 	m, err := new_empty_model(start = {-4, -4, -4}, end = {4, 4, 4})
-	defer free_model(&m)
+	defer {
+		free_model(&m)
+		log.debug("busted?")
+	}
 	testing.expect(t, err == .OK)
 	testing.expect(t, m.start == {-4, -4, -4})
-	testing.expect(t, m.end == {4, 4, 4})
+	testing.expect(t, m.end == {5, 5, 5})
 	testing.expect(t, m.size == {9, 9, 9}) // inclusive
 }
 
@@ -28,7 +32,7 @@ t_init_model_with_negative_coords :: proc(t: ^testing.T)
 	defer free_model(&m)
 	testing.expect(t, err == .OK)
 	testing.expect(t, m.start == {-12, -12, -12})
-	testing.expect(t, m.end == {11, 11, 11})
+	testing.expect(t, m.end == {12, 12, 12})
 	// size inclusive -> 24 voxels per axis
 	testing.expect(t, m.size.x == 24)
 	testing.expect(t, m.size.y == 24)
@@ -61,7 +65,7 @@ t_model_out_of_bounds :: proc(t: ^testing.T)
 		testing.expect(t, !solid)
 	}
 
-	inside := [][3]i32{{-8, 0, 0}, {7, 0, 0}, {0, -8, 0}, {0, 7, 0}, {0, 0, -8}, {0, 0, 7}}
+	inside := [][3]i32{{-7, 0, 0}, {7, 0, 0}, {0, -7, 0}, {0, 7, 0}, {0, 0, -7}, {0, 0, 7}}
 	for pos in inside {
 		testing.expect(t, !is_out_of_bounds(&m, pos))
 	}

@@ -91,6 +91,11 @@ new_empty_model :: proc(
 free_model :: proc(model: ^Model)
 {
 	for brick in model.bricks {
+		// mate
+		if brick == nil {
+			continue
+		}
+
 		delete(brick.data)
 		free(brick, model.allocator)
 	}
