@@ -5,7 +5,7 @@
 You need these installed:
 - Git
 - A C compiler (gcc, clang, msvc)
-- [Odin](https://odin-lang.org) v2025.11 or higher
+- [Odin](https://odin-lang.org) v2026.02
 - Windowing libraries for your OS
     - on Windows you *may* have to install Visual Studio
     - on Linux install the X11 and Wayland dev packages:
@@ -24,4 +24,5 @@ Including Starry in new projects is a bit more involved. There are 2 packages:
 - `starrylib/`: general utilities that work without the runtime
 - `thirdparty/`: any dependencies used by starryrt
 
-Starrylib can be used by any project by just copy and pasting it, since it only depends on `core:*`. If you want the full engine, you need to copy both `starryrt/`, `starrylib/`, and `thirdparty/`.
+Starrylib can be used by any project by just copy and pasting it, since it only depends on `core:*` and `vendor:stb/image`.
+If you want the full engine, you need to copy both `starryrt/`, `starrylib/`, and `thirdparty/`.

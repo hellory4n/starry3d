@@ -1,6 +1,5 @@
 package starrylib
 
-import "core:log"
 import "core:testing"
 
 @(test)
@@ -15,10 +14,7 @@ t_model_start_must_be_smaller_than_end :: proc(t: ^testing.T)
 t_init_small_model :: proc(t: ^testing.T)
 {
 	m, err := new_empty_model(start = {-4, -4, -4}, end = {4, 4, 4})
-	defer {
-		free_model(&m)
-		log.debug("busted?")
-	}
+	defer free_model(&m)
 	testing.expect(t, err == .OK)
 	testing.expect(t, m.start == {-4, -4, -4})
 	testing.expect(t, m.end == {5, 5, 5})
@@ -61,7 +57,7 @@ t_model_out_of_bounds :: proc(t: ^testing.T)
 		testing.expect(t, is_out_of_bounds(&m, pos))
 		_, solid := get_voxel(&m, pos, tag = 0, default = 0xDEADDEAD)
 		testing.expect(t, !solid)
-		_, solid = get_voxel(&m, u32, pos, tag = 0, default = 0xDEADDEAD)
+		_, solid = get_voxel_transmute(&m, u32, pos, tag = 0, default = 0xDEADDEAD)
 		testing.expect(t, !solid)
 	}
 
@@ -86,7 +82,7 @@ t_model_empty_voxel :: proc(t: ^testing.T)
 	testing.expect(t, !solidv)
 
 	Color :: distinct u32
-	c, solidc := get_voxel(&m, Color, pos, tag = 61, default = Color(0xFF00AA11))
+	c, solidc := get_voxel_transmute(&m, Color, pos, tag = 61, default = Color(0xFF00AA11))
 	testing.expect(t, c == 0xFF00AA11)
 	testing.expect(t, !solidc)
 }

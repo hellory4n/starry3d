@@ -130,7 +130,7 @@ _get_brick_ptr :: #force_inline proc(model: ^Model, pos: [3]i32) -> ^^Brick
 is_out_of_bounds :: #force_inline proc(model: ^Model, pos: [3]i32) -> bool
 {
 	return(
-		glm.any(glm.lessThanEqual(pos, model.start)) ||
+		glm.any(glm.lessThan(pos, model.start)) ||
 		glm.any(glm.greaterThanEqual(pos, model.end)) \
 	)
 }
@@ -146,7 +146,7 @@ Get_Voxel_Error :: enum {
 // get the data (out of bounds, empty voxel, or undefined tag), the default value will be
 // returned instead. the returned data may be interpreted any way you'd like (through
 // `transmute`) as long as it fits in 32 bits.
-get_voxel_raw :: proc(
+get_voxel :: proc(
 	model: ^Model,
 	pos: [3]i32,
 	tag: Tag,
@@ -195,13 +195,8 @@ get_voxel_transmute :: proc(
 	size_of(Payload)
 {
 	val: Payload
-	val, solid = get_voxel_raw(model, pos, tag, transmute(Payload)default)
+	val, solid = get_voxel(model, pos, tag, transmute(Payload)default)
 	return transmute(T)val, solid
-}
-
-get_voxel :: proc {
-	get_voxel_raw,
-	get_voxel_transmute,
 }
 
 Set_Voxel_Error :: enum {
