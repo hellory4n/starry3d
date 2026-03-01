@@ -54,6 +54,16 @@ unpack_rgba_from_u32 :: #force_inline proc(src: u32) -> (dst: [4]u8)
 	return
 }
 
+@(require_results)
+unpack_argb_from_u32 :: #force_inline proc(src: u32) -> (dst: [4]u8)
+{
+	dst.a = u8((src >> 24) & 0xff)
+	dst.r = u8((src >> 16) & 0xff)
+	dst.g = u8((src >> 8) & 0xff)
+	dst.b = u8(src & 0xff)
+	return
+}
+
 // converts 0-255 rgba channels to the 0.0-1.0 range
 @(require_results)
 rgba8_to_rgbaf32_unorm :: #force_inline proc(src: [4]u8) -> (dst: [4]f32)

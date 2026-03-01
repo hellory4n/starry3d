@@ -6,10 +6,10 @@ import "core:mem"
 import "core:os"
 import "vendor:glfw"
 
-VERSION_NUM :: 00_08_00 // 0.8.0
-VERSION_STR :: "v0.8.0-dev"
-VERSION_MAJOR :: 0
-VERSION_MINOR :: 8
+VERSION_NUM :: 2026_03_00 // v2026.3.0
+VERSION_STR :: "v2026.3.0-dev"
+VERSION_MAJOR :: 2026
+VERSION_MINOR :: 3
 VERSION_PATCH :: 0
 
 // NOTE: avoid putting stuff here and instead put state into the subsystem's structs
