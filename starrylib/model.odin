@@ -54,10 +54,6 @@ new_empty_model :: proc(
 	err: Init_Model_Error,
 )
 {
-	// so it's inclusive
-	end := end
-	end += {1, 1, 1}
-
 	model.allocator = allocator
 	model.start = start
 	model.end = end

@@ -17,14 +17,14 @@ t_init_small_model :: proc(t: ^testing.T)
 	defer free_model(&m)
 	testing.expect(t, err == .OK)
 	testing.expect(t, m.start == {-4, -4, -4})
-	testing.expect(t, m.end == {5, 5, 5})
-	testing.expect(t, m.size == {9, 9, 9}) // inclusive
+	testing.expect(t, m.end == {4, 4, 4})
+	testing.expect(t, m.size == {8, 8, 8}) // inclusive
 }
 
 @(test)
 t_init_model_with_negative_coords :: proc(t: ^testing.T)
 {
-	m, err := new_empty_model(start = {-12, -12, -12}, end = {11, 11, 11})
+	m, err := new_empty_model(start = {-12, -12, -12}, end = {12, 12, 12})
 	defer free_model(&m)
 	testing.expect(t, err == .OK)
 	testing.expect(t, m.start == {-12, -12, -12})
@@ -38,7 +38,7 @@ t_init_model_with_negative_coords :: proc(t: ^testing.T)
 @(test)
 t_model_out_of_bounds :: proc(t: ^testing.T)
 {
-	m, err := new_empty_model(start = {-8, -8, -8}, end = {7, 7, 7})
+	m, err := new_empty_model(start = {-8, -8, -8}, end = {8, 8, 8})
 	defer free_model(&m)
 	testing.expect(t, err == .OK)
 
@@ -70,7 +70,7 @@ t_model_out_of_bounds :: proc(t: ^testing.T)
 @(test)
 t_model_empty_voxel :: proc(t: ^testing.T)
 {
-	m, err := new_empty_model(start = {-8, -8, -8}, end = {7, 7, 7})
+	m, err := new_empty_model(start = {-8, -8, -8}, end = {8, 8, 8})
 	defer free_model(&m)
 	testing.expect(t, err == .OK)
 
@@ -90,7 +90,7 @@ t_model_empty_voxel :: proc(t: ^testing.T)
 @(test)
 t_model_get_set :: proc(t: ^testing.T)
 {
-	m, err := new_empty_model(start = {-32, -32, -32}, end = {31, 31, 31})
+	m, err := new_empty_model(start = {-32, -32, -32}, end = {32, 32, 32})
 	defer free_model(&m)
 	testing.expect(t, err == .OK)
 
@@ -121,7 +121,7 @@ t_model_get_set :: proc(t: ^testing.T)
 @(test)
 t_model_remove :: proc(t: ^testing.T)
 {
-	m, err := new_empty_model(start = {-16, -16, -16}, end = {15, 15, 15})
+	m, err := new_empty_model(start = {-16, -16, -16}, end = {16, 16, 16})
 	defer free_model(&m)
 	testing.expect(t, err == .OK)
 

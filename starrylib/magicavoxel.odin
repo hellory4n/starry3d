@@ -5,7 +5,6 @@ import os "core:os/os2"
 
 // NOTE: .vox doesn't specify endianness, assuming little endian
 Magica_Int :: i32le
-Magica_Uint :: u32le
 Magica_Char :: u8
 
 Magica_Limitation_Error :: enum {
@@ -59,21 +58,22 @@ write_model_to_magicavoxel :: proc(
 	// xyzi chunk
 	os.write_string(file, "XYZI") or_return
 
-	xyzi_chunk_size := 0
+	num_voxels := 0
 	for z in model.start.z ..< model.end.z {
 		for y in model.start.y ..< model.end.y {
 			for x in model.start.x ..< model.end.x {
 				if is_voxel_solid(model, {x, y, z}) {
-					xyzi_chunk_size += size_of(Magica_Char) * 4
+					num_voxels += 1
 				}
 			}
 		}
 	}
-	write_int_to_file(file, Magica_Int(xyzi_chunk_size)) // chunk size
+	write_int_to_file(file, Magica_Int(num_voxels * 4)) // chunk size
 	write_int_to_file(file, Magica_Int(0)) // children chunk size
+	write_int_to_file(file, Magica_Int(num_voxels))
 
 	// world's worst quantization algorithm
-	distance_sq :: #force_inline proc(c1, c2: [4]u8) -> u32
+	distance_sq :: #force_inline proc(c1, c2: [3]u8) -> u32
 	{
 		dr := i32(c1.r) - i32(c2.r)
 		dg := i32(c1.g) - i32(c2.g)
@@ -88,8 +88,8 @@ write_model_to_magicavoxel :: proc(
 
 		for pal_color, i in MAGICA_DEFAULT_PALETTE {
 			distance := distance_sq(
-				unpack_rgba_from_u32(src),
-				unpack_argb_from_u32(pal_color),
+				unpack_rgba_from_u32(src).rgb,
+				unpack_argb_from_u32(pal_color).bgr,
 			)
 			if distance < best_distance {
 				best_distance = distance
@@ -114,10 +114,10 @@ write_model_to_magicavoxel :: proc(
 					continue
 				}
 
-				// TODO are negative coords supported?
+				// +Y up in starry, +Z up in magicavoxel
 				write_int_to_file(file, Magica_Char(x - model.start.x))
-				write_int_to_file(file, Magica_Char(y - model.start.y))
 				write_int_to_file(file, Magica_Char(z - model.start.z))
+				write_int_to_file(file, Magica_Char(y - model.start.y))
 				write_int_to_file(file, Magica_Char(closest_color_idx(val)))
 			}
 		}
@@ -125,9 +125,9 @@ write_model_to_magicavoxel :: proc(
 
 	// "from BMV" chunk, to show .bmv's superiority
 	// any decent reader should be able to ignore this
-	// os.write_string(file, "fBMV") or_return
-	// write_int_to_file(file, Magica_Int(0)) // chunk size
-	// write_int_to_file(file, Magica_Int(0)) // children chunk size
+	os.write_string(file, "fBMV") or_return
+	write_int_to_file(file, Magica_Int(0)) // chunk size
+	write_int_to_file(file, Magica_Int(0)) // children chunk size
 
 	// now we know the size of the rest of the file
 	main_chunk_children_size := (os.seek(file, 0, .Current) or_return) - file_size_position
