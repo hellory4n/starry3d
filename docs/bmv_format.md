@@ -1,144 +1,149 @@
-# BMV File Format v0.1
+# Big Massive Voxels v1.0
 
-> [!NOTE]
-> i didn't finish this lmao
-
-Big Massive Voxels (BMV) is a voxel file format intended for both voxel assets and art, and, data used by fully interactive voxel games.
-
-## Why though / xkcd 927
-
-Looking at the existing voxel formats:
-
-- MagicaVoxel's `.vox` lacks compression, more than 255 colors, is really just a big dumb list of position + palette index with optional extensions, and you definitely can't use it for user data
-- Qubicle's format doesn't seem to have any documentation ever (and i'm not gonna buy it just to discover how it works)
-- PNG stacks (and formats based on them) are torturous and don't allow custom metadata
-- couldn't find if there's any other formats that people among us actually use
-
-Quite the pickle.
+Big Massive Voxels (BMV) is the biggest most massive voxel format of all time.
 
 ## Conventions
 
 - "count" refers to the number of items while "length" refers to the number of bytes
-- structs are represented with a format similar to Zig's packed structs, with no implicit padding and `bool` being 1 bit.
-- `byte` is used instead of `u8` for cases where it isn't just a small integer.
-- `[N]string` is also used, N is in bytes, encoding is UTF-8, NOT null terminated
-- `@nonzero` specifies that the file is malformed if a certain value is 0
-- files are always little-endian
-- coordinates are OpenGL-style, that means +X is right, +Y is up, and -Z is forward. coordinates are signed, with (0, 0, 0) being the center.
+- integers are two's complement little endian
+- all strings are UTF-8 without a null terminator
+- `#nonzero` specifies that the file is malformed is a field is 0
+- coordinates are right-handed, that means +X is right, +Y is up, and -Z is forward
+- coordinates are signed, with (0, 0, 0) being the center
 
 ## Header
 
-All BMV files immediately start with the header:
+All BMV files start with the header:
 
-```zig
-const Header = struct {
-    magic: [8]string = "bigvox:)",
-    // different tools and files with different minor versions should generally be compatible with
-    // each other, and the implementation should follow that
-    // different major versions means breaking changes
-    major_version: u8 = 0,
-    minor_version: u8 = 1,
-
-    compression_format: u8,
-    color_format: u8,
-    size_x: u32 @nonzero,
-    size_y: u32 @nonzero,
-    size_z: u32 @nonzero,
-
-    _reserved1: u56,
-    // visual separation between header and content, visible when opening in a hex editor
-    _reserved2: u8 = '|',
+```cpp
+struct Header {
+	uint8 magic[8] = "\0bmvoxel";
+	// minor_version should be increased every version, unless there's breaking changes
+	// it should still be valid to parse a file with a higher minor_version than what you support
+	uint8 major_version = 1;
+	uint8 minor_version = 0;
 };
 ```
 
-The color formats supported are:
-- 32 bit RGBA = 0
-- 16 bit palette indexes to 32 bit RGBA colors = 1
-- 8 bit palette indexes to 32 bit RGBA colors = 1
+## Metadata section
 
-An alpha of 0 always means there is no voxel at that place.
+Immediately after the header is the metadata section. The metadata section includes a list of metaprops:
 
-The compression formats supported are:
-- no compression = 0
-- [Zstandard](https://facebook.github.io/zstd) level 3 compression = 1
-
-## Voxel property table
-
-Custom properties can be added to individual voxels in what's called "voxel properties" (or "props" for short). To save space, the type and default value for each property is stored here, so the voxels themselves mostly only have to store the values themselves (more on that later). You can also specify a default value for if the property isn't present.
-
-```zig
-const VoxelPropertyTable = struct {
-    prop_count: u8 @nonzero,
-    voxel_prop_descs: []VoxelPropertyDesc,
-};
-
-const VoxelPropertyDesc = struct {
-    magic: [4]string,
-    type: u8,
-    default_value: []byte,
+```cpp
+struct Metaprop {
+	// unique ID/key for the prop
+	// 0-128 are reserved for the standard
+	uint16 tag;
+	uint32 length;
+	uint8 payload[length];
 };
 ```
 
-The types supported are:
-- bool = 0
-- int8 = 1, int16 = 2, int32 = 3, int64 = 4
-- uint8 = 5, uint16 = 6, uint32 = 7, uint64 = 8
-- float32 = 9, float64 = 10
-- array = 11
+Only one metaprop of each tag is allowed. Metaprops may be in any order.
 
-Array values are stored as type (u8, same values), followed by the item count (uint32), and then the data. Arrays of arrays are not supported. An UTF-8 string can be represented by an array of uint8s.
+The full structure for the metadata section is:
 
-The length of the default value of course depends on the type.
+```cpp
+struct Metadata_Section {
+	uint8 magic[8] = "metadata";
+	uint16 metaprop_count;
+	Metaprop metaprops[metaprop_count];
+}
+```
 
-## Tags
+### Standard metaprops
 
-Similar to formats such as `.tiff`, RIFF, and `.vox`, BMV mostly consists of tagged chunks, or just tags. These are described as follows:
+A few metaprops are useful enough to be part of the standard:
 
-```zig
-const Tag = struct {
-    magic: [4]string,
-    length: u32 @nonzero,
-    data: []byte,
+```cpp
+// required
+struct Size_Metaprop {
+	uint16 tag = 0;
+	uint32 length = 12;
+	struct {
+		// all must be less than 2^31
+		uint32 size_x;
+		uint32 size_y;
+		uint32 size_z;
+	} payload;
+};
+
+// optional
+struct Compression_Metaprop {
+	uint16 tag = 1;
+	uint32 length = 2;
+	struct {
+		enum : uint16 {
+			LZ4 = 1,
+		} algorithm;
+	} payload;
+};
+
+// optional
+struct Copyright_Metaprop {
+	uint16 tag = 2;
+	uint32 length; // dynamic
+	struct {
+		uint32 year;
+		uint32 name_length;
+		uint8 name_str[name_length];
+		uint32 author_length;
+		uint8 author_str[author_length];
+		uint32 license_length;
+		uint8 license_str[license_length];
+		uint32 contact_length;
+		uint8 contact_str[contact_length];
+	} payload;
 };
 ```
 
-Unknown tags should be skipped, instead of being treated as invalid. Multiple tags of the same type are also allowed.
+## Data section
 
-## `cpal` tag
+Immediately after the metadata section there's the data section:
 
-The color palette tag describes the color palette used by the file. It should only be used if the color format is a palette format.
+```cpp
+struct Data_Section {
+	uint8 tag[8] = "propdata";
+	uint32 voxel_count;
+	// may be compressed if Compression_Metaprop is available
+	Voxel voxels[voxel_count];
+};
 
-```zig
-const PaletteTag = struct {
-    // actual format depends on the color format
-    colors: []byte,
+struct Voxel {
+	int32 x;
+	int32 y;
+	int32 z;
+	uint16 prop_count;
+	Prop props[prop_count];
+};
+
+struct Prop {
+	// unique ID/key for the prop
+	// 0-128 are reserved for the standard
+	uint16 tag;
+	// unlike metaprops, all props must fit in 32-bits
+	uint32 payload;
 };
 ```
 
-If there is no color palette tag in the entire file, and the color format is a palette format, the file is malformed.
+Only one prop of each tag is allowed. Props may be in any order.
 
-## `voxl` tag
+### Standard props
 
-The voxel tag describes real voxel data. This is done using a [brickmap](https://studenttheses.uu.nl/bitstream/handle/20.500.12932/20460/final.pdf), which provides a good balance between space efficiency and writing efficiency. (sparse voxel octrees are too slow to write for our use case)
+A few props are useful enough to be part of the standard:
 
-TODO finish this shit
-
-probably gonna use structures of arrays so that props work
-
-```zig
-const VoxelTag = struct {
-    // TODO
-};
+```cpp
+struct Color_Prop {
+	uint16 tag = 0;
+	// equivalent to 0xRRGGBBAA
+	uint8 a, b, g, r;
+}
 ```
 
-## Full file structure
+## Changelog
 
-Putting everything together we get:
+**v1.0**
+- first finished draft
 
-```zig
-const BmvFile = struct {
-    header: Header,
-    voxel_prop_table: VoxelPropertyTable,
-    tags: []Tag,
-};
-```
+**v0.1**
+- first draft
