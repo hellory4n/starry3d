@@ -6,6 +6,11 @@ import "core:mem"
 Tag :: u16
 Payload :: u32
 
+Prop :: struct {
+	tag:     Tag,
+	payload: Payload,
+}
+
 // color is pretty important so it gets the so very special 0 tag
 COLOR_TAG :: 0
 
@@ -43,6 +48,7 @@ Model :: struct {
 	end:               [3]i32,
 	size:              [3]i32,
 	size_with_padding: [3]i32,
+	voxel_count:       i32,
 }
 
 new_empty_model :: proc(
@@ -99,28 +105,24 @@ free_model :: proc(model: ^Model)
 	model^ = {}
 }
 
-@(private)
-_get_brick_pos :: #force_inline proc(model: ^Model, pos: [3]i32) -> [3]i32
+model_get_brick_pos :: #force_inline proc(model: ^Model, pos: [3]i32) -> [3]i32
 {
 	return (pos + glm.abs(model.start)) / BRICK_SIZE_VECI
 }
 
-@(private)
-_get_brick_idx :: #force_inline proc(model: ^Model, pos: [3]i32) -> i32
+model_get_brick_idx :: #force_inline proc(model: ^Model, pos: [3]i32) -> i32
 {
 	return pos.x * (model.size.y * model.size.z) + pos.y * model.size.z + pos.z
 }
 
-@(private)
-_get_brick :: #force_inline proc(model: ^Model, pos: [3]i32) -> ^Brick
+model_get_brick :: #force_inline proc(model: ^Model, pos: [3]i32) -> ^Brick
 {
-	return model.bricks[_get_brick_idx(model, _get_brick_pos(model, pos))]
+	return model.bricks[model_get_brick_idx(model, model_get_brick_pos(model, pos))]
 }
 
-@(private)
-_get_brick_ptr :: #force_inline proc(model: ^Model, pos: [3]i32) -> ^^Brick
+model_get_brick_ptr :: #force_inline proc(model: ^Model, pos: [3]i32) -> ^^Brick
 {
-	return &model.bricks[_get_brick_idx(model, _get_brick_pos(model, pos))]
+	return &model.bricks[model_get_brick_idx(model, model_get_brick_pos(model, pos))]
 }
 
 is_out_of_bounds :: #force_inline proc(model: ^Model, pos: [3]i32) -> bool
@@ -155,7 +157,7 @@ get_voxel :: proc(
 	if is_out_of_bounds(model, pos) {
 		return default, false
 	}
-	brick := _get_brick(model, pos)
+	brick := model_get_brick(model, pos)
 	if brick == nil {
 		return default, false
 	}
@@ -216,7 +218,7 @@ set_voxel :: proc(
 		err = .OUT_OF_BOUNDS
 		return
 	}
-	brick := _get_brick(model, pos)
+	brick := model_get_brick(model, pos)
 	if brick == nil {
 		alloc_error: mem.Allocator_Error
 		brick, alloc_error = new(Brick, model.allocator)
@@ -231,11 +233,14 @@ set_voxel :: proc(
 			return
 		}
 
-		_get_brick_ptr(model, pos)^ = brick
+		model_get_brick_ptr(model, pos)^ = brick
 	}
 
 	voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
-	brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] = true
+	if !brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] {
+		brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] = true
+		model.voxel_count += 1
+	}
 
 	for &list in brick.data {
 		if list.tag == tag {
@@ -266,14 +271,17 @@ remove_voxel :: proc(model: ^Model, pos: [3]i32) -> (was_solid: bool)
 		was_solid = false
 		return
 	}
-	brick := _get_brick(model, pos)
+	brick := model_get_brick(model, pos)
 	if brick == nil {
 		was_solid = false
 		return
 	}
 
 	voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
-	brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] = false
+	if brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] {
+		brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] = false
+		model.voxel_count -= 1
+	}
 	return true
 }
 
@@ -282,7 +290,7 @@ is_voxel_solid :: proc(model: ^Model, pos: [3]i32) -> bool
 	if is_out_of_bounds(model, pos) {
 		return false
 	}
-	brick := _get_brick(model, pos)
+	brick := model_get_brick(model, pos)
 	if brick == nil {
 		return false
 	}
@@ -294,4 +302,50 @@ is_voxel_solid :: proc(model: ^Model, pos: [3]i32) -> bool
 is_voxel_empty :: proc(model: ^Model, pos: [3]i32) -> bool
 {
 	return !is_voxel_solid(model, pos)
+}
+
+// returned array must be manually `delete`d
+list_voxel_props :: proc(
+	model: ^Model,
+	pos: [3]i32,
+	allocator := context.allocator,
+) -> (
+	props: []Prop,
+	solid: bool,
+)
+{
+	if is_out_of_bounds(model, pos) {
+		return
+	}
+	brick := model_get_brick(model, pos)
+	if brick == nil {
+		return
+	}
+	voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
+
+	if (!brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z]) {
+		return
+	}
+	solid = true
+
+	length := 0
+	for list in brick.data {
+		if list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z].set {
+			length += 1
+		}
+	}
+	props = make([]Prop, length, allocator)
+
+	i := 0
+	for list in brick.data {
+		crap := list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z]
+		if !crap.set {
+			continue
+		}
+
+		props[i].tag = list.tag
+		props[i].payload = crap.payload
+		i += 1
+	}
+	return
 }

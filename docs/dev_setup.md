@@ -24,5 +24,5 @@ Including Starry in new projects is a bit more involved. There are 2 packages:
 - `starrylib/`: general utilities that work without the runtime
 - `thirdparty/`: any dependencies used by starryrt
 
-Starrylib can be used by any project by just copy and pasting it, since it only depends on `core:*` and `vendor:stb/image`.
+Starrylib can be used by any project by just copy and pasting it, since it only depends on `core:*`, `vendor:stb/image`, and `vendor:compress/lz4`.
 If you want the full engine, you need to copy both `starryrt/`, `starrylib/`, and `thirdparty/`.

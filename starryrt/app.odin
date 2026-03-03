@@ -147,6 +147,8 @@ run :: proc(
 	init_proc()
 	defer free_proc()
 
+	free_all(context.temp_allocator) // whatever was allocated during initialization
+
 	for !is_window_closing(global.main_window) {
 		// f32 is used more often in games in than f64
 		// just avoids having to convert too many times
@@ -160,6 +162,7 @@ run :: proc(
 
 		poll_events(global.main_window)
 		swap_gl_buffers(global.main_window)
+		free_all(context.temp_allocator)
 	}
 }
 

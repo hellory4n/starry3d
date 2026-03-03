@@ -1,15 +1,13 @@
-<img src="./docs/logo.png" alt="&quot;can't innovate anymore my ass&quot; - phil schiller" width="200">
-
 # Starry3D
 
 The voxel graphics toolkit
-
-See the [development setup](./docs/dev_setup.md) for build instructions.
 
 Engines can be massive. For these we have many directories:
 - `starrylib/`: standalone functionality that doesn't depend on the runtime
 - `starryrt/`: the big heavy runtime
 - `sandbox/`: test project for the engine
+
+See the [development setup](./docs/dev_setup.md) for build instructions.
 
 ## FAQ
 

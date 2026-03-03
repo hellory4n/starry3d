@@ -1,6 +1,8 @@
-# Big Massive Voxels v1.0
+# Big Massive Voxels v1.1
 
 Big Massive Voxels (BMV) is the biggest most massive voxel format of all time.
+
+This spec is licensed under the [CC0 license](https://creativecommons.org/public-domain/cc0/).
 
 ## Conventions
 
@@ -10,6 +12,7 @@ Big Massive Voxels (BMV) is the biggest most massive voxel format of all time.
 - `#nonzero` specifies that the file is malformed is a field is 0
 - coordinates are right-handed, that means +X is right, +Y is up, and -Z is forward
 - coordinates are signed, with (0, 0, 0) being the center
+- `bool` is 1 bit, `bool8` is 1 bit + 7 bits of padding
 
 ## Header
 
@@ -62,9 +65,9 @@ struct Size_Metaprop {
 	uint32 length = 12;
 	struct {
 		// all must be less than 2^31
-		uint32 size_x;
-		uint32 size_y;
-		uint32 size_z;
+		uint32 size_x #nonzero;
+		uint32 size_y #nonzero;
+		uint32 size_z #nonzero;
 	} payload;
 };
 
@@ -136,11 +139,16 @@ A few props are useful enough to be part of the standard:
 struct Color_Prop {
 	uint16 tag = 0;
 	// equivalent to 0xRRGGBBAA
+	// sRGB colorspace
+	// all channels from 0 to 255
 	uint8 a, b, g, r;
 }
 ```
 
 ## Changelog
+
+**v1.1**
+- changed license from zlib to CC0, clarified some things
 
 **v1.0**
 - first finished draft

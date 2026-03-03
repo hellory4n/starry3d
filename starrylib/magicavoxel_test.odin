@@ -95,7 +95,7 @@ t_write_to_magicavoxel :: proc(t: ^testing.T)
 		testing.expect_value(t, oserr, nil)
 	}
 
-	mverr := write_model_to_magicavoxel("testout/model.vox", &m)
+	mverr := write_model_to_magicavoxel_file("testout/model.vox", &m)
 	testing.expect_value(t, mverr, nil)
 
 	log.warn(

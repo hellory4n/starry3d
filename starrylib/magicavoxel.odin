@@ -21,11 +21,10 @@ Magica_Error :: union #shared_nil {
 // - model size must be smaller than 256x256x256
 // - semi-transparent voxels will be fully opaque
 // - 24-bit color will be quantized to a palette of 255 colors
-write_model_to_magicavoxel :: proc(
+write_model_to_magicavoxel_file :: proc(
 	path: string,
 	model: ^Model,
 	color_tag: Tag = COLOR_TAG,
-	allocator := context.allocator,
 ) -> (
 	err: Magica_Error,
 )
@@ -44,7 +43,7 @@ write_model_to_magicavoxel :: proc(
 	// main chunk
 	os.write_string(file, "MAIN") or_return
 	write_int_to_file(file, Magica_Int(0)) or_return
-	file_size_position := os.seek(file, 0, .Current) or_return // set later
+	file_size_position := file_tell(file) or_return // set later
 	write_int_to_file(file, Magica_Int(0)) or_return
 
 	// size chunk
@@ -58,19 +57,9 @@ write_model_to_magicavoxel :: proc(
 	// xyzi chunk
 	os.write_string(file, "XYZI") or_return
 
-	num_voxels := 0
-	for z in model.start.z ..< model.end.z {
-		for y in model.start.y ..< model.end.y {
-			for x in model.start.x ..< model.end.x {
-				if is_voxel_solid(model, {x, y, z}) {
-					num_voxels += 1
-				}
-			}
-		}
-	}
-	write_int_to_file(file, Magica_Int(num_voxels * 4)) // chunk size
+	write_int_to_file(file, Magica_Int(model.voxel_count * 4)) // chunk size
 	write_int_to_file(file, Magica_Int(0)) // children chunk size
-	write_int_to_file(file, Magica_Int(num_voxels))
+	write_int_to_file(file, Magica_Int(model.voxel_count))
 
 	// world's worst quantization algorithm
 	distance_sq :: #force_inline proc(c1, c2: [3]u8) -> u32
@@ -130,7 +119,7 @@ write_model_to_magicavoxel :: proc(
 	write_int_to_file(file, Magica_Int(0)) // children chunk size
 
 	// now we know the size of the rest of the file
-	main_chunk_children_size := (os.seek(file, 0, .Current) or_return) - file_size_position
+	main_chunk_children_size := (file_tell(file) or_return) - file_size_position
 	os.seek(file, file_size_position, .Start)
 	write_int_to_file(file, Magica_Int(main_chunk_children_size)) or_return
 
