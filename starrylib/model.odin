@@ -105,24 +105,28 @@ free_model :: proc(model: ^Model)
 	model^ = {}
 }
 
-model_get_brick_pos :: #force_inline proc(model: ^Model, pos: [3]i32) -> [3]i32
+model_get_brick_pos :: #force_inline proc(model: ^Model, vox_pos: [3]i32) -> [3]i32
 {
-	return (pos + glm.abs(model.start)) / BRICK_SIZE_VECI
+	return (vox_pos + glm.abs(model.start)) / BRICK_SIZE_VECI
 }
 
-model_get_brick_idx :: #force_inline proc(model: ^Model, pos: [3]i32) -> i32
+model_get_brick_idx :: #force_inline proc(model: ^Model, brick_pos: [3]i32) -> i32
 {
-	return pos.x * (model.size.y * model.size.z) + pos.y * model.size.z + pos.z
+	return(
+		brick_pos.x * (model.size.y * model.size.z) +
+		brick_pos.y * model.size.z +
+		brick_pos.z \
+	)
 }
 
-model_get_brick :: #force_inline proc(model: ^Model, pos: [3]i32) -> ^Brick
+model_get_brick :: #force_inline proc(model: ^Model, vox_pos: [3]i32) -> ^Brick
 {
-	return model.bricks[model_get_brick_idx(model, model_get_brick_pos(model, pos))]
+	return model.bricks[model_get_brick_idx(model, model_get_brick_pos(model, vox_pos))]
 }
 
-model_get_brick_ptr :: #force_inline proc(model: ^Model, pos: [3]i32) -> ^^Brick
+model_get_brick_ptr :: #force_inline proc(model: ^Model, vox_pos: [3]i32) -> ^^Brick
 {
-	return &model.bricks[model_get_brick_idx(model, model_get_brick_pos(model, pos))]
+	return &model.bricks[model_get_brick_idx(model, model_get_brick_pos(model, vox_pos))]
 }
 
 is_out_of_bounds :: #force_inline proc(model: ^Model, pos: [3]i32) -> bool
@@ -163,7 +167,7 @@ get_voxel :: proc(
 	}
 	voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
 
-	if (!brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z]) {
+	if !brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] {
 		return default, false
 	}
 
@@ -323,7 +327,7 @@ list_voxel_props :: proc(
 	}
 	voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
 
-	if (!brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z]) {
+	if !brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] {
 		return
 	}
 	solid = true
@@ -347,5 +351,85 @@ list_voxel_props :: proc(
 		props[i].payload = crap.payload
 		i += 1
 	}
+	return
+}
+
+Model_Iterator :: struct {
+	model:    ^Model,
+	pos:      [3]i32,
+	end:      [3]i32,
+	prop_idx: int,
+}
+
+// for iterating over all solid voxels in a model as well as all of their props
+model_iterator :: proc(model: ^Model) -> (iter: Model_Iterator)
+{
+	iter.model = model
+
+	if len(model.bricks) == 0 {
+		iter.end = {0, 0, 0}
+		return
+	}
+
+	iter.end = model.end
+	iter.pos = model.start
+	return
+}
+
+model_iterator_next :: proc(
+	iter: ^Model_Iterator,
+) -> (
+	pos: [3]i32,
+	tag: Tag,
+	payload: Payload,
+	ok: bool,
+)
+{
+	if glm.any(glm.greaterThanEqual(iter.pos, iter.end)) {
+		ok = false
+		return
+	}
+
+	for iter.pos.x < iter.end.x {
+		defer {
+			iter.pos.z += 1
+			if iter.pos.z >= iter.end.z {
+				iter.pos.z = 0
+				iter.pos.y += 1
+			}
+			if iter.pos.y >= iter.end.y {
+				iter.pos.y = 0
+				iter.pos.x += 1
+			}
+		}
+
+		// TODO is fetching bricks more times than necessary a problem for performance
+		brick := model_get_brick(iter.model, iter.pos)
+		if brick == nil {
+			iter.prop_idx = 0
+			continue
+		}
+
+		voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
+		if !brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] {
+			iter.prop_idx = 0
+			continue
+		}
+
+		for list in brick.data {
+			defer iter.prop_idx += 1
+			if list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z].set {
+				tag = list.tag
+				payload = list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z].payload
+				pos = iter.pos
+				return
+			} else {
+				continue
+			}
+		}
+		iter.prop_idx = 0
+	}
+
+	ok = true
 	return
 }

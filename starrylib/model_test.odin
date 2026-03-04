@@ -1,5 +1,6 @@
 package starrylib
 
+import "core:mem"
 import "core:testing"
 
 @(test)
@@ -144,4 +145,135 @@ t_model_remove :: proc(t: ^testing.T)
 	// neighbor still gets default for both tags
 	n := [3]i32{5, -3, 10}
 	testing.expect(t, !is_voxel_solid(&m, n))
+}
+
+@(test)
+t_model_iterator :: proc(t: ^testing.T)
+{
+	src := create_the_great_upside_down_t_model(t)
+	dst, err := new_empty_model(src.start, src.end)
+	testing.expect_value(t, err, Init_Model_Error.OK)
+	defer free_model(&src)
+	defer free_model(&dst)
+
+	iter := model_iterator(&src)
+	for pos, tag, payload in model_iterator_next(&iter) {
+		serr := set_voxel(&dst, pos, tag, payload)
+		testing.expect_value(t, serr, Set_Voxel_Error.OK)
+	}
+
+	// src and dst should now be equal
+	testing.expect_value(t, dst.voxel_count, src.voxel_count)
+	testing.expect_value(t, len(dst.bricks), len(src.bricks))
+
+	for i := 0; i < len(dst.bricks); i += 1 {
+		src_brick := src.bricks[i]
+		dst_brick := dst.bricks[i]
+
+		testing.expect(
+			t,
+			mem.compare(
+				transmute([]byte)src_brick.solid[:],
+				transmute([]byte)dst_brick.solid[:],
+			) ==
+			0,
+		)
+		testing.expect(
+			t,
+			mem.compare(
+				transmute([]byte)src_brick.data[:],
+				transmute([]byte)dst_brick.data[:],
+			) ==
+			0,
+		)
+	}
+}
+
+// world's worst test model
+@(private)
+create_the_great_upside_down_t_model :: proc(t: ^testing.T) -> Model
+{
+	m, err := new_empty_model(start = {-8, -8, -8}, end = {8, 8, 8})
+	testing.expect_value(t, err, Init_Model_Error.OK)
+
+	// upside-down T
+	testing.expect_value(
+		t,
+		set_voxel(&m, {0, -2, 0}, COLOR_TAG, u32(0xf9c440ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {-1, -2, 0}, COLOR_TAG, u32(0xf9c440ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {1, -2, 0}, COLOR_TAG, u32(0xf9c440ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {0, -1, 0}, COLOR_TAG, u32(0xf9c440ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {0, 0, 0}, COLOR_TAG, u32(0xf9c440ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {0, 1, 0}, COLOR_TAG, u32(0xf9c440ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {0, 2, 0}, COLOR_TAG, u32(0xffffffff)),
+		Set_Voxel_Error.OK,
+	)
+
+	// corners
+	testing.expect_value(
+		t,
+		set_voxel(&m, {-8, 7, -8}, COLOR_TAG, u32(0xff0000ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {-8, 7, 7}, COLOR_TAG, u32(0x00ff00ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {7, 7, -8}, COLOR_TAG, u32(0x0000ffff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {7, 7, 7}, COLOR_TAG, u32(0xffff00ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {-8, -8, -8}, COLOR_TAG, u32(0xff0000ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {-8, -8, 7}, COLOR_TAG, u32(0x00ff00ff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {7, -8, -8}, COLOR_TAG, u32(0x0000ffff)),
+		Set_Voxel_Error.OK,
+	)
+	testing.expect_value(
+		t,
+		set_voxel(&m, {7, -8, 7}, COLOR_TAG, u32(0xffff00ff)),
+		Set_Voxel_Error.OK,
+	)
+
+	return m
 }

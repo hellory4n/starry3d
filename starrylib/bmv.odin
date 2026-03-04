@@ -110,89 +110,90 @@ bmv_copyright_metaprop :: proc(src: Bmv_Copyright, allocator := context.allocato
 }
 
 // writes the model to a Big Massive Voxels file, the most massive most superior format of all time.
-write_model_to_bmv_file :: proc(
-	path: string,
-	model: ^Model,
-	metadata: Bmv_Metadata = {},
-	allocator := context.allocator,
-) -> (
-	err: Bmv_Error,
-)
-{
-	// TODO this can be optimized
+// write_model_to_bmv_file :: proc(
+// 	path: string,
+// 	model: ^Model,
+// 	metadata: Bmv_Metadata = {},
+// 	allocator := context.allocator,
+// ) -> (
+// 	err: Bmv_Error,
+// )
+// {
+// 	// TODO this can be optimized
+// 	// TODO consider not allocating every picosecond
 
-	// meta my data
-	raw_meta: Bmv_Raw_Metadata
-	raw_meta_owned: bool
+// 	// meta my data
+// 	raw_meta: Bmv_Raw_Metadata
+// 	raw_meta_owned: bool
 
-	switch v in metadata {
-	case Bmv_Raw_Metadata:
-		raw_meta = v
+// 	switch v in metadata {
+// 	case Bmv_Raw_Metadata:
+// 		raw_meta = v
 
-	case Bmv_Standard_Metadata:
-		raw_meta = make(Bmv_Raw_Metadata, allocator)
-		raw_meta_owned = true
+// 	case Bmv_Standard_Metadata:
+// 		raw_meta = make(Bmv_Raw_Metadata, allocator)
+// 		raw_meta_owned = true
 
-		raw_meta[BMV_SIZE_METATAG] = bmv_size_metaprop(model.size)
-		if v.compression_algorithm != .NONE {
-			raw_meta[BMV_COMPRESSION_METATAG] = bmv_compression_metaprop(
-				v.compression_algorithm,
-			)
-		}
+// 		raw_meta[BMV_SIZE_METATAG] = bmv_size_metaprop(model.size)
+// 		if v.compression_algorithm != .NONE {
+// 			raw_meta[BMV_COMPRESSION_METATAG] = bmv_compression_metaprop(
+// 				v.compression_algorithm,
+// 			)
+// 		}
 
-		if v.copyright != nil {
-			raw_meta[BMV_COPYRIGHT_METATAG] = bmv_copyright_metaprop(v.copyright.?)
-		}
-	}
+// 		if v.copyright != nil {
+// 			raw_meta[BMV_COPYRIGHT_METATAG] = bmv_copyright_metaprop(v.copyright.?)
+// 		}
+// 	}
 
-	defer if raw_meta_owned {
-		for tag, payload in raw_meta {
-			delete(payload, allocator)
-		}
-		delete(raw_meta)
-	}
+// 	defer if raw_meta_owned {
+// 		for tag, payload in raw_meta {
+// 			delete(payload, allocator)
+// 		}
+// 		delete(raw_meta)
+// 	}
 
-	file := os.open(path, {.Write, .Create}) or_return
-	defer os.close(file)
+// 	file := os.open(path, {.Write, .Create}) or_return
+// 	defer os.close(file)
 
-	// header
-	os.write_string(file, "\x00bmvoxel") or_return
-	write_int_to_file(file, BMV_MAJOR_VERSION) or_return
-	write_int_to_file(file, BMV_MINOR_VERSION) or_return
+// 	// header
+// 	os.write_string(file, "\x00bmvoxel") or_return
+// 	write_int_to_file(file, BMV_MAJOR_VERSION) or_return
+// 	write_int_to_file(file, BMV_MINOR_VERSION) or_return
 
-	// metadata section
-	os.write_string(file, "metadata") or_return
-	write_int_to_file(file, u16le(len(raw_meta))) or_return
-	for tag, payload in raw_meta {
-		write_int_to_file(file, u16le(tag)) or_return
-		write_int_to_file(file, u32le(len(payload))) or_return
-		os.write(file, payload) or_return
-	}
+// 	// metadata section
+// 	os.write_string(file, "metadata") or_return
+// 	write_int_to_file(file, u16le(len(raw_meta))) or_return
+// 	for tag, payload in raw_meta {
+// 		write_int_to_file(file, u16le(tag)) or_return
+// 		write_int_to_file(file, u32le(len(payload))) or_return
+// 		os.write(file, payload) or_return
+// 	}
 
-	// data section
-	os.write_string(file, "propdata") or_return
-	write_int_to_file(file, u32le(model.voxel_count)) or_return
+// 	// data section
+// 	os.write_string(file, "propdata") or_return
+// 	write_int_to_file(file, u32le(model.voxel_count)) or_return
 
-	voxel_data := make([dynamic]byte, allocator)
-	defer delete(voxel_data)
+// 	voxel_data := make([dynamic]byte, allocator)
+// 	defer delete(voxel_data)
 
-	for z in model.start.z ..< model.end.z {
-		for y in model.start.y ..< model.end.y {
-			for x in model.start.x ..< model.end.x {
-				props, solid := list_voxel_props(model, {x, y, z}, allocator)
-				if !solid {
-					continue
-				}
+// 	for z in model.start.z ..< model.end.z {
+// 		for y in model.start.y ..< model.end.y {
+// 			for x in model.start.x ..< model.end.x {
+// 				props, solid := list_voxel_props(model, {x, y, z}, allocator)
+// 				if !solid {
+// 					continue
+// 				}
 
-				// todo lmaop
-				append(&voxel_data)
-				for prop in props {
+// 				// todo lmaop
+// 				append(&voxel_data)
+// 				for prop in props {
 
-				}
-				append(&voxel_data)
-			}
-		}
-	}
+// 				}
+// 				append(&voxel_data)
+// 			}
+// 		}
+// 	}
 
-	return
-}
+// 	return
+// }

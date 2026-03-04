@@ -7,88 +7,8 @@ import "core:testing"
 @(test)
 t_png_slice :: proc(t: ^testing.T)
 {
-	m, merr := new_empty_model(start = {-8, -8, -8}, end = {8, 8, 8})
-	testing.expect_value(t, merr, Init_Model_Error.OK)
+	m := create_the_great_upside_down_t_model(t)
 	defer free_model(&m)
-
-	// upside-down T
-	testing.expect_value(
-		t,
-		set_voxel(&m, {0, -2, 0}, COLOR_TAG, u32(0xf9c440ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {-1, -2, 0}, COLOR_TAG, u32(0xf9c440ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {1, -2, 0}, COLOR_TAG, u32(0xf9c440ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {0, -1, 0}, COLOR_TAG, u32(0xf9c440ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {0, 0, 0}, COLOR_TAG, u32(0xf9c440ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {0, 1, 0}, COLOR_TAG, u32(0xf9c440ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {0, 2, 0}, COLOR_TAG, u32(0xffffffff)),
-		Set_Voxel_Error.OK,
-	)
-
-	// corners
-	testing.expect_value(
-		t,
-		set_voxel(&m, {-8, 7, -8}, COLOR_TAG, u32(0xff0000ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {-8, 7, 7}, COLOR_TAG, u32(0x00ff00ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {7, 7, -8}, COLOR_TAG, u32(0x0000ffff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {7, 7, 7}, COLOR_TAG, u32(0xffff00ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {-8, -8, -8}, COLOR_TAG, u32(0xff0000ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {-8, -8, 7}, COLOR_TAG, u32(0x00ff00ff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {7, -8, -8}, COLOR_TAG, u32(0x0000ffff)),
-		Set_Voxel_Error.OK,
-	)
-	testing.expect_value(
-		t,
-		set_voxel(&m, {7, -8, 7}, COLOR_TAG, u32(0xffff00ff)),
-		Set_Voxel_Error.OK,
-	)
 
 	oserr := os.make_directory_all("testout")
 	if oserr != .Exist {
