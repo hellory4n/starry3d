@@ -85,3 +85,28 @@ rgbaf32_unorm_to_rgba8 :: #force_inline proc(src: [4]f32) -> (dst: [4]u8)
 	dst.a = u8(src.a * 255)
 	return
 }
+
+@(require_results)
+flatten_3d_idx :: #force_inline proc(
+	size: [3]$T,
+	idx: [3]T,
+) -> T where intrinsics.type_is_integer(T)
+{
+	return idx.x * (size.y * size.z) + idx.y * size.z + idx.z
+}
+
+@(require_results)
+unflatten_3d_idx :: #force_inline proc(
+	size: [3]$T,
+	idx: T,
+) -> (
+	pos: [3]T,
+) where intrinsics.type_is_integer(T)
+{
+	xy_slice := size.y * size.z
+	pos.x = idx / xy_slice
+	rem := idx % xy_slice
+	pos.y = rem / size.z
+	pos.z = rem % size.z
+	return
+}

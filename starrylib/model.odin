@@ -1,6 +1,5 @@
 package starrylib
 
-import "core:log"
 import glm "core:math/linalg/glsl"
 import "core:mem"
 
@@ -54,6 +53,7 @@ Model :: struct {
 	end:               [3]i32,
 	size:              [3]i32,
 	size_with_padding: [3]i32,
+	brick_count:       [3]i32,
 	voxel_count:       i32,
 }
 
@@ -81,11 +81,12 @@ new_empty_model :: proc(
 	if glm.any(glm.notEqual(model.size % BRICK_SIZE_VECI, [3]i32{0, 0, 0})) {
 		model.size_with_padding += BRICK_SIZE_VECI
 	}
+	model.brick_count = model.size_with_padding / BRICK_SIZE_VECI
 
 	alloc_error: mem.Allocator_Error
 	model.bricks, alloc_error = make(
 		[]^Brick,
-		model.size_with_padding.x * model.size_with_padding.y * model.size_with_padding.z,
+		model.brick_count.x * model.brick_count.y * model.brick_count.z,
 		allocator,
 	)
 	if alloc_error == .Out_Of_Memory {
@@ -118,11 +119,7 @@ model_get_brick_pos :: #force_inline proc(model: ^Model, vox_pos: [3]i32) -> [3]
 
 model_get_brick_idx :: #force_inline proc(model: ^Model, brick_pos: [3]i32) -> i32
 {
-	return(
-		brick_pos.x * (model.size.y * model.size.z) +
-		brick_pos.y * model.size.z +
-		brick_pos.z \
-	)
+	return flatten_3d_idx(model.brick_count, brick_pos)
 }
 
 model_get_brick :: #force_inline proc(model: ^Model, vox_pos: [3]i32) -> ^Brick
@@ -362,9 +359,9 @@ list_voxel_props :: proc(
 
 Model_Iterator :: struct {
 	model:        ^Model,
-	voxel_index:  int, // 0 .. total_voxels-1
-	prop_index:   int, // current prop in current voxel
-	total_voxels: int,
+	voxel_index:  i32, // 0 .. total_voxels-1
+	prop_index:   i32, // current prop in current voxel
+	total_voxels: i32,
 }
 
 model_iterator :: proc(model: ^Model) -> Model_Iterator
@@ -373,7 +370,7 @@ model_iterator :: proc(model: ^Model) -> Model_Iterator
 		model = model,
 		voxel_index = 0,
 		prop_index = 0,
-		total_voxels = int(model.size.x * model.size.y * model.size.z),
+		total_voxels = model.size.x * model.size.y * model.size.z,
 	}
 }
 
@@ -387,40 +384,37 @@ model_iterator_next :: proc(
 )
 {
 	for it.voxel_index < it.total_voxels {
-		pos.x =
-			(i32(it.voxel_index) / (it.model.size.y * it.model.size.z)) +
-			it.model.start.x
-		pos.y =
-			((i32(it.voxel_index) / it.model.size.z) % it.model.size.y) +
-			it.model.start.y
-		pos.z = (i32(it.voxel_index) % it.model.size.z) + it.model.start.z
-
+		pos = unflatten_3d_idx(it.model.size, it.voxel_index) + it.model.start
 		brick := model_get_brick(it.model, pos)
 
 		if brick != nil {
-			for it.prop_index < len(brick.data) {
-				// the transmute is just to flatten the fucking
-				p := transmute([BRICK_SIZE_CUBED]Prop_List_Data)brick.data[it.prop_index].data
+			// the transmute is just to flatten the fucking
+			solid := transmute([BRICK_SIZE_CUBED]bool)brick.solid
+
+			for it.prop_index < i32(len(brick.data)) {
 				it.prop_index += 1
 
-				brick_idx := it.prop_index % BRICK_SIZE_CUBED
-				if p[brick_idx].set {
-					log.debug(
-						"fuh",
-						pos,
-						brick.data[it.prop_index].tag,
-						p[brick_idx].payload,
-						true,
-					)
+				local := (pos - it.model.start) % BRICK_SIZE_VECI
+				brick_idx :=
+					local.x +
+					local.y * BRICK_SIZE +
+					local.z * BRICK_SIZE * BRICK_SIZE
+
+				if !solid[brick_idx] {
+					continue
+				}
+
+				// man
+				props := transmute([BRICK_SIZE_CUBED]Prop_List_Data)brick.data[it.prop_index - 1].data
+				if props[brick_idx].set {
 					return pos,
-						brick.data[it.prop_index].tag,
-						p[brick_idx].payload,
+						brick.data[it.prop_index - 1].tag,
+						props[brick_idx].payload,
 						true
 				}
 			}
 		}
 
-		// next voxel
 		it.voxel_index += 1
 		it.prop_index = 0
 	}

@@ -39,3 +39,13 @@ t_unpack_argb_from_u32 :: proc(t: ^testing.T)
 	testing.expect_value(t, dst.g, 0x33)
 	testing.expect_value(t, dst.b, 0x44)
 }
+
+@(test)
+t_flatten_unflatten_3d_idx :: proc(t: ^testing.T)
+{
+	SIZE :: [3]int{256, 128, 64}
+	src := [3]int{67, 38, 61}
+	tmp := flatten_3d_idx(SIZE, src)
+	dst := unflatten_3d_idx(SIZE, tmp)
+	testing.expect_value(t, dst, src)
+}
