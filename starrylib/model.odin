@@ -1,5 +1,6 @@
 package starrylib
 
+import "core:log"
 import glm "core:math/linalg/glsl"
 import "core:mem"
 
@@ -17,15 +18,20 @@ COLOR_TAG :: 0
 @(private)
 BRICK_SIZE :: 8
 @(private)
+BRICK_SIZE_CUBED :: BRICK_SIZE * BRICK_SIZE * BRICK_SIZE
+@(private)
 BRICK_SIZE_VECI :: [3]i32{BRICK_SIZE, BRICK_SIZE, BRICK_SIZE}
+
+@(private)
+Prop_List_Data :: struct {
+	payload: Payload,
+	set:     bool,
+}
 
 @(private)
 Prop_List :: struct {
 	tag:  Tag,
-	data: [BRICK_SIZE][BRICK_SIZE][BRICK_SIZE]struct {
-		payload: Payload,
-		set:     bool,
-	},
+	data: [BRICK_SIZE][BRICK_SIZE][BRICK_SIZE]Prop_List_Data,
 }
 
 @(private)
@@ -355,29 +361,24 @@ list_voxel_props :: proc(
 }
 
 Model_Iterator :: struct {
-	model:    ^Model,
-	pos:      [3]i32,
-	end:      [3]i32,
-	prop_idx: int,
+	model:        ^Model,
+	voxel_index:  int, // 0 .. total_voxels-1
+	prop_index:   int, // current prop in current voxel
+	total_voxels: int,
 }
 
-// for iterating over all solid voxels in a model as well as all of their props
-model_iterator :: proc(model: ^Model) -> (iter: Model_Iterator)
+model_iterator :: proc(model: ^Model) -> Model_Iterator
 {
-	iter.model = model
-
-	if len(model.bricks) == 0 {
-		iter.end = {0, 0, 0}
-		return
+	return Model_Iterator {
+		model = model,
+		voxel_index = 0,
+		prop_index = 0,
+		total_voxels = int(model.size.x * model.size.y * model.size.z),
 	}
-
-	iter.end = model.end
-	iter.pos = model.start
-	return
 }
 
 model_iterator_next :: proc(
-	iter: ^Model_Iterator,
+	it: ^Model_Iterator,
 ) -> (
 	pos: [3]i32,
 	tag: Tag,
@@ -385,51 +386,45 @@ model_iterator_next :: proc(
 	ok: bool,
 )
 {
-	if glm.any(glm.greaterThanEqual(iter.pos, iter.end)) {
-		ok = false
-		return
+	for it.voxel_index < it.total_voxels {
+		pos.x =
+			(i32(it.voxel_index) / (it.model.size.y * it.model.size.z)) +
+			it.model.start.x
+		pos.y =
+			((i32(it.voxel_index) / it.model.size.z) % it.model.size.y) +
+			it.model.start.y
+		pos.z = (i32(it.voxel_index) % it.model.size.z) + it.model.start.z
+
+		brick := model_get_brick(it.model, pos)
+
+		if brick != nil {
+			for it.prop_index < len(brick.data) {
+				// the transmute is just to flatten the fucking
+				p := transmute([BRICK_SIZE_CUBED]Prop_List_Data)brick.data[it.prop_index].data
+				it.prop_index += 1
+
+				brick_idx := it.prop_index % BRICK_SIZE_CUBED
+				if p[brick_idx].set {
+					log.debug(
+						"fuh",
+						pos,
+						brick.data[it.prop_index].tag,
+						p[brick_idx].payload,
+						true,
+					)
+					return pos,
+						brick.data[it.prop_index].tag,
+						p[brick_idx].payload,
+						true
+				}
+			}
+		}
+
+		// next voxel
+		it.voxel_index += 1
+		it.prop_index = 0
 	}
 
-	for iter.pos.x < iter.end.x {
-		defer {
-			iter.pos.z += 1
-			if iter.pos.z >= iter.end.z {
-				iter.pos.z = 0
-				iter.pos.y += 1
-			}
-			if iter.pos.y >= iter.end.y {
-				iter.pos.y = 0
-				iter.pos.x += 1
-			}
-		}
-
-		// TODO is fetching bricks more times than necessary a problem for performance
-		brick := model_get_brick(iter.model, iter.pos)
-		if brick == nil {
-			iter.prop_idx = 0
-			continue
-		}
-
-		voxel_idx := glm.abs(pos) % BRICK_SIZE_VECI
-		if !brick.solid[voxel_idx.x][voxel_idx.y][voxel_idx.z] {
-			iter.prop_idx = 0
-			continue
-		}
-
-		for list in brick.data {
-			defer iter.prop_idx += 1
-			if list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z].set {
-				tag = list.tag
-				payload = list.data[voxel_idx.x][voxel_idx.y][voxel_idx.z].payload
-				pos = iter.pos
-				return
-			} else {
-				continue
-			}
-		}
-		iter.prop_idx = 0
-	}
-
-	ok = true
+	ok = false
 	return
 }

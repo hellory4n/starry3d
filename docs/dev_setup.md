@@ -5,7 +5,7 @@
 You need these installed:
 - Git
 - A C compiler (gcc, clang, msvc)
-- [Odin](https://odin-lang.org) v2026.02
+- [Odin](https://odin-lang.org) v2026.03
 - Windowing libraries for your OS
     - on Windows you *may* have to install Visual Studio
     - on Linux install the X11 and Wayland dev packages:

@@ -2,7 +2,7 @@ package starrylib
 
 import "base:runtime"
 import "core:c"
-import os "core:os/os2"
+import "core:os"
 import stbi "vendor:stb/image"
 
 // flattens the model into an image of 8-bit red, green, blue, and alpha quadruplets. assumes

@@ -1,5 +1,6 @@
 package starrylib
 
+import "core:log"
 import "core:mem"
 import "core:testing"
 
@@ -158,6 +159,7 @@ t_model_iterator :: proc(t: ^testing.T)
 
 	iter := model_iterator(&src)
 	for pos, tag, payload in model_iterator_next(&iter) {
+		log.debug("iter")
 		serr := set_voxel(&dst, pos, tag, payload)
 		testing.expect_value(t, serr, Set_Voxel_Error.OK)
 	}

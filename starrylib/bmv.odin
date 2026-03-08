@@ -1,6 +1,6 @@
 package starrylib
 
-import os "core:os/os2"
+import "core:os"
 
 Bmv_Write_Error :: enum {
 	OK,

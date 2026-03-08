@@ -1,7 +1,7 @@
 package starrylib
 
 import "base:intrinsics"
-import os "core:os/os2"
+import "core:os"
 
 write_int_to_file :: proc(
 	file: ^os.File,

@@ -1,7 +1,7 @@
 package starrylib
 
 import "core:log"
-import os "core:os/os2"
+import "core:os"
 import "core:testing"
 
 @(test)

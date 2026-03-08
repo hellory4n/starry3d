@@ -1,7 +1,7 @@
 package starrylib
 
 import glm "core:math/linalg/glsl"
-import os "core:os/os2"
+import "core:os"
 
 // NOTE: .vox doesn't specify endianness, assuming little endian
 Magica_Int :: i32le
