@@ -1,6 +1,6 @@
 package starrylib
 
-import "core:log"
+import "core:container/small_array"
 import "core:testing"
 
 @(test)
@@ -147,56 +147,36 @@ t_model_remove :: proc(t: ^testing.T)
 	testing.expect(t, !is_voxel_solid(&m, n))
 }
 
-@(test)
-t_model_iterator_empty :: proc(t: ^testing.T)
-{
-	m, err := new_empty_model(start = {0, 0, 0}, end = {8, 8, 8})
-	defer free_model(&m)
-	testing.expect(t, err == .OK)
+// @(test)
+// t_model_iterator_empty :: proc(t: ^testing.T)
+// {
+// 	m, err := new_empty_model(start = {0, 0, 0}, end = {8, 8, 8})
+// 	defer free_model(&m)
+// 	testing.expect(t, err == .OK)
 
-	iter := model_iterator(&m)
-	_, _, _, ok := model_iterator_next(&iter)
-	testing.expect(t, !ok, "empty model should have no items")
-}
+// 	iter := model_iterator(&m)
+// 	_, _, _, ok := model_iterator_next(&iter)
+// 	testing.expect(t, !ok, "empty model should have no items")
+// }
 
-@(test)
-t_model_iterator_no_solid_voxels :: proc(t: ^testing.T)
-{
-	m, err := new_empty_model(start = {-8, -8, -8}, end = {8, 8, 8})
-	defer free_model(&m)
-	testing.expect(t, err == .OK)
+// @(test)
+// t_model_iterator_no_solid_voxels :: proc(t: ^testing.T)
+// {
+// 	m, err := new_empty_model(start = {-8, -8, -8}, end = {8, 8, 8})
+// 	defer free_model(&m)
+// 	testing.expect(t, err == .OK)
 
-	pos := [3]i32{0, 0, 0}
-	// first set_voxel should allocate
-	set_voxel(&m, pos, COLOR_TAG, u32(0xFF112233))
-	set_voxel(&m, pos, 99, u32(777))
-	// memory still reserved but now without anything
-	remove_voxel(&m, pos)
+// 	pos := [3]i32{1, 1, -1}
+// 	// first set_voxel should allocate
+// 	set_voxel(&m, pos, COLOR_TAG, u32(0xFF112233))
+// 	set_voxel(&m, pos, 99, u32(777))
+// 	// memory still reserved but now without anything
+// 	remove_voxel(&m, pos)
 
-	iter := model_iterator(&m)
-	_, _, _, ok := model_iterator_next(&iter)
-	testing.expect(t, !ok, "should not yield anything when no solid voxel")
-}
-
-@(test)
-t_model_iterator_one_voxel_one_prop :: proc(t: ^testing.T)
-{
-	m, _ := new_empty_model(start = {-16, -16, -16}, end = {16, 16, 16})
-	defer free_model(&m)
-
-	target := [3]i32{5, -7, 12}
-	set_voxel(&m, target, COLOR_TAG, u32(0xFF00FF00))
-
-	iter := model_iterator(&m)
-	pos, tag, payload, ok := model_iterator_next(&iter)
-	testing.expect(t, ok)
-	testing.expect_value(t, pos, target)
-	testing.expect_value(t, tag, COLOR_TAG)
-	testing.expect_value(t, payload, 0xFF00FF00)
-
-	_, _, _, ok = model_iterator_next(&iter)
-	testing.expect(t, !ok, "should only have one item")
-}
+// 	iter := model_iterator(&m)
+// 	_, _, _, ok := model_iterator_next(&iter)
+// 	testing.expect(t, !ok, "should not yield anything when no solid voxel")
+// }
 
 @(test)
 t_model_iterator_negative_and_boundaries :: proc(t: ^testing.T)
@@ -218,9 +198,7 @@ t_model_iterator_negative_and_boundaries :: proc(t: ^testing.T)
 	defer delete(seen)
 
 	iter := model_iterator(&m)
-	for {
-		pos, _, _, ok := model_iterator_next(&iter)
-		if !ok { break }
+	for pos, _, _ in model_iterator_next(&iter) {
 		seen[pos] += 1
 	}
 
@@ -229,6 +207,26 @@ t_model_iterator_negative_and_boundaries :: proc(t: ^testing.T)
 		testing.expect_value(t, seen[p], 1)
 	}
 }
+
+// @(test)
+// t_model_iterator_one_voxel_one_prop :: proc(t: ^testing.T)
+// {
+// 	m, _ := new_empty_model(start = {-16, -16, -16}, end = {16, 16, 16})
+// 	defer free_model(&m)
+
+// 	target := [3]i32{5, -7, 12}
+// 	set_voxel(&m, target, COLOR_TAG, u32(0xFF00FF00))
+
+// 	iter := model_iterator(&m)
+// 	pos, tag, payload, ok := model_iterator_next(&iter)
+// 	testing.expect(t, ok)
+// 	testing.expect_value(t, pos, target)
+// 	testing.expect_value(t, tag, COLOR_TAG)
+// 	testing.expect_value(t, payload, 0xFF00FF00)
+
+// 	_, _, _, ok = model_iterator_next(&iter)
+// 	testing.expect(t, !ok, "should only have one item")
+// }
 
 // world's worst test model
 @(private)

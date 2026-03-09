@@ -110,3 +110,20 @@ unflatten_3d_idx :: #force_inline proc(
 	pos.z = rem % size.z
 	return
 }
+
+@(require_results)
+area_2d :: #force_inline proc(size: [2]$T) -> T where intrinsics.type_is_numeric(T)
+{
+	return size.x * size.y
+}
+
+@(require_results)
+area_3d :: #force_inline proc(size: [3]$T) -> T where intrinsics.type_is_numeric(T)
+{
+	return size.x * size.y * size.z
+}
+
+area :: proc {
+	area_2d,
+	area_3d,
+}

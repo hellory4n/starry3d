@@ -1,5 +1,6 @@
 package starrylib
 
+import "core:log"
 import glm "core:math/linalg/glsl"
 import "core:mem"
 
@@ -69,7 +70,7 @@ new_empty_model :: proc(
 	model.allocator = allocator
 	model.start = start
 	model.end = end
-	model.size = glm.abs(start) + glm.abs(end)
+	model.size = glm.abs(end - start)
 	model.size_with_padding = model.size
 
 	if glm.any(glm.greaterThanEqual(start, end)) {
@@ -358,20 +359,14 @@ list_voxel_props :: proc(
 }
 
 Model_Iterator :: struct {
-	model:        ^Model,
-	voxel_index:  i32, // 0 .. total_voxels-1
-	prop_index:   i32, // current prop in current voxel
-	total_voxels: i32,
+	model:    ^Model,
+	pos:      [3]i32,
+	prop_idx: i32,
 }
 
 model_iterator :: proc(model: ^Model) -> Model_Iterator
 {
-	return Model_Iterator {
-		model = model,
-		voxel_index = 0,
-		prop_index = 0,
-		total_voxels = model.size.x * model.size.y * model.size.z,
-	}
+	return {model = model, pos = model.start, prop_idx = 0}
 }
 
 model_iterator_next :: proc(
@@ -383,42 +378,49 @@ model_iterator_next :: proc(
 	ok: bool,
 )
 {
-	for it.voxel_index < it.total_voxels {
-		pos = unflatten_3d_idx(it.model.size, it.voxel_index) + it.model.start
-		brick := model_get_brick(it.model, pos)
+	for glm.all(glm.lessThan(it.pos, it.model.end)) {
+		brick := model_get_brick(it.model, it.pos)
+		if brick == nil {
+			model_iterator_next_pos(it)
+			it.prop_idx = 0
+			continue
+		}
 
-		if brick != nil {
-			// the transmute is just to flatten the fucking
-			solid := transmute([BRICK_SIZE_CUBED]bool)brick.solid
+		brick_idx := glm.abs(pos) % BRICK_SIZE_VECI
+		if !brick.solid[brick_idx.x][brick_idx.y][brick_idx.z] {
+			model_iterator_next_pos(it)
+			it.prop_idx = 0
+			continue
+		}
 
-			for it.prop_index < i32(len(brick.data)) {
-				it.prop_index += 1
-
-				local := (pos - it.model.start) % BRICK_SIZE_VECI
-				brick_idx :=
-					local.x +
-					local.y * BRICK_SIZE +
-					local.z * BRICK_SIZE * BRICK_SIZE
-
-				if !solid[brick_idx] {
-					continue
-				}
-
-				// man
-				props := transmute([BRICK_SIZE_CUBED]Prop_List_Data)brick.data[it.prop_index - 1].data
-				if props[brick_idx].set {
-					return pos,
-						brick.data[it.prop_index - 1].tag,
-						props[brick_idx].payload,
-						true
-				}
+		for it.prop_idx < i32(len(brick.data)) {
+			list := brick.data[it.prop_idx]
+			it.prop_idx += 1
+			if list.data[brick_idx.x][brick_idx.y][brick_idx.z].set {
+				pos = it.pos
+				tag = list.tag
+				payload = list.data[brick_idx.x][brick_idx.y][brick_idx.z].payload
+				ok = true
+				return
 			}
 		}
 
-		it.voxel_index += 1
-		it.prop_index = 0
+		model_iterator_next_pos(it)
+		it.prop_idx = 0
 	}
+	return {}, 0, 0, false
+}
 
-	ok = false
-	return
+@(private)
+model_iterator_next_pos :: proc(it: ^Model_Iterator)
+{
+	it.pos.z += 1
+	if it.pos.z >= it.model.end.z {
+		it.pos.z = it.model.start.z
+		it.pos.y += 1
+		if it.pos.y >= it.model.end.y {
+			it.pos.y = it.model.start.y
+			it.pos.x += 1
+		}
+	}
 }
