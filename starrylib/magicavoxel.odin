@@ -24,7 +24,7 @@ Magica_Error :: union #shared_nil {
 write_model_to_magicavoxel_file :: proc(
 	path: string,
 	model: ^Model,
-	color_tag: Tag = COLOR_TAG,
+	color_tag: Tag = RGBA_TAG,
 ) -> (
 	err: Magica_Error,
 )

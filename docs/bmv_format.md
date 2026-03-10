@@ -1,4 +1,4 @@
-# Big Massive Voxels v1.1
+# Big Massive Voxels v0.2
 
 Big Massive Voxels (BMV) is the biggest most massive voxel format of all time.
 
@@ -147,11 +147,8 @@ struct Color_Prop {
 
 ## Changelog
 
-**v1.1**
-- changed license from zlib to CC0, clarified some things
-
-**v1.0**
-- first finished draft
+**v0.2**
+- first "finished" draft
 
 **v0.1**
 - first draft

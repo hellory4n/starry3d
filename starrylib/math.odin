@@ -127,3 +127,20 @@ area :: proc {
 	area_2d,
 	area_3d,
 }
+
+// https://en.wikipedia.org/wiki/Z-order_curve
+@(require_results)
+morton3d :: #force_inline proc(idx: [3]i32) -> i64
+{
+	spread3 :: #force_inline proc(x: u64) -> u64
+	{
+		x := x
+		x = (x ~ (x << 16)) & 0x0000FFFF0000FFFF
+		x = (x ~ (x << 8)) & 0x00FF00FF00FF00FF
+		x = (x ~ (x << 4)) & 0x0F0F0F0F0F0F0F0F
+		x = (x ~ (x << 2)) & 0x3333333333333333
+		x = (x ~ (x << 1)) & 0x1111111111111111
+		return x
+	}
+	return i64(spread3(u64(idx.x)) | (spread3(u64(idx.y)) << 1) | (spread3(u64(idx.z)) << 2))
+}

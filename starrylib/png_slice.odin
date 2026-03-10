@@ -9,7 +9,7 @@ import stbi "vendor:stb/image"
 // the model is valid. you must `delete()` the returned buffer yourself.
 flatten_model :: proc(
 	model: ^Model,
-	color_tag: Tag = COLOR_TAG,
+	color_tag: Tag = RGBA_TAG,
 	allocator := context.allocator,
 ) -> (
 	buffer: []u8,
@@ -51,7 +51,7 @@ flatten_model :: proc(
 write_model_to_png_file :: proc(
 	path: string,
 	model: ^Model,
-	color_tag: Tag = COLOR_TAG,
+	color_tag: Tag = RGBA_TAG,
 	allocator := context.allocator,
 ) -> (
 	err: os.Error,
