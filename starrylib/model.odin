@@ -48,6 +48,11 @@ new_empty_model :: proc(
 		err = .START_MUST_BE_SMALLER_THAN_END
 		return
 	}
+	// can't fit more than that into 64-bit morton indexes
+	if glm.any(glm.greaterThanEqual(model.size, [3]i32{2097152, 2097152, 2097152})) {
+		err = .OUT_OF_MEMORY
+		return
+	}
 
 	// TODO for the padding stuff just allocate a bigger buffer than necessary,
 	// make a smaller slice from that buffer, and then disable bounds checks
@@ -99,10 +104,10 @@ get_voxel :: proc(
 		solid = false
 		return
 	}
-	solid = model.solid[morton3d(pos + model.start)]
+	solid = model.solid[flatten_3d_idx(model.size, pos - model.start)]
 
 	attr_list, ok := model.data[tag]
-	payload = attr_list[morton3d(pos + model.start)] if ok else default
+	payload = attr_list[flatten_3d_idx(model.size, pos - model.start)] if ok else default
 	return
 }
 
@@ -120,8 +125,8 @@ set_voxel :: proc(model: ^Model, pos: [3]i32, tag: Tag, value: Payload) -> (err:
 		return
 	}
 
-	if !model.solid[morton3d(pos + model.start)] {
-		model.solid[morton3d(pos + model.start)] = true
+	if !model.solid[flatten_3d_idx(model.size, pos - model.start)] {
+		model.solid[flatten_3d_idx(model.size, pos - model.start)] = true
 		model.voxel_count += 1
 	}
 
@@ -137,7 +142,7 @@ set_voxel :: proc(model: ^Model, pos: [3]i32, tag: Tag, value: Payload) -> (err:
 		attr_list = model.data[tag]
 	}
 
-	attr_list[morton3d(pos + model.start)] = value
+	attr_list[flatten_3d_idx(model.size, pos - model.start)] = value
 	return
 }
 
@@ -150,9 +155,9 @@ remove_voxel :: proc(model: ^Model, pos: [3]i32) -> (was_solid: bool)
 		return
 	}
 
-	was_solid = model.solid[morton3d(pos + model.start)]
+	was_solid = model.solid[flatten_3d_idx(model.size, pos - model.start)]
 	if !was_solid {
-		model.solid[morton3d(pos + model.start)] = false
+		model.solid[flatten_3d_idx(model.size, pos - model.start)] = false
 		model.voxel_count -= 1
 	}
 	return
@@ -163,7 +168,7 @@ is_voxel_solid :: proc(model: ^Model, pos: [3]i32) -> bool
 	if is_out_of_bounds(model, pos) {
 		return false
 	}
-	return model.solid[morton3d(pos + model.start)]
+	return model.solid[flatten_3d_idx(model.size, pos - model.start)]
 }
 
 is_voxel_empty :: proc(model: ^Model, pos: [3]i32) -> bool
