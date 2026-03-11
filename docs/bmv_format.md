@@ -1,4 +1,4 @@
-# Big Massive Voxels v0.2
+# Big Massive Voxels v0.3
 
 Big Massive Voxels (BMV) is the biggest most massive voxel format of all time.
 
@@ -23,45 +23,46 @@ struct Header {
 	uint8 magic[8] = "\0bmvoxel";
 	// minor_version should be increased every version, unless there's breaking changes
 	// it should still be valid to parse a file with a higher minor_version than what you support
-	uint8 major_version = 1;
-	uint8 minor_version = 0;
+	// v0.x versions can have any breaking changes though
+	// (v1.x will be compatible with the last v0.x version)
+	uint8 major_version = 0;
+	uint8 minor_version = 3;
 };
 ```
 
 ## Metadata section
 
-Immediately after the header is the metadata section. The metadata section includes a list of metaprops:
+Immediately after the header is the metadata section. The metadata section includes a list of meta-attributes:
 
 ```cpp
-struct Metaprop {
-	// unique ID/key for the prop
-	// 0-128 are reserved for the standard
-	uint16 tag;
+struct Meta_Attribute {
+	// unique ID/key for the attribute
+	uint8 tag[4];
 	uint32 length;
 	uint8 payload[length];
 };
 ```
 
-Only one metaprop of each tag is allowed. Metaprops may be in any order.
+Only one meta-attribute of each tag is allowed. Meta-attributes may be in any order.
 
 The full structure for the metadata section is:
 
 ```cpp
 struct Metadata_Section {
 	uint8 magic[8] = "metadata";
-	uint16 metaprop_count;
-	Metaprop metaprops[metaprop_count];
+	uint32 attr_count;
+	Meta_Attribute attrs[attr_count];
 }
 ```
 
-### Standard metaprops
+### Standard meta-attributes
 
-A few metaprops are useful enough to be part of the standard:
+A few meta-attributes are useful enough to be part of the standard:
 
 ```cpp
 // required
-struct Size_Metaprop {
-	uint16 tag = 0;
+struct Size_Meta_Attribute {
+	uint8 tag[4] = "size";
 	uint32 length = 12;
 	struct {
 		// all must be less than 2^31
@@ -72,8 +73,8 @@ struct Size_Metaprop {
 };
 
 // optional
-struct Compression_Metaprop {
-	uint16 tag = 1;
+struct Compression_Meta_Attribute {
+	uint8 tag[4] = "cmps";
 	uint32 length = 2;
 	struct {
 		enum : uint16 {
@@ -81,63 +82,46 @@ struct Compression_Metaprop {
 		} algorithm;
 	} payload;
 };
-
-// optional
-struct Copyright_Metaprop {
-	uint16 tag = 2;
-	uint32 length; // dynamic
-	struct {
-		uint32 year;
-		uint32 name_length;
-		uint8 name_str[name_length];
-		uint32 author_length;
-		uint8 author_str[author_length];
-		uint32 license_length;
-		uint8 license_str[license_length];
-		uint32 contact_length;
-		uint8 contact_str[contact_length];
-	} payload;
-};
 ```
 
-## Data section
+## Solid mask section
 
-Immediately after the metadata section there's the data section:
+Immediately after the metadata section there's the solid mask section, which indicates which voxels in the model are solid:
+
+```cpp
+struct Solid_Mask_Section {
+	uint8 magic[8] = "solidmsk";
+	bool bits[...];
+}
+```
+
+`bits` is a row-major 3D packed array of bits, with the size specified by the `size` meta-attribute. This means that for the position `[x, y, z]`, its index would be `x * (size.y * size.z) + y * size.z + z`.
+
+## Attribute data section
+
+Immediately after the metadata section there's one or more data sections, with each section being for a specific voxel attribute:
 
 ```cpp
 struct Data_Section {
-	uint8 tag[8] = "propdata";
-	uint32 voxel_count;
-	// may be compressed if Compression_Metaprop is available
-	Voxel voxels[voxel_count];
-};
-
-struct Voxel {
-	int32 x;
-	int32 y;
-	int32 z;
-	uint16 prop_count;
-	Prop props[prop_count];
-};
-
-struct Prop {
-	// unique ID/key for the prop
-	// 0-128 are reserved for the standard
-	uint16 tag;
-	// unlike metaprops, all props must fit in 32-bits
-	uint32 payload;
-};
+	uint8 magic[8] = "attrdata";
+	uint8 attr_tag[4];
+	uint32 data[...];
+}
 ```
 
-Only one prop of each tag is allowed. Props may be in any order.
+`data` is a row-major 3D array, with the size specified by the `size` meta-attribute. This means that for the position `[x, y, z]`, its index would be `x * (size.y * size.z) + y * size.z + z`.
 
-### Standard props
+The values in the indexes corresponding to non-solid voxels is undefined. (preferably 0)
 
-A few props are useful enough to be part of the standard:
+Only one section of each voxel attribute tag is allowed. Attributes may be in any order.
+
+### Standard attributes
+
+A few attributes are useful enough to be part of the standard:
 
 ```cpp
-struct Color_Prop {
-	uint16 tag = 0;
+struct Rgba_Attribute {
+	uint8 tag[4] = "rgba";
 	// equivalent to 0xRRGGBBAA
 	// sRGB colorspace
 	// all channels from 0 to 255
@@ -146,6 +130,9 @@ struct Color_Prop {
 ```
 
 ## Changelog
+
+**v0.3**
+- changes :)
 
 **v0.2**
 - first "finished" draft
