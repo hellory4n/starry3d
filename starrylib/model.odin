@@ -14,6 +14,12 @@ Vox_Attr :: struct {
 // the standard color tag
 RGBA_TAG :: Tag{'r', 'g', 'b', 'a'}
 
+@(private)
+Maybe_Payload :: struct {
+	payload: Payload,
+	set:     bool,
+}
+
 Model :: struct {
 	allocator:   mem.Allocator,
 	data:        map[Tag][]Payload,
@@ -90,15 +96,7 @@ is_out_of_bounds :: #force_inline proc(model: ^Model, pos: [3]i32) -> bool
 // unable to get the data (out of bounds, empty voxel, or undefined tag), the default value
 // will be returned instead. the returned data may be interpreted any way you'd like (through
 // `transmute`) as long as it fits in 32 bits.
-get_voxel :: proc(
-	model: ^Model,
-	pos: [3]i32,
-	tag: Tag,
-	default: Payload,
-) -> (
-	payload: Payload,
-	solid: bool,
-)
+get_voxel :: proc(model: ^Model, pos: [3]i32, tag: Tag) -> (payload: Payload, solid: bool)
 {
 	if is_out_of_bounds(model, pos) {
 		solid = false
@@ -107,7 +105,7 @@ get_voxel :: proc(
 	solid = model.solid[flatten_3d_idx(model.size, pos - model.start)]
 
 	attr_list, ok := model.data[tag]
-	payload = attr_list[flatten_3d_idx(model.size, pos - model.start)] if ok else default
+	payload = attr_list[flatten_3d_idx(model.size, pos - model.start)] if ok else 0
 	return
 }
 
@@ -156,7 +154,7 @@ remove_voxel :: proc(model: ^Model, pos: [3]i32) -> (was_solid: bool)
 	}
 
 	was_solid = model.solid[flatten_3d_idx(model.size, pos - model.start)]
-	if !was_solid {
+	if was_solid {
 		model.solid[flatten_3d_idx(model.size, pos - model.start)] = false
 		model.voxel_count -= 1
 	}

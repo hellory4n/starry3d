@@ -54,7 +54,7 @@ t_model_out_of_bounds :: proc(t: ^testing.T)
 
 	for pos in outside {
 		testing.expect(t, is_out_of_bounds(&m, pos))
-		_, solid := get_voxel(&m, pos, tag = 0, default = 0xDEADDEAD)
+		_, solid := get_voxel(&m, pos, tag = 0)
 		testing.expect(t, !solid)
 	}
 
@@ -74,12 +74,10 @@ t_model_empty_voxel :: proc(t: ^testing.T)
 	pos := [3]i32{3, 4, -2}
 	testing.expect(t, !is_voxel_solid(&m, pos))
 
-	v, solid := get_voxel(&m, pos, RGBA_TAG, default = 0x11223344)
-	testing.expect(t, v == 0x11223344)
+	_, solid := get_voxel(&m, pos, RGBA_TAG)
 	testing.expect(t, !solid)
 
-	v, solid = get_voxel(&m, pos, tag = 61, default = 0xFF00AA11)
-	testing.expect(t, v == 0xFF00AA11)
+	_, solid = get_voxel(&m, pos, tag = 61)
 	testing.expect(t, !solid)
 }
 
@@ -95,19 +93,9 @@ t_model_get_set :: proc(t: ^testing.T)
 	set_err := set_voxel(&m, pos, RGBA_TAG, 0xFF336699)
 	testing.expect(t, set_err == .OK)
 
-	col, solidcol := get_voxel(&m, pos, RGBA_TAG, default = 0)
+	col, solidcol := get_voxel(&m, pos, RGBA_TAG)
 	testing.expect(t, col == 0xFF336699)
 	testing.expect(t, solidcol)
-
-	// neighbor in same brick, tag now exists but not explicitly set
-	neighbor := [3]i32{-20, 9, 22}
-	n_col, _ := get_voxel(&m, neighbor, RGBA_TAG, default = 0xFFFFFFFF)
-	testing.expect(t, n_col == 0xFFFFFFFF)
-
-	// different tag still gives default
-	crap, solidcrap := get_voxel(&m, pos, tag = 99, default = 12345)
-	testing.expect(t, crap == 12345)
-	testing.expect(t, solidcrap)
 
 	// still solid without color tag
 	set_voxel(&m, {1, 0, 0}, tag = 61, value = 123456)
@@ -130,16 +118,6 @@ t_model_remove :: proc(t: ^testing.T)
 	was_solid := remove_voxel(&m, pos)
 	testing.expect(t, was_solid)
 	testing.expect(t, !is_voxel_solid(&m, pos))
-
-	col, _ := get_voxel(&m, pos, RGBA_TAG, default = 123)
-	testing.expect(t, col == 123)
-
-	v77, _ := get_voxel(&m, pos, tag = 77, default = 456)
-	testing.expect(t, v77 == 456)
-
-	// neighbor still gets default for both tags
-	n := [3]i32{5, -3, 10}
-	testing.expect(t, !is_voxel_solid(&m, n))
 }
 
 // @(test)

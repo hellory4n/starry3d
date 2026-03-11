@@ -25,12 +25,7 @@ flatten_model :: proc(
 			for x in model.start.x ..< model.end.x {
 				defer i += 4
 
-				val, solid := get_voxel(
-					model,
-					{x, y, z},
-					color_tag,
-					default = 0x000000ff,
-				)
+				val, solid := get_voxel(model, {x, y, z}, color_tag)
 				if !solid {
 					continue
 				}

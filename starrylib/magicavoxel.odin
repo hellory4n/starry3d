@@ -93,12 +93,7 @@ write_model_to_magicavoxel_file :: proc(
 	for z in model.start.z ..< model.end.z {
 		for y in model.start.y ..< model.end.y {
 			for x in model.start.x ..< model.end.x {
-				val, solid := get_voxel(
-					model,
-					{x, y, z},
-					color_tag,
-					default = 0x000000ff,
-				)
+				val, solid := get_voxel(model, {x, y, z}, color_tag)
 				if !solid {
 					continue
 				}
