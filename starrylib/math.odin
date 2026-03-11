@@ -86,6 +86,7 @@ rgbaf32_unorm_to_rgba8 :: #force_inline proc(src: [4]f32) -> (dst: [4]u8)
 	return
 }
 
+// row-major, equivalent to array[x][y][z]
 @(require_results)
 flatten_3d_idx :: #force_inline proc(
 	size: [3]$T,

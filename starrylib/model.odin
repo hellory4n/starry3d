@@ -173,3 +173,53 @@ is_voxel_empty :: proc(model: ^Model, pos: [3]i32) -> bool
 {
 	return !is_voxel_solid(model, pos)
 }
+
+Model_Iterator :: struct {
+	model:    ^Model,
+	attr_idx: int,
+	vox_idx:  i32,
+}
+
+// iterates over all the solid voxels and its attributes. order is undefined (fuck you)
+model_iterator :: proc(model: ^Model) -> Model_Iterator
+{
+	return Model_Iterator{model = model}
+}
+
+model_iterator_next :: proc(
+	it: ^Model_Iterator,
+) -> (
+	pos: [3]i32,
+	tag: Tag,
+	payload: Payload,
+	ok: bool,
+)
+{
+	for it.vox_idx < area(it.model.size) {
+		if !it.model.solid[it.vox_idx] {
+			it.attr_idx = 0
+			it.vox_idx += 1
+			continue
+		}
+
+		// TODO this sucks
+		i := 0
+		for this_tag, this_payload in it.model.data {
+			if i == it.attr_idx {
+				it.attr_idx += 1
+				return unflatten_3d_idx(it.model.size, it.vox_idx) +
+					it.model.start,
+					this_tag,
+					this_payload[it.vox_idx],
+					true
+			}
+			i += 1
+		}
+
+		it.attr_idx = 0
+		it.vox_idx += 1
+	}
+
+	ok = false
+	return
+}
