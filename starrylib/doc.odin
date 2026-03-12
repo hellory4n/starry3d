@@ -2,7 +2,10 @@
 # The Starry general purpose libraries
 
 This packages features components of Starry which may be put into any program, without depending on the runtime. It includes:
-- utilities
+- the reference BMV implementation
+- voxel model API
+- magicavoxel's .vox support
+- other utilities
 */
 package starrylib
 

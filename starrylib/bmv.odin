@@ -1,11 +1,14 @@
 package starrylib
 
+import "core:c"
 import glm "core:math/linalg/glsl"
+import "core:mem"
 import "core:os"
+import "vendor:compress/lz4"
 
 BMV_MAGIC :: "\x00bmvoxel"
 BMV_MAJOR_VERSION :: u8(0)
-BMV_MINOR_VERSION :: u8(3)
+BMV_MINOR_VERSION :: u8(5)
 
 // usage not recommended unless you need extensions
 Bmv_Raw_Metadata :: map[[4]byte][]byte
@@ -19,9 +22,9 @@ Bmv_Standard_Metadata :: struct {
 	compression_algorithm: Bmv_Compression,
 }
 
-Bmv_Compression :: enum u16 {
-	NONE = 0,
-	LZ4  = 1,
+Bmv_Compression :: enum u8 {
+	LZ4  = 0,
+	NONE = 255,
 }
 
 @(rodata)
@@ -32,7 +35,9 @@ BMV_COMPRESSION_METATAG := [4]byte{'c', 'm', 'p', 's'}
 Bmv_Write_Error :: enum {
 	OK,
 	INVALID_SIZE,
+	// only applies if using raw metadata
 	MISSING_SIZE_META_ATTRIBUTE,
+	COMPRESSION_FAILED,
 }
 
 Bmv_Error :: union #shared_nil {
@@ -45,7 +50,6 @@ write_model_to_bmv_file :: proc(
 	path: string,
 	model: ^Model,
 	metadata: Bmv_Metadata = {},
-	allocator := context.allocator,
 ) -> (
 	err: Bmv_Error,
 )
@@ -82,8 +86,8 @@ write_model_to_bmv_file :: proc(
 		// compression attr
 		if md.compression_algorithm != .NONE {
 			os.write(file, BMV_COMPRESSION_METATAG[:]) or_return
-			write_int_to_file(file, u32le(2)) or_return // len
-			write_int_to_file(file, u16le(md.compression_algorithm))
+			write_int_to_file(file, u32le(1)) or_return // len
+			write_int_to_file(file, u8(md.compression_algorithm))
 		}
 
 	case Bmv_Raw_Metadata:
@@ -112,9 +116,31 @@ write_model_to_bmv_file :: proc(
 
 	// solid mask section
 	os.write_string(file, "solidmsk") or_return
-	// it's very convenient when you're the one that designed the format
-	// TODO compression
-	os.write_slice(file, model.solid) or_return
+
+	switch compression {
+	case .NONE:
+		// it's very convenient when you're the one that designed the format
+		os.write_slice(file, model.solid) or_return
+
+	case .LZ4:
+		src := mem.slice_to_bytes(model.solid)
+
+		compressed_cap := lz4.compressBound(c.int(len(src)))
+		dst := make([]byte, compressed_cap, context.temp_allocator)
+
+		compressed_size := lz4.compress_default(
+			raw_data(src),
+			raw_data(dst),
+			c.int(len(src)),
+			compressed_cap,
+		)
+		if compressed_size <= 0 {
+			return .COMPRESSION_FAILED
+		}
+
+		compressed := dst[:compressed_size]
+		os.write(file, compressed) or_return
+	}
 
 	// attribute data sections
 	for tag, payloads in model.data {
@@ -123,8 +149,32 @@ write_model_to_bmv_file :: proc(
 		os.write_string(file, "attrdata") or_return
 		os.write(file, tag[:]) or_return
 
-		// TODO compression
-		os.write_slice(file, payloads) or_return
+		when ODIN_ENDIAN != .Little {
+			#panic("TODO")
+		}
+
+		switch compression {
+		case .NONE:
+			os.write_slice(file, payloads) or_return
+		case .LZ4:
+			src := mem.slice_to_bytes(payloads)
+
+			compressed_cap := lz4.compressBound(c.int(len(src)))
+			dst := make([]byte, compressed_cap, context.temp_allocator)
+
+			compressed_size := lz4.compress_default(
+				raw_data(src),
+				raw_data(dst),
+				c.int(len(src)),
+				compressed_cap,
+			)
+			if compressed_size <= 0 {
+				return .COMPRESSION_FAILED
+			}
+
+			compressed := dst[:compressed_size]
+			os.write(file, compressed) or_return
+		}
 	}
 
 	return

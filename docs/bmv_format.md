@@ -1,8 +1,17 @@
-# Big Massive Voxels v0.4
+# Big Massive Voxels v0.5
 
 Big Massive Voxels (BMV) is the biggest most massive voxel format of all time.
 
 This spec is licensed under the [CC0 license](https://creativecommons.org/public-domain/cc0/).
+
+## Why?
+
+BMV has many advantages over the current "standard", MagicaVoxel's .vox:
+- the incredible jump to 32-bits, that means full 32-bit color and models bigger than 256x256x256
+- compression through LZ4
+- able to encode voxel data other than color (material, game-specific attributes, etc)
+- highly extensible
+- fully open-source
 
 ## Conventions
 
@@ -12,7 +21,7 @@ This spec is licensed under the [CC0 license](https://creativecommons.org/public
 - `#nonzero` specifies that the file is malformed is a field is 0
 - coordinates are right-handed, that means +X is right, +Y is up, and -Z is forward
 - coordinates are signed, with (0, 0, 0) being the center
-- `bool` is 1 bit, `bool8` is 1 bit + 7 bits of padding
+- `bool` is 1 bit, `bool8` is 1 bit + 7 bits of padding (true = 1, false = 0)
 
 ## Header
 
@@ -26,7 +35,7 @@ struct Header {
 	// v0.x versions can have any breaking changes though
 	// (v1.x will be compatible with the last v0.x version)
 	uint8 major_version = 0;
-	uint8 minor_version = 4;
+	uint8 minor_version = 5;
 };
 ```
 
@@ -75,13 +84,16 @@ struct Size_Meta_Attribute {
 // optional
 struct Compression_Meta_Attribute {
 	uint8 tag[4] = "cmps";
-	uint32 length = 2;
+	uint32 length = 1;
 	struct {
-		enum : uint16 {
-			LZ4 = 1,
+		enum : uint8 {
+			LZ4 = 0,
+			NONE = 255,
 		} algorithm;
 	} payload;
 };
+// NOTE: if the cmps meta-attribute is missing, the file is assumed to have no compression
+// however LZ4 should be the default when writing to a file, hence why it gets the 0 value
 ```
 
 ## Solid mask section
@@ -122,8 +134,8 @@ Only one section of each voxel attribute tag is allowed. Attributes may be in an
 A few attributes are useful enough to be part of the standard:
 
 ```cpp
+// tag: "rgba"
 struct Rgba_Attribute {
-	uint8 tag[4] = "rgba";
 	// equivalent to 0xRRGGBBAA
 	// sRGB colorspace
 	// all channels from 0 to 255
@@ -132,6 +144,9 @@ struct Rgba_Attribute {
 ```
 
 ## Changelog
+
+**v0.5**
+- made LZ4 compression the default, as the format sucks ass without it. also why the fuck was that 16-bits
 
 **v0.4**
 - changes :), first version to be implemented
