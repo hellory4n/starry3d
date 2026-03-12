@@ -8,7 +8,7 @@ import "vendor:compress/lz4"
 
 BMV_MAGIC :: "\x00bmvoxel"
 BMV_MAJOR_VERSION :: u8(0)
-BMV_MINOR_VERSION :: u8(5)
+BMV_MINOR_VERSION :: u8(6)
 
 // usage not recommended unless you need extensions
 Bmv_Raw_Metadata :: map[[4]byte][]byte
@@ -31,6 +31,8 @@ Bmv_Compression :: enum u8 {
 BMV_SIZE_METATAG := [4]byte{'s', 'i', 'z', 'e'}
 @(rodata)
 BMV_COMPRESSION_METATAG := [4]byte{'c', 'm', 'p', 's'}
+@(rodata)
+BMV_STARRY_BOUNDS_METATAG := [4]byte{'s', 't', 'B', 'n'}
 
 Bmv_Write_Error :: enum {
 	OK,
@@ -67,7 +69,7 @@ write_model_to_bmv_file :: proc(
 
 	switch md in metadata {
 	case Bmv_Standard_Metadata:
-		count := 1
+		count := 2
 		if md.compression_algorithm != .NONE {
 			count += 1
 		}
@@ -82,6 +84,16 @@ write_model_to_bmv_file :: proc(
 		write_int_to_file(file, u32le(model.size.x)) or_return
 		write_int_to_file(file, u32le(model.size.y)) or_return
 		write_int_to_file(file, u32le(model.size.z)) or_return
+
+		// starry bounds attribute
+		os.write(file, BMV_STARRY_BOUNDS_METATAG[:]) or_return
+		write_int_to_file(file, u32le(24)) or_return // len
+		write_int_to_file(file, u32le(model.start.x)) or_return
+		write_int_to_file(file, u32le(model.start.y)) or_return
+		write_int_to_file(file, u32le(model.start.z)) or_return
+		write_int_to_file(file, u32le(model.end.x)) or_return
+		write_int_to_file(file, u32le(model.end.y)) or_return
+		write_int_to_file(file, u32le(model.end.z)) or_return
 
 		// compression attr
 		if md.compression_algorithm != .NONE {
@@ -120,6 +132,7 @@ write_model_to_bmv_file :: proc(
 	switch compression {
 	case .NONE:
 		// it's very convenient when you're the one that designed the format
+		write_int_to_file(file, u32le(area(model.size))) or_return
 		os.write_slice(file, model.solid) or_return
 
 	case .LZ4:
@@ -139,6 +152,7 @@ write_model_to_bmv_file :: proc(
 		}
 
 		compressed := dst[:compressed_size]
+		write_int_to_file(file, u32le(compressed_size)) or_return
 		os.write(file, compressed) or_return
 	}
 
@@ -155,6 +169,7 @@ write_model_to_bmv_file :: proc(
 
 		switch compression {
 		case .NONE:
+			write_int_to_file(file, u32le(area(model.size) * size_of(u32))) or_return
 			os.write_slice(file, payloads) or_return
 		case .LZ4:
 			src := mem.slice_to_bytes(payloads)
@@ -173,6 +188,7 @@ write_model_to_bmv_file :: proc(
 			}
 
 			compressed := dst[:compressed_size]
+			write_int_to_file(file, u32le(compressed_size)) or_return
 			os.write(file, compressed) or_return
 		}
 	}

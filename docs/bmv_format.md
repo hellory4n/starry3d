@@ -1,4 +1,4 @@
-# Big Massive Voxels v0.5
+# Big Massive Voxels v0.6
 
 Big Massive Voxels (BMV) is the biggest most massive voxel format of all time.
 
@@ -20,7 +20,6 @@ BMV has many advantages over the current "standard", MagicaVoxel's .vox:
 - all strings are UTF-8 without a null terminator
 - `#nonzero` specifies that the file is malformed is a field is 0
 - coordinates are right-handed, that means +X is right, +Y is up, and -Z is forward
-- coordinates are signed, with (0, 0, 0) being the center
 - `bool` is 1 bit, `bool8` is 1 bit + 7 bits of padding (true = 1, false = 0)
 
 ## Header
@@ -35,7 +34,7 @@ struct Header {
 	// v0.x versions can have any breaking changes though
 	// (v1.x will be compatible with the last v0.x version)
 	uint8 major_version = 0;
-	uint8 minor_version = 5;
+	uint8 minor_version = 6;
 };
 ```
 
@@ -70,6 +69,7 @@ A few meta-attributes are useful enough to be part of the standard:
 
 ```cpp
 // required
+// defines the size of the model in voxels
 struct Size_Meta_Attribute {
 	uint8 tag[4] = "size";
 	uint32 length = 12;
@@ -82,6 +82,9 @@ struct Size_Meta_Attribute {
 };
 
 // optional
+// defines the compression algorithm, if any
+// if this is missing, the file is assumed to have no compression
+// however LZ4 should be the default when writing to a file, hence why it gets the 0 value
 struct Compression_Meta_Attribute {
 	uint8 tag[4] = "cmps";
 	uint32 length = 1;
@@ -92,8 +95,23 @@ struct Compression_Meta_Attribute {
 		} algorithm;
 	} payload;
 };
-// NOTE: if the cmps meta-attribute is missing, the file is assumed to have no compression
-// however LZ4 should be the default when writing to a file, hence why it gets the 0 value
+
+// optional
+// allows defining arbitrary start/end coordinates like you can with starrylib models
+// if missing or ignored, the coordinates range from 0 to size (exclusive)
+// this should be safe to ignore if you don't support this feature
+struct Starry_Bounds_Meta_Attribute {
+	uint8 tag[4] = "stBn";
+	uint32 length = 24;
+	struct {
+		int32 start_x;
+		int32 start_y;
+		int32 start_z;
+		int32 end_x;
+		int32 end_y;
+		int32 end_z;
+	} payload;
+};
 ```
 
 ## Solid mask section
@@ -103,6 +121,9 @@ Immediately after the metadata section there's the solid mask section, which ind
 ```cpp
 struct Solid_Mask_Section {
 	uint8 magic[8] = "solidmsk";
+	// the size of the compressed data
+	// if not compressed, should be equal to size.x * size.y * size.z
+	uint32 compressed_length;
 	// may be compressed if the `cmps` meta-attribute is present
 	bool8 bits[...];
 }
@@ -118,6 +139,9 @@ Immediately after the metadata section there's one or more data sections, with e
 struct Data_Section {
 	uint8 magic[8] = "attrdata";
 	uint8 attr_tag[4];
+	// the size of the compressed data
+	// if not compressed, should be equal to size.x * size.y * size.z * 4
+	uint32 compressed_length;
 	// may be compressed if the `cmps` meta-attribute is present
 	uint32 data[...];
 }
@@ -144,6 +168,9 @@ struct Rgba_Attribute {
 ```
 
 ## Changelog
+
+**v0.6**
+- forgot information that is key + `stBn` meta-attribute
 
 **v0.5**
 - made LZ4 compression the default, as the format sucks ass without it. also why the fuck was that 16-bits
