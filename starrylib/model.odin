@@ -3,7 +3,7 @@ package starrylib
 import glm "core:math/linalg/glsl"
 import "core:mem"
 
-Tag :: [4]u8
+Tag :: [4]byte
 Payload :: u32
 
 Vox_Attr :: struct {
@@ -23,7 +23,7 @@ Maybe_Payload :: struct {
 Model :: struct {
 	allocator:   mem.Allocator,
 	data:        map[Tag][]Payload,
-	solid:       []bool,
+	solid:       []b8,
 	start:       [3]i32,
 	end:         [3]i32,
 	size:        [3]i32,
@@ -64,7 +64,7 @@ new_empty_model :: proc(
 	// make a smaller slice from that buffer, and then disable bounds checks
 	alerr: mem.Allocator_Error
 
-	model.solid, alerr = make([]bool, area(model.size), allocator)
+	model.solid, alerr = make([]b8, area(model.size), allocator)
 	if alerr == .Out_Of_Memory {
 		err = .OUT_OF_MEMORY
 		return
@@ -102,7 +102,7 @@ get_voxel :: proc(model: ^Model, pos: [3]i32, tag: Tag) -> (payload: Payload, so
 		solid = false
 		return
 	}
-	solid = model.solid[flatten_3d_idx(model.size, pos - model.start)]
+	solid = bool(model.solid[flatten_3d_idx(model.size, pos - model.start)])
 
 	attr_list, ok := model.data[tag]
 	payload = attr_list[flatten_3d_idx(model.size, pos - model.start)] if ok else 0
@@ -153,7 +153,7 @@ remove_voxel :: proc(model: ^Model, pos: [3]i32) -> (was_solid: bool)
 		return
 	}
 
-	was_solid = model.solid[flatten_3d_idx(model.size, pos - model.start)]
+	was_solid = bool(model.solid[flatten_3d_idx(model.size, pos - model.start)])
 	if was_solid {
 		model.solid[flatten_3d_idx(model.size, pos - model.start)] = false
 		model.voxel_count -= 1
@@ -166,7 +166,7 @@ is_voxel_solid :: proc(model: ^Model, pos: [3]i32) -> bool
 	if is_out_of_bounds(model, pos) {
 		return false
 	}
-	return model.solid[flatten_3d_idx(model.size, pos - model.start)]
+	return bool(model.solid[flatten_3d_idx(model.size, pos - model.start)])
 }
 
 is_voxel_empty :: proc(model: ^Model, pos: [3]i32) -> bool

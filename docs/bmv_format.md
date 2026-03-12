@@ -1,4 +1,4 @@
-# Big Massive Voxels v0.3
+# Big Massive Voxels v0.4
 
 Big Massive Voxels (BMV) is the biggest most massive voxel format of all time.
 
@@ -26,7 +26,7 @@ struct Header {
 	// v0.x versions can have any breaking changes though
 	// (v1.x will be compatible with the last v0.x version)
 	uint8 major_version = 0;
-	uint8 minor_version = 3;
+	uint8 minor_version = 4;
 };
 ```
 
@@ -91,25 +91,27 @@ Immediately after the metadata section there's the solid mask section, which ind
 ```cpp
 struct Solid_Mask_Section {
 	uint8 magic[8] = "solidmsk";
-	bool bits[...];
+	// may be compressed if the `cmps` meta-attribute is present
+	bool8 bits[...];
 }
 ```
 
-`bits` is a row-major 3D packed array of bits, with the size specified by the `size` meta-attribute. This means that for the position `[x, y, z]`, its index would be `x * (size.y * size.z) + y * size.z + z`.
+`bits` is a compressable row-major 3D array of bools with padding, with the size specified by the `size` meta-attribute. This means that for the position `[x, y, z]`, its index would be `x * (size.y * size.z) + y * size.z + z`.
 
 ## Attribute data section
 
-Immediately after the metadata section there's one or more data sections, with each section being for a specific voxel attribute:
+Immediately after the metadata section there's one or more data sections, with each section being for a specific voxel tag:
 
 ```cpp
 struct Data_Section {
 	uint8 magic[8] = "attrdata";
 	uint8 attr_tag[4];
+	// may be compressed if the `cmps` meta-attribute is present
 	uint32 data[...];
 }
 ```
 
-`data` is a row-major 3D array, with the size specified by the `size` meta-attribute. This means that for the position `[x, y, z]`, its index would be `x * (size.y * size.z) + y * size.z + z`.
+`data` is a compressable row-major 3D array, with the size specified by the `size` meta-attribute. This means that for the position `[x, y, z]`, its index would be `x * (size.y * size.z) + y * size.z + z`.
 
 The values in the indexes corresponding to non-solid voxels is undefined. (preferably 0)
 
@@ -130,6 +132,9 @@ struct Rgba_Attribute {
 ```
 
 ## Changelog
+
+**v0.4**
+- changes :), first version to be implemented
 
 **v0.3**
 - changes :)

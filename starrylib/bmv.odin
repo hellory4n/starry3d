@@ -1,22 +1,14 @@
 package starrylib
 
+import glm "core:math/linalg/glsl"
 import "core:os"
 
-Bmv_Write_Error :: enum {
-	OK,
-}
-
-Bmv_Error :: union #shared_nil {
-	os.Error,
-	Bmv_Write_Error,
-}
-
-BMV_SIZE_METATAG :: u16(0)
-BMV_COMPRESSION_METATAG :: u16(1)
-BMV_COPYRIGHT_METATAG :: u16(2)
+BMV_MAGIC :: "\x00bmvoxel"
+BMV_MAJOR_VERSION :: u8(0)
+BMV_MINOR_VERSION :: u8(3)
 
 // usage not recommended unless you need extensions
-Bmv_Raw_Metadata :: map[u16][]byte
+Bmv_Raw_Metadata :: map[[4]byte][]byte
 
 Bmv_Metadata :: union #no_nil {
 	Bmv_Standard_Metadata,
@@ -24,7 +16,6 @@ Bmv_Metadata :: union #no_nil {
 }
 
 Bmv_Standard_Metadata :: struct {
-	copyright:             Maybe(Bmv_Copyright),
 	compression_algorithm: Bmv_Compression,
 }
 
@@ -33,167 +24,108 @@ Bmv_Compression :: enum u16 {
 	LZ4  = 1,
 }
 
-Bmv_Copyright :: struct {
-	name:    string,
-	author:  string,
-	license: string,
-	contact: string,
-	year:    u32,
+@(rodata)
+BMV_SIZE_METATAG := [4]byte{'s', 'i', 'z', 'e'}
+@(rodata)
+BMV_COMPRESSION_METATAG := [4]byte{'c', 'm', 'p', 's'}
+
+Bmv_Write_Error :: enum {
+	OK,
+	INVALID_SIZE,
+	MISSING_SIZE_META_ATTRIBUTE,
 }
 
-BMV_MAGIC :: "\x00bmvoxel"
-BMV_MAJOR_VERSION :: u8(1)
-BMV_MINOR_VERSION :: u8(1)
-
-when ODIN_ENDIAN != .Little {
-	#panic("TODO real big endian support")
-}
-
-// TODO there might be a better way to do this
-bmv_size_metaprop :: proc(src: [3]i32, allocator := context.allocator) -> []byte
-{
-	Payload :: struct #packed {
-		size_x: u32le,
-		size_y: u32le,
-		size_z: u32le,
-	}
-	#assert(size_of(Payload) == 12)
-	payload := Payload {
-		size_x = u32le(src.x),
-		size_y = u32le(src.y),
-		size_z = u32le(src.z),
-	}
-	return ([^]byte)(new_clone(payload, allocator))[:size_of(Payload)]
-}
-
-bmv_compression_metaprop :: proc(src: Bmv_Compression, allocator := context.allocator) -> []byte
-{
-	Payload :: struct #packed {
-		algorithm: u16le,
-	}
-	#assert(size_of(Payload) == 2)
-	payload := Payload {
-		algorithm = u16le(src),
-	}
-	return ([^]byte)(new_clone(payload, allocator))[:size_of(Payload)]
-}
-
-bmv_copyright_metaprop :: proc(src: Bmv_Copyright, allocator := context.allocator) -> []byte
-{
-	bytes := make([dynamic]byte, allocator)
-
-	year := u32le(src.year)
-	i := ([^]byte)(&year)[:size_of(u32)]
-	append(&bytes, ..i)
-
-	strlen := u32le(len(src.name))
-	i = ([^]byte)(&strlen)[:size_of(u32)]
-	append(&bytes, ..i)
-	append(&bytes, src.name)
-
-	strlen = u32le(len(src.author))
-	i = ([^]byte)(&strlen)[:size_of(u32)]
-	append(&bytes, ..i)
-	append(&bytes, src.author)
-
-	strlen = u32le(len(src.license))
-	i = ([^]byte)(&strlen)[:size_of(u32)]
-	append(&bytes, ..i)
-	append(&bytes, src.license)
-
-	strlen = u32le(len(src.contact))
-	i = ([^]byte)(&strlen)[:size_of(u32)]
-	append(&bytes, ..i)
-	append(&bytes, src.contact)
-
-	return bytes[:]
+Bmv_Error :: union #shared_nil {
+	os.Error,
+	Bmv_Write_Error,
 }
 
 // writes the model to a Big Massive Voxels file, the most massive most superior format of all time.
-// write_model_to_bmv_file :: proc(
-// 	path: string,
-// 	model: ^Model,
-// 	metadata: Bmv_Metadata = {},
-// 	allocator := context.allocator,
-// ) -> (
-// 	err: Bmv_Error,
-// )
-// {
-// 	// TODO this can be optimized
-// 	// TODO consider not allocating every picosecond
+write_model_to_bmv_file :: proc(
+	path: string,
+	model: ^Model,
+	metadata: Bmv_Metadata = {},
+	allocator := context.allocator,
+) -> (
+	err: Bmv_Error,
+)
+{
+	file := os.open(path, {.Write, .Create}) or_return
+	defer os.close(file)
 
-// 	// meta my data
-// 	raw_meta: Bmv_Raw_Metadata
-// 	raw_meta_owned: bool
+	// header
+	os.write_string(file, BMV_MAGIC) or_return
+	write_int_to_file(file, BMV_MAJOR_VERSION) or_return
+	write_int_to_file(file, BMV_MINOR_VERSION) or_return
 
-// 	switch v in metadata {
-// 	case Bmv_Raw_Metadata:
-// 		raw_meta = v
+	// metadata section
+	os.write_string(file, "metadata") or_return
 
-// 	case Bmv_Standard_Metadata:
-// 		raw_meta = make(Bmv_Raw_Metadata, allocator)
-// 		raw_meta_owned = true
+	switch md in metadata {
+	case Bmv_Standard_Metadata:
+		count := 1
+		if md.compression_algorithm != .NONE {
+			count += 1
+		}
+		write_int_to_file(file, u32le(count))
 
-// 		raw_meta[BMV_SIZE_METATAG] = bmv_size_metaprop(model.size)
-// 		if v.compression_algorithm != .NONE {
-// 			raw_meta[BMV_COMPRESSION_METATAG] = bmv_compression_metaprop(
-// 				v.compression_algorithm,
-// 			)
-// 		}
+		// size attr
+		if glm.any(glm.lessThanEqual(model.size, [3]i32{0, 0, 0})) {
+			return .INVALID_SIZE
+		}
+		os.write(file, BMV_SIZE_METATAG[:]) or_return
+		write_int_to_file(file, u32le(12)) or_return // len
+		write_int_to_file(file, u32le(model.size.x)) or_return
+		write_int_to_file(file, u32le(model.size.y)) or_return
+		write_int_to_file(file, u32le(model.size.z)) or_return
 
-// 		if v.copyright != nil {
-// 			raw_meta[BMV_COPYRIGHT_METATAG] = bmv_copyright_metaprop(v.copyright.?)
-// 		}
-// 	}
+		// compression attr
+		if md.compression_algorithm != .NONE {
+			os.write(file, BMV_COMPRESSION_METATAG[:]) or_return
+			write_int_to_file(file, u32le(2)) or_return // len
+			write_int_to_file(file, u16le(md.compression_algorithm))
+		}
 
-// 	defer if raw_meta_owned {
-// 		for tag, payload in raw_meta {
-// 			delete(payload, allocator)
-// 		}
-// 		delete(raw_meta)
-// 	}
+	case Bmv_Raw_Metadata:
+		if BMV_SIZE_METATAG not_in md {
+			return .MISSING_SIZE_META_ATTRIBUTE
+		}
 
-// 	file := os.open(path, {.Write, .Create}) or_return
-// 	defer os.close(file)
+		write_int_to_file(file, u32le(len(md))) or_return
+		for tag, val in md {
+			tag := tag
+			os.write(file, tag[:]) or_return
+			write_int_to_file(file, u32le(len(val))) or_return
+			os.write(file, val) or_return
+		}
+	}
 
-// 	// header
-// 	os.write_string(file, "\x00bmvoxel") or_return
-// 	write_int_to_file(file, BMV_MAJOR_VERSION) or_return
-// 	write_int_to_file(file, BMV_MINOR_VERSION) or_return
+	compression: Bmv_Compression
+	switch md in metadata {
+	case Bmv_Standard_Metadata:
+		compression = md.compression_algorithm
+	case Bmv_Raw_Metadata:
+		compression = Bmv_Compression(
+			(cast([^]u16le)raw_data(md[BMV_COMPRESSION_METATAG]))[0],
+		)
+	}
 
-// 	// metadata section
-// 	os.write_string(file, "metadata") or_return
-// 	write_int_to_file(file, u16le(len(raw_meta))) or_return
-// 	for tag, payload in raw_meta {
-// 		write_int_to_file(file, u16le(tag)) or_return
-// 		write_int_to_file(file, u32le(len(payload))) or_return
-// 		os.write(file, payload) or_return
-// 	}
+	// solid mask section
+	os.write_string(file, "solidmsk") or_return
+	// it's very convenient when you're the one that designed the format
+	// TODO compression
+	os.write_slice(file, model.solid) or_return
 
-// 	// data section
-// 	os.write_string(file, "propdata") or_return
-// 	write_int_to_file(file, u32le(model.voxel_count)) or_return
+	// attribute data sections
+	for tag, payloads in model.data {
+		tag := tag
 
-// 	voxel_data := make([dynamic]byte, allocator)
-// 	defer delete(voxel_data)
+		os.write_string(file, "attrdata") or_return
+		os.write(file, tag[:]) or_return
 
-// 	for z in model.start.z ..< model.end.z {
-// 		for y in model.start.y ..< model.end.y {
-// 			for x in model.start.x ..< model.end.x {
-// 				props, solid := list_voxel_props(model, {x, y, z}, allocator)
-// 				if !solid {
-// 					continue
-// 				}
+		// TODO compression
+		os.write_slice(file, payloads) or_return
+	}
 
-// 				// todo lmaop
-// 				append(&voxel_data)
-// 				for prop in props {
-
-// 				}
-// 				append(&voxel_data)
-// 			}
-// 		}
-// 	}
-
-// 	return
-// }
+	return
+}

@@ -27,12 +27,6 @@ write_float_to_file :: proc(
 	return os.write_ptr(file, &tmp, size_of(T))
 }
 
-// doesn't include length, doesn't handle any platform-specific layout
-write_slice_to_file :: proc(file: ^os.File, val: $T/[]$E) -> (n: int, err: os.Error)
-{
-	return os.write_ptr(file, raw_data(val), len(val) * sizeof(E))
-}
-
 // returns the current position in the file
 file_tell :: proc(file: ^os.File) -> (pos: i64, err: os.Error)
 {
