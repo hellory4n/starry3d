@@ -32,3 +32,23 @@ file_tell :: proc(file: ^os.File) -> (pos: i64, err: os.Error)
 {
 	return os.seek(file, 0, .Current)
 }
+
+read_int_from_file :: proc(file: ^os.File, $T: typeid) -> (ret: T, err: os.Error)
+{
+	bytes: [size_of(T)]byte
+	os.read(file, bytes[:]) or_return
+	ret = (cast(^T)raw_data(bytes[:]))^
+	return
+}
+
+file_at_eof :: proc(file: ^os.File) -> (ret: bool, err: os.Error)
+{
+	// TODO this might suck
+	bytes: [1]byte
+	_, err = os.read(file, bytes[:])
+	if err == .EOF {
+		ret = true
+	}
+	os.seek(file, -1, .Current)
+	return
+}
