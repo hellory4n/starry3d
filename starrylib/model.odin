@@ -128,19 +128,24 @@ set_voxel :: proc(model: ^Model, pos: [3]i32, tag: Tag, value: Payload) -> (err:
 		model.voxel_count += 1
 	}
 
-	attr_list, ok := model.data[tag]
-	if !ok {
-		alerr: mem.Allocator_Error
-		model.data[tag], alerr = make([]Payload, area(model.size), model.allocator)
-		if alerr == .Out_Of_Memory {
-			err = .OUT_OF_MEMORY
-			return
-		}
+	reserve_tag_for_model(model, tag) or_return
+	model.data[tag][flatten_3d_idx(model.size, pos - model.start)] = value
+	return
+}
 
-		attr_list = model.data[tag]
+// internal bullshit you'll never use
+reserve_tag_for_model :: proc(model: ^Model, tag: Tag) -> (err: Set_Voxel_Error)
+{
+	if tag in model.data {
+		return
 	}
 
-	attr_list[flatten_3d_idx(model.size, pos - model.start)] = value
+	alerr: mem.Allocator_Error
+	model.data[tag], alerr = make([]Payload, area(model.size), model.allocator)
+	if alerr == .Out_Of_Memory {
+		err = .OUT_OF_MEMORY
+		return
+	}
 	return
 }
 

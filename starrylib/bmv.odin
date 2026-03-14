@@ -1,13 +1,13 @@
 package starrylib
 
-// TODO this might be a shitty reference implementation because it heavily depends on Model
-// working the way it works
-
 import "core:c"
 import glm "core:math/linalg/glsl"
 import "core:mem"
 import "core:os"
 import "vendor:compress/lz4"
+
+// TODO this might be a shitty reference implementation because it heavily depends on Model
+// working the way it works
 
 BMV_MAGIC :: "\x00bmvoxel"
 BMV_MAJOR_VERSION :: u8(0)
@@ -264,7 +264,7 @@ new_model_from_bmv_file :: proc(
 
 	switch compression {
 	case .NONE:
-		model.solid = transmute([]b8)raw_solid_mask
+		copy(model.solid, transmute([]b8)raw_solid_mask)
 
 	case .LZ4:
 		decompressed_size := lz4.decompress_safe(
@@ -292,9 +292,7 @@ new_model_from_bmv_file :: proc(
 		raw_attr_data := make([]byte, raw_data_len, context.temp_allocator)
 		os.read(file, raw_attr_data) or_return
 
-		// make sure it allocates the proper crap
-		set_voxel(&model, start, tag, 0) or_return
-		remove_voxel(&model, start)
+		reserve_tag_for_model(&model, tag) or_return
 
 		when ODIN_ENDIAN != .Little {
 			#panic("TODO")
@@ -302,7 +300,7 @@ new_model_from_bmv_file :: proc(
 
 		switch compression {
 		case .NONE:
-			model.data[tag] = mem.slice_data_cast([]u32, raw_attr_data)
+			copy(mem.slice_to_bytes(model.data[tag]), raw_attr_data)
 
 		case .LZ4:
 			decompressed_size := lz4.decompress_safe(

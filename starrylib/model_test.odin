@@ -266,6 +266,13 @@ create_the_great_upside_down_t_model :: proc(t: ^testing.T) -> Model
 	testing.expect_value(t, set_voxel(&m, {0, 1, 0}, RGBA_TAG, 0xf9c440ff), Set_Voxel_Error.OK)
 	testing.expect_value(t, set_voxel(&m, {0, 2, 0}, RGBA_TAG, 0xffffffff), Set_Voxel_Error.OK)
 
+	// test more than 1 tag
+	testing.expect_value(
+		t,
+		set_voxel(&m, {0, 2, 0}, [4]byte{'D', 'i', '?', 'h'}, 0x69696969),
+		Set_Voxel_Error.OK,
+	)
+
 	// corners
 	testing.expect_value(
 		t,

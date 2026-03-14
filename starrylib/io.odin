@@ -47,8 +47,9 @@ file_at_eof :: proc(file: ^os.File) -> (ret: bool, err: os.Error)
 	bytes: [1]byte
 	_, err = os.read(file, bytes[:])
 	if err == .EOF {
+		err = nil
 		ret = true
 	}
-	os.seek(file, -1, .Current)
+	os.seek(file, -1, .Current) or_return
 	return
 }
