@@ -1,5 +1,8 @@
 # Starry3D
 
+> [!WARNING]
+> Everything is on a half-broken state. I am only one man.
+
 The voxel graphics toolkit
 
 Engines can be massive. For these we have many directories:
