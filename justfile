@@ -25,3 +25,11 @@ build-all: build-sandbox
 @test:
 	@# test starrylib
 	odin test starrylib {{_CFLAGS}}
+	@# test starrylib/model
+	odin test starrylib/model
+	@# test starrylib/model/bmv
+	odin test starrylib/model/bmv
+	@# test starrylib/model/pngslice
+	odin test starrylib/model/pngslice
+	@# test starrylib/model/vox
+	odin test starrylib/model/vox

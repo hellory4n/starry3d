@@ -1,14 +1,15 @@
-package starrylib
+package pngslice
 
 import "core:log"
 import "core:os"
 import "core:testing"
+import model ".."
 
 @(test)
 t_png_slice :: proc(t: ^testing.T)
 {
-	m := create_the_great_upside_down_t_model(t)
-	defer free_model(&m)
+	m := model.make_testing_model(t)
+	defer model.free_model(&m)
 
 	oserr := os.make_directory_all("testout")
 	if oserr != .Exist {

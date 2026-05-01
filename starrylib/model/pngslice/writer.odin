@@ -1,36 +1,38 @@
-package starrylib
+package pngslice
 
 import "base:runtime"
 import "core:c"
 import "core:os"
 import stbi "vendor:stb/image"
+import model ".."
+import stlib "../.."
 
 // flattens the model into an image of 8-bit red, green, blue, and alpha quadruplets. assumes
 // the model is valid. you must `delete()` the returned buffer yourself.
 flatten_model :: proc(
-	model: ^Model,
-	color_tag: Tag = RGBA_TAG,
+	m: ^model.Model,
+	color_tag: stlib.Tag = model.RGBA_TAG,
 	allocator := context.allocator,
 ) -> (
 	buffer: []u8,
 	dimensions: [2]i32,
 )
 {
-	dimensions = [2]i32{model.size.x * model.size.y, model.size.z}
+	dimensions = [2]i32{m.size.x * m.size.y, m.size.z}
 	buffer = make([]u8, dimensions.x * dimensions.y * 4, allocator)
 
 	i := 0
-	for z in model.start.z ..< model.end.z {
-		for y in model.start.y ..< model.end.y {
-			for x in model.start.x ..< model.end.x {
+	for z in m.start.z ..< m.end.z {
+		for y in m.start.y ..< m.end.y {
+			for x in m.start.x ..< m.end.x {
 				defer i += 4
 
-				val, solid := get_voxel(model, {x, y, z}, color_tag)
+				val, solid := model.get_voxel(m, {x, y, z}, color_tag)
 				if !solid {
 					continue
 				}
 
-				color := unpack_rgba_from_u32(val)
+				color := stlib.unpack_rgba_from_u32(val)
 				buffer[i] = color.r
 				buffer[i + 1] = color.g
 				buffer[i + 2] = color.b
@@ -45,8 +47,8 @@ flatten_model :: proc(
 // assumes model is valid
 write_model_to_png_file :: proc(
 	path: string,
-	model: ^Model,
-	color_tag: Tag = RGBA_TAG,
+	m: ^model.Model,
+	color_tag: stlib.Tag = model.RGBA_TAG,
 	allocator := context.allocator,
 ) -> (
 	err: os.Error,
@@ -55,7 +57,7 @@ write_model_to_png_file :: proc(
 	file := os.open(path, {.Write, .Create}) or_return
 	defer os.close(file)
 
-	img, size := flatten_model(model, color_tag, allocator)
+	img, size := flatten_model(m, color_tag, allocator)
 	defer delete(img)
 
 	WriteContext :: struct {

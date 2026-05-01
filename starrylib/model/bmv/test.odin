@@ -1,14 +1,16 @@
-package starrylib
+package bmv
 
 import "core:mem"
 import "core:os"
 import "core:testing"
+import model ".."
+import stlib "../.."
 
 @(test)
 t_read_write_bmv :: proc(t: ^testing.T)
 {
-	src := create_the_great_upside_down_t_model(t)
-	defer free_model(&src)
+	src := model.make_testing_model(t)
+	defer model.free_model(&src)
 
 	oserr := os.make_directory_all("testout")
 	if oserr != .Exist {
@@ -37,7 +39,7 @@ t_read_write_bmv :: proc(t: ^testing.T)
 	// TODO don't feel like copy pasting the byte fucking to test the data
 
 	dst, err3 := new_model_from_bmv_file("testout/model.bmv")
-	defer free_model(&dst)
+	defer model.free_model(&dst)
 	testing.expect_value(t, err3, nil)
 
 	testing.expect_value(t, dst.start, src.start)
@@ -52,21 +54,21 @@ t_read_write_bmv :: proc(t: ^testing.T)
 	)
 
 	testing.expect_value(t, len(dst.data), len(src.data))
-	testing.expect(t, RGBA_TAG in dst.data)
-	testing.expect(t, ([4]byte{'D', 'i', '?', 'h'}) in dst.data)
+	testing.expect(t, model.RGBA_TAG in dst.data)
+	testing.expect(t, stlib.tag("Di?h") in dst.data)
 	testing.expect(
 		t,
 		mem.compare(
-			mem.slice_to_bytes(dst.data[RGBA_TAG]),
-			mem.slice_to_bytes(src.data[RGBA_TAG]),
+			mem.slice_to_bytes(dst.data[model.RGBA_TAG]),
+			mem.slice_to_bytes(src.data[model.RGBA_TAG]),
 		) ==
 		0,
 	)
 	testing.expect(
 		t,
 		mem.compare(
-			mem.slice_to_bytes(dst.data[[4]byte{'D', 'i', '?', 'h'}]),
-			mem.slice_to_bytes(src.data[[4]byte{'D', 'i', '?', 'h'}]),
+			mem.slice_to_bytes(dst.data[stlib.tag("Di?h")]),
+			mem.slice_to_bytes(src.data[stlib.tag("Di?h")]),
 		) ==
 		0,
 	)

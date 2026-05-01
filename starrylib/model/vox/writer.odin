@@ -1,7 +1,9 @@
-package starrylib
+package vox
 
 import glm "core:math/linalg/glsl"
 import "core:os"
+import model ".."
+import stlib "../.."
 
 // NOTE: .vox doesn't specify endianness, assuming little endian
 Magica_Int :: i32le
@@ -23,13 +25,13 @@ Magica_Error :: union #shared_nil {
 // - 24-bit color will be quantized to a palette of 255 colors
 write_model_to_magicavoxel_file :: proc(
 	path: string,
-	model: ^Model,
-	color_tag: Tag = RGBA_TAG,
+	m: ^model.Model,
+	color_tag: stlib.Tag = model.RGBA_TAG,
 ) -> (
 	err: Magica_Error,
 )
 {
-	if glm.any(glm.greaterThanEqual(model.size, [3]i32{256, 256, 256})) {
+	if glm.any(glm.greaterThanEqual(m.size, [3]i32{256, 256, 256})) {
 		return .SIZE_MUST_BE_SMALLER_THAN_256X256X256
 	}
 
@@ -38,28 +40,28 @@ write_model_to_magicavoxel_file :: proc(
 
 	// header
 	os.write_string(file, "VOX ") or_return
-	write_int_to_file(file, Magica_Int(150)) or_return
+	stlib.write_int_to_file(file, Magica_Int(150)) or_return
 
 	// main chunk
 	os.write_string(file, "MAIN") or_return
-	write_int_to_file(file, Magica_Int(0)) or_return
-	file_size_position := file_tell(file) or_return // set later
-	write_int_to_file(file, Magica_Int(0)) or_return
+	stlib.write_int_to_file(file, Magica_Int(0)) or_return
+	file_size_position := stlib.file_tell(file) or_return // set later
+	stlib.write_int_to_file(file, Magica_Int(0)) or_return
 
 	// size chunk
 	os.write_string(file, "SIZE") or_return
-	write_int_to_file(file, Magica_Int(size_of(Magica_Int) * 3)) // chunk size
-	write_int_to_file(file, Magica_Int(0)) // children chunk size
-	write_int_to_file(file, Magica_Int(model.size.x))
-	write_int_to_file(file, Magica_Int(model.size.y))
-	write_int_to_file(file, Magica_Int(model.size.z))
+	stlib.write_int_to_file(file, Magica_Int(size_of(Magica_Int) * 3)) // chunk size
+	stlib.write_int_to_file(file, Magica_Int(0)) // children chunk size
+	stlib.write_int_to_file(file, Magica_Int(m.size.x))
+	stlib.write_int_to_file(file, Magica_Int(m.size.y))
+	stlib.write_int_to_file(file, Magica_Int(m.size.z))
 
 	// xyzi chunk
 	os.write_string(file, "XYZI") or_return
 
-	write_int_to_file(file, Magica_Int(model.voxel_count * 4)) // chunk size
-	write_int_to_file(file, Magica_Int(0)) // children chunk size
-	write_int_to_file(file, Magica_Int(model.voxel_count))
+	stlib.write_int_to_file(file, Magica_Int(m.voxel_count * 4)) // chunk size
+	stlib.write_int_to_file(file, Magica_Int(0)) // children chunk size
+	stlib.write_int_to_file(file, Magica_Int(m.voxel_count))
 
 	// world's worst quantization algorithm
 	distance_sq :: #force_inline proc(c1, c2: [3]u8) -> u32
@@ -77,8 +79,8 @@ write_model_to_magicavoxel_file :: proc(
 
 		for pal_color, i in MAGICA_DEFAULT_PALETTE {
 			distance := distance_sq(
-				unpack_rgba_from_u32(src).rgb,
-				unpack_argb_from_u32(pal_color).bgr,
+				stlib.unpack_rgba_from_u32(src).rgb,
+				stlib.unpack_argb_from_u32(pal_color).bgr,
 			)
 			if distance < best_distance {
 				best_distance = distance
@@ -90,19 +92,19 @@ write_model_to_magicavoxel_file :: proc(
 	}
 
 	// destruction
-	for z in model.start.z ..< model.end.z {
-		for y in model.start.y ..< model.end.y {
-			for x in model.start.x ..< model.end.x {
-				val, solid := get_voxel(model, {x, y, z}, color_tag)
+	for z in m.start.z ..< m.end.z {
+		for y in m.start.y ..< m.end.y {
+			for x in m.start.x ..< m.end.x {
+				val, solid := model.get_voxel(m, {x, y, z}, color_tag)
 				if !solid {
 					continue
 				}
 
 				// +Y up in starry, +Z up in magicavoxel
-				write_int_to_file(file, Magica_Char(x - model.start.x))
-				write_int_to_file(file, Magica_Char(z - model.start.z))
-				write_int_to_file(file, Magica_Char(y - model.start.y))
-				write_int_to_file(file, Magica_Char(closest_color_idx(val)))
+				stlib.write_int_to_file(file, Magica_Char(x - m.start.x))
+				stlib.write_int_to_file(file, Magica_Char(z - m.start.z))
+				stlib.write_int_to_file(file, Magica_Char(y - m.start.y))
+				stlib.write_int_to_file(file, Magica_Char(closest_color_idx(val)))
 			}
 		}
 	}
@@ -110,13 +112,13 @@ write_model_to_magicavoxel_file :: proc(
 	// "from BMV" chunk, to show .bmv's superiority
 	// any decent reader should be able to ignore this
 	os.write_string(file, "fBMV") or_return
-	write_int_to_file(file, Magica_Int(0)) // chunk size
-	write_int_to_file(file, Magica_Int(0)) // children chunk size
+	stlib.write_int_to_file(file, Magica_Int(0)) // chunk size
+	stlib.write_int_to_file(file, Magica_Int(0)) // children chunk size
 
 	// now we know the size of the rest of the file
-	main_chunk_children_size := (file_tell(file) or_return) - file_size_position
+	main_chunk_children_size := (stlib.file_tell(file) or_return) - file_size_position
 	os.seek(file, file_size_position, .Start)
-	write_int_to_file(file, Magica_Int(main_chunk_children_size)) or_return
+	stlib.write_int_to_file(file, Magica_Int(main_chunk_children_size)) or_return
 
 	return
 }

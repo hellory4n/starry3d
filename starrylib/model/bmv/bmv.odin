@@ -1,10 +1,15 @@
-package starrylib
+/*
+The reference implementation for the BMV file format. Incomplete!
+*/
+package bmv
 
 import "core:c"
 import glm "core:math/linalg/glsl"
 import "core:mem"
 import "core:os"
 import "vendor:compress/lz4"
+import model ".."
+import stlib "../.."
 
 // TODO this might be a shitty reference implementation because it heavily depends on Model
 // working the way it works
@@ -14,7 +19,7 @@ BMV_MAJOR_VERSION :: u8(0)
 BMV_MINOR_VERSION :: u8(6)
 
 // usage not recommended unless you need extensions
-Bmv_Raw_Metadata :: map[[4]byte][]byte
+Bmv_Raw_Metadata :: map[stlib.Tag][]byte
 
 Bmv_Metadata :: union #no_nil {
 	Bmv_Standard_Metadata,
@@ -30,12 +35,9 @@ Bmv_Compression :: enum u8 {
 	NONE = 255,
 }
 
-@(rodata)
-BMV_SIZE_METATAG := [4]byte{'s', 'i', 'z', 'e'}
-@(rodata)
-BMV_COMPRESSION_METATAG := [4]byte{'c', 'm', 'p', 's'}
-@(rodata)
-BMV_STARRY_BOUNDS_METATAG := [4]byte{'s', 't', 'B', 'n'}
+BMV_SIZE_METATAG := stlib.tag("size")
+BMV_COMPRESSION_METATAG := stlib.tag("cmps")
+BMV_STARRY_BOUNDS_METATAG := stlib.tag("stBn")
 
 Bmv_Write_Error :: enum {
 	OK,
@@ -57,14 +59,14 @@ Bmv_Error :: union #shared_nil {
 	os.Error,
 	Bmv_Write_Error,
 	Bmv_Read_Error,
-	Init_Model_Error,
-	Set_Voxel_Error,
+	model.Init_Model_Error,
+	model.Set_Voxel_Error,
 }
 
 // writes the model to a Big Massive Voxels file, the most massive most superior format of all time.
 write_model_to_bmv_file :: proc(
 	path: string,
-	model: ^Model,
+	model: ^model.Model,
 	metadata: Bmv_Metadata = {},
 ) -> (
 	err: Bmv_Error,
@@ -75,8 +77,8 @@ write_model_to_bmv_file :: proc(
 
 	// header
 	os.write_string(file, BMV_MAGIC) or_return
-	write_int_to_file(file, BMV_MAJOR_VERSION) or_return
-	write_int_to_file(file, BMV_MINOR_VERSION) or_return
+	stlib.write_int_to_file(file, BMV_MAJOR_VERSION) or_return
+	stlib.write_int_to_file(file, BMV_MINOR_VERSION) or_return
 
 	// metadata section
 	os.write_string(file, "metadata") or_return
@@ -87,33 +89,33 @@ write_model_to_bmv_file :: proc(
 		if md.compression_algorithm != .NONE {
 			count += 1
 		}
-		write_int_to_file(file, u32le(count))
+		stlib.write_int_to_file(file, u32le(count))
 
 		// size attr
 		if glm.any(glm.lessThanEqual(model.size, [3]i32{0, 0, 0})) {
 			return .INVALID_SIZE
 		}
 		os.write(file, BMV_SIZE_METATAG[:]) or_return
-		write_int_to_file(file, u32le(12)) or_return // len
-		write_int_to_file(file, u32le(model.size.x)) or_return
-		write_int_to_file(file, u32le(model.size.y)) or_return
-		write_int_to_file(file, u32le(model.size.z)) or_return
+		stlib.write_int_to_file(file, u32le(12)) or_return // len
+		stlib.write_int_to_file(file, u32le(model.size.x)) or_return
+		stlib.write_int_to_file(file, u32le(model.size.y)) or_return
+		stlib.write_int_to_file(file, u32le(model.size.z)) or_return
 
 		// starry bounds attribute
 		os.write(file, BMV_STARRY_BOUNDS_METATAG[:]) or_return
-		write_int_to_file(file, u32le(24)) or_return // len
-		write_int_to_file(file, u32le(model.start.x)) or_return
-		write_int_to_file(file, u32le(model.start.y)) or_return
-		write_int_to_file(file, u32le(model.start.z)) or_return
-		write_int_to_file(file, u32le(model.end.x)) or_return
-		write_int_to_file(file, u32le(model.end.y)) or_return
-		write_int_to_file(file, u32le(model.end.z)) or_return
+		stlib.write_int_to_file(file, u32le(24)) or_return // len
+		stlib.write_int_to_file(file, u32le(model.start.x)) or_return
+		stlib.write_int_to_file(file, u32le(model.start.y)) or_return
+		stlib.write_int_to_file(file, u32le(model.start.z)) or_return
+		stlib.write_int_to_file(file, u32le(model.end.x)) or_return
+		stlib.write_int_to_file(file, u32le(model.end.y)) or_return
+		stlib.write_int_to_file(file, u32le(model.end.z)) or_return
 
 		// compression attr
 		if md.compression_algorithm != .NONE {
 			os.write(file, BMV_COMPRESSION_METATAG[:]) or_return
-			write_int_to_file(file, u32le(1)) or_return // len
-			write_int_to_file(file, u8(md.compression_algorithm))
+			stlib.write_int_to_file(file, u32le(1)) or_return // len
+			stlib.write_int_to_file(file, u8(md.compression_algorithm))
 		}
 
 	case Bmv_Raw_Metadata:
@@ -121,11 +123,11 @@ write_model_to_bmv_file :: proc(
 			return Bmv_Write_Error.MISSING_SIZE_META_ATTRIBUTE
 		}
 
-		write_int_to_file(file, u32le(len(md))) or_return
+		stlib.write_int_to_file(file, u32le(len(md))) or_return
 		for tag, val in md {
 			tag := tag
 			os.write(file, tag[:]) or_return
-			write_int_to_file(file, u32le(len(val))) or_return
+			stlib.write_int_to_file(file, u32le(len(val))) or_return
 			os.write(file, val) or_return
 		}
 	}
@@ -146,7 +148,7 @@ write_model_to_bmv_file :: proc(
 	switch compression {
 	case .NONE:
 		// it's very convenient when you're the one that designed the format
-		write_int_to_file(file, u32le(area(model.size))) or_return
+		stlib.write_int_to_file(file, u32le(stlib.area(model.size))) or_return
 		os.write_slice(file, model.solid) or_return
 
 	case .LZ4:
@@ -166,7 +168,7 @@ write_model_to_bmv_file :: proc(
 		}
 
 		compressed := dst[:compressed_size]
-		write_int_to_file(file, u32le(compressed_size)) or_return
+		stlib.write_int_to_file(file, u32le(compressed_size)) or_return
 		os.write(file, compressed) or_return
 	}
 
@@ -183,7 +185,7 @@ write_model_to_bmv_file :: proc(
 
 		switch compression {
 		case .NONE:
-			write_int_to_file(file, u32le(area(model.size) * size_of(u32))) or_return
+			stlib.write_int_to_file(file, u32le(stlib.area(model.size) * size_of(u32))) or_return
 			os.write_slice(file, payloads) or_return
 
 		case .LZ4:
@@ -203,7 +205,7 @@ write_model_to_bmv_file :: proc(
 			}
 
 			compressed := dst[:compressed_size]
-			write_int_to_file(file, u32le(compressed_size)) or_return
+			stlib.write_int_to_file(file, u32le(compressed_size)) or_return
 			os.write(file, compressed) or_return
 		}
 	}
@@ -216,7 +218,7 @@ new_model_from_bmv_file :: proc(
 	path: string,
 	allocator := context.allocator,
 ) -> (
-	model: Model,
+	m: model.Model,
 	err: Bmv_Error,
 )
 {
@@ -249,7 +251,7 @@ new_model_from_bmv_file :: proc(
 	}
 
 	// chukabanga! we have a model
-	model = new_empty_model(start, end, allocator) or_return
+	m = model.new_empty_model(start, end, allocator) or_return
 
 	// solidmsk section
 	magic: [8]byte
@@ -258,20 +260,20 @@ new_model_from_bmv_file :: proc(
 		err = .CORRUPTED_FILE
 	}
 
-	raw_solid_mask_len := read_int_from_file(file, u32le) or_return
+	raw_solid_mask_len := stlib.read_int_from_file(file, u32le) or_return
 	raw_solid_mask := make([]byte, raw_solid_mask_len, context.temp_allocator)
 	os.read(file, raw_solid_mask) or_return
 
 	switch compression {
 	case .NONE:
-		copy(model.solid, transmute([]b8)raw_solid_mask)
+		copy(m.solid, transmute([]b8)raw_solid_mask)
 
 	case .LZ4:
 		decompressed_size := lz4.decompress_safe(
 			raw_data(raw_solid_mask),
-			cast([^]byte)raw_data(model.solid),
+			cast([^]byte)raw_data(m.solid),
 			c.int(len(raw_solid_mask)),
-			c.int(len(model.solid)),
+			c.int(len(m.solid)),
 		)
 		if decompressed_size <= 0 {
 			err = .DECOMPRESSION_FAILED
@@ -280,19 +282,19 @@ new_model_from_bmv_file :: proc(
 	}
 
 	// attrdata sections
-	for !(file_at_eof(file) or_return) {
+	for !(stlib.file_at_eof(file) or_return) {
 		os.read(file, magic[:]) or_return
 		if mem.compare(magic[:], transmute([]byte)string("attrdata")) != 0 {
 			err = .CORRUPTED_FILE
 		}
 
-		tag: [4]byte
+		tag: stlib.Tag
 		os.read(file, tag[:]) or_return
-		raw_data_len := read_int_from_file(file, u32le) or_return
+		raw_data_len := stlib.read_int_from_file(file, u32le) or_return
 		raw_attr_data := make([]byte, raw_data_len, context.temp_allocator)
 		os.read(file, raw_attr_data) or_return
 
-		reserve_tag_for_model(&model, tag) or_return
+		model.reserve_tag_for_model(&m, tag) or_return
 
 		when ODIN_ENDIAN != .Little {
 			#panic("TODO")
@@ -300,14 +302,14 @@ new_model_from_bmv_file :: proc(
 
 		switch compression {
 		case .NONE:
-			copy(mem.slice_to_bytes(model.data[tag]), raw_attr_data)
+			copy(mem.slice_to_bytes(m.data[tag]), raw_attr_data)
 
 		case .LZ4:
 			decompressed_size := lz4.decompress_safe(
 				raw_data(raw_attr_data),
-				cast([^]byte)raw_data(model.data[tag]),
+				cast([^]byte)raw_data(m.data[tag]),
 				c.int(len(raw_attr_data)),
-				c.int(len(model.data[tag])),
+				c.int(len(m.data[tag])),
 			)
 			if decompressed_size <= 0 {
 				err = .DECOMPRESSION_FAILED
@@ -317,9 +319,9 @@ new_model_from_bmv_file :: proc(
 	}
 
 	// bmv doesn't include voxel count
-	for solid in model.solid {
+	for solid in m.solid {
 		if solid {
-			model.voxel_count += 1
+			m.voxel_count += 1
 		}
 	}
 
@@ -384,14 +386,14 @@ read_bmv_header_and_meta :: proc(
 		return
 	}
 
-	meta_attr_count := read_int_from_file(file, u32le) or_return
+	meta_attr_count := stlib.read_int_from_file(file, u32le) or_return
 	meta = make(Bmv_Raw_Metadata, allocator)
 	reserve(&meta, meta_attr_count)
 
 	for _ in 0 ..< meta_attr_count {
-		tag: [4]byte
+		tag: stlib.Tag
 		os.read(file, tag[:]) or_return
-		length := read_int_from_file(file, u32le) or_return
+		length := stlib.read_int_from_file(file, u32le) or_return
 
 		payload := make([]byte, length, allocator)
 		os.read(file, payload) or_return

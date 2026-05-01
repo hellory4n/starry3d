@@ -1,6 +1,7 @@
-package starrylib
+package model
 
 import "core:testing"
+import stlib ".."
 
 @(test)
 t_model_start_must_be_smaller_than_end :: proc(t: ^testing.T)
@@ -209,7 +210,7 @@ t_model_iterator_one_voxel_multiple_props :: proc(t: ^testing.T)
 	set_voxel(&m, pos, 77, 12345678)
 
 	Collected_Crap :: struct {
-		tag:     Tag,
+		tag:     stlib.Tag,
 		payload: Payload,
 	}
 	collected: [dynamic]Collected_Crap
@@ -223,7 +224,7 @@ t_model_iterator_one_voxel_multiple_props :: proc(t: ^testing.T)
 
 	testing.expect(t, len(collected) == 3)
 
-	found_tags: map[Tag]Payload
+	found_tags: map[stlib.Tag]Payload
 	defer delete(found_tags)
 	for item in collected {
 		found_tags[item.tag] = item.payload
@@ -235,8 +236,7 @@ t_model_iterator_one_voxel_multiple_props :: proc(t: ^testing.T)
 }
 
 // world's worst test model
-@(private)
-create_the_great_upside_down_t_model :: proc(t: ^testing.T) -> Model
+make_testing_model :: proc(t: ^testing.T) -> Model
 {
 	m, err := new_empty_model(start = {-8, -8, -8}, end = {8, 8, 8})
 	testing.expect_value(t, err, Init_Model_Error.OK)
@@ -269,7 +269,7 @@ create_the_great_upside_down_t_model :: proc(t: ^testing.T) -> Model
 	// test more than 1 tag
 	testing.expect_value(
 		t,
-		set_voxel(&m, {0, 2, 0}, [4]byte{'D', 'i', '?', 'h'}, 0x69696969),
+		set_voxel(&m, {0, 2, 0}, stlib.tag("Di?h"), 0x69696969),
 		Set_Voxel_Error.OK,
 	)
 
