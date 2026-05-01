@@ -28,7 +28,7 @@ write_float_to_file :: proc(
 }
 
 // returns the current position in the file
-file_tell :: proc(file: ^os.File) -> (pos: i64, err: os.Error)
+file_position :: proc(file: ^os.File) -> (pos: i64, err: os.Error)
 {
 	return os.seek(file, 0, .Current)
 }
@@ -41,7 +41,7 @@ read_int_from_file :: proc(file: ^os.File, $T: typeid) -> (ret: T, err: os.Error
 	return
 }
 
-file_at_eof :: proc(file: ^os.File) -> (ret: bool, err: os.Error)
+is_file_at_eof :: proc(file: ^os.File) -> (ret: bool, err: os.Error)
 {
 	// TODO this might suck
 	bytes: [1]byte

@@ -11,35 +11,35 @@ import "vendor:compress/lz4"
 import model ".."
 import stlib "../.."
 
-// TODO this might be a shitty reference implementation because it heavily depends on Model
-// working the way it works
+// TODO this might be a shitty reference implementation because it heavily depends
+// on model.Model working the way it works
 
-BMV_MAGIC :: "\x00bmvoxel"
-BMV_MAJOR_VERSION :: u8(0)
-BMV_MINOR_VERSION :: u8(6)
+MAGIC :: "\x00bmvoxel"
+MAJOR_VERSION :: u8(0)
+MINOR_VERSION :: u8(6)
 
 // usage not recommended unless you need extensions
-Bmv_Raw_Metadata :: map[stlib.Tag][]byte
+Raw_Metadata :: map[stlib.Tag][]byte
 
-Bmv_Metadata :: union #no_nil {
-	Bmv_Standard_Metadata,
-	Bmv_Raw_Metadata,
+Metadata :: union #no_nil {
+	Standard_Metadata,
+	Raw_Metadata,
 }
 
-Bmv_Standard_Metadata :: struct {
-	compression_algorithm: Bmv_Compression,
+Standard_Metadata :: struct {
+	compression_algorithm: Compression,
 }
 
-Bmv_Compression :: enum u8 {
+Compression :: enum u8 {
 	LZ4  = 0,
 	NONE = 255,
 }
 
-BMV_SIZE_METATAG := stlib.tag("size")
-BMV_COMPRESSION_METATAG := stlib.tag("cmps")
-BMV_STARRY_BOUNDS_METATAG := stlib.tag("stBn")
+SIZE_METATAG := stlib.tag("size")
+COMPRESSION_METATAG := stlib.tag("cmps")
+STARRY_BOUNDS_METATAG := stlib.tag("stBn")
 
-Bmv_Write_Error :: enum {
+Write_Error :: enum {
 	OK,
 	INVALID_SIZE,
 	// only applies if using raw metadata
@@ -47,7 +47,7 @@ Bmv_Write_Error :: enum {
 	COMPRESSION_FAILED,
 }
 
-Bmv_Read_Error :: enum {
+Read_Error :: enum {
 	OK,
 	UNSUPPORTED_VERSION,
 	CORRUPTED_FILE,
@@ -55,36 +55,36 @@ Bmv_Read_Error :: enum {
 	DECOMPRESSION_FAILED,
 }
 
-Bmv_Error :: union #shared_nil {
+Error :: union #shared_nil {
 	os.Error,
-	Bmv_Write_Error,
-	Bmv_Read_Error,
-	model.Init_Model_Error,
+	Write_Error,
+	Read_Error,
+	model.Init_Error,
 	model.Set_Voxel_Error,
 }
 
 // writes the model to a Big Massive Voxels file, the most massive most superior format of all time.
-write_model_to_bmv_file :: proc(
+write_to_file :: proc(
 	path: string,
 	model: ^model.Model,
-	metadata: Bmv_Metadata = {},
+	metadata: Metadata = {},
 ) -> (
-	err: Bmv_Error,
+	err: Error,
 )
 {
 	file := os.open(path, {.Write, .Create}) or_return
 	defer os.close(file)
 
 	// header
-	os.write_string(file, BMV_MAGIC) or_return
-	stlib.write_int_to_file(file, BMV_MAJOR_VERSION) or_return
-	stlib.write_int_to_file(file, BMV_MINOR_VERSION) or_return
+	os.write_string(file, MAGIC) or_return
+	stlib.write_int_to_file(file, MAJOR_VERSION) or_return
+	stlib.write_int_to_file(file, MINOR_VERSION) or_return
 
 	// metadata section
 	os.write_string(file, "metadata") or_return
 
 	switch md in metadata {
-	case Bmv_Standard_Metadata:
+	case Standard_Metadata:
 		count := 2
 		if md.compression_algorithm != .NONE {
 			count += 1
@@ -95,14 +95,14 @@ write_model_to_bmv_file :: proc(
 		if glm.any(glm.lessThanEqual(model.size, [3]i32{0, 0, 0})) {
 			return .INVALID_SIZE
 		}
-		os.write(file, BMV_SIZE_METATAG[:]) or_return
+		os.write(file, SIZE_METATAG[:]) or_return
 		stlib.write_int_to_file(file, u32le(12)) or_return // len
 		stlib.write_int_to_file(file, u32le(model.size.x)) or_return
 		stlib.write_int_to_file(file, u32le(model.size.y)) or_return
 		stlib.write_int_to_file(file, u32le(model.size.z)) or_return
 
 		// starry bounds attribute
-		os.write(file, BMV_STARRY_BOUNDS_METATAG[:]) or_return
+		os.write(file, STARRY_BOUNDS_METATAG[:]) or_return
 		stlib.write_int_to_file(file, u32le(24)) or_return // len
 		stlib.write_int_to_file(file, u32le(model.start.x)) or_return
 		stlib.write_int_to_file(file, u32le(model.start.y)) or_return
@@ -113,14 +113,14 @@ write_model_to_bmv_file :: proc(
 
 		// compression attr
 		if md.compression_algorithm != .NONE {
-			os.write(file, BMV_COMPRESSION_METATAG[:]) or_return
+			os.write(file, COMPRESSION_METATAG[:]) or_return
 			stlib.write_int_to_file(file, u32le(1)) or_return // len
 			stlib.write_int_to_file(file, u8(md.compression_algorithm))
 		}
 
-	case Bmv_Raw_Metadata:
-		if BMV_SIZE_METATAG not_in md {
-			return Bmv_Write_Error.MISSING_SIZE_META_ATTRIBUTE
+	case Raw_Metadata:
+		if SIZE_METATAG not_in md {
+			return Write_Error.MISSING_SIZE_META_ATTRIBUTE
 		}
 
 		stlib.write_int_to_file(file, u32le(len(md))) or_return
@@ -132,13 +132,13 @@ write_model_to_bmv_file :: proc(
 		}
 	}
 
-	compression: Bmv_Compression
+	compression: Compression
 	switch md in metadata {
-	case Bmv_Standard_Metadata:
+	case Standard_Metadata:
 		compression = md.compression_algorithm
-	case Bmv_Raw_Metadata:
-		compression = Bmv_Compression(
-			(cast([^]u16le)raw_data(md[BMV_COMPRESSION_METATAG]))[0],
+	case Raw_Metadata:
+		compression = Compression(
+			(cast([^]u16le)raw_data(md[COMPRESSION_METATAG]))[0],
 		)
 	}
 
@@ -213,45 +213,45 @@ write_model_to_bmv_file :: proc(
 	return
 }
 
-// reads the model from a Big Massive Voxels file, the most massive most superior format of all time.
-new_model_from_bmv_file :: proc(
+// reads a model from a Big Massive Voxels file, the most massive most superior format of all time.
+load_from_file :: proc(
 	path: string,
 	allocator := context.allocator,
 ) -> (
 	m: model.Model,
-	err: Bmv_Error,
+	err: Error,
 )
 {
 	file := os.open(path, {.Read}) or_return
 	defer os.close(file)
 
-	meta := read_bmv_header_and_meta(file, context.temp_allocator) or_return
-	if BMV_SIZE_METATAG not_in meta {
-		err = Bmv_Read_Error.MISSING_SIZE_META_ATTRIBUTE
+	meta := read_header_and_meta(file, context.temp_allocator) or_return
+	if SIZE_METATAG not_in meta {
+		err = Read_Error.MISSING_SIZE_META_ATTRIBUTE
 		return
 	}
 
 	// a twinge of bit fuckery to get the meta attr values
-	src_size_slice := (cast([^]i32le)raw_data(meta[BMV_SIZE_METATAG]))[:3]
+	src_size_slice := (cast([^]i32le)raw_data(meta[SIZE_METATAG]))[:3]
 	src_size := [3]i32{i32(src_size_slice[0]), i32(src_size_slice[1]), i32(src_size_slice[2])}
 
 	// the stBn meta attr lets us define custom start/end coords
 	start := [3]i32{0, 0, 0}
 	end := src_size
-	if BMV_STARRY_BOUNDS_METATAG in meta {
-		start_end_slice := (cast([^]i32le)raw_data(meta[BMV_STARRY_BOUNDS_METATAG]))[:6]
+	if STARRY_BOUNDS_METATAG in meta {
+		start_end_slice := (cast([^]i32le)raw_data(meta[STARRY_BOUNDS_METATAG]))[:6]
 		start = {i32(start_end_slice[0]), i32(start_end_slice[1]), i32(start_end_slice[2])}
 		end = {i32(start_end_slice[3]), i32(start_end_slice[4]), i32(start_end_slice[5])}
 	}
 
 	// compression is pretty important innit
-	compression := Bmv_Compression.NONE
-	if BMV_COMPRESSION_METATAG in meta {
-		compression = Bmv_Compression(meta[BMV_COMPRESSION_METATAG][0])
+	compression := Compression.NONE
+	if COMPRESSION_METATAG in meta {
+		compression = Compression(meta[COMPRESSION_METATAG][0])
 	}
 
 	// chukabanga! we have a model
-	m = model.new_empty_model(start, end, allocator) or_return
+	m = model.new_empty(start, end, allocator) or_return
 
 	// solidmsk section
 	magic: [8]byte
@@ -282,7 +282,7 @@ new_model_from_bmv_file :: proc(
 	}
 
 	// attrdata sections
-	for !(stlib.file_at_eof(file) or_return) {
+	for !(stlib.is_file_at_eof(file) or_return) {
 		os.read(file, magic[:]) or_return
 		if mem.compare(magic[:], transmute([]byte)string("attrdata")) != 0 {
 			err = .CORRUPTED_FILE
@@ -294,7 +294,7 @@ new_model_from_bmv_file :: proc(
 		raw_attr_data := make([]byte, raw_data_len, context.temp_allocator)
 		os.read(file, raw_attr_data) or_return
 
-		model.reserve_tag_for_model(&m, tag) or_return
+		model.reserve_tag(&m, tag) or_return
 
 		when ODIN_ENDIAN != .Little {
 			#panic("TODO")
@@ -330,23 +330,23 @@ new_model_from_bmv_file :: proc(
 
 // loads a Big Massive Voxels file and returns its raw metadata. the returned data must be
 // freed with `free_metadata_loaded_from_bmv_file`
-load_metadata_from_bmv_file :: proc(
+load_metadata_from_file :: proc(
 	path: string,
 	allocator := context.allocator,
 ) -> (
-	meta: Bmv_Raw_Metadata,
-	err: Bmv_Error,
+	meta: Raw_Metadata,
+	err: Error,
 )
 {
 	file := os.open(path, {.Read}) or_return
 	defer os.close(file)
 
-	meta = read_bmv_header_and_meta(file, allocator) or_return
+	meta = read_header_and_meta(file, allocator) or_return
 	return
 }
 
 // catchy
-free_metadata_loaded_from_bmv_file :: proc(meta: Bmv_Raw_Metadata, allocator := context.allocator)
+free_metadata_from_file :: proc(meta: Raw_Metadata, allocator := context.allocator)
 {
 	for _, payload in meta {
 		delete(payload, allocator)
@@ -356,25 +356,25 @@ free_metadata_loaded_from_bmv_file :: proc(meta: Bmv_Raw_Metadata, allocator := 
 
 // `meta` must be freed by the caller
 @(private)
-read_bmv_header_and_meta :: proc(
+read_header_and_meta :: proc(
 	file: ^os.File,
 	allocator := context.allocator,
 ) -> (
-	meta: Bmv_Raw_Metadata,
-	err: Bmv_Error,
+	meta: Raw_Metadata,
+	err: Error,
 )
 {
 	// header
 	magic: [8]byte
 	os.read(file, magic[:]) or_return
-	if mem.compare(magic[:], transmute([]byte)string(BMV_MAGIC)) != 0 {
+	if mem.compare(magic[:], transmute([]byte)string(MAGIC)) != 0 {
 		err = .CORRUPTED_FILE
 		return
 	}
 
 	ver: [2]byte
 	os.read(file, ver[:]) or_return
-	if ver[0] != BMV_MAJOR_VERSION {
+	if ver[0] != MAJOR_VERSION {
 		err = .UNSUPPORTED_VERSION
 		return
 	}
@@ -387,7 +387,7 @@ read_bmv_header_and_meta :: proc(
 	}
 
 	meta_attr_count := stlib.read_int_from_file(file, u32le) or_return
-	meta = make(Bmv_Raw_Metadata, allocator)
+	meta = make(Raw_Metadata, allocator)
 	reserve(&meta, meta_attr_count)
 
 	for _ in 0 ..< meta_attr_count {

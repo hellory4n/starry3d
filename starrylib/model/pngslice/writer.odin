@@ -3,8 +3,9 @@ package pngslice
 import "base:runtime"
 import "core:c"
 import "core:os"
-import stbi "vendor:stb/image"
 import model ".."
+// fuck dyslexic people
+import stbi "vendor:stb/image"
 import stlib "../.."
 
 // flattens the model into an image of 8-bit red, green, blue, and alpha quadruplets. assumes
@@ -45,7 +46,7 @@ flatten_model :: proc(
 }
 
 // assumes model is valid
-write_model_to_png_file :: proc(
+write_to_file :: proc(
 	path: string,
 	m: ^model.Model,
 	color_tag: stlib.Tag = model.RGBA_TAG,
@@ -60,7 +61,7 @@ write_model_to_png_file :: proc(
 	img, size := flatten_model(m, color_tag, allocator)
 	defer delete(img)
 
-	WriteContext :: struct {
+	Write_Context :: struct {
 		ctx:        runtime.Context,
 		file:       ^os.File,
 		last_error: os.Error,
@@ -68,14 +69,14 @@ write_model_to_png_file :: proc(
 
 	write_func :: proc "c" (ctx: rawptr, data: rawptr, size: c.int)
 	{
-		crap := cast(^WriteContext)ctx
+		crap := cast(^Write_Context)ctx
 		context = crap.ctx
 
 		// inconveniently we can't tell stb to stop writing
 		_, crap.last_error = os.write_ptr(crap.file, data, int(size))
 	}
 
-	crap := WriteContext {
+	crap := Write_Context {
 		file = file,
 		ctx  = context,
 	}

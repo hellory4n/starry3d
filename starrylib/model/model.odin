@@ -6,19 +6,13 @@ import stlib ".."
 
 Payload :: u32
 
-Vox_Attr :: struct {
+Attribute :: struct {
 	tag:     stlib.Tag,
 	payload: Payload,
 }
 
 // The standard color tag
 RGBA_TAG := stlib.tag("rgba")
-
-@(private)
-Maybe_Payload :: struct {
-	payload: Payload,
-	set:     bool,
-}
 
 Model :: struct {
 	allocator:   mem.Allocator,
@@ -30,19 +24,19 @@ Model :: struct {
 	voxel_count: i32,
 }
 
-Init_Model_Error :: enum {
+Init_Error :: enum {
 	OK,
 	OUT_OF_MEMORY,
 	START_MUST_BE_SMALLER_THAN_END,
 }
 
-new_empty_model :: proc(
+new_empty :: proc(
 	start: [3]i32,
 	end: [3]i32,
 	allocator := context.allocator,
 ) -> (
 	model: Model,
-	err: Init_Model_Error,
+	err: Init_Error,
 )
 {
 	model.allocator = allocator
@@ -54,8 +48,8 @@ new_empty_model :: proc(
 		err = .START_MUST_BE_SMALLER_THAN_END
 		return
 	}
-	// can't fit more than that into 64-bit morton indexes
-	if glm.any(glm.greaterThanEqual(model.size, [3]i32{2097152, 2097152, 2097152})) {
+	// signed/unsigned crap stuff breaks here
+	if glm.any(glm.greaterThanEqual(model.size, [3]i32{2147483647, 2147483647, 2147483647})) {
 		err = .OUT_OF_MEMORY
 		return
 	}
@@ -74,7 +68,7 @@ new_empty_model :: proc(
 	return
 }
 
-free_model :: proc(model: ^Model)
+destroy :: proc(model: ^Model)
 {
 	delete(model.solid, model.allocator)
 	for _, payload in model.data {
@@ -128,13 +122,13 @@ set_voxel :: proc(model: ^Model, pos: [3]i32, tag: stlib.Tag, value: Payload) ->
 		model.voxel_count += 1
 	}
 
-	reserve_tag_for_model(model, tag) or_return
+	reserve_tag(model, tag) or_return
 	model.data[tag][stlib.flatten_3d_idx(model.size, pos - model.start)] = value
 	return
 }
 
 // internal bullshit you'll never use
-reserve_tag_for_model :: proc(model: ^Model, tag: stlib.Tag) -> (err: Set_Voxel_Error)
+reserve_tag :: proc(model: ^Model, tag: stlib.Tag) -> (err: Set_Voxel_Error)
 {
 	if tag in model.data {
 		return
@@ -179,20 +173,20 @@ is_voxel_empty :: proc(model: ^Model, pos: [3]i32) -> bool
 	return !is_voxel_solid(model, pos)
 }
 
-Model_Iterator :: struct {
+Iterator :: struct {
 	model:    ^Model,
 	attr_idx: int,
 	vox_idx:  i32,
 }
 
 // iterates over all the solid voxels and its attributes. order is undefined (fuck you)
-model_iterator :: proc(model: ^Model) -> Model_Iterator
+iterator :: proc(model: ^Model) -> Iterator
 {
-	return Model_Iterator{model = model}
+	return Iterator{model = model}
 }
 
-model_iterator_next :: proc(
-	it: ^Model_Iterator,
+iterator_next :: proc(
+	it: ^Iterator,
 ) -> (
 	pos: [3]i32,
 	tag: stlib.Tag,

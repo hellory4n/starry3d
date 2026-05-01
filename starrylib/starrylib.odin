@@ -22,7 +22,7 @@ VERSION_PATCH :: 0
 //
 // Note that if creating those things is fully automatic, it's usually better to use an incrementing
 // 32-bit index. For example:
-// - layers, model attributes, etc: uses human-assigned IDs
+// - layers, model attributes, etc: uses human-assigned tags
 // - handles: fully handled by the engine on its own, doesn't need to be human-readable
 Tag :: distinct [4]byte
 

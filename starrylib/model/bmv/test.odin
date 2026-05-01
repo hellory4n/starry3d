@@ -7,20 +7,20 @@ import model ".."
 import stlib "../.."
 
 @(test)
-t_read_write_bmv :: proc(t: ^testing.T)
+t_read_write :: proc(t: ^testing.T)
 {
-	src := model.make_testing_model(t)
-	defer model.free_model(&src)
+	src := model.new_testing_model(t)
+	defer model.destroy(&src)
 
 	oserr := os.make_directory_all("testout")
 	if oserr != .Exist {
 		testing.expect_value(t, oserr, nil)
 	}
 
-	err := write_model_to_bmv_file(
+	err := write_to_file(
 		"testout/model.bmv",
 		&src,
-		Bmv_Standard_Metadata{compression_algorithm = .NONE},
+		Standard_Metadata{compression_algorithm = .NONE},
 	)
 	testing.expect_value(t, err, nil)
 
@@ -29,17 +29,17 @@ t_read_write_bmv :: proc(t: ^testing.T)
 	// a chicken or egg esque conundrum
 	// (read the file and manually check all of the bytes i guess?)
 
-	meta, err2 := load_metadata_from_bmv_file("testout/model.bmv")
+	meta, err2 := load_metadata_from_file("testout/model.bmv")
 	testing.expect_value(t, err2, nil)
-	defer free_metadata_loaded_from_bmv_file(meta)
+	defer free_metadata_from_file(meta)
 
-	testing.expect(t, BMV_SIZE_METATAG in meta)
-	testing.expect(t, BMV_STARRY_BOUNDS_METATAG in meta)
+	testing.expect(t, SIZE_METATAG in meta)
+	testing.expect(t, STARRY_BOUNDS_METATAG in meta)
 	// testing.expect(t, BMV_COMPRESSION_METATAG in meta)
 	// TODO don't feel like copy pasting the byte fucking to test the data
 
-	dst, err3 := new_model_from_bmv_file("testout/model.bmv")
-	defer model.free_model(&dst)
+	dst, err3 := load_from_file("testout/model.bmv")
+	defer model.destroy(&dst)
 	testing.expect_value(t, err3, nil)
 
 	testing.expect_value(t, dst.start, src.start)
