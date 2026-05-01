@@ -5,10 +5,10 @@
 
 The voxel graphics toolkit
 
-Engines can be massive. For these we have many directories:
-- `starrylib/`: standalone functionality that doesn't depend on the runtime
-- `starryrt/`: the big heavy runtime
-- `sandbox/`: test project for the engine
+Engines can be massive. For these we have many projects:
+- `starryrt`: the big heavy engine and runtime
+- `starrylib`: functions that don't depend on the runtime
+- `sandbox`: test project for the engine
 
 See the [development setup](./docs/dev_setup.md) for build instructions.
 
@@ -20,8 +20,7 @@ No fuck off.
 
 ### Why?
 
-Voxel rendering can be quite the pickle, so I think it's easier and better to just do the whole thing
-from scratch. Also why not also the suffering is endless
+Why not?
 
 ### Is this stable enough to use?
 

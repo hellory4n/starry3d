@@ -4,25 +4,28 @@
 
 You need these installed:
 - Git
-- A C compiler (gcc, clang, msvc)
-- [Odin](https://odin-lang.org) v2026.03
+- A C compiler (GCC, Clang, Microsoft Visual C++)
 - Windowing libraries for your OS
-    - on Windows you *may* have to install Visual Studio
+    - on Windows install the Windows SDK
     - on Linux install the X11 and Wayland dev packages:
         - Debian, Ubuntu, etc: `sudo apt install libwayland-dev libxkbcommon-dev xorg-dev`
         - Fedora: `sudo dnf install wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
         - Arch: `sudo pacman -S glfw` should pull all other dependencies
-- [Vulkan SDK](https://vulkan.lunarg.com/sdk/home) on Linux
-- [Just](https://github.com/casey/just)
+- [Odin](https://odin-lang.org) v2026.04
+- [Just command runner](https://github.com/casey/just)
 
-## Odin libraries
+## Building
 
-After building the C libraries, you can use Just again to run specific projects. For example `just run-sandbox`
+While you can run `odin build`/`odin run` like you can with any other Odin project, it's recommended that you use the Just wrappers:
+- `just run-sandbox` to run the sandbox project
+- `just test` to run tests
 
-Including Starry in new projects is a bit more involved. There are 2 packages:
+## Using Starry in new projects
+
+The Starry engine is split into 3 main directories:
 - `starryrt/`: the big heavy engine and runtime
-- `starrylib/`: general utilities that work without the runtime
+- `starrylib/`: functions that work without the runtime
 - `thirdparty/`: any dependencies used by starryrt
 
-Starrylib can be used by any project by just copy and pasting it, since it only depends on `core:*`, `vendor:stb/image`, and `vendor:compress/lz4`.
+Starrylib can be used by any project by just downloading it, since it only depends on the Odin standard libraries.
 If you want the full engine, you need to copy both `starryrt/`, `starrylib/`, and `thirdparty/`.
