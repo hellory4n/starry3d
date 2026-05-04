@@ -12,6 +12,7 @@ You need these installed:
         - Fedora: `sudo dnf install wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
         - Arch: `sudo pacman -S glfw` should pull all other dependencies
 - [Odin](https://odin-lang.org) v2026.04
+- [Slang shader compiler](https://shader-slang.org/)
 - [Just command runner](https://github.com/casey/just)
 
 ## Building

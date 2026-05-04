@@ -3,6 +3,7 @@
 
 *.bin
 *.exe
+*.pdb
 
 # engine garbage
 log.txt

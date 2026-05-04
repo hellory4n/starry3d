@@ -4,6 +4,8 @@ import st "../starrylib"
 import "core:log"
 import "core:mem"
 import "core:time"
+import "gpu"
+import "vendor:glfw"
 
 @(private)
 engine: struct {
@@ -58,6 +60,16 @@ run :: proc(
 	window := open_window(app_name, width, height, resizable = true, high_dpi = true)
 	defer close_window(window)
 
+	gpu.new_ctx(
+		glue = gpu.D3D11_Glue{hwnd = glfw.GetWin32Window(main_window().glfw)},
+		app_name = app_name,
+		app_version = app_version,
+		engine_name = "Starry",
+		engine_version = {st.VERSION_MAJOR, st.VERSION_MINOR, st.VERSION_PATCH},
+	)
+	defer gpu.free_ctx()
+
+	// Chukabanga!
 	if init_proc != nil do init_proc()
 	defer if free_proc != nil do free_proc()
 
