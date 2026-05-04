@@ -1,7 +1,7 @@
 package model
 
 import "core:testing"
-import stlib ".."
+import st ".."
 
 @(test)
 t_start_must_be_smaller_than_end :: proc(t: ^testing.T)
@@ -14,7 +14,7 @@ t_start_must_be_smaller_than_end :: proc(t: ^testing.T)
 t_init_small :: proc(t: ^testing.T)
 {
 	m, err := new_empty(start = {-4, -4, -4}, end = {4, 4, 4})
-	defer destroy(&m)
+	defer free_model(&m)
 	testing.expect(t, err == .OK)
 	testing.expect(t, m.start == {-4, -4, -4})
 	testing.expect(t, m.end == {4, 4, 4})
@@ -25,7 +25,7 @@ t_init_small :: proc(t: ^testing.T)
 t_init_with_negative_coords :: proc(t: ^testing.T)
 {
 	m, err := new_empty(start = {-12, -12, -12}, end = {12, 12, 12})
-	defer destroy(&m)
+	defer free_model(&m)
 	testing.expect(t, err == .OK)
 	testing.expect(t, m.start == {-12, -12, -12})
 	testing.expect(t, m.end == {12, 12, 12})
@@ -39,7 +39,7 @@ t_init_with_negative_coords :: proc(t: ^testing.T)
 t_out_of_bounds :: proc(t: ^testing.T)
 {
 	m, err := new_empty(start = {-8, -8, -8}, end = {8, 8, 8})
-	defer destroy(&m)
+	defer free_model(&m)
 	testing.expect(t, err == .OK)
 
 	outside := [][3]i32 {
@@ -69,7 +69,7 @@ t_out_of_bounds :: proc(t: ^testing.T)
 t_empty_voxel :: proc(t: ^testing.T)
 {
 	m, err := new_empty(start = {-8, -8, -8}, end = {8, 8, 8})
-	defer destroy(&m)
+	defer free_model(&m)
 	testing.expect(t, err == .OK)
 
 	pos := [3]i32{3, 4, -2}
@@ -86,7 +86,7 @@ t_empty_voxel :: proc(t: ^testing.T)
 t_get_set :: proc(t: ^testing.T)
 {
 	m, err := new_empty(start = {-32, -32, -32}, end = {32, 32, 32})
-	defer destroy(&m)
+	defer free_model(&m)
 	testing.expect(t, err == .OK)
 
 	pos := [3]i32{-17, 9, 22}
@@ -107,7 +107,7 @@ t_get_set :: proc(t: ^testing.T)
 t_remove :: proc(t: ^testing.T)
 {
 	m, err := new_empty(start = {-16, -16, -16}, end = {16, 16, 16})
-	defer destroy(&m)
+	defer free_model(&m)
 	testing.expect(t, err == .OK)
 
 	pos := [3]i32{4, -3, 10}
@@ -125,7 +125,7 @@ t_remove :: proc(t: ^testing.T)
 t_iterator_empty :: proc(t: ^testing.T)
 {
 	m, err := new_empty(start = {0, 0, 0}, end = {8, 8, 8})
-	defer destroy(&m)
+	defer free_model(&m)
 	testing.expect(t, err == .OK)
 
 	iter := iterator(&m)
@@ -137,7 +137,7 @@ t_iterator_empty :: proc(t: ^testing.T)
 t_iterator_no_solid_voxels :: proc(t: ^testing.T)
 {
 	m, err := new_empty(start = {-8, -8, -8}, end = {8, 8, 8})
-	defer destroy(&m)
+	defer free_model(&m)
 	testing.expect(t, err == .OK)
 
 	pos := [3]i32{1, 1, -1}
@@ -156,7 +156,7 @@ t_iterator_no_solid_voxels :: proc(t: ^testing.T)
 t_iterator_negative_and_boundaries :: proc(t: ^testing.T)
 {
 	m, _ := new_empty(start = {-12, -12, -12}, end = {-5, -5, -5})
-	defer destroy(&m)
+	defer free_model(&m)
 
 	positions := [][3]i32{{-12, -12, -12}, {-8, -8, -8}, {-6, -6, -6}}
 
@@ -182,7 +182,7 @@ t_iterator_negative_and_boundaries :: proc(t: ^testing.T)
 t_iterator_one_voxel_one_prop :: proc(t: ^testing.T)
 {
 	m, _ := new_empty(start = {-16, -16, -16}, end = {16, 16, 16})
-	defer destroy(&m)
+	defer free_model(&m)
 
 	target := [3]i32{5, -7, 12}
 	set_voxel(&m, target, RGBA_TAG, 0xFF00FF00)
@@ -202,7 +202,7 @@ t_iterator_one_voxel_one_prop :: proc(t: ^testing.T)
 t_iterator_one_voxel_multiple_props :: proc(t: ^testing.T)
 {
 	m, _ := new_empty(start = {0, 0, 0}, end = {15, 15, 15})
-	defer destroy(&m)
+	defer free_model(&m)
 
 	pos := [3]i32{4, 4, 4}
 	set_voxel(&m, pos, RGBA_TAG, 0xFF336699)
@@ -210,7 +210,7 @@ t_iterator_one_voxel_multiple_props :: proc(t: ^testing.T)
 	set_voxel(&m, pos, 77, 12345678)
 
 	Collected_Crap :: struct {
-		tag:     stlib.Tag,
+		tag:     st.Tag,
 		payload: Payload,
 	}
 	collected: [dynamic]Collected_Crap
@@ -224,7 +224,7 @@ t_iterator_one_voxel_multiple_props :: proc(t: ^testing.T)
 
 	testing.expect(t, len(collected) == 3)
 
-	found_tags: map[stlib.Tag]Payload
+	found_tags: map[st.Tag]Payload
 	defer delete(found_tags)
 	for item in collected {
 		found_tags[item.tag] = item.payload
@@ -269,7 +269,7 @@ new_testing_model :: proc(t: ^testing.T) -> Model
 	// test more than 1 tag
 	testing.expect_value(
 		t,
-		set_voxel(&m, {0, 2, 0}, stlib.tag("Di?h"), 0x69696969),
+		set_voxel(&m, {0, 2, 0}, st.tag("Di?h"), 0x69696969),
 		Set_Voxel_Error.OK,
 	)
 

@@ -9,7 +9,7 @@ import model ".."
 t_write :: proc(t: ^testing.T)
 {
 	m := model.new_testing_model(t)
-	defer model.destroy(&m)
+	defer model.free_model(&m)
 
 	oserr := os.make_directory_all("testout")
 	if oserr != .Exist {

@@ -9,7 +9,7 @@ import "core:mem"
 import "core:os"
 import "vendor:compress/lz4"
 import model ".."
-import stlib "../.."
+import st "../.."
 
 // TODO this might be a shitty reference implementation because it heavily depends
 // on model.Model working the way it works
@@ -19,7 +19,7 @@ MAJOR_VERSION :: u8(0)
 MINOR_VERSION :: u8(6)
 
 // usage not recommended unless you need extensions
-Raw_Metadata :: map[stlib.Tag][]byte
+Raw_Metadata :: map[st.Tag][]byte
 
 Metadata :: union #no_nil {
 	Standard_Metadata,
@@ -35,9 +35,9 @@ Compression :: enum u8 {
 	NONE = 255,
 }
 
-SIZE_METATAG := stlib.tag("size")
-COMPRESSION_METATAG := stlib.tag("cmps")
-STARRY_BOUNDS_METATAG := stlib.tag("stBn")
+SIZE_METATAG := st.tag("size")
+COMPRESSION_METATAG := st.tag("cmps")
+STARRY_BOUNDS_METATAG := st.tag("stBn")
 
 Write_Error :: enum {
 	OK,
@@ -77,8 +77,8 @@ write_to_file :: proc(
 
 	// header
 	os.write_string(file, MAGIC) or_return
-	stlib.write_int_to_file(file, MAJOR_VERSION) or_return
-	stlib.write_int_to_file(file, MINOR_VERSION) or_return
+	st.write_int_to_file(file, MAJOR_VERSION) or_return
+	st.write_int_to_file(file, MINOR_VERSION) or_return
 
 	// metadata section
 	os.write_string(file, "metadata") or_return
@@ -89,33 +89,33 @@ write_to_file :: proc(
 		if md.compression_algorithm != .NONE {
 			count += 1
 		}
-		stlib.write_int_to_file(file, u32le(count))
+		st.write_int_to_file(file, u32le(count))
 
 		// size attr
 		if glm.any(glm.lessThanEqual(model.size, [3]i32{0, 0, 0})) {
 			return .INVALID_SIZE
 		}
 		os.write(file, SIZE_METATAG[:]) or_return
-		stlib.write_int_to_file(file, u32le(12)) or_return // len
-		stlib.write_int_to_file(file, u32le(model.size.x)) or_return
-		stlib.write_int_to_file(file, u32le(model.size.y)) or_return
-		stlib.write_int_to_file(file, u32le(model.size.z)) or_return
+		st.write_int_to_file(file, u32le(12)) or_return // len
+		st.write_int_to_file(file, u32le(model.size.x)) or_return
+		st.write_int_to_file(file, u32le(model.size.y)) or_return
+		st.write_int_to_file(file, u32le(model.size.z)) or_return
 
 		// starry bounds attribute
 		os.write(file, STARRY_BOUNDS_METATAG[:]) or_return
-		stlib.write_int_to_file(file, u32le(24)) or_return // len
-		stlib.write_int_to_file(file, u32le(model.start.x)) or_return
-		stlib.write_int_to_file(file, u32le(model.start.y)) or_return
-		stlib.write_int_to_file(file, u32le(model.start.z)) or_return
-		stlib.write_int_to_file(file, u32le(model.end.x)) or_return
-		stlib.write_int_to_file(file, u32le(model.end.y)) or_return
-		stlib.write_int_to_file(file, u32le(model.end.z)) or_return
+		st.write_int_to_file(file, u32le(24)) or_return // len
+		st.write_int_to_file(file, u32le(model.start.x)) or_return
+		st.write_int_to_file(file, u32le(model.start.y)) or_return
+		st.write_int_to_file(file, u32le(model.start.z)) or_return
+		st.write_int_to_file(file, u32le(model.end.x)) or_return
+		st.write_int_to_file(file, u32le(model.end.y)) or_return
+		st.write_int_to_file(file, u32le(model.end.z)) or_return
 
 		// compression attr
 		if md.compression_algorithm != .NONE {
 			os.write(file, COMPRESSION_METATAG[:]) or_return
-			stlib.write_int_to_file(file, u32le(1)) or_return // len
-			stlib.write_int_to_file(file, u8(md.compression_algorithm))
+			st.write_int_to_file(file, u32le(1)) or_return // len
+			st.write_int_to_file(file, u8(md.compression_algorithm))
 		}
 
 	case Raw_Metadata:
@@ -123,11 +123,11 @@ write_to_file :: proc(
 			return Write_Error.MISSING_SIZE_META_ATTRIBUTE
 		}
 
-		stlib.write_int_to_file(file, u32le(len(md))) or_return
+		st.write_int_to_file(file, u32le(len(md))) or_return
 		for tag, val in md {
 			tag := tag
 			os.write(file, tag[:]) or_return
-			stlib.write_int_to_file(file, u32le(len(val))) or_return
+			st.write_int_to_file(file, u32le(len(val))) or_return
 			os.write(file, val) or_return
 		}
 	}
@@ -148,7 +148,7 @@ write_to_file :: proc(
 	switch compression {
 	case .NONE:
 		// it's very convenient when you're the one that designed the format
-		stlib.write_int_to_file(file, u32le(stlib.area(model.size))) or_return
+		st.write_int_to_file(file, u32le(st.area(model.size))) or_return
 		os.write_slice(file, model.solid) or_return
 
 	case .LZ4:
@@ -168,7 +168,7 @@ write_to_file :: proc(
 		}
 
 		compressed := dst[:compressed_size]
-		stlib.write_int_to_file(file, u32le(compressed_size)) or_return
+		st.write_int_to_file(file, u32le(compressed_size)) or_return
 		os.write(file, compressed) or_return
 	}
 
@@ -185,7 +185,7 @@ write_to_file :: proc(
 
 		switch compression {
 		case .NONE:
-			stlib.write_int_to_file(file, u32le(stlib.area(model.size) * size_of(u32))) or_return
+			st.write_int_to_file(file, u32le(st.area(model.size) * size_of(u32))) or_return
 			os.write_slice(file, payloads) or_return
 
 		case .LZ4:
@@ -205,7 +205,7 @@ write_to_file :: proc(
 			}
 
 			compressed := dst[:compressed_size]
-			stlib.write_int_to_file(file, u32le(compressed_size)) or_return
+			st.write_int_to_file(file, u32le(compressed_size)) or_return
 			os.write(file, compressed) or_return
 		}
 	}
@@ -260,7 +260,7 @@ load_from_file :: proc(
 		err = .CORRUPTED_FILE
 	}
 
-	raw_solid_mask_len := stlib.read_int_from_file(file, u32le) or_return
+	raw_solid_mask_len := st.read_int_from_file(file, u32le) or_return
 	raw_solid_mask := make([]byte, raw_solid_mask_len, context.temp_allocator)
 	os.read(file, raw_solid_mask) or_return
 
@@ -282,15 +282,15 @@ load_from_file :: proc(
 	}
 
 	// attrdata sections
-	for !(stlib.is_file_at_eof(file) or_return) {
+	for !(st.is_file_at_eof(file) or_return) {
 		os.read(file, magic[:]) or_return
 		if mem.compare(magic[:], transmute([]byte)string("attrdata")) != 0 {
 			err = .CORRUPTED_FILE
 		}
 
-		tag: stlib.Tag
+		tag: st.Tag
 		os.read(file, tag[:]) or_return
-		raw_data_len := stlib.read_int_from_file(file, u32le) or_return
+		raw_data_len := st.read_int_from_file(file, u32le) or_return
 		raw_attr_data := make([]byte, raw_data_len, context.temp_allocator)
 		os.read(file, raw_attr_data) or_return
 
@@ -386,14 +386,14 @@ read_header_and_meta :: proc(
 		return
 	}
 
-	meta_attr_count := stlib.read_int_from_file(file, u32le) or_return
+	meta_attr_count := st.read_int_from_file(file, u32le) or_return
 	meta = make(Raw_Metadata, allocator)
 	reserve(&meta, meta_attr_count)
 
 	for _ in 0 ..< meta_attr_count {
-		tag: stlib.Tag
+		tag: st.Tag
 		os.read(file, tag[:]) or_return
-		length := stlib.read_int_from_file(file, u32le) or_return
+		length := st.read_int_from_file(file, u32le) or_return
 
 		payload := make([]byte, length, allocator)
 		os.read(file, payload) or_return

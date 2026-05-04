@@ -20,15 +20,22 @@ VERSION_PATCH :: 0
 
 // A short string used in many places to uniquely identify something.
 //
-// Note that if creating those things is fully automatic, it's usually better to use an incrementing
-// 32-bit index. For example:
-// - layers, model attributes, etc: uses human-assigned tags
+// Note that if creating those things is fully automatic, it's usually better to use an
+// incrementing 32-bit index. For example:
+// - model attributes, etc: uses human-assigned tags
 // - handles: fully handled by the engine on its own, doesn't need to be human-readable
 Tag :: distinct [4]byte
 
-// `stlib.tag("crap")` looks nicer than `[4]stlib.Tag{'c', 'r', 'a', 'p'}`
-tag :: #force_inline proc "contextless" (src: $T) -> Tag
-	where intrinsics.type_is_string(T)
+// `st.tag("crap")` looks nicer than `[4]st.Tag{'c', 'r', 'a', 'p'}`
+tag :: #force_inline proc "contextless" (src: $T) -> Tag where intrinsics.type_is_string(T)
 {
 	return Tag{src[0], src[1], src[2], src[3]}
+}
+
+// Converts a tag to a readable string
+tag_str :: #force_inline proc(src: Tag) -> string
+{
+	// you probably don't need an allocation but idk
+	bytes := make([]byte, 4, context.temp_allocator)
+	return string(bytes)
 }

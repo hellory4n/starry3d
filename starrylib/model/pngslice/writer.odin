@@ -4,15 +4,14 @@ import "base:runtime"
 import "core:c"
 import "core:os"
 import model ".."
-// fuck dyslexic people
 import stbi "vendor:stb/image"
-import stlib "../.."
+import st "../.."
 
 // flattens the model into an image of 8-bit red, green, blue, and alpha quadruplets. assumes
 // the model is valid. you must `delete()` the returned buffer yourself.
 flatten_model :: proc(
 	m: ^model.Model,
-	color_tag: stlib.Tag = model.RGBA_TAG,
+	color_tag: st.Tag = model.RGBA_TAG,
 	allocator := context.allocator,
 ) -> (
 	buffer: []u8,
@@ -33,7 +32,7 @@ flatten_model :: proc(
 					continue
 				}
 
-				color := stlib.unpack_rgba_from_u32(val)
+				color := st.unpack_rgba_from_u32(val)
 				buffer[i] = color.r
 				buffer[i + 1] = color.g
 				buffer[i + 2] = color.b
@@ -49,7 +48,7 @@ flatten_model :: proc(
 write_to_file :: proc(
 	path: string,
 	m: ^model.Model,
-	color_tag: stlib.Tag = model.RGBA_TAG,
+	color_tag: st.Tag = model.RGBA_TAG,
 	allocator := context.allocator,
 ) -> (
 	err: os.Error,

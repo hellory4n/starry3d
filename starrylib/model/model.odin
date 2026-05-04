@@ -2,21 +2,21 @@ package model
 
 import glm "core:math/linalg/glsl"
 import "core:mem"
-import stlib ".."
+import st ".."
 
 Payload :: u32
 
 Attribute :: struct {
-	tag:     stlib.Tag,
+	tag:     st.Tag,
 	payload: Payload,
 }
 
 // The standard color tag
-RGBA_TAG := stlib.tag("rgba")
+RGBA_TAG := st.tag("rgba")
 
 Model :: struct {
 	allocator:   mem.Allocator,
-	data:        map[stlib.Tag][]Payload,
+	data:        map[st.Tag][]Payload,
 	solid:       []b8,
 	start:       [3]i32,
 	end:         [3]i32,
@@ -58,17 +58,17 @@ new_empty :: proc(
 	// make a smaller slice from that buffer, and then disable bounds checks
 	alerr: mem.Allocator_Error
 
-	model.solid, alerr = make([]b8, stlib.area(model.size), allocator)
+	model.solid, alerr = make([]b8, st.area(model.size), allocator)
 	if alerr == .Out_Of_Memory {
 		err = .OUT_OF_MEMORY
 		return
 	}
 
-	model.data = make(map[stlib.Tag][]Payload, allocator)
+	model.data = make(map[st.Tag][]Payload, allocator)
 	return
 }
 
-destroy :: proc(model: ^Model)
+free_model :: proc(model: ^Model)
 {
 	delete(model.solid, model.allocator)
 	for _, payload in model.data {
@@ -90,16 +90,16 @@ is_out_of_bounds :: #force_inline proc(model: ^Model, pos: [3]i32) -> bool
 // unable to get the data (out of bounds, empty voxel, or undefined tag), the default value
 // will be returned instead. the returned data may be interpreted any way you'd like (through
 // `transmute`) as long as it fits in 32 bits.
-get_voxel :: proc(model: ^Model, pos: [3]i32, tag: stlib.Tag) -> (payload: Payload, solid: bool)
+get_voxel :: proc(model: ^Model, pos: [3]i32, tag: st.Tag) -> (payload: Payload, solid: bool)
 {
 	if is_out_of_bounds(model, pos) {
 		solid = false
 		return
 	}
-	solid = bool(model.solid[stlib.flatten_3d_idx(model.size, pos - model.start)])
+	solid = bool(model.solid[st.flatten_3d_idx(model.size, pos - model.start)])
 
 	attr_list, ok := model.data[tag]
-	payload = attr_list[stlib.flatten_3d_idx(model.size, pos - model.start)] if ok else 0
+	payload = attr_list[st.flatten_3d_idx(model.size, pos - model.start)] if ok else 0
 	return
 }
 
@@ -110,32 +110,32 @@ Set_Voxel_Error :: enum {
 }
 
 // sets a voxel's attribute to a value (must be 32 bits), may allocate
-set_voxel :: proc(model: ^Model, pos: [3]i32, tag: stlib.Tag, value: Payload) -> (err: Set_Voxel_Error)
+set_voxel :: proc(model: ^Model, pos: [3]i32, tag: st.Tag, value: Payload) -> (err: Set_Voxel_Error)
 {
 	if is_out_of_bounds(model, pos) {
 		err = .OUT_OF_BOUNDS
 		return
 	}
 
-	if !model.solid[stlib.flatten_3d_idx(model.size, pos - model.start)] {
-		model.solid[stlib.flatten_3d_idx(model.size, pos - model.start)] = true
+	if !model.solid[st.flatten_3d_idx(model.size, pos - model.start)] {
+		model.solid[st.flatten_3d_idx(model.size, pos - model.start)] = true
 		model.voxel_count += 1
 	}
 
 	reserve_tag(model, tag) or_return
-	model.data[tag][stlib.flatten_3d_idx(model.size, pos - model.start)] = value
+	model.data[tag][st.flatten_3d_idx(model.size, pos - model.start)] = value
 	return
 }
 
 // internal bullshit you'll never use
-reserve_tag :: proc(model: ^Model, tag: stlib.Tag) -> (err: Set_Voxel_Error)
+reserve_tag :: proc(model: ^Model, tag: st.Tag) -> (err: Set_Voxel_Error)
 {
 	if tag in model.data {
 		return
 	}
 
 	alerr: mem.Allocator_Error
-	model.data[tag], alerr = make([]Payload, stlib.area(model.size), model.allocator)
+	model.data[tag], alerr = make([]Payload, st.area(model.size), model.allocator)
 	if alerr == .Out_Of_Memory {
 		err = .OUT_OF_MEMORY
 		return
@@ -152,9 +152,9 @@ remove_voxel :: proc(model: ^Model, pos: [3]i32) -> (was_solid: bool)
 		return
 	}
 
-	was_solid = bool(model.solid[stlib.flatten_3d_idx(model.size, pos - model.start)])
+	was_solid = bool(model.solid[st.flatten_3d_idx(model.size, pos - model.start)])
 	if was_solid {
-		model.solid[stlib.flatten_3d_idx(model.size, pos - model.start)] = false
+		model.solid[st.flatten_3d_idx(model.size, pos - model.start)] = false
 		model.voxel_count -= 1
 	}
 	return
@@ -165,7 +165,7 @@ is_voxel_solid :: proc(model: ^Model, pos: [3]i32) -> bool
 	if is_out_of_bounds(model, pos) {
 		return false
 	}
-	return bool(model.solid[stlib.flatten_3d_idx(model.size, pos - model.start)])
+	return bool(model.solid[st.flatten_3d_idx(model.size, pos - model.start)])
 }
 
 is_voxel_empty :: proc(model: ^Model, pos: [3]i32) -> bool
@@ -189,12 +189,12 @@ iterator_next :: proc(
 	it: ^Iterator,
 ) -> (
 	pos: [3]i32,
-	tag: stlib.Tag,
+	tag: st.Tag,
 	payload: Payload,
 	ok: bool,
 )
 {
-	for it.vox_idx < stlib.area(it.model.size) {
+	for it.vox_idx < st.area(it.model.size) {
 		if !it.model.solid[it.vox_idx] {
 			it.attr_idx = 0
 			it.vox_idx += 1
@@ -206,7 +206,7 @@ iterator_next :: proc(
 		for this_tag, this_payload in it.model.data {
 			if i == it.attr_idx {
 				it.attr_idx += 1
-				return stlib.unflatten_3d_idx(it.model.size, it.vox_idx) +
+				return st.unflatten_3d_idx(it.model.size, it.vox_idx) +
 					it.model.start,
 					this_tag,
 					this_payload[it.vox_idx],
