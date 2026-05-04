@@ -298,34 +298,6 @@ window_set_title :: proc(window: ^Window, title: string)
 	glfw.SetWindowTitle(window.glfw, title_cstr)
 }
 
-Window_Backend :: enum {
-	UNKNOWN,
-	HEADLESS,
-	WIN32,
-	COCOA,
-	X11,
-	WAYLAND,
-}
-
-// returns the window system backend being used because that's not necessarily the same as the OS
-window_backend :: proc() -> Window_Backend
-{
-	switch glfw.GetPlatform() {
-	case glfw.PLATFORM_NULL:
-		return .HEADLESS
-	case glfw.PLATFORM_WIN32:
-		return .WIN32
-	case glfw.PLATFORM_COCOA:
-		return .COCOA
-	case glfw.PLATFORM_X11:
-		return .X11
-	case glfw.PLATFORM_WAYLAND:
-		return .WAYLAND
-	case:
-		return .UNKNOWN
-	}
-}
-
 // keyboard keys on your keyboard which is key. values are the same as GLFW.
 Key :: enum u32 {
 	INVALID         = 0,

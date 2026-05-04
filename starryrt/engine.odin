@@ -1,6 +1,8 @@
 package starryrt
 
+import st "../starrylib"
 import "core:log"
+import "core:mem"
 import "core:time"
 
 @(private)
@@ -30,8 +32,27 @@ run :: proc(
 		log.warnf("platform %s not officially supported", ODIN_PLATFORM_SUBTARGET)
 	}
 
+	lazy_logger, _ := st.new_lazy_logger()
+	context.logger = lazy_logger.logger
+	defer st.free_lazy_logger(&lazy_logger)
+
+	// we have valgrind at home
+	when ODIN_DEBUG {
+		track: mem.Tracking_Allocator
+		mem.tracking_allocator_init(&track, context.allocator)
+		context.allocator = mem.tracking_allocator(&track)
+
+		defer {
+			st.poor_mans_valgrind(track)
+			mem.tracking_allocator_destroy(&track)
+		}
+	}
+
+	log.infof("starry engine %s for %s", st.VERSION_STR, ODIN_OS)
 	engine.running = true
 	engine.start_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0
+	engine.windows = make([dynamic]^Window)
+	defer delete(engine.windows)
 
 	// setup required systems
 	window := open_window(app_name, width, height, resizable = true, high_dpi = true)
