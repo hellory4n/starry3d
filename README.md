@@ -3,12 +3,7 @@
 > [!WARNING]
 > Everything is on a half-broken state. I am only one man.
 
-The voxel graphics toolkit
-
-Engines can be massive. For these we have many projects:
-- `starryrt`: the big heavy engine and runtime
-- `starrylib`: functions that don't depend on the runtime
-- `sandbox`: test project for the engine
+The biggest most massive engine of all time.
 
 See the [development setup](./docs/dev_setup.md) for build instructions.
 

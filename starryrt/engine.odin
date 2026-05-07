@@ -1,6 +1,8 @@
 package starryrt
 
 import st "../starrylib"
+import "base:runtime"
+import "core:c"
 import "core:log"
 import "core:mem"
 import "core:time"
@@ -9,7 +11,10 @@ import "vendor:glfw"
 
 @(private)
 engine: struct {
+	ctx:          runtime.Context, // for callbacks
 	windows:      [dynamic]^Window,
+	device:       gpu.Device,
+	swapchain:    gpu.Swapchain,
 	start_time:   f64,
 	current_time: f64,
 	prev_time:    f64,
@@ -52,22 +57,59 @@ run :: proc(
 
 	log.infof("starry engine %s for %s", st.VERSION_STR, ODIN_OS)
 	engine.running = true
+	engine.ctx = context
 	engine.start_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0
 	engine.windows = make([dynamic]^Window)
 	defer delete(engine.windows)
 
 	// setup required systems
-	window := open_window(app_name, width, height, resizable = true, high_dpi = true)
+	window := open_window(
+		app_name,
+		width,
+		height,
+		resizable = true,
+		high_dpi = true,
+		setup_gl_ctx = true,
+	)
 	defer close_window(window)
 
-	gpu.new_ctx(
-		glue = gpu.D3D11_Glue{hwnd = glfw.GetWin32Window(main_window().glfw)},
-		app_name = app_name,
-		app_version = app_version,
-		engine_name = "Starry",
-		engine_version = {st.VERSION_MAJOR, st.VERSION_MINOR, st.VERSION_PATCH},
+	// gpu crap
+	// TODO clean up
+	ok: bool
+	engine.device, ok = gpu.new_device(gpu.Gl_Init_Glue {
+		get_proc_address_proc = proc(p: rawptr, name: cstring)
+		{
+			_proc := cast(^rawptr)p
+			_proc^ = glfw.GetProcAddress(name)
+		},
+	})
+	if !ok {
+		log.panic("couldn't create GPU device")
+	}
+	defer gpu.free_device(engine.device)
+
+	engine.swapchain = gpu.new_swapchain(
+		engine.device,
+		framebuffer_sizeu(),
+		gpu.Gl_Swapchain_Glue {
+			window = main_window(),
+			swap_buffers_proc = proc(w: rawptr)
+			{
+				window := cast(^Window)w
+				glfw.SwapBuffers(window.glfw)
+			},
+		},
 	)
-	defer gpu.free_ctx()
+	defer gpu.free_swapchain(engine.swapchain)
+
+	glfw.SetFramebufferSizeCallback(
+		main_window().glfw,
+		proc "c" (window: glfw.WindowHandle, width, height: c.int)
+		{
+			context = engine.ctx // shut up
+			gpu.resize_swapchain(engine.swapchain, {u32(width), u32(height)})
+		},
+	)
 
 	// Chukabanga!
 	if init_proc != nil do init_proc()
@@ -81,6 +123,9 @@ run :: proc(
 		}
 		poll_events()
 
+		// gpuing it
+		gpu.begin_frame(engine.device)
+
 		// timing it
 		engine.current_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0
 		delta_time := engine.current_time - engine.prev_time
@@ -88,6 +133,10 @@ run :: proc(
 
 		if update_proc != nil do update_proc(f32(delta_time))
 		if render_proc != nil do render_proc()
+
+		// gpuing it
+		gpu.end_frame(engine.device)
+		gpu.present_swapchain(engine.device, engine.swapchain)
 	}
 }
 
@@ -95,4 +144,16 @@ run :: proc(
 now_in_seconds :: proc() -> f64
 {
 	return engine.current_time - engine.start_time
+}
+
+// Returns the current GPU device
+get_gpu :: proc() -> gpu.Device
+{
+	return engine.device
+}
+
+// Returns the current swapchain
+get_swapchain :: proc() -> gpu.Swapchain
+{
+	return engine.swapchain
 }

@@ -1,6 +1,7 @@
 package sandbox
 
 import strt "../starryrt"
+import gpu "../starryrt/gpu"
 import "core:fmt"
 
 new_app :: proc()
@@ -20,6 +21,15 @@ update_app :: proc(dt: f32)
 	}
 }
 
+render_app :: proc()
+{
+	dev := strt.get_gpu()
+	swap := strt.get_swapchain()
+
+	gpu.begin_render_pass(dev, swap, [4]f32{1, 0, 0, 1})
+	gpu.end_render_pass(dev)
+}
+
 main :: proc()
 {
 	strt.run(
@@ -28,5 +38,6 @@ main :: proc()
 		init_proc = new_app,
 		free_proc = free_app,
 		update_proc = update_app,
+		render_proc = render_app,
 	)
 }

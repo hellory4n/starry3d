@@ -26,7 +26,13 @@ While you can run `odin build`/`odin run` like you can with any other Odin proje
 The Starry engine is split into 3 main directories:
 - `starryrt/`: the big heavy engine and runtime
 - `starrylib/`: functions that work without the runtime
-- `thirdparty/`: any dependencies used by starryrt
 
-Starrylib can be used by any project by just downloading it, since it only depends on the Odin standard libraries.
-If you want the full engine, you need to copy both `starryrt/`, `starrylib/`, and `thirdparty/`.
+`starryrt/` depends on `starrylib`, so you must download both side by side, e.g.:
+
+```plaintext
+game/
+├─ thirdparty/
+│  ├─ starrylib/
+│  ├─ starryrt/
+├─ main.odin
+```

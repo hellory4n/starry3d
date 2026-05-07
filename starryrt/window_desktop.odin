@@ -46,7 +46,7 @@ open_window :: proc(
 		glfw.WindowHint(glfw.CLIENT_API, glfw.OPENGL_API)
 		glfw.WindowHint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 		glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 4)
-		glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 5)
+		glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 3)
 	} else {
 		glfw.WindowHint(glfw.CLIENT_API, glfw.NO_API)
 	}
