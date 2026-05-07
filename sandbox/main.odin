@@ -4,14 +4,29 @@ import strt "../starryrt"
 import gpu "../starryrt/gpu"
 import "core:fmt"
 
+app: struct {
+	pipeline: gpu.Pipeline,
+}
+
 new_app :: proc()
 {
-	fmt.println("hehe")
+	dev := strt.get_gpu()
+
+	vert := gpu.new_shader(dev, #load("tri.vert"), .VERTEX)
+	defer gpu.free_shader(vert)
+
+	frag := gpu.new_shader(dev, #load("tri.frag"), .FRAGMENT)
+	defer gpu.free_shader(frag)
+
+	app.pipeline = gpu.new_pipeline(
+		dev,
+		shaders = gpu.Render_Shaders{vertex = vert, fragment = frag},
+	)
 }
 
 free_app :: proc()
 {
-	fmt.println("hihi")
+	gpu.free_pipeline(app.pipeline)
 }
 
 update_app :: proc(dt: f32)
@@ -26,7 +41,11 @@ render_app :: proc()
 	dev := strt.get_gpu()
 	swap := strt.get_swapchain()
 
-	gpu.begin_render_pass(dev, swap, [4]f32{1, 0, 0, 1})
+	gpu.begin_render_pass(dev, swap, [4]f32{0, 0, 0, 1})
+
+	gpu.bind_pipeline(dev, app.pipeline)
+	gpu.draw(dev, vertex_count = 3)
+
 	gpu.end_render_pass(dev)
 }
 

@@ -1,7 +1,7 @@
 /*
 # Starrygpu
 
-The non-vexing postmodern graphics API.
+The non-vexing low-level postmodern graphics API.
 
 Starrygpu is also known as Emerson Victor Kyler Gandalf Joel Pablo Daquavious II Sr. Jr. OBE (🇪🇸 Émerez Víctor Quejador Gandalf Joel Pablo Decavio II Sr. Jr. OIB) (Joel Pablo for short)
 
@@ -29,7 +29,8 @@ Device :: distinct hm.Handle32
 
 @(private)
 Gl_Device :: struct {
-	handle: Device,
+	handle:           Device,
+	current_pipeline: Gl_Pipeline,
 }
 
 Swapchain :: distinct hm.Handle32
@@ -45,7 +46,12 @@ Pipeline :: distinct hm.Handle32
 
 @(private)
 Gl_Pipeline :: struct {
-	handle: Pipeline,
+	handle:     Pipeline,
+	id:         u32,
+	topology:   Topology,
+	front_face: Winding_Order,
+	cull:       Cull_Face,
+	compute:    bool,
 }
 
 Shader :: distinct hm.Handle32
@@ -53,6 +59,7 @@ Shader :: distinct hm.Handle32
 @(private)
 Gl_Shader :: struct {
 	handle: Shader,
+	id:     u32,
 }
 
 Buffer :: distinct hm.Handle32
@@ -85,15 +92,6 @@ global: struct {
 	buffers:    hm.Static_Handle_Map(1024, Gl_Buffer, Buffer),
 	textures:   hm.Static_Handle_Map(1024, Gl_Texture, Texture),
 	samplers:   hm.Static_Handle_Map(1024, Gl_Sampler, Sampler),
-}
-
-Resource_View :: struct {
-	resource: union {
-		Buffer,
-		Texture,
-	},
-	offset:   u32,
-	size:     u32,
 }
 
 Gl_Init_Glue :: struct {
@@ -219,4 +217,217 @@ begin_render_pass :: proc(dev: Device, swapchain: Swapchain, clear_color := [4]f
 end_render_pass :: proc(dev: Device)
 {
 	// noop in opengl
+}
+
+Shader_Stage :: enum {
+	VERTEX,
+	FRAGMENT,
+	COMPUTE,
+}
+
+// `native_code` depends on the backend:
+// - GLSL on OpenGL
+new_shader :: proc(
+	dev: Device,
+	native_code: []byte,
+	stage: Shader_Stage,
+	entry_point := "main",
+) -> (
+	shader: Shader,
+	ok: bool,
+) #optional_ok
+{
+	glstage: u32
+	switch stage {
+	case .VERTEX:
+		glstage = gl.VERTEX_SHADER
+	case .FRAGMENT:
+		glstage = gl.FRAGMENT_SHADER
+	case .COMPUTE:
+		glstage = gl.COMPUTE_SHADER
+	}
+
+	id := gl.CreateShader(glstage)
+	mate := cstring(raw_data(native_code))
+	gl.ShaderSource(id, 1, &mate, nil)
+	gl.CompileShader(id)
+
+	success: i32 = ---
+	gl.GetShaderiv(id, gl.COMPILE_STATUS, &success)
+
+	if success == 0 {
+		info_log_buf: [1024]byte
+		gl.GetShaderInfoLog(id, len(info_log_buf), nil, raw_data(info_log_buf[:]))
+		info_log := cstring(raw_data(info_log_buf[:]))
+
+		log.errorf("compiling shader failed: %s", info_log)
+		return shader, false
+	}
+
+	return hm.add(&global.shaders, Gl_Shader{id = id})
+}
+
+free_shader :: proc(shader: Shader)
+{
+	s, ok := hm.get(&global.shaders, shader)
+	assert(ok)
+
+	gl.DeleteShader(s.id)
+	hm.remove(&global.shaders, shader)
+}
+
+Render_Shaders :: struct {
+	vertex:   Shader,
+	fragment: Shader,
+}
+
+Shaders :: union {
+	Render_Shaders,
+}
+
+Topology :: enum {
+	// Vertices 0, 1, and 2 form a triangle. Vertices 3, 4, and 5 form a triangle. And so on.
+	TRIANGLE_LIST,
+	/// Every group of 3 adjacent vertices forms a triangle. The face direction of the strip is
+	/// determined by the winding of the first triangle. Each successive triangle will have its
+	/// effective face order reversed, so the system compensates for that by testing it in the
+	/// opposite way. A vertex stream of n length will generate n-2 triangles.
+	TRIANGLE_STRIP,
+	/// The first vertex is always held fixed. From there on, every group of 2 adjacent vertices
+	/// form a triangle with the first. So with a vertex stream, you get a list of triangles
+	/// like so: (0, 1, 2) (0, 2, 3), (0, 3, 4), etc. A vertex stream of n length will
+	/// generate n-2 triangles.
+	TRIANGLE_FAN,
+}
+
+Winding_Order :: enum {
+	CLOCKWISE,
+	COUNTER_CLOCKWISE,
+}
+
+Cull_Face :: enum {
+	NONE,
+	FRONT_FACE,
+	BACK_FACE,
+	FRONT_AND_BACK_FACES,
+}
+
+new_pipeline :: proc(
+	dev: Device,
+	shaders: Shaders,
+	topology := Topology.TRIANGLE_LIST,
+	front_face := Winding_Order.COUNTER_CLOCKWISE,
+	cull := Cull_Face.NONE,
+) -> (
+	pipeline: Pipeline,
+	ok: bool,
+) #optional_ok
+{
+	id: u32
+	compute: bool
+
+	switch s in shaders {
+	case Render_Shaders:
+		compute = false
+
+		vert, frag: ^Gl_Shader
+		vert, ok = hm.get(&global.shaders, s.vertex)
+		assert(ok)
+		frag, ok = hm.get(&global.shaders, s.fragment)
+		assert(ok)
+
+		id = gl.CreateProgram()
+		gl.AttachShader(id, vert.id)
+		gl.AttachShader(id, frag.id)
+		gl.LinkProgram(id)
+
+		success: i32 = ---
+		gl.GetProgramiv(id, gl.LINK_STATUS, &success)
+
+		if success == 0 {
+			info_log_buf: [1024]byte
+			gl.GetProgramInfoLog(id, len(info_log_buf), nil, raw_data(info_log_buf[:]))
+			info_log := cstring(raw_data(info_log_buf[:]))
+
+			log.errorf("compiling pipeline failed: %s", info_log)
+			return pipeline, false
+		}
+	}
+
+	return hm.add(
+			&global.pipelines,
+			Gl_Pipeline {
+				id = id,
+				topology = topology,
+				front_face = front_face,
+				cull = cull,
+				compute = compute,
+			},
+		),
+		true
+}
+
+free_pipeline :: proc(pipeline: Pipeline)
+{
+	p, ok := hm.get(&global.pipelines, pipeline)
+	assert(ok)
+
+	gl.DeleteProgram(p.id)
+	hm.remove(&global.pipelines, pipeline)
+}
+
+bind_pipeline :: proc(dev: Device, pipeline: Pipeline)
+{
+	p, ok1 := hm.get(&global.pipelines, pipeline)
+	assert(ok1)
+	d, ok2 := hm.get(&global.devices, dev)
+	assert(ok2)
+	d.current_pipeline = p^
+
+	gl.UseProgram(p.id)
+
+	if p.compute {
+		unimplemented("lnmao")
+	} else {
+		switch p.front_face {
+		case .CLOCKWISE:
+			gl.FrontFace(gl.CW)
+		case .COUNTER_CLOCKWISE:
+			gl.FrontFace(gl.CCW)
+		}
+
+		if p.cull == .NONE {
+			gl.Disable(gl.CULL_FACE)
+		} else {
+			gl.Enable(gl.CULL_FACE)
+			switch p.cull {
+			case .FRONT_FACE:
+				gl.CullFace(gl.FRONT)
+			case .BACK_FACE:
+				gl.CullFace(gl.BACK)
+			case .FRONT_AND_BACK_FACES:
+				gl.CullFace(gl.FRONT_AND_BACK)
+			case .NONE:
+				unreachable()
+			}
+		}
+	}
+}
+
+draw :: proc(dev: Device, vertex_count: u32, instance_count := u32(1), first_vertex := u32(0))
+{
+	d, ok := hm.get(&global.devices, dev)
+	assert(ok)
+
+	topology: u32
+	switch d.current_pipeline.topology {
+	case .TRIANGLE_LIST:
+		topology = gl.TRIANGLES
+	case .TRIANGLE_STRIP:
+		topology = gl.TRIANGLE_STRIP
+	case .TRIANGLE_FAN:
+		topology = gl.TRIANGLE_FAN
+	}
+
+	gl.DrawArraysInstanced(topology, i32(first_vertex), i32(vertex_count), i32(instance_count))
 }
