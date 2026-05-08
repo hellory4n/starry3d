@@ -3,6 +3,7 @@ package sandbox
 import strt "../starryrt"
 import gpu "../starryrt/gpu"
 import "core:fmt"
+import glm "core:math/linalg/glsl"
 
 app: struct {
 	pipeline: gpu.Pipeline,
@@ -44,6 +45,20 @@ render_app :: proc()
 	gpu.begin_render_pass(dev, swap, [4]f32{0, 0, 0, 1})
 
 	gpu.bind_pipeline(dev, app.pipeline)
+	Uniforms :: struct {
+		model: matrix[4, 4]f32 `gpu:"u_model"`,
+		view:  matrix[4, 4]f32 `gpu:"u_view"`,
+		proj:  matrix[4, 4]f32 `gpu:"u_proj"`,
+	}
+	gpu.set_uniforms(
+		dev,
+		Uniforms {
+			model = glm.identity(matrix[4, 4]f32),
+			view = glm.identity(matrix[4, 4]f32),
+			proj = glm.identity(matrix[4, 4]f32),
+		},
+	)
+
 	gpu.draw(dev, vertex_count = 3)
 
 	gpu.end_render_pass(dev)

@@ -137,6 +137,8 @@ run :: proc(
 		// gpuing it
 		gpu.end_frame(engine.device)
 		gpu.present_swapchain(engine.device, engine.swapchain)
+
+		free_all(context.temp_allocator)
 	}
 }
 
