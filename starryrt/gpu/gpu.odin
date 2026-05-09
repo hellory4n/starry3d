@@ -84,6 +84,7 @@ Texture :: distinct hm.Handle32
 @(private)
 Gl_Texture :: struct {
 	handle: Texture,
+	id:     u32,
 }
 
 Sampler :: distinct hm.Handle32
@@ -91,6 +92,7 @@ Sampler :: distinct hm.Handle32
 @(private)
 Gl_Sampler :: struct {
 	handle: Sampler,
+	id:     u32,
 }
 
 @(private)
@@ -573,6 +575,30 @@ draw :: proc(dev: Device, vertex_count: u32, instance_count := u32(1), first_ver
 //         proj:  matrix[4, 4]f32 `gpu:"u_proj"`
 // }
 // ```
+//
+// Supported types: (GLSL -> Odin)
+// - `float` -> `f32`
+// - `int` -> `i32`
+// - `uint` -> `u32`
+// - `vec2` -> `[2]f32`
+// - `ivec2` -> `[2]i32`
+// - `uvec2` -> `[2]u32`
+// - `vec3` -> `[3]f32`
+// - `ivec3` -> `[3]i32`
+// - `uvec3` -> `[3]u32`
+// - `vec4` -> `[4]f32`
+// - `ivec4` -> `[4]i32`
+// - `uvec4` -> `[4]u32`
+// - `mat2` -> `matrix[2, 2]f32`
+// - `mat3` -> `matrix[3, 3]f32`
+// - `mat4` -> `matrix[4, 4]f32`
+// - `mat2x3` -> `matrix[2, 3]f32`
+// - `mat3x2` -> `matrix[3, 2]f32`
+// - `mat2x4` -> `matrix[2, 4]f32`
+// - `mat4x2` -> `matrix[4, 2]f32`
+// - `mat3x4` -> `matrix[3, 4]f32`
+// - `mat4x3` -> `matrix[4, 3]f32`
+// - `sampler2D` -> `i32`
 set_uniforms :: proc(dev: Device, uniforms: $T) where intrinsics.type_is_struct(T)
 {
 	uniforms := uniforms
@@ -772,4 +798,146 @@ bind_storage_buffer :: proc(dev: Device, buffer: Buffer, slot: u32)
 	b.gltarget = gl.SHADER_STORAGE_BUFFER // TODO this is likely stupid but so is opengl
 	gl.BindBuffer(b.gltarget, b.id)
 	gl.BindBufferBase(b.gltarget, slot, b.id)
+}
+
+Texture_Format :: enum {
+	RGB_U8,
+	RGBA_U8,
+	RGB_F32,
+	RGBA_F32,
+}
+
+new_texture :: proc(
+	dev: Device,
+	size: [2]i32,
+	input_format: Texture_Format,
+	gpu_format: Texture_Format,
+	data: []byte,
+) -> Texture
+{
+	id: u32
+	gl.GenTextures(1, &id)
+	gl.BindTexture(gl.TEXTURE_2D, id)
+
+	gl_internal_format: i32
+	switch gpu_format {
+	case .RGB_U8:
+		gl_internal_format = gl.RGB8
+	case .RGBA_U8:
+		gl_internal_format = gl.RGBA8
+	case .RGB_F32:
+		gl_internal_format = gl.RGB32F
+	case .RGBA_F32:
+		gl_internal_format = gl.RGBA32F
+	}
+
+	gl_format: u32
+	switch input_format {
+	case .RGB_U8, .RGB_F32:
+		gl_format = gl.RGB
+	case .RGBA_U8, .RGBA_F32:
+		gl_format = gl.RGBA
+	}
+
+	gl_type: u32
+	switch input_format {
+	case .RGB_U8, .RGBA_U8:
+		gl_type = gl.UNSIGNED_BYTE
+	case .RGB_F32, .RGBA_F32:
+		gl_type = gl.FLOAT
+	}
+
+	gl.TexImage2D(
+		target = gl.TEXTURE_2D,
+		level = 0,
+		internalformat = gl_internal_format,
+		width = size.x,
+		height = size.y,
+		border = 0,
+		format = gl_format,
+		type = gl_type,
+		pixels = raw_data(data),
+	)
+
+	return hm.add(&global.textures, Gl_Texture{id = id})
+}
+
+free_texture :: proc(texture: Texture)
+{
+	t, ok := hm.get(&global.textures, texture)
+	assert(ok)
+
+	gl.DeleteTextures(1, &t.id)
+	hm.remove(&global.textures, texture)
+}
+
+// What should happen when texture coordinates go beyond 0-1. Example: https://learnopengl.com/img/getting-started/texture_wrapping.png
+Texture_Wrap :: enum {
+	TILE,
+	MIRRORED_TILE,
+	CLAMP_TO_EDGE,
+	CLAMP_TO_BORDER,
+}
+
+Texture_Filter :: enum {
+	NEAREST_NEIGHBOR,
+	BILINEAR_FILTER,
+}
+
+new_sampler :: proc(dev: Device, wrap: Texture_Wrap, filter: Texture_Filter) -> Sampler
+{
+	id: u32
+	gl.GenSamplers(1, &id)
+
+	switch wrap {
+	case .TILE:
+		gl.SamplerParameteri(id, gl.TEXTURE_WRAP_S, gl.REPEAT)
+		gl.SamplerParameteri(id, gl.TEXTURE_WRAP_T, gl.REPEAT)
+	case .MIRRORED_TILE:
+		gl.SamplerParameteri(id, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT)
+		gl.SamplerParameteri(id, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT)
+	case .CLAMP_TO_EDGE:
+		gl.SamplerParameteri(id, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+		gl.SamplerParameteri(id, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+	case .CLAMP_TO_BORDER:
+		gl.SamplerParameteri(id, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_BORDER)
+		gl.SamplerParameteri(id, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_BORDER)
+	}
+
+	switch filter {
+	case .NEAREST_NEIGHBOR:
+		gl.SamplerParameteri(id, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+		gl.SamplerParameteri(id, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	case .BILINEAR_FILTER:
+		gl.SamplerParameteri(id, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+		gl.SamplerParameteri(id, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	}
+
+	return hm.add(&global.samplers, Gl_Sampler{id = id})
+}
+
+free_sampler :: proc(sampler: Sampler)
+{
+	s, ok := hm.get(&global.samplers, sampler)
+	assert(ok)
+
+	gl.DeleteSamplers(1, &s.id)
+	hm.remove(&global.samplers, sampler)
+}
+
+bind_texture :: proc(dev: Device, texture: Texture, slot: u32)
+{
+	t, ok := hm.get(&global.textures, texture)
+	assert(ok)
+
+	gl.ActiveTexture(gl.TEXTURE0 + slot)
+	gl.BindTexture(gl.TEXTURE_2D, t.id)
+}
+
+bind_sampler :: proc(dev: Device, sampler: Sampler, slot: u32)
+{
+	s, ok := hm.get(&global.samplers, sampler)
+	assert(ok)
+
+	gl.BindSampler(slot, s.id)
 }

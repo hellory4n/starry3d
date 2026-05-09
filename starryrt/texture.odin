@@ -1,14 +1,18 @@
 package starryrt
 
 import hm "core:container/handle_map"
+import "core:image/png"
+import "core:image/jpeg"
 import "core:image"
 import "core:log"
+import "gpu"
 
 Texture :: distinct hm.Handle32
 
 Texture_Data :: struct {
 	handle: Texture,
 	img:    ^image.Image,
+	tex:    gpu.Texture,
 }
 
 // Forces a texture to be reloaded, ignoring if it's already in texture cache
@@ -21,8 +25,36 @@ reload_texture :: proc(path: string) -> (texture: Texture, ok: bool) #optional_o
 		log.errorf("couldn't load %q: %s", path, err)
 		return texture, false
 	}
+	defer if !ok {
+		image.destroy(img)
+	}
 
-	texture, ok = hm.add(&engine.textures, Texture_Data{img = img})
+	if img.depth != 8 {
+		unimplemented("bit depths other than 8")
+	}
+
+	format: gpu.Texture_Format
+	switch img.channels {
+	case 3:
+		format = .RGB_U8
+	case 4:
+		format = .RGBA_U8
+	case:
+		unimplemented("TODO grayscale image support")
+	}
+
+	gpu_texture := gpu.new_texture(
+		dev = get_gpu(),
+		size = {i32(img.width), i32(img.height)},
+		input_format = format,
+		gpu_format = .RGBA_U8,
+		data = img.pixels.buf[:],
+	)
+	defer if !ok {
+		gpu.free_texture(gpu_texture)
+	}
+
+	texture, ok = hm.add(&engine.textures, Texture_Data{img = img, tex = gpu_texture})
 	if !ok do return
 
 	engine.texture_cache[path] = texture
@@ -37,6 +69,9 @@ unload_texture :: proc(texture: Texture)
 	t, ok := hm.get(&engine.textures, texture)
 	assert(ok)
 
+	gpu.free_texture(t.tex)
+	// NOTE: the CPU-side image data could be deleted in reload_texture but it's not so
+	// that you can always fetch it who gives a shit
 	image.destroy(t.img)
 	hm.remove(&engine.textures, texture)
 }
@@ -98,4 +133,13 @@ texture_data :: proc(texture: Texture) -> []byte
 	assert(ok)
 
 	return t.img.pixels.buf[:]
+}
+
+// Returns the GPU handle for the texture.
+texture_gpu_handle :: proc(texture: Texture) -> gpu.Texture
+{
+	t, ok := hm.get(&engine.textures, texture)
+	assert(ok)
+
+	return t.tex
 }

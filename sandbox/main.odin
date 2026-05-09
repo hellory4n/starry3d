@@ -10,27 +10,30 @@ app: struct {
 	pipeline:      gpu.Pipeline,
 	vertex_buffer: gpu.Buffer,
 	index_buffer:  gpu.Buffer,
+	texture:       strt.Texture,
+	sampler:       gpu.Sampler,
 }
 
 Vertex :: struct {
-	pos:   [2]f32,
-	color: [3]f32,
+	pos: [2]f32,
+	uv:  [2]f32,
 }
 
 @(rodata)
 VERTICES := [?]Vertex {
-	Vertex{pos = {0.0, 0.5}, color = {1.0, 0.0, 0.0}},
-	Vertex{pos = {0.5, -0.5}, color = {0.0, 1.0, 0.0}},
-	Vertex{pos = {-0.5, -0.5}, color = {0.0, 0.0, 1.0}},
+	Vertex{pos = {0.0, 0.5}, uv = {0.5, 0.0}},
+	Vertex{pos = {0.5, -0.5}, uv = {1.0, 1.0}},
+	Vertex{pos = {-0.5, -0.5}, uv = {0.0, 1.0}},
 }
 
 @(rodata)
 INDICES := [?]u32{0, 1, 2}
 
 Uniforms :: struct {
-	model: matrix[4, 4]f32 `gpu:"u_model"`,
-	view:  matrix[4, 4]f32 `gpu:"u_view"`,
-	proj:  matrix[4, 4]f32 `gpu:"u_proj"`,
+	model:   matrix[4, 4]f32 `gpu:"u_model"`,
+	view:    matrix[4, 4]f32 `gpu:"u_view"`,
+	proj:    matrix[4, 4]f32 `gpu:"u_proj"`,
+	texture: i32 `gpu:"u_texture"`,
 }
 
 new_app :: proc()
@@ -54,9 +57,9 @@ new_app :: proc()
 				offset = offset_of(Vertex, pos),
 			},
 			gpu.Vertex_Attribute {
-				name = "color",
-				type = .VEC3_FLOAT32,
-				offset = offset_of(Vertex, color),
+				name = "uv",
+				type = .VEC2_FLOAT32,
+				offset = offset_of(Vertex, uv),
 			},
 		},
 	)
@@ -66,10 +69,14 @@ new_app :: proc()
 
 	idx_bytes := mem.slice_to_bytes(INDICES[:])
 	app.index_buffer = gpu.new_buffer(dev, .INDEX, .READ_ONLY, len(idx_bytes), idx_bytes)
+
+	app.sampler = gpu.new_sampler(dev, .TILE, .BILINEAR_FILTER)
+	app.texture = strt.fetch_texture("sandbox/assets/hurley.png")
 }
 
 free_app :: proc()
 {
+	gpu.free_sampler(app.sampler)
 	gpu.free_buffer(app.index_buffer)
 	gpu.free_buffer(app.vertex_buffer)
 	gpu.free_pipeline(app.pipeline)
@@ -93,6 +100,8 @@ render_app :: proc()
 
 	gpu.bind_vertex_buffer(dev, app.vertex_buffer)
 	gpu.bind_index_buffer(dev, app.index_buffer)
+	gpu.bind_texture(dev, strt.texture_gpu_handle(app.texture), slot = 0)
+	gpu.bind_sampler(dev, app.sampler, slot = 0)
 
 	gpu.set_uniforms(
 		dev,
@@ -100,6 +109,7 @@ render_app :: proc()
 			model = glm.identity(matrix[4, 4]f32),
 			view = glm.identity(matrix[4, 4]f32),
 			proj = glm.identity(matrix[4, 4]f32),
+			texture = 0,
 		},
 	)
 
