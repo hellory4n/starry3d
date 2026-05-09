@@ -357,6 +357,7 @@ new_pipeline :: proc(
 	cull := Cull_Face.NONE,
 	vertex_layout: []Vertex_Attribute = nil,
 	vertex_size: int = 0,
+	allocator := context.allocator,
 ) -> (
 	pipeline: Pipeline,
 	ok: bool,
@@ -395,7 +396,7 @@ new_pipeline :: proc(
 
 	vhuyvfyfhbvhyf := vertex_layout
 	if vertex_layout != nil {
-		vhuyvfyfhbvhyf = make([]Vertex_Attribute, len(vertex_layout))
+		vhuyvfyfhbvhyf = make([]Vertex_Attribute, len(vertex_layout), allocator)
 		copy(vhuyvfyfhbvhyf, vertex_layout)
 	}
 
@@ -414,13 +415,13 @@ new_pipeline :: proc(
 		true
 }
 
-free_pipeline :: proc(pipeline: Pipeline)
+free_pipeline :: proc(pipeline: Pipeline, allocator := context.allocator)
 {
 	p, ok := hm.get(&global.pipelines, pipeline)
 	assert(ok)
 
 	gl.DeleteProgram(p.id)
-	delete(p.vertex_layout)
+	delete(p.vertex_layout, allocator)
 	hm.remove(&global.pipelines, pipeline)
 }
 

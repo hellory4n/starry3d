@@ -1,25 +1,12 @@
 package starryrt
 
 import st "../starrylib"
-import "base:runtime"
 import "core:c"
 import "core:log"
 import "core:mem"
 import "core:time"
 import "gpu"
 import "vendor:glfw"
-
-@(private)
-engine: struct {
-	ctx:          runtime.Context, // for callbacks
-	windows:      [dynamic]^Window,
-	device:       gpu.Device,
-	swapchain:    gpu.Swapchain,
-	start_time:   f64,
-	current_time: f64,
-	prev_time:    f64,
-	running:      bool,
-}
 
 run :: proc(
 	app_name: string,
@@ -32,6 +19,7 @@ run :: proc(
 	height: int = 600,
 )
 {
+	// TODO split into 5 billion trillion functions for Clean™ Code®
 	when ODIN_OS != .Windows || ODIN_OS != .Linux {
 		log.warnf("platform %s not officially supported", ODIN_OS)
 	}
@@ -55,6 +43,7 @@ run :: proc(
 		}
 	}
 
+	// IT'S ALIVE!
 	log.infof("starry engine %s for %s", st.VERSION_STR, ODIN_OS)
 	defer log.infof("exited safely")
 	engine.running = true
@@ -63,7 +52,7 @@ run :: proc(
 	engine.windows = make([dynamic]^Window)
 	defer delete(engine.windows)
 
-	// setup required systems
+	// window
 	window := open_window(
 		app_name,
 		width,
@@ -75,7 +64,6 @@ run :: proc(
 	defer close_window(window)
 
 	// gpu crap
-	// TODO clean up
 	ok: bool
 	engine.device, ok = gpu.new_device(gpu.Gl_Init_Glue {
 		get_proc_address_proc = proc(p: rawptr, name: cstring)
@@ -112,7 +100,10 @@ run :: proc(
 		},
 	)
 
-	// Chukabanga!
+	init_assets()
+	defer free_assets()
+
+	// IT'S ALIVE! (but it's the game this time)
 	if init_proc != nil do init_proc()
 	defer if free_proc != nil do free_proc()
 
