@@ -50,12 +50,14 @@ Pipeline :: distinct hm.Handle32
 
 @(private)
 Gl_Pipeline :: struct {
-	handle:     Pipeline,
-	id:         u32,
-	topology:   Topology,
-	front_face: Winding_Order,
-	cull:       Cull_Face,
-	compute:    bool,
+	handle:        Pipeline,
+	id:            u32,
+	topology:      Topology,
+	front_face:    Winding_Order,
+	cull:          Cull_Face,
+	vertex_layout: []Vertex_Attribute,
+	vertex_size:   int,
+	compute:       bool,
 }
 
 Shader :: distinct hm.Handle32
@@ -70,7 +72,11 @@ Buffer :: distinct hm.Handle32
 
 @(private)
 Gl_Buffer :: struct {
-	handle: Buffer,
+	handle:   Buffer,
+	size:     int,
+	id:       u32,
+	gltarget: u32,
+	glusage:  u32,
 }
 
 Texture :: distinct hm.Handle32
@@ -132,7 +138,7 @@ new_device :: proc(glue: Init_Glue, debug: bool = ODIN_DEBUG) -> (dev: Device, o
 				context = runtime.default_context()
 				switch severity {
 				case gl.DEBUG_SEVERITY_HIGH:
-					log.panicf("OpenGL 0x%X: %s", id, message)
+					log.errorf("OpenGL 0x%X: %s", id, message)
 				case gl.DEBUG_SEVERITY_MEDIUM:
 				case gl.DEBUG_SEVERITY_LOW:
 					log.warnf("OpenGL 0x%X: %s", id, message)
@@ -316,12 +322,41 @@ Cull_Face :: enum {
 	FRONT_AND_BACK_FACES,
 }
 
+Vertex_Attribute_Type :: enum {
+	INT32,
+	UINT32,
+	FLOAT32,
+	FLOAT64,
+	VEC2_INT32,
+	VEC2_UINT32,
+	VEC2_FLOAT32,
+	VEC2_FLOAT64,
+	VEC3_INT32,
+	VEC3_UINT32,
+	VEC3_FLOAT32,
+	VEC3_FLOAT64,
+	VEC4_INT32,
+	VEC4_UINT32,
+	VEC4_FLOAT32,
+	VEC4_FLOAT64,
+}
+
+Vertex_Attribute :: struct {
+	name:       string,
+	// Use with `offset_of`
+	offset:     uintptr,
+	type:       Vertex_Attribute_Type,
+	normalized: bool,
+}
+
 new_pipeline :: proc(
 	dev: Device,
 	shaders: Shaders,
 	topology := Topology.TRIANGLE_LIST,
 	front_face := Winding_Order.COUNTER_CLOCKWISE,
 	cull := Cull_Face.NONE,
+	vertex_layout: []Vertex_Attribute = nil,
+	vertex_size: int = 0,
 ) -> (
 	pipeline: Pipeline,
 	ok: bool,
@@ -358,6 +393,12 @@ new_pipeline :: proc(
 		}
 	}
 
+	vhuyvfyfhbvhyf := vertex_layout
+	if vertex_layout != nil {
+		vhuyvfyfhbvhyf = make([]Vertex_Attribute, len(vertex_layout))
+		copy(vhuyvfyfhbvhyf, vertex_layout)
+	}
+
 	return hm.add(
 			&global.pipelines,
 			Gl_Pipeline {
@@ -366,6 +407,8 @@ new_pipeline :: proc(
 				front_face = front_face,
 				cull = cull,
 				compute = compute,
+				vertex_layout = vhuyvfyfhbvhyf,
+				vertex_size = vertex_size,
 			},
 		),
 		true
@@ -377,6 +420,7 @@ free_pipeline :: proc(pipeline: Pipeline)
 	assert(ok)
 
 	gl.DeleteProgram(p.id)
+	delete(p.vertex_layout)
 	hm.remove(&global.pipelines, pipeline)
 }
 
@@ -387,6 +431,83 @@ bind_pipeline :: proc(dev: Device, pipeline: Pipeline)
 	d, ok2 := hm.get(&global.devices, dev)
 	assert(ok2)
 	d.current_pipeline = p^
+
+	// alledgedly this is "fine" to call every frame on "modern drivers"
+	for attr, i in p.vertex_layout {
+		attr_is_int: bool
+		switch attr.type {
+		case .INT32,
+		     .UINT32,
+		     .VEC2_INT32,
+		     .VEC2_UINT32,
+		     .VEC3_INT32,
+		     .VEC3_UINT32,
+		     .VEC4_INT32,
+		     .VEC4_UINT32:
+			attr_is_int = true
+
+		case .FLOAT32,
+		     .FLOAT64,
+		     .VEC2_FLOAT32,
+		     .VEC2_FLOAT64,
+		     .VEC3_FLOAT32,
+		     .VEC3_FLOAT64,
+		     .VEC4_FLOAT32,
+		     .VEC4_FLOAT64:
+			attr_is_int = false
+		}
+
+		attr_size: i32 = -8
+		switch attr.type {
+		case .INT32, .UINT32, .FLOAT32, .FLOAT64:
+			attr_size = 1
+
+		case .VEC2_INT32, .VEC2_UINT32, .VEC2_FLOAT32, .VEC2_FLOAT64:
+			attr_size = 2
+
+		case .VEC3_INT32, .VEC3_UINT32, .VEC3_FLOAT32, .VEC3_FLOAT64:
+			attr_size = 3
+
+		case .VEC4_INT32, .VEC4_UINT32, .VEC4_FLOAT32, .VEC4_FLOAT64:
+			attr_size = 4
+		}
+
+		attr_gl_type: u32
+		switch attr.type {
+		case .INT32, .VEC2_INT32, .VEC3_INT32, .VEC4_INT32:
+			attr_gl_type = gl.INT
+
+		case .UINT32, .VEC2_UINT32, .VEC3_UINT32, .VEC4_UINT32:
+			attr_gl_type = gl.UNSIGNED_INT
+
+		case .FLOAT32, .VEC2_FLOAT32, .VEC3_FLOAT32, .VEC4_FLOAT32:
+			attr_gl_type = gl.FLOAT
+
+		case .FLOAT64, .VEC2_FLOAT64, .VEC3_FLOAT64, .VEC4_FLOAT64:
+			attr_gl_type = gl.DOUBLE
+		}
+
+		if attr_is_int {
+			gl.VertexAttribIPointer(
+				index = u32(i),
+				size = attr_size,
+				type = attr_gl_type,
+				stride = i32(p.vertex_size),
+				pointer = attr.offset,
+			)
+		} else {
+			gl.VertexAttribPointer(
+				index = u32(i),
+				size = attr_size,
+				type = attr_gl_type,
+				normalized = attr.normalized,
+				stride = i32(p.vertex_size),
+				pointer = attr.offset,
+			)
+		}
+
+		gl.EnableVertexAttribArray(u32(i))
+	}
 
 	gl.UseProgram(p.id)
 
@@ -465,8 +586,8 @@ set_uniforms :: proc(dev: Device, uniforms: $T) where intrinsics.type_is_struct(
 		}
 
 		loc := gl.GetUniformLocation(
-			d.current_pipeline.id,
-			strings.clone_to_cstring(name, context.temp_allocator),
+			program = d.current_pipeline.id,
+			name = strings.clone_to_cstring(name, context.temp_allocator),
 		)
 		if loc < 0 {
 			log.warnf("uniform %q missing", name)
@@ -543,4 +664,111 @@ set_uniforms :: proc(dev: Device, uniforms: $T) where intrinsics.type_is_struct(
 			gl.UniformMatrix4x3fv(loc, 1, false, val)
 		}
 	}
+}
+
+Buffer_Target :: enum {
+	VERTEX,
+	INDEX,
+	STORAGE,
+}
+
+Buffer_Usage :: enum {
+	READ_ONLY,
+	MUTABLE,
+	STREAMED,
+}
+
+new_buffer :: proc(
+	dev: Device,
+	target: Buffer_Target,
+	usage: Buffer_Usage,
+	size: int,
+	data: []byte = nil,
+) -> Buffer
+{
+	gltarget: u32
+	switch target {
+	case .VERTEX:
+		gltarget = gl.ARRAY_BUFFER
+	case .INDEX:
+		gltarget = gl.ELEMENT_ARRAY_BUFFER
+	case .STORAGE:
+		gltarget = gl.SHADER_STORAGE_BUFFER
+	}
+
+	glusage: u32
+	switch usage {
+	case .READ_ONLY:
+		glusage = gl.STATIC_DRAW
+	case .MUTABLE:
+		glusage = gl.DYNAMIC_DRAW
+	case .STREAMED:
+		glusage = gl.STREAM_DRAW
+	}
+
+	id: u32
+	gl.GenBuffers(1, &id)
+	gl.BindBuffer(gltarget, id)
+
+	if data == nil {
+		gl.BufferData(gltarget, size, nil, glusage)
+	} else {
+		assert(len(data) == size)
+		gl.BufferData(gltarget, size, raw_data(data), glusage)
+	}
+
+	return hm.add(
+		&global.buffers,
+		Gl_Buffer{id = id, size = size, gltarget = gltarget, glusage = glusage},
+	)
+}
+
+free_buffer :: proc(buffer: Buffer)
+{
+	b, ok := hm.get(&global.buffers, buffer)
+	assert(ok)
+
+	gl.DeleteBuffers(1, &b.id)
+	hm.remove(&global.buffers, buffer)
+}
+
+update_buffer :: proc(dev: Device, buffer: Buffer, data: []byte, offset: u32 = 0)
+{
+	b, ok := hm.get(&global.buffers, buffer)
+	assert(ok)
+
+	gl.BindBuffer(b.gltarget, b.id)
+	if offset == 0 && len(data) == b.size {
+		gl.BufferData(b.gltarget, len(data), raw_data(data), b.glusage)
+	} else {
+		gl.BufferSubData(b.gltarget, int(offset), len(data), raw_data(data))
+	}
+}
+
+bind_vertex_buffer :: proc(dev: Device, buffer: Buffer)
+{
+	b, ok := hm.get(&global.buffers, buffer)
+	assert(ok)
+
+	b.gltarget = gl.ARRAY_BUFFER // TODO this is likely stupid but so is opengl
+	gl.BindBuffer(b.gltarget, b.id)
+}
+
+bind_index_buffer :: proc(dev: Device, buffer: Buffer)
+{
+	b, ok := hm.get(&global.buffers, buffer)
+	assert(ok)
+
+	b.gltarget = gl.ELEMENT_ARRAY_BUFFER // TODO this is likely stupid but so is opengl
+	gl.BindBuffer(b.gltarget, b.id)
+}
+
+bind_storage_buffer :: proc(dev: Device, buffer: Buffer, slot: u32)
+{
+	b, ok := hm.get(&global.buffers, buffer)
+	assert(ok)
+
+	b.gltarget = gl.SHADER_STORAGE_BUFFER // TODO this is likely stupid but so is opengl
+	gl.BindBuffer(b.gltarget, b.id)
+	gl.BindBufferBase(b.gltarget, slot, b.id)
 }

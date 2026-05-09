@@ -56,6 +56,7 @@ run :: proc(
 	}
 
 	log.infof("starry engine %s for %s", st.VERSION_STR, ODIN_OS)
+	defer log.infof("exited safely")
 	engine.running = true
 	engine.ctx = context
 	engine.start_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0
