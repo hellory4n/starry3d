@@ -1,9 +1,10 @@
 package starryrt
 
+import "core:bytes"
 import hm "core:container/handle_map"
-import "core:image/png"
-import "core:image/jpeg"
 import "core:image"
+import "core:image/jpeg"
+import "core:image/png"
 import "core:log"
 import "gpu"
 
@@ -20,7 +21,14 @@ reload_texture :: proc(path: string) -> (texture: Texture, ok: bool) #optional_o
 {
 	context.allocator = engine.ctx.allocator
 
-	img, err := image.load(path)
+	file: []byte
+	file, ok = load_asset_bytes(path)
+	if !ok {
+		return
+	}
+	defer delete(file)
+
+	img, err := image.load_from_bytes(file)
 	if err != nil {
 		log.errorf("couldn't load %q: %s", path, err)
 		return texture, false

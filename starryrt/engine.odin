@@ -14,6 +14,7 @@ run :: proc(
 	free_proc: proc(),
 	update_proc: proc(dt: f32) = nil,
 	render_proc: proc() = nil,
+	asset_dir: string = ".",
 	app_version: [3]i32 = {0, 0, 0},
 	width: int = 800,
 	height: int = 600,
@@ -100,7 +101,8 @@ run :: proc(
 		},
 	)
 
-	init_assets()
+	// init other crap systems
+	init_assets(asset_dir)
 	defer free_assets()
 
 	// IT'S ALIVE! (but it's the game this time)

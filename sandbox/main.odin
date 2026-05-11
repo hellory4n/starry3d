@@ -71,7 +71,7 @@ new_app :: proc()
 	app.index_buffer = gpu.new_buffer(dev, .INDEX, .READ_ONLY, len(idx_bytes), idx_bytes)
 
 	app.sampler = gpu.new_sampler(dev, .TILE, .BILINEAR_FILTER)
-	app.texture = strt.fetch_texture("sandbox/assets/hurley.png")
+	app.texture = strt.fetch_texture("hurley.png")
 }
 
 free_app :: proc()
@@ -123,6 +123,7 @@ main :: proc()
 	strt.run(
 		app_name = "sandbox",
 		app_version = {0, 1, 0},
+		asset_dir = "sandbox/assets",
 		init_proc = new_app,
 		free_proc = free_app,
 		update_proc = update_app,

@@ -18,6 +18,8 @@ engine: struct {
 	running:       bool,
 
 	// asset systems
+	exe_dir:       string,
+	asset_dir:     string,
 	textures:      hm.Static_Handle_Map(1024, Texture_Data, Texture),
 	texture_cache: map[string]Texture,
 }
