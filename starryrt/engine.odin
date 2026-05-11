@@ -142,6 +142,12 @@ now_in_seconds :: proc() -> f64
 	return engine.current_time - engine.start_time
 }
 
+// Returns the time between the current frame and last frame
+delta_time :: proc() -> f64
+{
+	return engine.current_time - engine.prev_time
+}
+
 // Returns the current GPU device
 get_gpu :: proc() -> gpu.Device
 {

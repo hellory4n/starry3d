@@ -28,22 +28,6 @@ approx_eql :: proc {
 	approx_eql_f64,
 }
 
-// mr odin why would you ever do that
-@(require_results)
-vector_cast :: #force_inline proc(
-	$N: int,
-	$Dst: typeid,
-	src: [N]$Src,
-) -> [N]Dst where intrinsics.type_is_numeric(Dst),
-	intrinsics.type_is_numeric(Src)
-{
-	result: [N]Dst
-	#unroll for i in 0 ..< N {
-		result[i] = cast(Dst)src[i]
-	}
-	return result
-}
-
 @(require_results)
 unpack_rgba_from_u32 :: #force_inline proc(src: u32) -> (dst: [4]u8)
 {

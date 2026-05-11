@@ -9,16 +9,6 @@ t_approx_eql :: proc(t: ^testing.T)
 }
 
 @(test)
-t_vector_cast :: proc(t: ^testing.T)
-{
-	src := [3]i32{1, 2, 3}
-	dst := vector_cast(3, f32, src)
-	testing.expect(t, approx_eql(dst.x, 1))
-	testing.expect(t, approx_eql(dst.y, 2))
-	testing.expect(t, approx_eql(dst.z, 3))
-}
-
-@(test)
 t_unpack_rgba_from_u32 :: proc(t: ^testing.T)
 {
 	src: u32 = 0x11223344

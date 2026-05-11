@@ -11,15 +11,14 @@ You need these installed:
         - Debian, Ubuntu, etc: `sudo apt install libwayland-dev libxkbcommon-dev xorg-dev`
         - Fedora: `sudo dnf install wayland-devel libxkbcommon-devel libXcursor-devel libXi-devel libXinerama-devel libXrandr-devel`
         - Arch: `sudo pacman -S glfw` should pull all other dependencies
-- [Odin](https://odin-lang.org) v2026.04
-- [Slang shader compiler](https://shader-slang.org/)
+- [Odin](https://odin-lang.org) v2026.05
 - [Just command runner](https://github.com/casey/just)
 
 ## Building
 
 While you can run `odin build`/`odin run` like you can with any other Odin project, it's recommended that you use the Just wrappers:
-- `just run-sandbox` to run the sandbox project
 - `just test` to run tests
+- `just --list` to list example projects, you can run then with e.g. `just run-hello`
 
 ## Using Starry in new projects
 

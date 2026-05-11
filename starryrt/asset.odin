@@ -51,7 +51,7 @@ fetch_asset_dir :: #force_inline proc(asset_dir: string) -> string
 	}
 
 	log.errorf("couldn't find asset directory")
-	log.errorf("    tried: %s/%s", os.get_working_directory(context.allocator), asset_dir)
+	log.errorf("    tried: ./%s", asset_dir)
 	log.errorf("    tried: %s", path_from_exe_dir)
 	log.panicf("panicking")
 }

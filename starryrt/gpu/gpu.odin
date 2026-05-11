@@ -560,6 +560,30 @@ draw :: proc(dev: Device, vertex_count: u32, instance_count := u32(1), first_ver
 	gl.DrawArraysInstanced(topology, i32(first_vertex), i32(vertex_count), i32(instance_count))
 }
 
+draw_indexed :: proc(dev: Device, index_count: u32, instance_count := u32(1))
+{
+	d, ok := hm.get(&global.devices, dev)
+	assert(ok)
+
+	topology: u32
+	switch d.current_pipeline.topology {
+	case .TRIANGLE_LIST:
+		topology = gl.TRIANGLES
+	case .TRIANGLE_STRIP:
+		topology = gl.TRIANGLE_STRIP
+	case .TRIANGLE_FAN:
+		topology = gl.TRIANGLE_FAN
+	}
+
+	gl.DrawElementsInstanced(
+		topology,
+		i32(index_count),
+		gl.UNSIGNED_INT,
+		nil,
+		i32(instance_count),
+	)
+}
+
 // Sets the uniforms for the shader. This is done through evil reflection fuckery:
 // Shader code:
 // ```glsl
@@ -881,7 +905,7 @@ Texture_Wrap :: enum {
 
 Texture_Filter :: enum {
 	NEAREST_NEIGHBOR,
-	BILINEAR_FILTER,
+	BILINEAR,
 }
 
 new_sampler :: proc(dev: Device, wrap: Texture_Wrap, filter: Texture_Filter) -> Sampler
@@ -908,7 +932,7 @@ new_sampler :: proc(dev: Device, wrap: Texture_Wrap, filter: Texture_Filter) -> 
 	case .NEAREST_NEIGHBOR:
 		gl.SamplerParameteri(id, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 		gl.SamplerParameteri(id, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-	case .BILINEAR_FILTER:
+	case .BILINEAR:
 		gl.SamplerParameteri(id, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 		gl.SamplerParameteri(id, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 	}
