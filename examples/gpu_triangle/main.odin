@@ -67,18 +67,15 @@ free_app :: proc()
 	gpu.free_pipeline(app.pipeline)
 }
 
-render_app :: proc()
+render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
 {
-	dev := strt.get_gpu()
-	swap := strt.get_swapchain()
-
 	gpu.begin_render_pass(dev, swap, [4]f32{0, 0, 0, 1})
 
 	gpu.bind_pipeline(dev, app.pipeline)
 	gpu.bind_vertex_buffer(dev, app.vertex_buffer)
 	gpu.bind_index_buffer(dev, app.index_buffer)
 
-	gpu.draw_indexed(dev, index_count = 6)
+	gpu.draw_indexed(dev, index_count = 3)
 	gpu.end_render_pass(dev)
 }
 

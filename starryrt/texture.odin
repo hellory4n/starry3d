@@ -84,8 +84,9 @@ unload_texture :: proc(texture: Texture)
 	hm.remove(&engine.textures, texture)
 }
 
-// Fetches a texture from the cache, and loads if it's not in there yet. This means that it'll
-// only be loaded once throughout the entire app's lifecycle.
+// Fetches a texture from the cache, and loads it if it's not in there yet. This means that it'll
+// only be loaded once throughout the entire app's lifecycle. The engine will handle freeing the
+// texture automatically.
 fetch_texture :: proc(path: string) -> (texture: Texture, ok: bool) #optional_ok
 {
 	texture, ok = engine.texture_cache[path]

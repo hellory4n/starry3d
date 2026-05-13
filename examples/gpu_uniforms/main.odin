@@ -2,6 +2,7 @@ package gpu_uniforms
 
 import strt "../../starryrt"
 import gpu "../../starryrt/gpu"
+import "core:math"
 import "core:math/linalg"
 import "core:mem"
 
@@ -75,11 +76,8 @@ free_app :: proc()
 	gpu.free_pipeline(app.pipeline)
 }
 
-render_app :: proc()
+render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
 {
-	dev := strt.get_gpu()
-	swap := strt.get_swapchain()
-
 	gpu.begin_render_pass(dev, swap, [4]f32{0, 0, 0, 1})
 
 	gpu.bind_pipeline(dev, app.pipeline)
@@ -87,8 +85,8 @@ render_app :: proc()
 	gpu.bind_index_buffer(dev, app.index_buffer)
 
 	// make it spin
-	app.rotation += 0.001
-	model_mat := linalg.matrix4_from_euler_angle_y(app.rotation)
+	app.rotation += dt * 1
+	model_mat := linalg.matrix4_rotate(math.to_radians(app.rotation), [3]f32{0, 1, 0})
 
 	gpu.set_uniforms(
 		dev,
@@ -99,7 +97,7 @@ render_app :: proc()
 		},
 	)
 
-	gpu.draw(dev, vertex_count = 3)
+	gpu.draw_indexed(dev, index_count = 3)
 	gpu.end_render_pass(dev)
 }
 

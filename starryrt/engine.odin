@@ -3,6 +3,7 @@ package starryrt
 import st "../starrylib"
 import "core:c"
 import "core:log"
+import "core:math"
 import "core:mem"
 import "core:time"
 import "gpu"
@@ -13,7 +14,7 @@ run :: proc(
 	init_proc: proc(),
 	free_proc: proc(),
 	update_proc: proc(dt: f32) = nil,
-	render_proc: proc() = nil,
+	render_proc: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain) = nil,
 	asset_dir: string = ".",
 	app_version: [3]i32 = {0, 0, 0},
 	width: int = 800,
@@ -122,11 +123,11 @@ run :: proc(
 
 		// timing it
 		engine.current_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0
-		delta_time := engine.current_time - engine.prev_time
+		delta_time := math.clamp(engine.current_time - engine.prev_time, 0.1, 1)
 		engine.prev_time = engine.current_time
 
 		if update_proc != nil do update_proc(f32(delta_time))
-		if render_proc != nil do render_proc()
+		if render_proc != nil do render_proc(f32(delta_time), get_gpu(), get_swapchain())
 
 		// gpuing it
 		gpu.end_frame(engine.device)

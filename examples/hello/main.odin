@@ -1,6 +1,7 @@
 package hello
 
 import strt "../../starryrt"
+import gpu "../../starryrt/gpu"
 import "core:log"
 
 new_app :: proc()
@@ -18,7 +19,7 @@ update_app :: proc(dt: f32)
 	// TODO
 }
 
-render_app :: proc()
+render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
 {
 	// TODO
 }

@@ -28,11 +28,8 @@ free_app :: proc()
 	gpu.free_pipeline(app.pipeline)
 }
 
-render_app :: proc()
+render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
 {
-	dev := strt.get_gpu()
-	swap := strt.get_swapchain()
-
 	gpu.begin_render_pass(dev, swap, [4]f32{0, 0, 0, 1})
 	gpu.bind_pipeline(dev, app.pipeline)
 
