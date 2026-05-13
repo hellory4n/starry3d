@@ -157,7 +157,13 @@ new_device :: proc(glue: Init_Glue, debug: bool = ODIN_DEBUG) -> (dev: Device, o
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 
-	return Device(hm.add(&global.devices, Gl_Device{})), true
+	dev, ok = hm.add(&global.devices, Gl_Device{})
+	assert(ok)
+
+	// objectively better defaults than opengl
+	set_blend(dev, .SRC_ALPHA, .ONE_MINUS_SRC_ALPHA)
+
+	return dev, true
 }
 
 free_device :: proc(dev: Device)
@@ -964,4 +970,96 @@ bind_sampler :: proc(dev: Device, sampler: Sampler, slot: u32)
 	assert(ok)
 
 	gl.BindSampler(slot, s.id)
+}
+
+// If position or size are nil, it disables scissor testing, which is equivalent to
+// `set_scissor(dev, pos = {0, 0}, window_size())`
+set_scissor :: proc(dev: Device, pos, size: Maybe([2]i32))
+{
+	if pos == nil || size == nil {
+		gl.Disable(gl.SCISSOR_TEST)
+	} else {
+		gl.Enable(gl.SCISSOR_TEST)
+		gl.Scissor(pos.?.x, pos.?.y, size.?.x, size.?.y)
+	}
+}
+
+// See https://docs.gl/gl4/glBlendFunc for the mildly fancy equations that each value does
+Blend_Factor :: enum {
+	ZERO,
+	ONE,
+	SRC_COLOR,
+	ONE_MINUS_SRC_COLOR,
+	DST_COLOR,
+	ONE_MINUS_DST_COLOR,
+	SRC_ALPHA,
+	ONE_MINUS_SRC_ALPHA,
+	DST_ALPHA,
+	ONE_MINUS_DST_ALPHA,
+	CONSTANT_COLOR,
+	ONE_MINUS_CONSTANT_COLOR,
+	CONSTANT_ALPHA,
+	ONE_MINUS_CONSTANT_ALPHA,
+	SRC_ALPHA_SATURATE,
+	SRC1_COLOR,
+	ONE_MINUS_SRC1_COLOR,
+	SRC1_ALPHA,
+	ONE_MINUS_SRC1_ALPHA,
+}
+
+set_blend :: proc(
+	dev: Device,
+	src_factor: Blend_Factor,
+	dst_factor: Blend_Factor,
+	constant_color := [4]f32{0, 0, 0, 0},
+)
+{
+	stgpu_blend_to_gl_blend :: #force_inline proc(x: Blend_Factor) -> u32
+	{
+		switch x {
+		case .ZERO:
+			return gl.ZERO
+		case .ONE:
+			return gl.ONE
+		case .SRC_COLOR:
+			return gl.SRC_COLOR
+		case .ONE_MINUS_SRC_COLOR:
+			return gl.ONE_MINUS_SRC_COLOR
+		case .DST_COLOR:
+			return gl.DST_COLOR
+		case .ONE_MINUS_DST_COLOR:
+			return gl.ONE_MINUS_DST_COLOR
+		case .SRC_ALPHA:
+			return gl.SRC_ALPHA
+		case .ONE_MINUS_SRC_ALPHA:
+			return gl.ONE_MINUS_SRC_ALPHA
+		case .DST_ALPHA:
+			return gl.DST_ALPHA
+		case .ONE_MINUS_DST_ALPHA:
+			return gl.ONE_MINUS_DST_ALPHA
+		case .CONSTANT_COLOR:
+			return gl.CONSTANT_COLOR
+		case .ONE_MINUS_CONSTANT_COLOR:
+			return gl.ONE_MINUS_CONSTANT_COLOR
+		case .CONSTANT_ALPHA:
+			return gl.CONSTANT_ALPHA
+		case .ONE_MINUS_CONSTANT_ALPHA:
+			return gl.ONE_MINUS_CONSTANT_ALPHA
+		case .SRC_ALPHA_SATURATE:
+			return gl.SRC_ALPHA_SATURATE
+		case .SRC1_COLOR:
+			return gl.SRC1_COLOR
+		case .ONE_MINUS_SRC1_COLOR:
+			return gl.ONE_MINUS_SRC1_COLOR
+		case .SRC1_ALPHA:
+			return gl.SRC1_ALPHA
+		case .ONE_MINUS_SRC1_ALPHA:
+			return gl.ONE_MINUS_SRC1_ALPHA
+		}
+		unreachable()
+	}
+
+	gl.Enable(gl.BLEND)
+	gl.BlendFunc(stgpu_blend_to_gl_blend(src_factor), stgpu_blend_to_gl_blend(dst_factor))
+	gl.BlendColor(constant_color.r, constant_color.g, constant_color.b, constant_color.a)
 }
