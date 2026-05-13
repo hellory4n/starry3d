@@ -22,4 +22,14 @@ engine: struct {
 	asset_dir:     string,
 	textures:      hm.Static_Handle_Map(1024, Texture_Data, Texture),
 	texture_cache: map[string]Texture,
+
+	// debug text renderer
+	debugrender:   struct {
+		mesh:          [dynamic]Debug_Text_Vertex,
+		cursor:        [2]i32,
+		pipeline:      gpu.Pipeline,
+		vertex_buffer: gpu.Buffer,
+		sampler:       gpu.Sampler,
+		texture:       Texture,
+	},
 }

@@ -226,10 +226,14 @@ present_swapchain :: proc(dev: Device, swapchain: Swapchain)
 	swap.swap_buffers_proc(swap.window)
 }
 
-begin_render_pass :: proc(dev: Device, swapchain: Swapchain, clear_color := [4]f32{0, 0, 0, 1})
+// Doesn't clear the screen if `clear_color` is nil
+begin_render_pass :: proc(dev: Device, swapchain: Swapchain, clear_color: Maybe([4]f32) = nil)
 {
-	gl.ClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a)
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	switch v in clear_color {
+	case [4]f32:
+		gl.ClearColor(v.r, v.g, v.b, v.a)
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	}
 }
 
 end_render_pass :: proc(dev: Device)

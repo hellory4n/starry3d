@@ -69,6 +69,51 @@ reload_texture :: proc(path: string) -> (texture: Texture, ok: bool) #optional_o
 	return
 }
 
+// Loads a texture from memory. The data should be valid PNG/JPEG data.
+load_texture_from_memory :: proc(data: []byte) -> (texture: Texture, ok: bool) #optional_ok
+{
+	context.allocator = engine.ctx.allocator
+
+	img, err := image.load_from_bytes(data)
+	if err != nil {
+		log.errorf("couldn't load texture: %s", err)
+		return texture, false
+	}
+	defer if !ok {
+		image.destroy(img)
+	}
+
+	if img.depth != 8 {
+		unimplemented("bit depths other than 8")
+	}
+
+	format: gpu.Texture_Format
+	switch img.channels {
+	case 3:
+		format = .RGB_U8
+	case 4:
+		format = .RGBA_U8
+	case:
+		unimplemented("TODO grayscale image support")
+	}
+
+	gpu_texture := gpu.new_texture(
+		dev = get_gpu(),
+		size = {i32(img.width), i32(img.height)},
+		input_format = format,
+		gpu_format = .RGBA_U8,
+		data = img.pixels.buf[:],
+	)
+	defer if !ok {
+		gpu.free_texture(gpu_texture)
+	}
+
+	texture, ok = hm.add(&engine.textures, Texture_Data{img = img, tex = gpu_texture})
+	if !ok do return
+
+	return
+}
+
 // Unloads a texture from memory.
 unload_texture :: proc(texture: Texture)
 {

@@ -1,5 +1,6 @@
 package starryrt
 
+import hm "core:container/handle_map"
 import "core:log"
 import "core:os"
 import "core:strings"
@@ -14,9 +15,11 @@ init_assets :: proc(asset_dir: string)
 @(private)
 free_assets :: proc()
 {
-	for _, texture in engine.texture_cache {
-		unload_texture(texture)
+	texture_iter := hm.iterator_make(&engine.textures)
+	for _, handle in hm.iterate(&texture_iter) {
+		unload_texture(handle)
 	}
+
 	delete(engine.texture_cache)
 	delete(engine.asset_dir)
 	delete(engine.exe_dir)

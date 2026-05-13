@@ -24,7 +24,9 @@ _CFLAGS      := f"{{_BASE_CFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}}"
 
 # but why would you do that
 run-all-examples: \
-	run-hello run-gpu-triangle run-gpu-bufferless run-gpu-textures run-gpu-uniforms
+	run-hello \
+	run-gpu-triangle run-gpu-bufferless run-gpu-textures run-gpu-uniforms \
+	run-debug-text
 
 @run-hello:
 	@# run hello
@@ -45,3 +47,7 @@ run-all-examples: \
 @run-gpu-uniforms:
 	@# run gpu uniforms
 	odin run examples/gpu_uniforms {{_CFLAGS}}
+
+@run-debug-text:
+	@# run debug text
+	odin run examples/debug_text {{_CFLAGS}}
