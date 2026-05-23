@@ -1,11 +1,6 @@
-# Starry3D
+# Starry
 
-> [!WARNING]
-> Everything is on a half-broken state. I am only one man.
-
-The biggest most massive engine of all time.
-
-See the [development setup](./docs/dev_setup.md) for build instructions.
+Voxel engine that will eventually become a game or something.
 
 ## FAQ
 
@@ -16,11 +11,3 @@ No fuck off.
 ### Why?
 
 Why not?
-
-### Is this stable enough to use?
-
-No.
-
-### Where's the documentation?
-
-Can't be bothered to write real documentation when the engine changes every picosecond.

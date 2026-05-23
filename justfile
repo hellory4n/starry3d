@@ -23,31 +23,26 @@ _CFLAGS      := f"{{_BASE_CFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}}"
 	odin test starrylib/model/vox {{_CFLAGS}}
 
 # but why would you do that
-run-all-examples: \
+run-all-samples: \
 	run-hello \
 	run-gpu-triangle run-gpu-bufferless run-gpu-textures run-gpu-uniforms \
-	run-debug-text
 
 @run-hello:
 	@# run hello
-	odin run examples/hello {{_CFLAGS}}
+	odin run samples/hello {{_CFLAGS}}
 
 @run-gpu-triangle:
 	@# run gpu triangle
-	odin run examples/gpu_triangle {{_CFLAGS}}
+	odin run samples/gpu_triangle {{_CFLAGS}}
 
 @run-gpu-bufferless:
 	@# run gpu bufferless
-	odin run examples/gpu_bufferless {{_CFLAGS}}
+	odin run samples/gpu_bufferless {{_CFLAGS}}
 
 @run-gpu-textures:
 	@# run gpu textures
-	odin run examples/gpu_textures {{_CFLAGS}}
+	odin run samples/gpu_textures {{_CFLAGS}}
 
 @run-gpu-uniforms:
 	@# run gpu uniforms
-	odin run examples/gpu_uniforms {{_CFLAGS}}
-
-@run-debug-text:
-	@# run debug text
-	odin run examples/debug_text {{_CFLAGS}}
+	odin run samples/gpu_uniforms {{_CFLAGS}}
