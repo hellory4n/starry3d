@@ -84,7 +84,7 @@ main :: proc()
 	strt.run(
 		app_name = "gpu triangle",
 		app_version = {0, 1, 0},
-		asset_dir = "examples/gpu_triangle",
+		asset_dir = "samples/gpu_triangle",
 		init_proc = new_app,
 		free_proc = free_app,
 		render_proc = render_app,

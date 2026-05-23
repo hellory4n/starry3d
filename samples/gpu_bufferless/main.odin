@@ -42,7 +42,7 @@ main :: proc()
 	strt.run(
 		app_name = "gpu bufferless",
 		app_version = {0, 1, 0},
-		asset_dir = "examples/gpu_bufferless",
+		asset_dir = "samples/gpu_bufferless",
 		init_proc = new_app,
 		free_proc = free_app,
 		render_proc = render_app,

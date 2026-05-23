@@ -106,7 +106,7 @@ main :: proc()
 	strt.run(
 		app_name = "gpu uniforms",
 		app_version = {0, 1, 0},
-		asset_dir = "examples/gpu_uniforms",
+		asset_dir = "samples/gpu_uniforms",
 		init_proc = new_app,
 		free_proc = free_app,
 		render_proc = render_app,

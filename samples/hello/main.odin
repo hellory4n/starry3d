@@ -29,7 +29,7 @@ main :: proc()
 	strt.run(
 		app_name = "hello starry",
 		app_version = {0, 1, 0},
-		asset_dir = "examples/hello",
+		asset_dir = "samples/hello",
 		init_proc = new_app,
 		free_proc = free_app,
 		update_proc = update_app,

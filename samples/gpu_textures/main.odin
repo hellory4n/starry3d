@@ -36,10 +36,10 @@ new_app :: proc()
 {
 	dev := strt.get_gpu()
 
-	vert := gpu.new_shader(dev, #load("tri.vert"), .VERTEX)
+	vert := gpu.new_shader(dev, #load("shader.vert"), .VERTEX)
 	defer gpu.free_shader(vert)
 
-	frag := gpu.new_shader(dev, #load("tri.frag"), .FRAGMENT)
+	frag := gpu.new_shader(dev, #load("shader.frag"), .FRAGMENT)
 	defer gpu.free_shader(frag)
 
 	app.pipeline = gpu.new_pipeline(
@@ -99,7 +99,7 @@ main :: proc()
 	strt.run(
 		app_name = "gpu textures",
 		app_version = {0, 1, 0},
-		asset_dir = "examples/gpu_textures",
+		asset_dir = "samples/gpu_textures",
 		init_proc = new_app,
 		free_proc = free_app,
 		render_proc = render_app,

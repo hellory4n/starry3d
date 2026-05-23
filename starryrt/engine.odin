@@ -19,7 +19,6 @@ run :: proc(
 	app_version: [3]i32 = {0, 0, 0},
 	width: int = 800,
 	height: int = 600,
-	debug_text_enabled: bool = false,
 )
 {
 	// TODO split into 5 billion trillion functions for Clean™ Code®
@@ -106,8 +105,6 @@ run :: proc(
 	// init other crap systems
 	init_assets(asset_dir)
 	defer free_assets()
-	if debug_text_enabled do init_debug_text_renderer()
-	defer if debug_text_enabled do free_debug_text_renderer()
 
 	// IT'S ALIVE! (but it's the game this time)
 	if init_proc != nil do init_proc()
@@ -135,7 +132,6 @@ run :: proc(
 		if render_proc != nil do render_proc(f32(delta_time), get_gpu(), get_swapchain())
 
 		// gpuing it 2
-		if debug_text_enabled do render_debug_text()
 		gpu.end_frame(engine.device)
 		gpu.present_swapchain(engine.device, engine.swapchain)
 	}
