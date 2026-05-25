@@ -1,4 +1,4 @@
-#version 450 core
+#version 430 core
 
 layout(location = 0) in vec2 fs_uv;
 

@@ -46,3 +46,7 @@ run-all-samples: \
 @run-gpu-uniforms:
 	@# run gpu uniforms
 	odin run samples/gpu_uniforms {{_CFLAGS}}
+
+@run-hello-voxel:
+	@# run hello voxel
+	odin run samples/hello_voxel {{_CFLAGS}}

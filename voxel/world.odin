@@ -1,10 +1,10 @@
 package stvoxel
 
 Camera :: struct {
-	position: [3]f32,
-	rotation: quaternion128,
+	position:    [3]f32,
+	rotation:    quaternion128,
+	fov_radians: f32,
 	// TODO orthographic projection
-	fov:      f32, // radians
 }
 
 // Returns the active camera
