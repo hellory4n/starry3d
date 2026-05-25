@@ -11,6 +11,8 @@ Window :: struct {
 	glfw:             glfw.WindowHandle,
 	key_state:        #sparse[Key]Input_State,
 	mouse_state:      #sparse[Mouse_Button]Input_State,
+	current_mouse:    [2]f32,
+	delta_mouse:      [2]f32,
 	prev_mouse:       [2]f32,
 	idx:              int,
 	high_dpi_enabled: bool,
@@ -120,7 +122,9 @@ poll_events :: proc()
 @(private = "file")
 poll_window_events :: proc(window: ^Window)
 {
-	window.prev_mouse = window_mouse_position(window)
+	window.current_mouse = window_mouse_position(window)
+	window.delta_mouse = window.current_mouse - window.prev_mouse
+	window.prev_mouse = window.current_mouse
 
 	// glfw has 2 input states: pressed and not pressed
 	// we need some extra faffery to get our fancy 4 states
@@ -182,7 +186,7 @@ window_mouse_position :: proc(window: ^Window) -> [2]f32
 // the screen
 window_delta_mouse_position :: proc(window: ^Window) -> [2]f32
 {
-	return window_mouse_position(window) - window.prev_mouse
+	return window.delta_mouse
 }
 
 window_is_key_just_pressed :: proc(window: ^Window, key: Key) -> bool
@@ -450,74 +454,118 @@ Input_State :: enum {
 // man
 
 is_closing :: proc() -> bool
-{ return window_is_closing(main_window()) }
+{
+	return window_is_closing(main_window())
+}
 
 // aligned to the top left of the screen
 mouse_position :: proc() -> [2]f32
-{ return window_mouse_position(main_window()) }
+{
+	return window_mouse_position(main_window())
+}
 
 // returns how much the mouse position changed in the last frame, aligned to the top left of
 // the screen
 delta_mouse_position :: proc() -> [2]f32
-{ return window_delta_mouse_position(main_window()) }
+{
+	return window_delta_mouse_position(main_window())
+}
 
 is_key_just_pressed :: proc(key: Key) -> bool
-{ return window_is_key_just_pressed(main_window(), key) }
+{
+	return window_is_key_just_pressed(main_window(), key)
+}
 
 is_key_held :: proc(key: Key) -> bool
-{ return window_is_key_held(main_window(), key) }
+{
+	return window_is_key_held(main_window(), key)
+}
 
 is_key_just_released :: proc(key: Key) -> bool
-{ return window_is_key_just_released(main_window(), key) }
+{
+	return window_is_key_just_released(main_window(), key)
+}
 
 is_key_not_pressed :: proc(key: Key) -> bool
-{ return window_is_key_not_pressed(main_window(), key) }
+{
+	return window_is_key_not_pressed(main_window(), key)
+}
 
 is_mouse_button_just_pressed :: proc(btn: Mouse_Button) -> bool
-{ return window_is_mouse_button_just_pressed(main_window(), btn) }
+{
+	return window_is_mouse_button_just_pressed(main_window(), btn)
+}
 
 is_mouse_button_held :: proc(btn: Mouse_Button) -> bool
-{ return window_is_mouse_button_held(main_window(), btn) }
+{
+	return window_is_mouse_button_held(main_window(), btn)
+}
 
 is_mouse_button_just_released :: proc(btn: Mouse_Button) -> bool
-{ return window_is_mouse_button_just_released(main_window(), btn) }
+{
+	return window_is_mouse_button_just_released(main_window(), btn)
+}
 
 is_mouse_button_not_pressed :: proc(btn: Mouse_Button) -> bool
-{ return window_is_mouse_button_not_pressed(main_window(), btn) }
+{
+	return window_is_mouse_button_not_pressed(main_window(), btn)
+}
 
 framebuffer_sizei :: proc() -> [2]i32
-{ return window_framebuffer_sizei(main_window()) }
+{
+	return window_framebuffer_sizei(main_window())
+}
 
 framebuffer_sizeu :: proc() -> [2]u32
-{ return window_framebuffer_sizeu(main_window()) }
+{
+	return window_framebuffer_sizeu(main_window())
+}
 
 framebuffer_sizef :: proc() -> [2]f32
-{ return window_framebuffer_sizef(main_window()) }
+{
+	return window_framebuffer_sizef(main_window())
+}
 
 aspect_ratio :: proc() -> f32
-{ return window_aspect_ratio(main_window()) }
+{
+	return window_aspect_ratio(main_window())
+}
 
 // returns true if high DPI is enabled and the app is actually running in a high DPI setting
 is_high_dpi :: proc() -> bool
-{ return window_is_high_dpi(main_window()) }
+{
+	return window_is_high_dpi(main_window())
+}
 
 scale_factor :: proc() -> f32
-{ return window_scale_factor(main_window()) }
+{
+	return window_scale_factor(main_window())
+}
 
 // if true, locks the mouse inside the window and enables raw mouse input, otherwise unlocks it.
 lock_mouse :: proc(lock: bool)
-{ window_lock_mouse(main_window(), lock) }
+{
+	window_lock_mouse(main_window(), lock)
+}
 
 is_mouse_locked :: proc() -> bool
-{ return window_is_mouse_locked(main_window()) }
+{
+	return window_is_mouse_locked(main_window())
+}
 
 // asks nicely for the window to close (you can handle it and not actually quit)
 request_quit :: proc()
-{ window_request_quit(main_window()) }
+{
+	window_request_quit(main_window())
+}
 
 // cancel a pending quit from `request_quit` or the OS
 cancel_quit :: proc()
-{ window_cancel_quit(main_window()) }
+{
+	window_cancel_quit(main_window())
+}
 
 set_title :: proc(title: string)
-{ window_set_title(main_window(), title) }
+{
+	window_set_title(main_window(), title)
+}

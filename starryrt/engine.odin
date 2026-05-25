@@ -117,14 +117,13 @@ run :: proc(
 			engine.running = false
 			break
 		}
-		poll_events()
 
 		// gpuing it
 		gpu.begin_frame(engine.device)
 
 		// timing it
 		engine.current_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0
-		delta_time := math.clamp(engine.current_time - engine.prev_time, 0.1, 1)
+		delta_time := math.clamp(engine.current_time - engine.prev_time, 0.0001, 1)
 		engine.prev_time = engine.current_time
 
 		// running it
@@ -134,6 +133,7 @@ run :: proc(
 		// gpuing it 2
 		gpu.end_frame(engine.device)
 		gpu.present_swapchain(engine.device, engine.swapchain)
+		poll_events()
 	}
 }
 

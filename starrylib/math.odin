@@ -2,6 +2,7 @@ package starrylib
 
 import "base:intrinsics"
 import "core:math"
+import "core:math/linalg"
 
 @(require_results)
 approx_eql_f16 :: #force_inline proc(x, y: f16) -> bool
@@ -111,4 +112,9 @@ area_3d :: #force_inline proc(size: [3]$T) -> T where intrinsics.type_is_numeric
 area :: proc {
 	area_2d,
 	area_3d,
+}
+
+quat_to_vec4 :: #force_inline proc(q: quaternion128) -> [4]f32
+{
+	return {q.x, q.y, q.z, q.w}
 }
