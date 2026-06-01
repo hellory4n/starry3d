@@ -25,6 +25,15 @@ lua_run_file_from_path :: proc {
 	lua_run_file_from_odin_path,
 }
 
+lua_run_string :: proc(L: ^lua.State, src: cstring) -> (ok: bool)
+{
+	if lua.L_dostring(L, src) != c.int(lua.OK) {
+		fmt.printfln("in %s", lua.tostring(L, -1))
+		return false
+	}
+	return true
+}
+
 lua_call :: proc(L: ^lua.State, name: cstring, args: ..any) -> (ok: bool)
 {
 	lua.getglobal(L, name)

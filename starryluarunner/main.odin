@@ -42,6 +42,7 @@ init_app :: proc()
 {
 	L := global.L
 	// TODO load bindings here
+	lua_run_string(L, #load("builtin.lua", cstring))
 
 	lua_run_file_from_path(L, global.conf.main)
 	lua_call(L, "app_init")
