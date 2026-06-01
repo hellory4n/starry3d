@@ -3,5 +3,4 @@ function app_init()
 end
 
 function app_update(dt)
-	print("delta time:", dt)
 end

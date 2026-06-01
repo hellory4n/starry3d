@@ -1,8 +1,29 @@
 package starryluarunner
 
 import "core:c"
+import "core:fmt"
 import "core:log"
+import "core:strings"
 import lua "vendor:lua/5.4"
+
+lua_run_file_from_c_path :: proc(L: ^lua.State, path: cstring) -> (ok: bool)
+{
+	if lua.L_dofile(L, path) != c.int(lua.OK) {
+		fmt.printfln("in %s", lua.tostring(L, -1))
+		return false
+	}
+	return true
+}
+
+lua_run_file_from_odin_path :: proc(L: ^lua.State, path: string) -> (ok: bool)
+{
+	return lua_run_file_from_c_path(L, strings.clone_to_cstring(path, context.temp_allocator))
+}
+
+lua_run_file_from_path :: proc {
+	lua_run_file_from_c_path,
+	lua_run_file_from_odin_path,
+}
 
 lua_call :: proc(L: ^lua.State, name: cstring, args: ..any) -> (ok: bool)
 {
@@ -37,6 +58,8 @@ lua_push_value :: proc(L: ^lua.State, v: any)
 		lua.pushboolean(L, b32(val))
 	case b16:
 		lua.pushboolean(L, b32(val))
+	case b32:
+		lua.pushboolean(L, val)
 	case int:
 		lua.pushinteger(L, lua.Integer(val))
 	case uint:

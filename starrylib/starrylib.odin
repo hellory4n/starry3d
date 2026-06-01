@@ -16,10 +16,10 @@ import "core:log"
 import "core:mem"
 import "core:os"
 
-VERSION_NUM :: 2026_05_00 // v2026.5.0
-VERSION_STR :: "v2026.5.0-dev"
+VERSION_NUM :: 2026_06_00 // v2026.6.0
+VERSION_STR :: "v2026.6.0-dev"
 VERSION_MAJOR :: 2026
-VERSION_MINOR :: 5
+VERSION_MINOR :: 6
 VERSION_PATCH :: 0
 
 // A short string used in many places to uniquely identify something.

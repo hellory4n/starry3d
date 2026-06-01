@@ -1,0 +1,4 @@
+return {
+	name = "hello starry",
+	main = "samples/lua/hello/main.lua"
+}

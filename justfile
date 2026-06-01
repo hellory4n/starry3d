@@ -53,4 +53,4 @@ run-all-samples: \
 
 @run-lua-hello:
 	@# run hello (lua)
-	odin run starryluarunner -- samples/lua/hello/game.ini
+	odin run starryluarunner -- samples/lua/hello/config.lua
