@@ -1,10 +1,14 @@
-# Starry
+# Starry engine
 
-Voxel engine that will eventually become a game or something.
+The most massive.
 
 ## FAQ
 
-### Have you tried \[game engine] you fucking moron
+### Is this usable?
+
+Barely.
+
+### Have you tried \[game engine] you moron
 
 No fuck off.
 

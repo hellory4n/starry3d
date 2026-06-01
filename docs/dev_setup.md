@@ -1,5 +1,8 @@
 # Development setup
 
+> [!NOTE]
+> This is intended for developing the engine. Look elsewhere (todo) to create a new project.
+
 ## Prerequisites
 
 You need these installed:
