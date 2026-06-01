@@ -1,7 +1,7 @@
 package hello
 
-import strt "../../starryrt"
-import gpu "../../starryrt/gpu"
+import stapp "../../starryapp"
+import gpu "../../starryapp/gpu"
 import "core:log"
 
 new_app :: proc()
@@ -26,7 +26,7 @@ render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
 
 main :: proc()
 {
-	strt.run(
+	stapp.run(
 		app_name = "hello starry",
 		app_version = {0, 1, 0},
 		asset_dir = "samples/hello",

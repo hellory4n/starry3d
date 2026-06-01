@@ -1,14 +1,14 @@
 package gpu_textures
 
-import strt "../../starryrt"
-import gpu "../../starryrt/gpu"
+import stapp "../../starryapp"
+import gpu "../../starryapp/gpu"
 import "core:mem"
 
 app: struct {
 	pipeline:      gpu.Pipeline,
 	vertex_buffer: gpu.Buffer,
 	index_buffer:  gpu.Buffer,
-	texture:       strt.Texture,
+	texture:       stapp.Texture,
 	sampler:       gpu.Sampler,
 }
 
@@ -34,7 +34,7 @@ Uniforms :: struct {
 
 new_app :: proc()
 {
-	dev := strt.get_gpu()
+	dev := stapp.get_gpu()
 
 	vert := gpu.new_shader(dev, #load("shader.vert"), .VERTEX)
 	defer gpu.free_shader(vert)
@@ -67,7 +67,7 @@ new_app :: proc()
 	app.index_buffer = gpu.new_buffer(dev, .INDEX, .READ_ONLY, len(idx_bytes), idx_bytes)
 
 	app.sampler = gpu.new_sampler(dev, wrap = .TILE, filter = .NEAREST_NEIGHBOR)
-	app.texture = strt.fetch_texture("fish.png")
+	app.texture = stapp.fetch_texture("fish.png")
 }
 
 free_app :: proc()
@@ -85,7 +85,7 @@ render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
 	gpu.bind_pipeline(dev, app.pipeline)
 	gpu.bind_vertex_buffer(dev, app.vertex_buffer)
 	gpu.bind_index_buffer(dev, app.index_buffer)
-	gpu.bind_texture(dev, strt.texture_gpu_handle(app.texture), slot = 0)
+	gpu.bind_texture(dev, stapp.texture_gpu_handle(app.texture), slot = 0)
 	gpu.bind_sampler(dev, app.sampler, slot = 0)
 
 	gpu.set_uniforms(dev, Uniforms{texture = 0})
@@ -96,7 +96,7 @@ render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
 
 main :: proc()
 {
-	strt.run(
+	stapp.run(
 		app_name = "gpu textures",
 		app_version = {0, 1, 0},
 		asset_dir = "samples/gpu_textures",

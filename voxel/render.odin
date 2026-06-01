@@ -1,8 +1,8 @@
 package stvoxel
 
 import st "../starrylib"
-import strt "../starryrt"
-import "../starryrt/gpu"
+import stapp "../starryapp"
+import "../starryapp/gpu"
 import "core:math"
 import "core:math/linalg"
 
@@ -42,7 +42,7 @@ render :: proc(dev: gpu.Device, swap: gpu.Swapchain)
 	gpu.set_uniforms(
 		dev,
 		Uniforms {
-			aspect_ratio = strt.aspect_ratio(),
+			aspect_ratio = stapp.aspect_ratio(),
 			cam_pos = camera().position,
 			cam_rot = st.quat_to_vec4(camera().rotation),
 			fov = camera().fov_radians,

@@ -1,7 +1,7 @@
 package gpu_triangle
 
-import strt "../../starryrt"
-import gpu "../../starryrt/gpu"
+import stapp "../../starryapp"
+import gpu "../../starryapp/gpu"
 import "core:mem"
 
 app: struct {
@@ -27,7 +27,7 @@ INDICES := [?]u32{0, 1, 2}
 
 new_app :: proc()
 {
-	dev := strt.get_gpu()
+	dev := stapp.get_gpu()
 
 	vert := gpu.new_shader(dev, #load("tri.vert"), .VERTEX)
 	defer gpu.free_shader(vert)
@@ -81,7 +81,7 @@ render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
 
 main :: proc()
 {
-	strt.run(
+	stapp.run(
 		app_name = "gpu triangle",
 		app_version = {0, 1, 0},
 		asset_dir = "samples/gpu_triangle",

@@ -1,4 +1,4 @@
-package starryrt
+package starryapp
 
 import hm "core:container/handle_map"
 import "core:log"

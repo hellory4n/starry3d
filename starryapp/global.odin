@@ -1,4 +1,4 @@
-package starryrt
+package starryapp
 
 import "base:runtime"
 import hm "core:container/handle_map"

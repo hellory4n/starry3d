@@ -1,4 +1,4 @@
-package starryrt
+package starryapp
 
 import "core:bytes"
 import hm "core:container/handle_map"

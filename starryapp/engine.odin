@@ -1,4 +1,4 @@
-package starryrt
+package starryapp
 
 import st "../starrylib"
 import "core:c"

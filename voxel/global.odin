@@ -1,6 +1,6 @@
 package stvoxel
 
-import gpu "../starryrt/gpu"
+import gpu "../starryapp/gpu"
 
 @(private)
 global: struct {
