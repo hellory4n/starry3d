@@ -3,7 +3,7 @@ RELEASE := ""   # default: debug, can be 'minimal', 'size', or 'speed'
 TARGET := ""    # default: native
 SANITIZE := ""  # default: none
 
-_RELEASE     := if RELEASE  == "" { "-debug" } else { f"-o:{{RELEASE}}" }
+_RELEASE     := if RELEASE  == "" { "-debug -o:minimal" } else { f"-o:{{RELEASE}}" }
 _SANITIZE    := if SANITIZE == "" { "" }       else { f"-sanitize:{{SANITIZE}}" }
 _TARGET      := if TARGET   == "" { "" }       else { f"-target:{{TARGET}}" }
 

@@ -5,6 +5,7 @@ import "base:runtime"
 import "core:c"
 import "core:log"
 import "core:strings"
+import "gpu"
 import "vendor:glfw"
 
 Window :: struct {
@@ -26,6 +27,7 @@ open_window :: proc(
 	resizable: bool = true,
 	high_dpi: bool = true,
 	setup_gl_ctx: bool = false,
+	gl_version: gpu.Gl_Version = .CORE_43,
 	allocator := context.allocator,
 ) -> ^Window
 {
@@ -47,8 +49,15 @@ open_window :: proc(
 	if setup_gl_ctx {
 		glfw.WindowHint(glfw.CLIENT_API, glfw.OPENGL_API)
 		glfw.WindowHint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
-		glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 4)
-		glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 3)
+
+		switch gl_version {
+		case .CORE_33:
+			glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 3)
+			glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 3)
+		case .CORE_43:
+			glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 4)
+			glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 3)
+		}
 	} else {
 		glfw.WindowHint(glfw.CLIENT_API, glfw.NO_API)
 	}
@@ -58,6 +67,7 @@ open_window :: proc(
 	glfw.WindowHint(glfw.SCALE_TO_MONITOR, b32(!high_dpi))
 	glfw.WindowHint(glfw.SCALE_FRAMEBUFFER, b32(!high_dpi))
 
+	// completely unnecessary
 	glfw.WindowHintString(glfw.X11_CLASS_NAME, title_cstr)
 	glfw.WindowHintString(glfw.WAYLAND_APP_ID, title_cstr)
 

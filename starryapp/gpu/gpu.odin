@@ -106,8 +106,14 @@ global: struct {
 	samplers:   hm.Static_Handle_Map(1024, Gl_Sampler, Sampler),
 }
 
+Gl_Version :: enum {
+	CORE_33,
+	CORE_43,
+}
+
 Gl_Init_Glue :: struct {
 	get_proc_address_proc: gl.Set_Proc_Address_Type,
+	gl_version:            Gl_Version,
 }
 
 Init_Glue :: union {
@@ -121,36 +127,42 @@ Init_Glue :: union {
 new_device :: proc(glue: Init_Glue, debug: bool = ODIN_DEBUG) -> (dev: Device, ok: bool)
 {
 	gl_glue := glue.(Gl_Init_Glue)
-	gl.load_up_to(4, 3, gl_glue.get_proc_address_proc)
-
-	when ODIN_DEBUG {
-		gl.Enable(gl.DEBUG_OUTPUT)
-		gl.Enable(gl.DEBUG_OUTPUT_SYNCHRONOUS)
-		gl.DebugMessageCallback(
-			proc "c" (
-				source: u32,
-				type: u32,
-				id: u32,
-				severity: u32,
-				length: i32,
-				message: cstring,
-				userparam: rawptr,
-			)
-			{
-				context = runtime.default_context()
-				switch severity {
-				case gl.DEBUG_SEVERITY_HIGH:
-					log.errorf("OpenGL 0x%X: %s", id, message)
-				case gl.DEBUG_SEVERITY_MEDIUM:
-				case gl.DEBUG_SEVERITY_LOW:
-					log.warnf("OpenGL 0x%X: %s", id, message)
-				case:
-					log.infof("OpenGL 0x%X: %s", id, message)
-				}
-			},
-			nil,
-		)
+	switch gl_glue.gl_version {
+	case .CORE_33:
+		gl.load_up_to(3, 3, gl_glue.get_proc_address_proc)
+	case .CORE_43:
+		gl.load_up_to(4, 3, gl_glue.get_proc_address_proc)
 	}
+
+	// this segfaults?????????????
+	// when ODIN_DEBUG {
+	// 	gl.Enable(gl.DEBUG_OUTPUT)
+	// 	gl.Enable(gl.DEBUG_OUTPUT_SYNCHRONOUS)
+	// 	gl.DebugMessageCallback(
+	// 		proc "c" (
+	// 			source: u32,
+	// 			type: u32,
+	// 			id: u32,
+	// 			severity: u32,
+	// 			length: i32,
+	// 			message: cstring,
+	// 			userparam: rawptr,
+	// 		)
+	// 		{
+	// 			context = runtime.default_context()
+	// 			switch severity {
+	// 			case gl.DEBUG_SEVERITY_HIGH:
+	// 				log.errorf("OpenGL 0x%X: %s", id, message)
+	// 			case gl.DEBUG_SEVERITY_MEDIUM:
+	// 			case gl.DEBUG_SEVERITY_LOW:
+	// 				log.warnf("OpenGL 0x%X: %s", id, message)
+	// 			case:
+	// 				log.infof("OpenGL 0x%X: %s", id, message)
+	// 			}
+	// 		},
+	// 		userParam = nil,
+	// 	)
+	// }
 
 	// dummy vao so it stops bitching with bufferless rendering
 	vao: u32 = ---

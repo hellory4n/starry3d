@@ -9,6 +9,13 @@ import "core:time"
 import "gpu"
 import "vendor:glfw"
 
+Graphics_Profile :: enum {
+	// Targets OpenGL 3.3, can't run the voxel renderer.
+	COMPATIBILITY,
+	// Targets OpenGL 4.3, supports the voxel renderer.
+	MODERN,
+}
+
 run :: proc(
 	app_name: string,
 	init_proc: proc(),
@@ -19,6 +26,7 @@ run :: proc(
 	app_version: [3]i32 = {0, 0, 0},
 	width: int = 800,
 	height: int = 600,
+	graphics_profile := Graphics_Profile.MODERN,
 )
 {
 	// TODO split into 5 billion trillion functions for Clean™ Code®
@@ -62,6 +70,7 @@ run :: proc(
 		resizable = true,
 		high_dpi = true,
 		setup_gl_ctx = true,
+		gl_version = .CORE_33 if graphics_profile == .COMPATIBILITY else .CORE_43,
 	)
 	defer close_window(window)
 
