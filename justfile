@@ -50,3 +50,7 @@ run-all-samples: \
 @run-hello-voxel:
 	@# run hello voxel
 	odin run samples/hello_voxel {{_CFLAGS}}
+
+@run-lua-hello:
+	@# run hello (lua)
+	odin run starryluarunner -- samples/lua/hello/game.ini
