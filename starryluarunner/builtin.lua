@@ -1,6 +1,5 @@
 -- starry preloaded lua
-st = {
-}
+st = {}
 
 -- to avoid a 'function not found' error
 function app_init() end
