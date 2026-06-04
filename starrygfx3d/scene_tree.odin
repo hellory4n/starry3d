@@ -107,6 +107,8 @@ print_obj :: proc(obj: ^Object, name: string, level: int)
 
 add_child_to_scene :: proc(parent: ^Scene_Object, name: string, child: ^Object)
 {
+	// TODO this WILL cause some goofy bug because it got out of sync or some shit
+	child.parent = parent
 	parent.children[name] = child
 }
 

@@ -2,7 +2,9 @@ package starryluarunner
 
 import stapp "../starryapp"
 import gpu "../starryapp/gpu"
+import st "../starrylib"
 import "core:fmt"
+import "core:os"
 import lua "vendor:lua/5.4"
 
 global: struct {
@@ -12,7 +14,34 @@ global: struct {
 
 main :: proc()
 {
-	// TODO there should be a logger setup at this point?
+	// we have command parsing at home
+	if len(os.args) > 1 {
+		cmd := os.args[1]
+		switch cmd {
+		case "--version", "-v":
+			fmt.printfln("starryluarunner %s", st.VERSION_STR)
+			return
+
+		case "--help", "-h":
+			fmt.println("starryluarunner")
+			fmt.printfln("usage: %s [config.lua]", os.args[0])
+			fmt.println()
+			fmt.println("Options:")
+			fmt.println(
+				"    --dump-symbols: prints all the engine symbols as a JSON to stdout",
+			)
+			fmt.println("    --version, -v: prints version and exits")
+			fmt.println("    --help, -h: prints this and exits")
+			return
+
+		// TODO strip on release mode?
+		case "--dump-symbols":
+			dump_symbols()
+			return
+		}
+	}
+
+	// TODO there should be a logger setup at this point
 	// (usually the engine inits it, but the engine isn't initialized yet)
 
 	L := lua.L_newstate()
