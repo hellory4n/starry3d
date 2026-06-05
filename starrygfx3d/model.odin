@@ -9,14 +9,15 @@ import gltf "vendor:cgltf"
 Model :: distinct hm.Handle32
 
 Model_Data :: struct {
+	handle:     Model,
 	gltf_model: ^gltf.data,
 	meshes:     []Mesh,
 }
 
 // Pure uncut mesh data. Probably use a model instead
 Mesh :: struct {
-	vertices: []Vertex,
-	indices:  []Triangle,
+	vertices: gpu.Buffer,
+	indices:  gpu.Buffer,
 }
 
 // TODO consider not forcing the exact same format for every model that has ever existed
@@ -48,6 +49,12 @@ reload_model :: proc(path: string) -> (model: Model, ok: bool) #optional_ok
 	if !ok do return
 
 	global.model_cache[path] = model
+	return
+}
+
+load_model_from_memory :: proc(meshes: []Mesh) -> (model: Model, ok: bool)
+{
+	model, ok = hm.add(&global.models, Model_Data{meshes = meshes})
 	return
 }
 
