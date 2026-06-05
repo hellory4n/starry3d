@@ -9,7 +9,8 @@ import gltf "vendor:cgltf"
 Model :: distinct hm.Handle32
 
 Model_Data :: struct {
-	meshes: []Mesh,
+	gltf_model: ^gltf.data,
+	meshes:     []Mesh,
 }
 
 // Pure uncut mesh data. Probably use a model instead
@@ -56,6 +57,10 @@ unload_model :: proc(model: Model)
 	m, ok := hm.get(&global.models, model)
 	assert(ok)
 
+	if m.gltf_model != nil {
+		defer gltf.free(m.gltf_model)
+	}
+
 	hm.remove(&global.models, model)
 }
 
@@ -79,5 +84,19 @@ fetch_model :: proc(path: string) -> (model: Model, ok: bool) #optional_ok
 @(private)
 import_gltf :: proc(path: string) -> (model: Model_Data, ok: bool) #optional_ok
 {
-	log.panic("TODO lmo")
+	cpath := strings.clone_to_cstring(path, context.temp_allocator)
+	tfm, res := gltf.parse_file({}, cpath)
+	if res != .success {
+		log.errorf("couldn't load %q: %s", path, res)
+		return model, false
+	}
+	model.gltf_model = tfm
+
+	res = gltf.load_buffers({}, tfm, cpath)
+	if res != .success {
+		log.errorf("couldn't load internal buffers for %q: %s", path, res)
+		return model, false
+	}
+
+	return model, true
 }
