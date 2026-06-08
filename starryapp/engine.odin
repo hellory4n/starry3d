@@ -4,7 +4,6 @@ import st "../starrylib"
 import "core:c"
 import "core:log"
 import "core:math"
-import "core:mem"
 import "core:time"
 import "gpu"
 import "vendor:glfw"
@@ -30,30 +29,13 @@ run :: proc(
 )
 {
 	// TODO split into 5 billion trillion functions for Clean™ Code®
-	when ODIN_OS != .Windows || ODIN_OS != .Linux {
+	when ODIN_OS != .Windows && ODIN_OS != .Linux {
 		log.warnf("platform %s not officially supported", ODIN_OS)
 	}
 	when ODIN_PLATFORM_SUBTARGET != .Default {
 		log.warnf("platform %s not officially supported", ODIN_PLATFORM_SUBTARGET)
 	}
 
-	lazy_logger, _ := st.new_lazy_logger()
-	context.logger = lazy_logger.logger
-	defer st.free_lazy_logger(&lazy_logger)
-
-	// we have valgrind at home
-	when ODIN_DEBUG {
-		track: mem.Tracking_Allocator
-		mem.tracking_allocator_init(&track, context.allocator)
-		context.allocator = mem.tracking_allocator(&track)
-
-		defer {
-			st.poor_mans_valgrind(track)
-			mem.tracking_allocator_destroy(&track)
-		}
-	}
-
-	// IT'S ALIVE!
 	log.infof("starry engine %s for %s", st.VERSION_STR, ODIN_OS)
 	defer log.infof("exited safely")
 	engine.running = true
@@ -115,7 +97,7 @@ run :: proc(
 	init_assets(asset_dir)
 	defer free_assets()
 
-	// IT'S ALIVE! (but it's the game this time)
+	// IT'S ALIVE!
 	if init_proc != nil do init_proc()
 	defer if free_proc != nil do free_proc()
 
