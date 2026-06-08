@@ -14,6 +14,10 @@ global: struct {
 
 main :: proc()
 {
+	ctx := st.init_better_context()
+	defer st.free_better_context(&ctx)
+	context = ctx.ctx
+
 	// we have command parsing at home
 	if len(os.args) > 1 {
 		cmd := os.args[1]
@@ -40,9 +44,6 @@ main :: proc()
 			return
 		}
 	}
-
-	// TODO there should be a logger setup at this point
-	// (usually the engine inits it, but the engine isn't initialized yet)
 
 	L := lua.L_newstate()
 	if L == nil {

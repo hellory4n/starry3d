@@ -2,6 +2,7 @@ package gpu_bufferless
 
 import stapp "../../starryapp"
 import gpu "../../starryapp/gpu"
+import st "../../starrylib"
 
 app: struct {
 	pipeline: gpu.Pipeline,
@@ -39,6 +40,10 @@ render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
 
 main :: proc()
 {
+	ctx := st.init_better_context()
+	defer st.free_better_context(&ctx)
+	context = ctx.ctx
+
 	stapp.run(
 		app_name = "gpu bufferless",
 		app_version = {0, 1, 0},

@@ -1,5 +1,6 @@
 package hello
 
+import st "../../starrylib"
 import stapp "../../starryapp"
 import "../../starryapp/gpu"
 import stvx "../../voxel"
@@ -97,6 +98,10 @@ move :: #force_inline proc(camera: ^stvx.Camera, dt: f32)
 
 main :: proc()
 {
+	ctx := st.init_better_context()
+	defer st.free_better_context(&ctx)
+	context = ctx.ctx
+
 	stapp.run(
 		app_name = "hello voxel",
 		app_version = {0, 1, 0},

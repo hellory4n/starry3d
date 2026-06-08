@@ -2,6 +2,7 @@ package gpu_uniforms
 
 import stapp "../../starryapp"
 import gpu "../../starryapp/gpu"
+import st "../../starrylib"
 import "core:math"
 import "core:math/linalg"
 import "core:mem"
@@ -186,6 +187,10 @@ camera_view_matrix :: proc() -> matrix[4, 4]f32
 
 main :: proc()
 {
+	ctx := st.init_better_context()
+	defer st.free_better_context(&ctx)
+	context = ctx.ctx
+
 	stapp.run(
 		app_name = "gpu uniforms",
 		app_version = {0, 1, 0},
