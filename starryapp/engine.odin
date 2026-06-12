@@ -57,6 +57,9 @@ run :: proc(
 	defer close_window(window)
 
 	// gpu crap
+	gpu.init_instance()
+	defer gpu.free_instance()
+
 	ok: bool
 	engine.device, ok = gpu.new_device(gpu.Gl_Init_Glue {
 		window = main_window(),
