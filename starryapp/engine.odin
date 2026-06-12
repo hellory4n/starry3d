@@ -76,15 +76,12 @@ run :: proc(
 	}
 	defer gpu.free_device(engine.device)
 
-	glfw.SetFramebufferSizeCallback(
-		main_window().glfw,
-		proc "c" (window: glfw.WindowHandle, width, height: c.int)
-		{
-			context = engine.ctx // shut up
-			gpu.resize_swapchain(engine.device, {width, height})
-			gpu.set_viewport(engine.device, pos = {0, 0}, size = {width, height})
-		},
-	)
+	on_resize(proc(userdata: rawptr, window: ^Window)
+	{
+		size := framebuffer_sizei()
+		gpu.resize_swapchain(engine.device, size)
+		gpu.set_viewport(engine.device, pos = {0, 0}, size = size)
+	})
 
 	// init other crap systems
 	init_assets(asset_dir)
