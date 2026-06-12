@@ -20,7 +20,7 @@ update_app :: proc(dt: f32)
 	// TODO
 }
 
-render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
+render_app :: proc(dt: f32, dev: gpu.Device)
 {
 	// TODO
 }

@@ -65,7 +65,7 @@ main :: proc()
 	stapp.run(
 		app_name = "3D scene",
 		app_version = {0, 1, 0},
-		asset_dir = "samples/3d_scene",
+		asset_dir = "samples/odi3d_scene",
 		init_proc = new_app,
 		free_proc = free_app,
 		update_proc = update_app,

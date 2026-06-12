@@ -1,8 +1,8 @@
 package gpu_triangle
 
-import st "../../starrylib"
 import stapp "../../starryapp"
 import gpu "../../starryapp/gpu"
+import st "../../starrylib"
 import "core:mem"
 
 app: struct {
@@ -68,9 +68,9 @@ free_app :: proc()
 	gpu.free_pipeline(app.pipeline)
 }
 
-render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
+render_app :: proc(dt: f32, dev: gpu.Device)
 {
-	gpu.begin_render_pass(dev, swap, [4]f32{0, 0, 0, 1})
+	gpu.begin_render_pass(dev, gpu.default_framebuffer(dev), clear_color = [4]f32{0, 0, 0, 1})
 
 	gpu.bind_pipeline(dev, app.pipeline)
 	gpu.bind_vertex_buffer(dev, app.vertex_buffer)
@@ -85,7 +85,7 @@ main :: proc()
 	ctx := st.init_better_context()
 	defer st.free_better_context(&ctx)
 	context = ctx.ctx
-	
+
 	stapp.run(
 		app_name = "gpu triangle",
 		app_version = {0, 1, 0},

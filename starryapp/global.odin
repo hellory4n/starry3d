@@ -11,7 +11,6 @@ engine: struct {
 	ctx:           runtime.Context, // for callbacks
 	windows:       [dynamic]^Window,
 	device:        gpu.Device,
-	swapchain:     gpu.Swapchain,
 	start_time:    f64,
 	current_time:  f64,
 	prev_time:     f64,

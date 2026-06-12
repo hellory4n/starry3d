@@ -229,7 +229,7 @@ free_device :: proc(dev: Device)
 	hm.remove(&global.devices, dev)
 }
 
-resize_swapchain :: proc(dev: Device, new_size: [2]u32)
+resize_swapchain :: proc(dev: Device, new_size: [2]i32)
 {
 	// noop in opengl
 	// i think glViewport handles that?
@@ -267,9 +267,9 @@ begin_render_pass :: proc(
 {
 	fb, ok := hm.get(&global.framebuffers, framebuffer)
 	assert(ok)
-	
+
 	gl.BindFramebuffer(gl.FRAMEBUFFER, fb.id)
-	
+
 	clear_bits: u32
 	switch v in clear_color {
 	case [4]f32:
@@ -338,7 +338,6 @@ new_shader :: proc(
 		return shader, false
 	}
 
-	err: mem.Allocator_Error
 	return hm.add(&global.shaders, Gl_Shader{id = id}), true
 }
 
@@ -1035,9 +1034,9 @@ bind_sampler :: proc(dev: Device, sampler: Sampler, slot: u32)
 	gl.BindSampler(slot, s.id)
 }
 
-set_viewport :: proc(dev: Device, new_size: [2]u32)
+set_viewport :: proc(dev: Device, pos: [2]i32, size: [2]i32)
 {
-	gl.Viewport(0, 0, i32(new_size.x), i32(new_size.y))
+	gl.Viewport(pos.x, pos.y, size.x, size.y)
 }
 
 // If position or size are nil, it disables scissor testing, which is equivalent to

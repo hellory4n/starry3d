@@ -20,7 +20,7 @@ run :: proc(
 	init_proc: proc(),
 	free_proc: proc(),
 	update_proc: proc(dt: f32) = nil,
-	render_proc: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain) = nil,
+	render_proc: proc(dt: f32, dev: gpu.Device) = nil,
 	asset_dir: string = ".",
 	app_version: [3]i32 = {0, 0, 0},
 	width: int = 800,
@@ -59,10 +59,16 @@ run :: proc(
 	// gpu crap
 	ok: bool
 	engine.device, ok = gpu.new_device(gpu.Gl_Init_Glue {
+		window = main_window(),
 		get_proc_address_proc = proc(p: rawptr, name: cstring)
 		{
 			_proc := cast(^rawptr)p
 			_proc^ = glfw.GetProcAddress(name)
+		},
+		swap_buffers_proc = proc(w: rawptr)
+		{
+			window := cast(^Window)w
+			glfw.SwapBuffers(window.glfw)
 		},
 	})
 	if !ok {
@@ -70,26 +76,13 @@ run :: proc(
 	}
 	defer gpu.free_device(engine.device)
 
-	engine.swapchain = gpu.new_swapchain(
-		engine.device,
-		framebuffer_sizeu(),
-		gpu.Gl_Swapchain_Glue {
-			window = main_window(),
-			swap_buffers_proc = proc(w: rawptr)
-			{
-				window := cast(^Window)w
-				glfw.SwapBuffers(window.glfw)
-			},
-		},
-	)
-	defer gpu.free_swapchain(engine.swapchain)
-
 	glfw.SetFramebufferSizeCallback(
 		main_window().glfw,
 		proc "c" (window: glfw.WindowHandle, width, height: c.int)
 		{
 			context = engine.ctx // shut up
-			gpu.resize_swapchain(engine.swapchain, {u32(width), u32(height)})
+			gpu.resize_swapchain(engine.device, {width, height})
+			gpu.set_viewport(engine.device, pos = {0, 0}, size = {width, height})
 		},
 	)
 
@@ -119,11 +112,11 @@ run :: proc(
 
 		// running it
 		if update_proc != nil do update_proc(f32(delta_time))
-		if render_proc != nil do render_proc(f32(delta_time), get_gpu(), get_swapchain())
+		if render_proc != nil do render_proc(f32(delta_time), get_gpu())
 
 		// gpuing it 2
 		gpu.end_frame(engine.device)
-		gpu.present_swapchain(engine.device, engine.swapchain)
+		gpu.present_and_swap_buffers(engine.device)
 		poll_events()
 	}
 }
@@ -144,10 +137,4 @@ delta_time :: proc() -> f64
 get_gpu :: proc() -> gpu.Device
 {
 	return engine.device
-}
-
-// Returns the current swapchain
-get_swapchain :: proc() -> gpu.Swapchain
-{
-	return engine.swapchain
 }
