@@ -13,7 +13,7 @@ Qurjs fhycmjjjjjjjjjjjjjjjjjç foyr6th name is QuejaGontificador
 
 Emerson Victor Kyler Gandalf Joel Pablo Daquavious II Sr. Jr. OBE (🇪🇸 Émerez Víctor Quejador Gandalf Joel Pablo Decavio II Sr. Jr. OIB) or QuejaPalronicador or Qurjs fhycmjjjjjjjjjjjjjjjjjç can produce mind boggling effects.
 */
-package stgpu
+package starrygpu
 
 import "base:intrinsics"
 import "base:runtime"
@@ -33,17 +33,11 @@ Device :: distinct hm.Handle32
 
 @(private)
 Gl_Device :: struct {
-	handle:           Device,
-	current_pipeline: Gl_Pipeline,
-}
-
-Swapchain :: distinct hm.Handle32
-
-@(private)
-Gl_Swapchain :: struct {
-	handle:            Swapchain,
-	window:            rawptr,
-	swap_buffers_proc: proc(window: rawptr),
+	handle:              Device,
+	current_pipeline:    Gl_Pipeline,
+	window:              rawptr,
+	swap_buffers_proc:   proc(window: rawptr),
+	default_framebuffer: Framebuffer,
 }
 
 Pipeline :: distinct hm.Handle32
@@ -95,15 +89,56 @@ Gl_Sampler :: struct {
 	id:     u32,
 }
 
+Framebuffer :: distinct hm.Handle32
+
+Gl_Framebuffer_Attachment :: struct {
+	handle:       Texture,
+	id:           u32,
+	renderbuffer: bool,
+}
+
 @(private)
+Gl_Framebuffer :: struct {
+	handle:                   Framebuffer,
+	id:                       u32,
+	color_attachments:        [dynamic]Gl_Framebuffer_Attachment,
+	depth_stencil_attachment: Gl_Framebuffer_Attachment,
+}
+
 global: struct {
-	devices:    hm.Static_Handle_Map(1024, Gl_Device, Device),
-	swapchains: hm.Static_Handle_Map(1024, Gl_Swapchain, Swapchain),
-	pipelines:  hm.Static_Handle_Map(1024, Gl_Pipeline, Pipeline),
-	shaders:    hm.Static_Handle_Map(1024, Gl_Shader, Shader),
-	buffers:    hm.Static_Handle_Map(1024, Gl_Buffer, Buffer),
-	textures:   hm.Static_Handle_Map(1024, Gl_Texture, Texture),
-	samplers:   hm.Static_Handle_Map(1024, Gl_Sampler, Sampler),
+	allocator:    mem.Allocator,
+	devices:      hm.Dynamic_Handle_Map(Gl_Device, Device),
+	pipelines:    hm.Dynamic_Handle_Map(Gl_Pipeline, Pipeline),
+	shaders:      hm.Dynamic_Handle_Map(Gl_Shader, Shader),
+	buffers:      hm.Dynamic_Handle_Map(Gl_Buffer, Buffer),
+	textures:     hm.Dynamic_Handle_Map(Gl_Texture, Texture),
+	samplers:     hm.Dynamic_Handle_Map(Gl_Sampler, Sampler),
+	framebuffers: hm.Dynamic_Handle_Map(Gl_Framebuffer, Framebuffer),
+}
+
+// Initializes the global state used by the GPU backend.
+init_instance :: proc(allocator := context.allocator)
+{
+	global.allocator = allocator
+	hm.dynamic_init(&global.devices, allocator)
+	hm.dynamic_init(&global.pipelines, allocator)
+	hm.dynamic_init(&global.shaders, allocator)
+	hm.dynamic_init(&global.buffers, allocator)
+	hm.dynamic_init(&global.textures, allocator)
+	hm.dynamic_init(&global.samplers, allocator)
+	hm.dynamic_init(&global.framebuffers, allocator)
+}
+
+// Deinitializes the global state used by the GPU backend.
+free_instance :: proc()
+{
+	hm.dynamic_destroy(&global.devices)
+	hm.dynamic_destroy(&global.pipelines)
+	hm.dynamic_destroy(&global.shaders)
+	hm.dynamic_destroy(&global.buffers)
+	hm.dynamic_destroy(&global.textures)
+	hm.dynamic_destroy(&global.samplers)
+	hm.dynamic_destroy(&global.framebuffers)
 }
 
 Gl_Version :: enum {
@@ -114,6 +149,8 @@ Gl_Version :: enum {
 Gl_Init_Glue :: struct {
 	get_proc_address_proc: gl.Set_Proc_Address_Type,
 	gl_version:            Gl_Version,
+	window:                rawptr,
+	swap_buffers_proc:     proc(window: rawptr),
 }
 
 Init_Glue :: union {
@@ -169,8 +206,17 @@ new_device :: proc(glue: Init_Glue, debug: bool = ODIN_DEBUG) -> (dev: Device, o
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 
-	dev, ok = hm.add(&global.devices, Gl_Device{})
-	assert(ok)
+	// dummy/default framebuffer
+	default_fb := hm.add(&global.framebuffers, Gl_Framebuffer{id = 0})
+
+	dev = hm.add(
+		&global.devices,
+		Gl_Device {
+			window = gl_glue.window,
+			swap_buffers_proc = gl_glue.swap_buffers_proc,
+			default_framebuffer = default_fb,
+		},
+	)
 
 	// objectively better defaults than opengl
 	set_blend(dev, .SRC_ALPHA, .ONE_MINUS_SRC_ALPHA)
@@ -183,37 +229,10 @@ free_device :: proc(dev: Device)
 	hm.remove(&global.devices, dev)
 }
 
-Gl_Swapchain_Glue :: struct {
-	window:            rawptr,
-	swap_buffers_proc: proc(window: rawptr),
-}
-
-Swapchain_Glue :: union {
-	Gl_Swapchain_Glue,
-}
-
-// swpap my chain<3
-new_swapchain :: proc(dev: Device, size: [2]u32, glue: Swapchain_Glue) -> Swapchain
+resize_swapchain :: proc(dev: Device, new_size: [2]u32)
 {
-	gl.Viewport(0, 0, i32(size.x), i32(size.y))
-	return hm.add(
-		&global.swapchains,
-		Gl_Swapchain {
-			window = glue.(Gl_Swapchain_Glue).window,
-			swap_buffers_proc = glue.(Gl_Swapchain_Glue).swap_buffers_proc,
-		},
-	)
-}
-
-// *unswaps your chains*
-free_swapchain :: proc(swapchain: Swapchain)
-{
-	hm.remove(&global.swapchains, swapchain)
-}
-
-resize_swapchain :: proc(swapchain: Swapchain, new_size: [2]u32)
-{
-	gl.Viewport(0, 0, i32(new_size.x), i32(new_size.y))
+	// noop in opengl
+	// i think glViewport handles that?
 }
 
 // Starts a new command buffer.
@@ -229,22 +248,43 @@ end_frame :: proc(dev: Device)
 }
 
 // Makes it so the swapchain shows up on the screen and stuff.
-present_swapchain :: proc(dev: Device, swapchain: Swapchain)
+present_and_swap_buffers :: proc(dev: Device)
 {
-	swap, ok := hm.get(&global.swapchains, swapchain)
+	d, ok := hm.get(&global.devices, dev)
 	assert(ok)
 
 	// close enough
-	swap.swap_buffers_proc(swap.window)
+	d.swap_buffers_proc(d.window)
 }
 
 // Doesn't clear the screen if `clear_color` is nil
-begin_render_pass :: proc(dev: Device, swapchain: Swapchain, clear_color: Maybe([4]f32) = nil)
+begin_render_pass :: proc(
+	dev: Device,
+	framebuffer: Framebuffer,
+	clear_color: Maybe([4]f32) = nil,
+	clear_depth: Maybe(f32) = nil,
+)
 {
+	fb, ok := hm.get(&global.framebuffers, framebuffer)
+	assert(ok)
+	
+	gl.BindFramebuffer(gl.FRAMEBUFFER, fb.id)
+	
+	clear_bits: u32
 	switch v in clear_color {
 	case [4]f32:
 		gl.ClearColor(v.r, v.g, v.b, v.a)
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		clear_bits |= gl.COLOR_BUFFER_BIT
+	}
+
+	switch v in clear_depth {
+	case f32:
+		gl.ClearDepthf(v)
+		clear_bits |= gl.DEPTH_BUFFER_BIT
+	}
+
+	if clear_bits != 0 {
+		gl.Clear(clear_bits)
 	}
 }
 
@@ -298,7 +338,8 @@ new_shader :: proc(
 		return shader, false
 	}
 
-	return hm.add(&global.shaders, Gl_Shader{id = id})
+	err: mem.Allocator_Error
+	return hm.add(&global.shaders, Gl_Shader{id = id}), true
 }
 
 free_shader :: proc(shader: Shader)
@@ -851,14 +892,16 @@ Texture_Format :: enum {
 	RGBA_U8,
 	RGB_F32,
 	RGBA_F32,
+	DEPTH_F32,
 }
 
+// If data is nil, this only allocates the data for later use
 new_texture :: proc(
 	dev: Device,
 	size: [2]i32,
-	input_format: Texture_Format,
 	gpu_format: Texture_Format,
-	data: []byte,
+	input_format: Maybe(Texture_Format) = nil,
+	data: []byte = nil,
 ) -> Texture
 {
 	id: u32
@@ -875,6 +918,8 @@ new_texture :: proc(
 		gl_internal_format = gl.RGB32F
 	case .RGBA_F32:
 		gl_internal_format = gl.RGBA32F
+	case .DEPTH_F32:
+		gl_internal_format = gl.DEPTH_COMPONENT32F
 	}
 
 	gl_format: u32
@@ -883,13 +928,15 @@ new_texture :: proc(
 		gl_format = gl.RGB
 	case .RGBA_U8, .RGBA_F32:
 		gl_format = gl.RGBA
+	case .DEPTH_F32:
+		gl_format = gl.DEPTH_COMPONENT
 	}
 
 	gl_type: u32
 	switch input_format {
 	case .RGB_U8, .RGBA_U8:
 		gl_type = gl.UNSIGNED_BYTE
-	case .RGB_F32, .RGBA_F32:
+	case .RGB_F32, .RGBA_F32, .DEPTH_F32:
 		gl_type = gl.FLOAT
 	}
 
@@ -988,6 +1035,11 @@ bind_sampler :: proc(dev: Device, sampler: Sampler, slot: u32)
 	gl.BindSampler(slot, s.id)
 }
 
+set_viewport :: proc(dev: Device, new_size: [2]u32)
+{
+	gl.Viewport(0, 0, i32(new_size.x), i32(new_size.y))
+}
+
 // If position or size are nil, it disables scissor testing, which is equivalent to
 // `set_scissor(dev, pos = {0, 0}, window_size())`
 set_scissor :: proc(dev: Device, pos, size: Maybe([2]i32))
@@ -1078,4 +1130,206 @@ set_blend :: proc(
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(stgpu_blend_to_gl_blend(src_factor), stgpu_blend_to_gl_blend(dst_factor))
 	gl.BlendColor(constant_color.r, constant_color.g, constant_color.b, constant_color.a)
+}
+
+Attachment :: struct {
+	format:     Texture_Format,
+	write_only: bool,
+}
+
+new_framebuffer :: proc(
+	dev: Device,
+	size: [2]i32,
+	color_attachments: []Attachment,
+	depth_stencil_attachment: Maybe(Attachment) = nil,
+) -> Framebuffer
+{
+	new_renderbuffer :: proc(dev: Device, size: [2]i32, format: Texture_Format) -> u32
+	{
+		id: u32 = ---
+		gl.GenRenderbuffers(1, &id)
+		gl.BindRenderbuffer(gl.RENDERBUFFER, id)
+		defer gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
+
+		gl_internal_format: u32
+		switch format {
+		case .RGB_U8:
+			gl_internal_format = gl.RGB8
+		case .RGBA_U8:
+			gl_internal_format = gl.RGBA8
+		case .RGB_F32:
+			gl_internal_format = gl.RGB32F
+		case .RGBA_F32:
+			gl_internal_format = gl.RGBA32F
+		case .DEPTH_F32:
+			gl_internal_format = gl.DEPTH_COMPONENT32F
+		}
+
+		gl.RenderbufferStorage(gl.RENDERBUFFER, gl_internal_format, size.x, size.y)
+
+		return id
+	}
+
+	fb := Gl_Framebuffer{}
+
+	gl.GenFramebuffers(1, &fb.id)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, fb.id)
+	defer gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+
+	for attachment, i in color_attachments {
+		if !attachment.write_only {
+			texture_handle := new_texture(dev, size, attachment.format)
+			texture := hm.get(&global.textures, texture_handle)
+
+			gl.FramebufferTexture2D(
+				gl.FRAMEBUFFER,
+				gl.COLOR_ATTACHMENT0 + u32(i),
+				gl.TEXTURE_2D,
+				texture.id,
+				level = 0,
+			)
+
+			append(
+				&fb.color_attachments,
+				Gl_Framebuffer_Attachment {
+					handle = texture_handle,
+					id = texture.id,
+					renderbuffer = false,
+				},
+			)
+		} else {
+			rbo := new_renderbuffer(dev, size, attachment.format)
+			gl.FramebufferRenderbuffer(
+				gl.FRAMEBUFFER,
+				gl.COLOR_ATTACHMENT0 + u32(i),
+				gl.RENDERBUFFER,
+				rbo,
+			)
+
+			append(
+				&fb.color_attachments,
+				Gl_Framebuffer_Attachment{id = rbo, renderbuffer = true},
+			)
+		}
+	}
+
+	switch attachment in depth_stencil_attachment {
+	case Attachment:
+		attachment_type: u32
+		switch attachment.format {
+		case .DEPTH_F32:
+			attachment_type = gl.DEPTH_ATTACHMENT
+
+		case .RGB_U8:
+		case .RGBA_U8:
+		case .RGB_F32:
+		case .RGBA_F32:
+			log.panic("expected depth/stencil attachment, got color attachment")
+		}
+
+		if !attachment.write_only {
+			fb.depth_stencil_attachment.handle = new_texture(
+				dev,
+				size,
+				attachment.format,
+			)
+			texture := hm.get(&global.textures, fb.depth_stencil_attachment.handle)
+			fb.depth_stencil_attachment.id = texture.id
+			fb.depth_stencil_attachment.renderbuffer = false
+
+			gl.FramebufferTexture2D(
+				gl.FRAMEBUFFER,
+				attachment_type,
+				gl.TEXTURE_2D,
+				texture.id,
+				level = 0,
+			)
+		} else {
+			rbo := new_renderbuffer(dev, size, attachment.format)
+			gl.FramebufferRenderbuffer(
+				gl.FRAMEBUFFER,
+				attachment_type,
+				gl.RENDERBUFFER,
+				rbo,
+			)
+
+			fb.depth_stencil_attachment = {
+				id           = rbo,
+				renderbuffer = true,
+			}
+		}
+	}
+
+	status := gl.CheckFramebufferStatus(gl.FRAMEBUFFER)
+	if status != gl.FRAMEBUFFER_COMPLETE {
+		log.errorf("couldn't create framebuffer (gl framebuffer status 0x%X)", status)
+		return {}
+	}
+
+	return hm.add(&global.framebuffers, fb)
+}
+
+free_framebuffer :: proc(framebuffer: Framebuffer)
+{
+	fb, ok := hm.get(&global.framebuffers, framebuffer)
+	assert(ok)
+
+	gl.DeleteFramebuffers(1, &fb.id)
+
+	for attachment in fb.color_attachments {
+		if attachment.renderbuffer {
+			mate := attachment.id
+			gl.DeleteRenderbuffers(1, &mate)
+		} else {
+			free_texture(attachment.handle)
+		}
+	}
+
+	hm.remove(&global.framebuffers, framebuffer)
+}
+
+default_framebuffer :: proc(dev: Device) -> Framebuffer
+{
+	d, ok := hm.get(&global.devices, dev)
+	assert(ok)
+
+	return d.default_framebuffer
+}
+
+framebuffer_color_attachment :: proc(framebuffer: Framebuffer, idx: i32) -> Texture
+{
+	fb, ok := hm.get(&global.framebuffers, framebuffer)
+	assert(ok)
+
+	// default framebuffer
+	if fb.id == 0 {
+		unimplemented("opengl is goofy and i don't feel safe doing this")
+	} else {
+		// TODO this sucks
+		if fb.color_attachments[idx].renderbuffer {
+			log.errorf("framebuffer attachment %d is write-only", idx)
+			return {}
+		}
+
+		return fb.color_attachments[idx].handle
+	}
+}
+
+framebuffer_depth_stencil_attachment :: proc(framebuffer: Framebuffer) -> Texture
+{
+	fb, ok := hm.get(&global.framebuffers, framebuffer)
+	assert(ok)
+
+	// default framebuffer
+	if fb.id == 0 {
+		unimplemented("opengl is goofy and i don't feel safe doing this")
+	} else {
+		// TODO this sucks
+		if fb.depth_stencil_attachment.renderbuffer {
+			log.error("framebuffer depth/stencil attachment is write-only")
+			return {}
+		}
+
+		return fb.depth_stencil_attachment.handle
+	}
 }

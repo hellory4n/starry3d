@@ -137,7 +137,7 @@ now_in_seconds :: proc() -> f64
 // Returns the time between the current frame and last frame
 delta_time :: proc() -> f64
 {
-	return engine.current_time - engine.prev_time
+	return math.clamp(engine.current_time - engine.prev_time, 0.0001, 1)
 }
 
 // Returns the current GPU device
