@@ -899,7 +899,7 @@ new_texture :: proc(
 	dev: Device,
 	size: [2]i32,
 	gpu_format: Texture_Format,
-	input_format: Maybe(Texture_Format) = nil,
+	input_format: Texture_Format,
 	data: []byte = nil,
 ) -> Texture
 {
@@ -1177,7 +1177,12 @@ new_framebuffer :: proc(
 
 	for attachment, i in color_attachments {
 		if !attachment.write_only {
-			texture_handle := new_texture(dev, size, attachment.format)
+			texture_handle := new_texture(
+				dev,
+				size,
+				gpu_format = attachment.format,
+				input_format = attachment.format,
+			)
 			texture := hm.get(&global.textures, texture_handle)
 
 			gl.FramebufferTexture2D(
@@ -1230,7 +1235,8 @@ new_framebuffer :: proc(
 			fb.depth_stencil_attachment.handle = new_texture(
 				dev,
 				size,
-				attachment.format,
+				gpu_format = attachment.format,
+				input_format = attachment.format,
 			)
 			texture := hm.get(&global.textures, fb.depth_stencil_attachment.handle)
 			fb.depth_stencil_attachment.id = texture.id

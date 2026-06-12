@@ -26,6 +26,7 @@ _CFLAGS      := f"{{_BASE_CFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}}"
 run-all-samples: \
 	run-hello \
 	run-gpu-triangle run-gpu-bufferless run-gpu-textures run-gpu-uniforms \
+	run-gpu-framebuffers \
 	run-3d-scene
 
 @run-hello:
@@ -48,13 +49,13 @@ run-all-samples: \
 	@# run gpu uniforms
 	odin run samples/gpu_uniforms {{_CFLAGS}}
 
+@run-gpu-framebuffers:
+	@# run gpu framebuffers
+	odin run samples/gpu_framebuffers {{_CFLAGS}}
+
 @run-3d-scene:
 	@# run 3D scene
 	odin run samples/3d_scene {{_CFLAGS}}
-
-@run-hello-voxel:
-	@# run hello voxel
-	odin run samples/hello_voxel {{_CFLAGS}}
 
 @run-lua-hello:
 	@# run hello (lua)
