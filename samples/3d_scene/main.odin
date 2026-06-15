@@ -2,44 +2,26 @@ package a3dscene
 
 import stapp "../../starryapp"
 import gpu "../../starryapp/gpu"
-import gfx3d "../../starrygfx3d"
+import gfx "../../starrygfx"
 import st "../../starrylib"
-import "core:log"
-import "core:math/linalg"
 
 app: struct {
-	scene: ^gfx3d.Scene_Object,
+	scene: gfx.Flat_Scene,
 }
 
 new_app :: proc()
 {
-	app.scene = gfx3d.new_blank_scene()
-	ricardo := gfx3d.new_blank_scene()
-	roberto := gfx3d.new_blank_scene()
-	ricardo_roberto := gfx3d.new_blank_scene()
-	camera := gfx3d.new_camera()
-	ensure(camera.type == .CAMERA)
-
-	defer gfx3d.free_scene(app.scene)
-	defer gfx3d.free_scene(ricardo)
-	defer gfx3d.free_scene(roberto)
-	defer gfx3d.free_scene(ricardo_roberto)
-	defer gfx3d.free_camera(camera)
-
-	gfx3d.add_child_to_scene(app.scene, "ricardo roberto", ricardo_roberto)
-	gfx3d.add_child_to_scene(ricardo_roberto, "ricardo", ricardo)
-	gfx3d.add_child_to_scene(ricardo_roberto, "roberto", roberto)
-	gfx3d.add_child_to_scene(ricardo, "camera", camera)
-	ensure(camera.type == .CAMERA)
-
-	camera.rotation = linalg.quaternion_from_euler_angle_x(f32(3))
-	ricardo.position = {-1, 41, 3}
-	ricardo_roberto.scale = 4
-
-	ensure(camera.type == .CAMERA)
-	gfx3d.dump_scene(app.scene, "la scene au chocolat")
-	log.debugf("%#v", gfx3d.camera_projection_matrix(camera) * gfx3d.object_transform(camera))
-	ensure(camera.type == .CAMERA)
+	app.scene = gfx.new_flat_scene()
+	app.scene.camera = {
+		transform   = gfx.camera_transform_from_position_rotation(
+			pos = {1, 2, 3},
+			rot = 1,
+		),
+		projection  = .PERSPECTIVE,
+		fov_or_zoom = 45,
+		near        = 0.001,
+		far         = 1000,
+	}
 }
 
 free_app :: proc()
@@ -51,7 +33,7 @@ update_app :: proc(dt: f32)
 	// TODO
 }
 
-render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
+render_app :: proc(dt: f32, dev: gpu.Device)
 {
 	// TODO
 }
@@ -65,7 +47,7 @@ main :: proc()
 	stapp.run(
 		app_name = "3D scene",
 		app_version = {0, 1, 0},
-		asset_dir = "samples/odi3d_scene",
+		asset_dir = "samples/3d_scene",
 		init_proc = new_app,
 		free_proc = free_app,
 		update_proc = update_app,
