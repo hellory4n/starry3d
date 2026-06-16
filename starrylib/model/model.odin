@@ -1,224 +1,114 @@
-package model
+/*
+3D model API and loader, with an API inspired by `core:image`
+*/
+package stmodel
 
-import glm "core:math/linalg/glsl"
+import "core:fmt"
 import "core:mem"
-import st ".."
+import "core:strings"
 
-Payload :: u32
-
-Attribute :: struct {
-	tag:     st.Tag,
-	payload: Payload,
+Vertex :: struct {
+	position: [3]f32,
+	normal:   [3]f32,
+	uv:       [2]f32,
 }
 
-// The standard color tag
-RGBA_TAG := st.tag("rgba")
+Material :: struct {
+	// TODO ?????
+}
+
+Mesh :: struct {
+	vertices: [dynamic]Vertex,
+	indices:  [dynamic]u32, // must be triangles
+	material: Material,
+}
 
 Model :: struct {
-	allocator:   mem.Allocator,
-	data:        map[st.Tag][]Payload,
-	solid:       []b8,
-	start:       [3]i32,
-	end:         [3]i32,
-	size:        [3]i32,
-	voxel_count: i32,
+	meshes: [dynamic]Mesh,
 }
 
-Init_Error :: enum {
-	OK,
-	OUT_OF_MEMORY,
-	START_MUST_BE_SMALLER_THAN_END,
+Error :: union {}
+
+Loader_Proc :: #type proc(data: []byte, allocator: mem.Allocator) -> (model: Model, err: Error)
+
+@(private)
+_internal_loaders: [File_Type]Loader_Proc
+
+register :: proc "contextless" (kind: File_Type, loader: Loader_Proc)
+{
+	assert_contextless(loader != nil)
+	_internal_loaders[kind] = loader
 }
 
-new_empty :: proc(
-	start: [3]i32,
-	end: [3]i32,
+File_Type :: enum {
+	UNKNOWN,
+	BIG_MASSIVE_MODELS, // .bmm
+	BLENDER, // .blend
+	FBX, // .fbx
+	GLTF, // .gltf, .glb
+	WAVEFRONT_OBJ, // .obj
+	STL, // .stl
+	COLLADA_DAE, // .dae
+	UNIVERSAL_SCENE_DESCRIPTION, // .usd
+	STANFORD_PLY, // .ply
+	ALEMBIC, // .abc
+}
+
+// there's too many text-based formats to detect it from just a magic number (it's possible
+// but very annoying)
+which_format_from_path :: proc(path: string) -> File_Type
+{
+	if strings.ends_with(path, ".bmm") {
+		return .BIG_MASSIVE_MODELS
+	} else if strings.ends_with(path, ".blend") {
+		return .BLENDER
+	} else if strings.ends_with(path, ".fbx") {
+		return .FBX
+	} else if strings.ends_with(path, ".gltf") || strings.ends_with(path, ".glb") {
+		return .GLTF
+	} else if strings.ends_with(path, ".obj") {
+		return .WAVEFRONT_OBJ
+	} else if strings.ends_with(path, ".stl") {
+		return .STL
+	} else if strings.ends_with(path, ".dae") {
+		return .COLLADA_DAE
+	} else if strings.ends_with(path, ".usd") {
+		return .UNIVERSAL_SCENE_DESCRIPTION
+	} else if strings.ends_with(path, ".ply") {
+		return .STANFORD_PLY
+	} else if strings.ends_with(path, ".abc") {
+		return .ALEMBIC
+	}
+	return .UNKNOWN
+}
+
+load_from_bytes :: proc(
+	data: []byte,
+	format: File_Type,
 	allocator := context.allocator,
 ) -> (
 	model: Model,
-	err: Init_Error,
+	err: Error,
 )
 {
-	model.allocator = allocator
-	model.start = start
-	model.end = end
-	model.size = glm.abs(end - start)
+	loader := _internal_loaders[format]
+	if loader == nil {
+		errstrb: strings.Builder
+		strings.builder_init(&errstrb, context.temp_allocator)
 
-	if glm.any(glm.greaterThanEqual(start, end)) {
-		err = .START_MUST_BE_SMALLER_THAN_END
-		return
-	}
-	// signed/unsigned crap stuff breaks here
-	if glm.any(glm.greaterThanEqual(model.size, [3]i32{2147483647, 2147483647, 2147483647})) {
-		err = .OUT_OF_MEMORY
-		return
+		errstr := fmt.sbprintf(
+			&errstrb,
+			"no loader for %s found. add one with model.register()",
+			format,
+		)
+		panic(errstr)
 	}
 
-	// TODO for the padding stuff just allocate a bigger buffer than necessary,
-	// make a smaller slice from that buffer, and then disable bounds checks
-	alerr: mem.Allocator_Error
-
-	model.solid, alerr = make([]b8, st.area(model.size), allocator)
-	if alerr == .Out_Of_Memory {
-		err = .OUT_OF_MEMORY
-		return
-	}
-
-	model.data = make(map[st.Tag][]Payload, allocator)
-	return
+	return loader(data, allocator)
 }
 
-free_model :: proc(model: ^Model)
+destroy :: proc(model: ^Model)
 {
-	delete(model.solid, model.allocator)
-	for _, payload in model.data {
-		delete(payload, model.allocator)
-	}
-	delete(model.data)
+	delete(model.meshes)
 	model^ = {}
-}
-
-is_out_of_bounds :: #force_inline proc(model: ^Model, pos: [3]i32) -> bool
-{
-	return(
-		glm.any(glm.lessThan(pos, model.start)) ||
-		glm.any(glm.greaterThanEqual(pos, model.end)) \
-	)
-}
-
-// returns a attribute from a voxel at the specified position. if for whatever reason it's
-// unable to get the data (out of bounds, empty voxel, or undefined tag), the default value
-// will be returned instead. the returned data may be interpreted any way you'd like (through
-// `transmute`) as long as it fits in 32 bits.
-get_voxel :: proc(model: ^Model, pos: [3]i32, tag: st.Tag) -> (payload: Payload, solid: bool)
-{
-	if is_out_of_bounds(model, pos) {
-		solid = false
-		return
-	}
-	solid = bool(model.solid[st.flatten_3d_idx(model.size, pos - model.start)])
-
-	attr_list, ok := model.data[tag]
-	payload = attr_list[st.flatten_3d_idx(model.size, pos - model.start)] if ok else 0
-	return
-}
-
-Set_Voxel_Error :: enum {
-	OK,
-	OUT_OF_MEMORY,
-	OUT_OF_BOUNDS,
-}
-
-// sets a voxel's attribute to a value (must be 32 bits), may allocate
-set_voxel :: proc(model: ^Model, pos: [3]i32, tag: st.Tag, value: Payload) -> (err: Set_Voxel_Error)
-{
-	if is_out_of_bounds(model, pos) {
-		err = .OUT_OF_BOUNDS
-		return
-	}
-
-	if !model.solid[st.flatten_3d_idx(model.size, pos - model.start)] {
-		model.solid[st.flatten_3d_idx(model.size, pos - model.start)] = true
-		model.voxel_count += 1
-	}
-
-	reserve_tag(model, tag) or_return
-	model.data[tag][st.flatten_3d_idx(model.size, pos - model.start)] = value
-	return
-}
-
-// internal bullshit you'll never use
-reserve_tag :: proc(model: ^Model, tag: st.Tag) -> (err: Set_Voxel_Error)
-{
-	if tag in model.data {
-		return
-	}
-
-	alerr: mem.Allocator_Error
-	model.data[tag], alerr = make([]Payload, st.area(model.size), model.allocator)
-	if alerr == .Out_Of_Memory {
-		err = .OUT_OF_MEMORY
-		return
-	}
-	return
-}
-
-// brutally murders the voxel in cold blood. poor voxel. returns true if the voxel was actually
-// deleted instead of just being empty/out of bounds.
-remove_voxel :: proc(model: ^Model, pos: [3]i32) -> (was_solid: bool)
-{
-	if is_out_of_bounds(model, pos) {
-		was_solid = false
-		return
-	}
-
-	was_solid = bool(model.solid[st.flatten_3d_idx(model.size, pos - model.start)])
-	if was_solid {
-		model.solid[st.flatten_3d_idx(model.size, pos - model.start)] = false
-		model.voxel_count -= 1
-	}
-	return
-}
-
-is_voxel_solid :: proc(model: ^Model, pos: [3]i32) -> bool
-{
-	if is_out_of_bounds(model, pos) {
-		return false
-	}
-	return bool(model.solid[st.flatten_3d_idx(model.size, pos - model.start)])
-}
-
-is_voxel_empty :: proc(model: ^Model, pos: [3]i32) -> bool
-{
-	return !is_voxel_solid(model, pos)
-}
-
-Iterator :: struct {
-	model:    ^Model,
-	attr_idx: int,
-	vox_idx:  i32,
-}
-
-// iterates over all the solid voxels and its attributes. order is undefined (fuck you)
-iterator :: proc(model: ^Model) -> Iterator
-{
-	return Iterator{model = model}
-}
-
-iterator_next :: proc(
-	it: ^Iterator,
-) -> (
-	pos: [3]i32,
-	tag: st.Tag,
-	payload: Payload,
-	ok: bool,
-)
-{
-	for it.vox_idx < st.area(it.model.size) {
-		if !it.model.solid[it.vox_idx] {
-			it.attr_idx = 0
-			it.vox_idx += 1
-			continue
-		}
-
-		// TODO this sucks
-		i := 0
-		for this_tag, this_payload in it.model.data {
-			if i == it.attr_idx {
-				it.attr_idx += 1
-				return st.unflatten_3d_idx(it.model.size, it.vox_idx) +
-					it.model.start,
-					this_tag,
-					this_payload[it.vox_idx],
-					true
-			}
-			i += 1
-		}
-
-		it.attr_idx = 0
-		it.vox_idx += 1
-	}
-
-	ok = false
-	return
 }
