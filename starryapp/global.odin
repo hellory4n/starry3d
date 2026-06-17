@@ -1,5 +1,6 @@
 package starryapp
 
+import st "../starrylib"
 import "base:runtime"
 import hm "core:container/handle_map"
 import "gpu"
@@ -16,9 +17,8 @@ engine: struct {
 	prev_time:     f64,
 	running:       bool,
 
-	// asset systems
+	// asset system
 	exe_dir:       string,
 	asset_dir:     string,
-	textures:      hm.Static_Handle_Map(1024, Texture_Data, Texture),
-	texture_cache: map[string]Texture,
+	asset_handlers: map[st.Tag]Asset_Handler,
 }
