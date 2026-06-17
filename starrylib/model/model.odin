@@ -14,6 +14,7 @@ Vertex :: struct {
 }
 
 Material :: struct {
+	color: [3]f32,
 	// TODO ?????
 }
 
