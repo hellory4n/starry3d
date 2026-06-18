@@ -10,16 +10,17 @@ import "core:strings"
 init_assets :: proc(asset_dir: string)
 {
 	engine.asset_dir = fetch_asset_dir(asset_dir)
-	engine.asset_handlers = make(map[st.Tag]Asset_Handler)
+	engine.asset_loaders = make(map[st.Tag]Asset_Loader)
 }
 
 @(private)
 free_assets :: proc()
 {
-	for _, handler in engine.asset_handlers {
-		handler.destroy_all()
+	for _, handler in engine.asset_loaders {
+		handler.unload_all()
+		delete(handler.cache)
 	}
-	delete(engine.asset_handlers)
+	delete(engine.asset_loaders)
 	delete(engine.asset_dir)
 	delete(engine.exe_dir)
 }
@@ -78,48 +79,49 @@ load_asset_bytes :: proc(path: string, allocator := context.allocator) -> (data:
 	return data, true
 }
 
-ASSET_IMAGE := st.tag("imag")
-ASSET_MODEL := st.tag("modl")
-ASSET_AUDIO := st.tag("audi")
+Asset_Handle :: struct {
+	path:   string,
+	type:   st.Tag,
+	handle: hm.Handle32,
+}
 
-Asset_Loader_Proc :: #type proc(data: []byte, path: string) -> (h: hm.Handle32, ok: bool)
-Asset_Destroyer_Proc :: #type proc(h: hm.Handle32)
-Asset_Destroy_All_Proc :: #type proc()
+Asset_Load_Proc :: #type proc(data: []byte, path: string) -> (h: hm.Handle32, ok: bool)
+Asset_Unload_Proc :: #type proc(h: hm.Handle32)
+Asset_Unload_All_Proc :: #type proc()
 
 @(private)
-Asset_Handler :: struct {
-	loader:         Asset_Loader_Proc,
-	destroyer:      Asset_Destroyer_Proc,
-	destroy_all:    Asset_Destroy_All_Proc,
-	// insane?
-	cache:          map[string]hm.Handle32,
-	handle_to_path: map[hm.Handle32]string,
+Asset_Loader :: struct {
+	load:       Asset_Load_Proc,
+	unload:     Asset_Unload_Proc,
+	unload_all: Asset_Unload_All_Proc,
+	cache:      map[string]Asset_Handle,
 }
 
 register_asset_loader :: proc(
 	tag: st.Tag,
-	loader: Asset_Loader_Proc,
-	destroyer: Asset_Destroyer_Proc,
-	destroy_all: Asset_Destroy_All_Proc,
+	loader: Asset_Load_Proc,
+	unloader: Asset_Unload_Proc,
+	unload_all: Asset_Unload_All_Proc,
 )
 {
 	assert(loader != nil)
-	assert(destroyer != nil)
+	assert(unloader != nil)
 
-	engine.asset_handlers[tag] = {
-		loader         = loader,
-		destroyer      = destroyer,
-		destroy_all    = destroy_all,
-		cache          = make(map[string]hm.Handle32, engine.ctx.allocator),
-		handle_to_path = make(map[hm.Handle32]string, engine.ctx.allocator),
+	engine.asset_loaders[tag] = {
+		load       = loader,
+		unload     = unloader,
+		unload_all = unload_all,
+		cache      = make(map[string]Asset_Handle, engine.ctx.allocator),
 	}
 }
 
 // Forces an asset to be reloaded from its path.
-reload :: proc(asset_type: st.Tag, path: string) -> (h: hm.Handle32, ok: bool) #optional_ok
+reload :: proc(asset_type: st.Tag, path: string) -> (h: Asset_Handle, ok: bool) #optional_ok
 {
-	handler: Asset_Handler
-	handler, ok = engine.asset_handlers[asset_type]
+	context.allocator = engine.ctx.allocator
+
+	loader: Asset_Loader
+	loader, ok = engine.asset_loaders[asset_type]
 	if !ok {
 		log.panicf(
 			"couldn't load %q: no asset loader for asset_type %q. please add one with `register_asset_loader()`.",
@@ -131,41 +133,49 @@ reload :: proc(asset_type: st.Tag, path: string) -> (h: hm.Handle32, ok: bool) #
 	// TODO better errors than "FIGURE IT OUT IDIOT"
 	// for now we rely on everywhere else printing the errors for us
 
-	data: []byte
-	data, ok = load_asset_bytes(path, engine.ctx.allocator)
-	if !ok do return
+	if path in loader.cache {
+		unload(loader.cache[path])
+	}
 
-	h, ok = handler.loader(data, path)
+	data: []byte
+	data, ok = load_asset_bytes(path)
+	if !ok {
+		return
+	}
+	defer delete(data)
+
+	h.handle, ok = loader.load(data, path)
 	if ok {
-		handler.cache[path] = h
-		handler.handle_to_path[h] = path
+		h.path = path
+		h.type = asset_type
+		loader.cache[path] = h
 	}
 	return h, ok
 }
 
 // Loads an asset, or fetches it from cache if it was already loaded before.
-load :: proc(asset_type: st.Tag, path: string) -> (h: hm.Handle32, ok: bool) #optional_ok
+load :: proc(asset_type: st.Tag, path: string) -> (h: Asset_Handle, ok: bool) #optional_ok
 {
-	handler: Asset_Handler
-	handler, ok = engine.asset_handlers[asset_type]
+	loader: Asset_Loader
+	loader, ok = engine.asset_loaders[asset_type]
 	if !ok do return
 
-	if path in handler.cache {
-		return handler.cache[path], true
+	if path in loader.cache {
+		return loader.cache[path], true
 	}
+
 	return reload(asset_type, path)
 }
 
 // Unloads an asset. Note that the engine already unloads all assets when the game closes,
 // so calling this is (usually) unnecessary.
-unload :: proc(asset_type: st.Tag, h: hm.Handle32)
+unload :: proc(h: Asset_Handle)
 {
-	handler, ok := engine.asset_handlers[asset_type]
+	loader, ok := engine.asset_loaders[h.type]
 	assert(ok, "what the fuck?")
-	assert(handler.destroyer != nil, "what the fuck?")
+	assert(loader.unload != nil, "what the fuck?")
 
-	handler.destroyer(h)
-	path := handler.handle_to_path[h]
-	delete_key(&handler.cache, path)
-	delete_key(&handler.handle_to_path, h)
+	context.allocator = engine.ctx.allocator
+	loader.unload(h.handle)
+	delete_key(&loader.cache, h.path)
 }

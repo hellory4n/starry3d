@@ -2,6 +2,7 @@ package gpu_textures
 
 import stapp "../../starryapp"
 import gpu "../../starryapp/gpu"
+import stgfx "../../starrygfx"
 import st "../../starrylib"
 import "core:mem"
 
@@ -9,7 +10,7 @@ app: struct {
 	pipeline:      gpu.Pipeline,
 	vertex_buffer: gpu.Buffer,
 	index_buffer:  gpu.Buffer,
-	texture:       stapp.Texture,
+	texture:       stapp.Asset_Handle,
 	sampler:       gpu.Sampler,
 }
 
@@ -35,6 +36,7 @@ Uniforms :: struct {
 
 new_app :: proc()
 {
+	stgfx.init_asset_loaders()
 	dev := stapp.get_gpu()
 
 	vert := gpu.new_shader(dev, #load("shader.vert"), .VERTEX)
@@ -68,7 +70,9 @@ new_app :: proc()
 	app.index_buffer = gpu.new_buffer(dev, .INDEX, .READ_ONLY, len(idx_bytes), idx_bytes)
 
 	app.sampler = gpu.new_sampler(dev, wrap = .TILE, filter = .NEAREST_NEIGHBOR)
-	app.texture = stapp.fetch_texture("fish.png")
+	// parses texture and uploads it to the gpu, through `gpu.new_texture`
+	// see starrygfx/texture.odin if you don't want to use the asset system
+	app.texture = stapp.load(stgfx.ASSET_TEXTURE, "fish.png")
 }
 
 free_app :: proc()
@@ -77,6 +81,8 @@ free_app :: proc()
 	gpu.free_buffer(app.index_buffer)
 	gpu.free_buffer(app.vertex_buffer)
 	gpu.free_pipeline(app.pipeline)
+
+	stgfx.free_asset_loaders()
 }
 
 render_app :: proc(dt: f32, dev: gpu.Device)
@@ -86,7 +92,7 @@ render_app :: proc(dt: f32, dev: gpu.Device)
 	gpu.bind_pipeline(dev, app.pipeline)
 	gpu.bind_vertex_buffer(dev, app.vertex_buffer)
 	gpu.bind_index_buffer(dev, app.index_buffer)
-	gpu.bind_texture(dev, stapp.texture_gpu_handle(app.texture), slot = 0)
+	gpu.bind_texture(dev, stgfx.texture_gpu_handle(app.texture), slot = 0)
 	gpu.bind_sampler(dev, app.sampler, slot = 0)
 
 	gpu.set_uniforms(dev, Uniforms{texture = 0})

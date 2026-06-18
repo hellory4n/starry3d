@@ -4,9 +4,9 @@ The most massive.
 
 Packages:
 - `starrylib`: utility functions
-- `starryapp`: manages the app lifecycle and GPU context
+- `starryapp`: manages the app lifecycle, GPU context, and asset system
 - `starrygfx`: the 3D (and soon 2D) renderer
-- `starryluarunner`: allows using Lua for Starry projects
+- `starryluarunner`: allows using Lua for Starry projects (WIP)
 
 Get started with the [documentation](./docs/README.md) and [samples](./samples).
 

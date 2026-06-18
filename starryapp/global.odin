@@ -20,5 +20,5 @@ engine: struct {
 	// asset system
 	exe_dir:       string,
 	asset_dir:     string,
-	asset_handlers: map[st.Tag]Asset_Handler,
+	asset_loaders: map[st.Tag]Asset_Loader,
 }
