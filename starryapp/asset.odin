@@ -124,9 +124,9 @@ reload :: proc(asset_type: st.Tag, path: string) -> (h: Asset_Handle, ok: bool) 
 	loader, ok = engine.asset_loaders[asset_type]
 	if !ok {
 		log.panicf(
-			"couldn't load %q: no asset loader for asset_type %q. please add one with `register_asset_loader()`.",
+			"couldn't load %q: no asset loader for asset_type %w. please add one with `register_asset_loader()`.",
 			path,
-			st.tag_str(asset_type),
+			asset_type,
 		)
 	}
 
@@ -150,6 +150,8 @@ reload :: proc(asset_type: st.Tag, path: string) -> (h: Asset_Handle, ok: bool) 
 		h.type = asset_type
 		loader.cache[path] = h
 	}
+
+	log.infof("loaded %q of type %w", path, asset_type)
 	return h, ok
 }
 
@@ -178,4 +180,6 @@ unload :: proc(h: Asset_Handle)
 	context.allocator = engine.ctx.allocator
 	loader.unload(h.handle)
 	delete_key(&loader.cache, h.path)
+
+	log.infof("unloaded %q of type %w", h.path, h.type)
 }

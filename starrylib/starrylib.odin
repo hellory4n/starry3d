@@ -9,6 +9,7 @@ package starrylib
 import "base:intrinsics"
 import "base:runtime"
 import "core:fmt"
+import "core:io"
 import "core:log"
 import "core:mem"
 import "core:os"
@@ -31,13 +32,31 @@ tag :: #force_inline proc "contextless" (src: $T) -> Tag where intrinsics.type_i
 	return Tag{src[0], src[1], src[2], src[3]}
 }
 
-// Converts a tag to a readable string
-tag_str :: #force_inline proc(src: Tag, allocator := context.temp_allocator) -> string
+Tag_Formatter :: proc(fi: ^fmt.Info, arg: any, verb: rune) -> (ok: bool)
 {
-	// you probably don't need an allocation but idk
-	// TODO this sucks
-	bytes := make([]byte, 4, allocator)
-	return string(bytes)
+	tag := cast(^Tag)arg.data
+	switch verb {
+	case 'v', 's':
+		_, err := io.write(fi.writer, tag[:])
+		if err != nil do return false
+	case 'q':
+		_, err := io.write_rune(fi.writer, '"')
+		if err != nil do return false
+		_, err = io.write(fi.writer, tag[:])
+		if err != nil do return false
+		_, err = io.write_rune(fi.writer, '"')
+		if err != nil do return false
+	case 'w':
+		_, err := io.write_string(fi.writer, "st.tag(\"")
+		if err != nil do return false
+		_, err = io.write(fi.writer, tag[:])
+		if err != nil do return false
+		_, err = io.write_string(fi.writer, "\")")
+		if err != nil do return false
+	case:
+		return false
+	}
+	return true
 }
 
 Better_Context :: struct {
@@ -96,6 +115,13 @@ init_better_context :: proc(track_allocs := true) -> (better: Better_Context)
 		better.ctx.allocator = mem.tracking_allocator(better.track)
 		better.ctx.temp_allocator = mem.tracking_allocator(better.temp_track)
 	}
+
+	// TODO might be a bit too sneaky
+	if fmt._user_formatters == nil {
+		fmt.set_user_formatters(new(map[typeid]fmt.User_Formatter))
+	}
+	err := fmt.register_user_formatter(type_info_of(Tag).id, Tag_Formatter)
+	assert(err == .None)
 
 	return
 }

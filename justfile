@@ -24,7 +24,7 @@ _CFLAGS      := f"{{_BASE_CFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}}"
 
 # but why would you do that
 run-all-samples: \
-	run-hello \
+	run-hello run-custom-asset-loaders \
 	run-gpu-triangle run-gpu-bufferless run-gpu-textures run-gpu-uniforms \
 	run-gpu-framebuffers \
 	run-3d-scene
@@ -32,6 +32,10 @@ run-all-samples: \
 @run-hello:
 	@# run hello
 	odin run samples/hello {{_CFLAGS}}
+
+@run-custom-asset-loaders:
+	@# run hello
+	odin run samples/custom_asset_loaders {{_CFLAGS}}
 
 @run-gpu-triangle:
 	@# run gpu triangle

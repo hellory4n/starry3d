@@ -1,7 +1,6 @@
 package starryapp
 
 import st "../starrylib"
-import "core:c"
 import "core:log"
 import "core:math"
 import "core:time"
@@ -17,8 +16,8 @@ Graphics_Profile :: enum {
 
 run :: proc(
 	app_name: string,
-	init_proc: proc(),
-	free_proc: proc(),
+	init_proc: proc() = nil,
+	free_proc: proc() = nil,
 	update_proc: proc(dt: f32) = nil,
 	render_proc: proc(dt: f32, dev: gpu.Device) = nil,
 	asset_dir: string = ".",

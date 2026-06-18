@@ -80,6 +80,7 @@ texture_size :: proc(h: stapp.Asset_Handle) -> [2]i32
 {
 	texture, ok := hm.get(&global.textures, h.handle)
 	assert(ok)
+	assert(h.type == ASSET_TEXTURE)
 	return {i32(texture.img.width), i32(texture.img.height)}
 }
 
@@ -95,6 +96,7 @@ texture_channels :: proc(h: stapp.Asset_Handle) -> Texture_Channels
 {
 	texture, ok := hm.get(&global.textures, h.handle)
 	assert(ok)
+	assert(h.type == ASSET_TEXTURE)
 	return Texture_Channels(texture.img.channels)
 }
 
@@ -103,6 +105,7 @@ texture_bit_depth :: proc(h: stapp.Asset_Handle) -> int
 {
 	texture, ok := hm.get(&global.textures, h.handle)
 	assert(ok)
+	assert(h.type == ASSET_TEXTURE)
 	return texture.img.depth
 }
 
@@ -111,6 +114,7 @@ texture_data :: proc(h: stapp.Asset_Handle) -> []byte
 {
 	texture, ok := hm.get(&global.textures, h.handle)
 	assert(ok)
+	assert(h.type == ASSET_TEXTURE)
 	return texture.img.pixels.buf[:]
 }
 
@@ -119,5 +123,6 @@ texture_gpu_handle :: proc(h: stapp.Asset_Handle) -> gpu.Texture
 {
 	texture, ok := hm.get(&global.textures, h.handle)
 	assert(ok)
+	assert(h.type == ASSET_TEXTURE)
 	return texture.tex
 }
