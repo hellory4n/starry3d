@@ -64,7 +64,6 @@ main :: proc()
 		update_proc = update_app,
 		render_proc = render_app,
 		app_version = cast([3]i32)global.conf.version,
-		graphics_profile = global.conf.graphics_profile,
 	)
 }
 
@@ -89,7 +88,7 @@ update_app :: proc(dt: f32)
 	lua_call(L, "app_update", dt)
 }
 
-render_app :: proc(dt: f32, dev: gpu.Device, swap: gpu.Swapchain)
+render_app :: proc(dt: f32, dev: gpu.Device)
 {
 	// TODO
 }

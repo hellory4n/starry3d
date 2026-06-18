@@ -24,7 +24,6 @@ run :: proc(
 	app_version: [3]i32 = {0, 0, 0},
 	width: int = 800,
 	height: int = 600,
-	graphics_profile := Graphics_Profile.MODERN,
 )
 {
 	// TODO split into 5 billion trillion functions for Clean™ Code®
@@ -51,7 +50,7 @@ run :: proc(
 		resizable = true,
 		high_dpi = true,
 		setup_gl_ctx = true,
-		gl_version = .CORE_33 if graphics_profile == .COMPATIBILITY else .CORE_43,
+		gl_version = .CORE_43,
 	)
 	defer close_window(window)
 

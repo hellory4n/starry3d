@@ -11,7 +11,6 @@ Game_Conf :: struct {
 	name:             string,
 	main:             string,
 	version:          [3]int,
-	graphics_profile: stapp.Graphics_Profile,
 }
 
 // crashes on error (fuck you)
@@ -89,21 +88,6 @@ load_game_conf :: proc(L: ^lua.State) -> (conf: Game_Conf)
 			ensure(ok, "config.lua: couldn't parse version number")
 			conf.version[2], ok = strconv.parse_int(version_elems[2])
 			ensure(ok, "config.lua: couldn't parse version number")
-
-		case "graphics_profile":
-			profile_str := string(lua.tostring(L, VALUE_IDX))
-
-			switch profile_str {
-			case "compatibility":
-				conf.graphics_profile = .COMPATIBILITY
-			case "modern":
-				conf.graphics_profile = .MODERN
-			case:
-				fmt.printfln(
-					"warning: unexpected graphics profile %q (perhaps a typo?)",
-					profile_str,
-				)
-			}
 
 		case:
 			fmt.printfln("warning: unexpected key %q (perhaps a typo?)", key)
