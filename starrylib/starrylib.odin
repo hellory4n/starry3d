@@ -24,17 +24,29 @@ VERSION_PATCH :: 0
 //
 // Note that if creating those things is fully automatic, it's usually better to use an
 // incrementing 32-bit index, or `core:container/handle_map`.
-Tag :: distinct [4]byte
+Tag32 :: distinct [4]byte
 
-// `st.tag("crap")` looks nicer than `[4]st.Tag{'c', 'r', 'a', 'p'}`
-tag :: #force_inline proc "contextless" (src: $T) -> Tag where intrinsics.type_is_string(T)
+// A short string used in many places to uniquely identify something.
+//
+// Note that if creating those things is fully automatic, it's usually better to use an
+// incrementing 32-bit index, or `core:container/handle_map`.
+Tag64 :: distinct [8]byte
+
+// `st.tag32("crap")` looks nicer than `st.Tag32{'c', 'r', 'a', 'p'}`
+tag32 :: #force_inline proc "contextless" (src: $T) -> Tag32 where intrinsics.type_is_string(T)
 {
-	return Tag{src[0], src[1], src[2], src[3]}
+	return Tag32{src[0], src[1], src[2], src[3]}
 }
 
-Tag_Formatter :: proc(fi: ^fmt.Info, arg: any, verb: rune) -> (ok: bool)
+// `st.tag64("crapfric")` looks nicer than `st.Tag64{'c', 'r', 'a', 'p', 'f', 'r', 'i', 'c'}`
+tag64 :: #force_inline proc "contextless" (src: $T) -> Tag64 where intrinsics.type_is_string(T)
 {
-	tag := cast(^Tag)arg.data
+	return Tag64{src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7]}
+}
+
+Tag32_Formatter :: proc(fi: ^fmt.Info, arg: any, verb: rune) -> (ok: bool)
+{
+	tag := cast(^Tag32)arg.data
 	switch verb {
 	case 'v', 's':
 		_, err := io.write(fi.writer, tag[:])
@@ -47,7 +59,34 @@ Tag_Formatter :: proc(fi: ^fmt.Info, arg: any, verb: rune) -> (ok: bool)
 		_, err = io.write_rune(fi.writer, '"')
 		if err != nil do return false
 	case 'w':
-		_, err := io.write_string(fi.writer, "st.tag(\"")
+		_, err := io.write_string(fi.writer, "st.tag32(\"")
+		if err != nil do return false
+		_, err = io.write(fi.writer, tag[:])
+		if err != nil do return false
+		_, err = io.write_string(fi.writer, "\")")
+		if err != nil do return false
+	case:
+		return false
+	}
+	return true
+}
+
+Tag64_Formatter :: proc(fi: ^fmt.Info, arg: any, verb: rune) -> (ok: bool)
+{
+	tag := cast(^Tag64)arg.data
+	switch verb {
+	case 'v', 's':
+		_, err := io.write(fi.writer, tag[:])
+		if err != nil do return false
+	case 'q':
+		_, err := io.write_rune(fi.writer, '"')
+		if err != nil do return false
+		_, err = io.write(fi.writer, tag[:])
+		if err != nil do return false
+		_, err = io.write_rune(fi.writer, '"')
+		if err != nil do return false
+	case 'w':
+		_, err := io.write_string(fi.writer, "st.tag64(\"")
 		if err != nil do return false
 		_, err = io.write(fi.writer, tag[:])
 		if err != nil do return false
@@ -120,7 +159,9 @@ init_better_context :: proc(track_allocs := true) -> (better: Better_Context)
 	if fmt._user_formatters == nil {
 		fmt.set_user_formatters(new(map[typeid]fmt.User_Formatter))
 	}
-	err := fmt.register_user_formatter(type_info_of(Tag).id, Tag_Formatter)
+	err := fmt.register_user_formatter(type_info_of(Tag32).id, Tag32_Formatter)
+	assert(err == .None)
+	err = fmt.register_user_formatter(type_info_of(Tag64).id, Tag64_Formatter)
 	assert(err == .None)
 
 	return

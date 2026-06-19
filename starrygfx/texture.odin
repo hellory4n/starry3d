@@ -9,7 +9,7 @@ import "core:image/jpeg"
 import "core:image/png"
 import "core:log"
 
-ASSET_TEXTURE := st.tag("txtr")
+ASSET_TEXTURE := st.tag64("texture ")
 
 Texture_Data :: struct {
 	handle: hm.Handle32,

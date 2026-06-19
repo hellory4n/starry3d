@@ -8,7 +8,7 @@ import "core:strings"
 
 // each asset type (or rather asset loader) has a tag
 // by convention, this starts with `ASSET_`
-ASSET_MY_ASSET := st.tag("myAs") // must be 4 characters
+ASSET_MY_ASSET := st.tag64("myasset!") // must be 8 characters
 
 // Asset_Handle is simply a wrapper for hm.Handle32
 // so we also need a handle map:

@@ -16,30 +16,7 @@ The current formats vex me.
 - `#nonzero` specifies that the file is malformed is a field is 0
 - coordinates are right-handed, that means +X is right, +Y is up, and -Z is forward (OpenGL style)
 - `bool` is 1 bit, `bool8` is 1 bit + 7 bits of padding (true = 1, false = 0)
-
-## Types
-
-These are used throughout the file:
-
-```cpp
-struct Vec3 {
-	float32 x, y, z;
-};
-
-struct Vec4 {
-	float32 x, y, z;
-};
-
-struct Rgb {
-	// all from 0 to 1
-	float32 r, g, b;
-};
-
-struct Rgba {
-	// all from 0 to 1
-	float32 r, g, b, a;
-};
-```
+- BMM uses [Starry's tag system](./tags.md), this is defined here as `uint8[8]` for `st.Tag64`
 
 ## Header
 
@@ -55,5 +32,26 @@ struct Header {
 	uint8 major_version = 0;
 	uint8 minor_version = 1;
 	uint8 _reserved[246];
+};
+```
+
+## Mesh section
+
+The header may be followed by one or more mesh sections:
+
+```cpp
+struct Mesh {
+	uint8 magic[8] = "meshdata";
+	uint32 vertex_count;
+	struct {
+		float32 x, y, z;
+		float32 normal_x, normal_y, normal_z;
+		float32 u, v;
+	} vertices[vertex_count];
+	uint32 index_count;
+	// must form triangles (every 3 items is a new triangle)
+	uint32 indices[index_count];
+
+	material
 };
 ```

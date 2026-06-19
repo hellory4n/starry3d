@@ -10,7 +10,7 @@ import "core:strings"
 init_assets :: proc(asset_dir: string)
 {
 	engine.asset_dir = fetch_asset_dir(asset_dir)
-	engine.asset_loaders = make(map[st.Tag]Asset_Loader)
+	engine.asset_loaders = make(map[st.Tag64]Asset_Loader)
 }
 
 @(private)
@@ -81,7 +81,7 @@ load_asset_bytes :: proc(path: string, allocator := context.allocator) -> (data:
 
 Asset_Handle :: struct {
 	path:   string,
-	type:   st.Tag,
+	type:   st.Tag64,
 	handle: hm.Handle32,
 }
 
@@ -98,7 +98,7 @@ Asset_Loader :: struct {
 }
 
 register_asset_loader :: proc(
-	tag: st.Tag,
+	tag: st.Tag64,
 	loader: Asset_Load_Proc,
 	unloader: Asset_Unload_Proc,
 	unload_all: Asset_Unload_All_Proc,
@@ -116,7 +116,7 @@ register_asset_loader :: proc(
 }
 
 // Forces an asset to be reloaded from its path.
-reload :: proc(asset_type: st.Tag, path: string) -> (h: Asset_Handle, ok: bool) #optional_ok
+reload :: proc(asset_type: st.Tag64, path: string) -> (h: Asset_Handle, ok: bool) #optional_ok
 {
 	context.allocator = engine.ctx.allocator
 
@@ -156,7 +156,7 @@ reload :: proc(asset_type: st.Tag, path: string) -> (h: Asset_Handle, ok: bool) 
 }
 
 // Loads an asset, or fetches it from cache if it was already loaded before.
-load :: proc(asset_type: st.Tag, path: string) -> (h: Asset_Handle, ok: bool) #optional_ok
+load :: proc(asset_type: st.Tag64, path: string) -> (h: Asset_Handle, ok: bool) #optional_ok
 {
 	loader: Asset_Loader
 	loader, ok = engine.asset_loaders[asset_type]
