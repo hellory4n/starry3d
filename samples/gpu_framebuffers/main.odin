@@ -1,4 +1,4 @@
-package gpu_bufferless
+package gpu_framebuffers
 
 import stapp "../../starryapp"
 import gpu "../../starryapp/gpu"

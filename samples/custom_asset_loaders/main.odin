@@ -1,4 +1,4 @@
-package hello
+package custom_asset_loaders
 
 import stapp "../../starryapp"
 import st "../../starrylib"

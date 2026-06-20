@@ -1,4 +1,4 @@
-package gpu_uniforms
+package gpu_uniform_buffers
 
 import stapp "../../starryapp"
 import gpu "../../starryapp/gpu"
@@ -83,6 +83,7 @@ free_app :: proc()
 {
 	gpu.free_buffer(app.index_buffer)
 	gpu.free_buffer(app.vertex_buffer)
+	gpu.free_buffer(app.uniform_buffer)
 	gpu.free_pipeline(app.pipeline)
 }
 
