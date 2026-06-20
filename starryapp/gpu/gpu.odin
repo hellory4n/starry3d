@@ -15,13 +15,10 @@ Emerson Victor Kyler Gandalf Joel Pablo Daquavious II Sr. Jr. OBE (🇪🇸 Éme
 */
 package starrygpu
 
-import "base:intrinsics"
 import "base:runtime"
 import hm "core:container/handle_map"
 import "core:log"
 import "core:mem"
-import "core:reflect"
-import "core:strings"
 import gl "vendor:OpenGL"
 
 // TODO separate the OpenGL implementation into its own file
@@ -644,139 +641,6 @@ draw_indexed :: proc(dev: Device, index_count: u32, instance_count := u32(1))
 		nil,
 		i32(instance_count),
 	)
-}
-
-// Sets the uniforms for the shader. This is done through evil reflection fuckery:
-// Shader code:
-// ```glsl
-// uniform mat4 u_model;
-// uniform mat4 u_view;
-// uniform mat4 u_proj;
-// ```
-// CPU side:
-// ```odin
-// Uniforms :: struct {
-//         model: matrix[4, 4]f32 `gpu:"u_model"`
-//         view:  matrix[4, 4]f32 `gpu:"u_view"`
-//         proj:  matrix[4, 4]f32 `gpu:"u_proj"`
-// }
-// ```
-//
-// Supported types: (GLSL -> Odin)
-// - `float` -> `f32`
-// - `int` -> `i32`
-// - `uint` -> `u32`
-// - `vec2` -> `[2]f32`
-// - `ivec2` -> `[2]i32`
-// - `uvec2` -> `[2]u32`
-// - `vec3` -> `[3]f32`
-// - `ivec3` -> `[3]i32`
-// - `uvec3` -> `[3]u32`
-// - `vec4` -> `[4]f32`
-// - `ivec4` -> `[4]i32`
-// - `uvec4` -> `[4]u32`
-// - `mat2` -> `matrix[2, 2]f32`
-// - `mat3` -> `matrix[3, 3]f32`
-// - `mat4` -> `matrix[4, 4]f32`
-// - `mat2x3` -> `matrix[2, 3]f32`
-// - `mat3x2` -> `matrix[3, 2]f32`
-// - `mat2x4` -> `matrix[2, 4]f32`
-// - `mat4x2` -> `matrix[4, 2]f32`
-// - `mat3x4` -> `matrix[3, 4]f32`
-// - `mat4x3` -> `matrix[4, 3]f32`
-// - `sampler2D` -> `i32`
-set_uniforms :: proc(dev: Device, uniforms: $T) where intrinsics.type_is_struct(T)
-{
-	uniforms := uniforms
-	d, ok1 := hm.get(&global.devices, dev)
-	assert(ok1)
-
-	// TODO cache this i'm begging you
-	for field in reflect.struct_fields_zipped(T) {
-		name := field.name
-		if uname, ok2 := reflect.struct_tag_lookup(field.tag, "gpu"); ok2 {
-			name = uname
-		}
-
-		loc := gl.GetUniformLocation(
-			program = d.current_pipeline.id,
-			name = strings.clone_to_cstring(name, context.temp_allocator),
-		)
-		if loc < 0 {
-			log.warnf("uniform %q missing", name)
-		}
-
-		// ptr fucking my beloved
-		bytes := cast(^byte)&uniforms
-		uptr := mem.ptr_offset(bytes, field.offset)
-
-		// fuck
-		switch field.type.id {
-		case f32:
-			val := (cast(^f32)uptr)^
-			gl.Uniform1f(loc, val)
-		case i32:
-			val := (cast(^i32)uptr)^
-			gl.Uniform1i(loc, val)
-		case u32:
-			val := (cast(^u32)uptr)^
-			gl.Uniform1ui(loc, val)
-		case [2]f32:
-			val := (cast(^[2]f32)uptr)^
-			gl.Uniform2f(loc, val.x, val.y)
-		case [2]i32:
-			val := (cast(^[2]i32)uptr)^
-			gl.Uniform2i(loc, val.x, val.y)
-		case [2]u32:
-			val := (cast(^[2]u32)uptr)^
-			gl.Uniform2ui(loc, val.x, val.y)
-		case [3]f32:
-			val := (cast(^[3]f32)uptr)^
-			gl.Uniform3f(loc, val.x, val.y, val.z)
-		case [3]i32:
-			val := (cast(^[3]i32)uptr)^
-			gl.Uniform3i(loc, val.x, val.y, val.z)
-		case [3]u32:
-			val := (cast(^[3]u32)uptr)^
-			gl.Uniform3ui(loc, val.x, val.y, val.z)
-		case [4]f32:
-			val := (cast(^[4]f32)uptr)^
-			gl.Uniform4f(loc, val.x, val.y, val.z, val.w)
-		case [4]i32:
-			val := (cast(^[4]i32)uptr)^
-			gl.Uniform4i(loc, val.x, val.y, val.z, val.w)
-		case [4]u32:
-			val := (cast(^[4]u32)uptr)^
-			gl.Uniform4ui(loc, val.x, val.y, val.z, val.w)
-		case matrix[2, 2]f32:
-			val := cast([^]f32)uptr
-			gl.UniformMatrix2fv(loc, 1, false, val)
-		case matrix[3, 3]f32:
-			val := cast([^]f32)uptr
-			gl.UniformMatrix3fv(loc, 1, false, val)
-		case matrix[4, 4]f32:
-			val := cast([^]f32)uptr
-			gl.UniformMatrix4fv(loc, 1, false, val)
-		case matrix[2, 3]f32:
-			val := cast([^]f32)uptr
-			gl.UniformMatrix2x3fv(loc, 1, false, val)
-		case matrix[3, 2]f32:
-			val := cast([^]f32)uptr
-			gl.UniformMatrix3x2fv(loc, 1, false, val)
-		case matrix[2, 4]f32:
-			val := cast([^]f32)uptr
-			gl.UniformMatrix2x4fv(loc, 1, false, val)
-		case matrix[4, 2]f32:
-			val := cast([^]f32)uptr
-			gl.UniformMatrix4x2fv(loc, 1, false, val)
-		case matrix[3, 4]f32:
-			val := cast([^]f32)uptr
-			gl.UniformMatrix3x4fv(loc, 1, false, val)
-		case matrix[4, 3]f32:
-			val := cast([^]f32)uptr
-			gl.UniformMatrix4x3fv(loc, 1, false, val)
-		}
-	}
 }
 
 Buffer_Target :: enum {

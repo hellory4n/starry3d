@@ -4,7 +4,7 @@ layout(location = 0) in vec2 fs_uv;
 
 layout(location = 0) out vec4 frag_color;
 
-uniform sampler2D u_framebuffer;
+layout(location = 0) uniform sampler2D u_framebuffer;
 
 void main()
 {

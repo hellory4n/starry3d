@@ -7,11 +7,11 @@ import st "../../starrylib"
 import "core:mem"
 
 app: struct {
-	pipeline:      gpu.Pipeline,
-	vertex_buffer: gpu.Buffer,
-	index_buffer:  gpu.Buffer,
-	texture:       stapp.Asset_Handle,
-	sampler:       gpu.Sampler,
+	pipeline:       gpu.Pipeline,
+	vertex_buffer:  gpu.Buffer,
+	index_buffer:   gpu.Buffer,
+	texture:        stapp.Asset_Handle,
+	sampler:        gpu.Sampler,
 }
 
 Vertex :: struct {
@@ -29,10 +29,6 @@ VERTICES := [?]Vertex {
 
 @(rodata)
 INDICES := [?]u32{0, 1, 3, 1, 2, 3}
-
-Uniforms :: struct {
-	texture: i32 `gpu:"u_texture"`,
-}
 
 new_app :: proc()
 {
@@ -94,8 +90,6 @@ render_app :: proc(dt: f32, dev: gpu.Device)
 	gpu.bind_index_buffer(dev, app.index_buffer)
 	gpu.bind_texture(dev, stgfx.texture_gpu_handle(app.texture), slot = 0)
 	gpu.bind_sampler(dev, app.sampler, slot = 0)
-
-	gpu.set_uniforms(dev, Uniforms{texture = 0})
 
 	gpu.draw_indexed(dev, index_count = 6)
 	gpu.end_render_pass(dev)

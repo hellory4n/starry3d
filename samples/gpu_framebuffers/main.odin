@@ -78,11 +78,6 @@ render_app :: proc(dt: f32, dev: gpu.Device)
 	gpu.bind_texture(dev, color_fb, slot = 0)
 	gpu.bind_sampler(dev, app.sampler, slot = 0)
 
-	Uniforms :: struct {
-		texture: i32 `gpu:"u_framebuffer"`,
-	}
-	gpu.set_uniforms(dev, Uniforms{texture = 0})
-
 	gpu.draw(dev, vertex_count = 6)
 	gpu.end_render_pass(dev)
 }
