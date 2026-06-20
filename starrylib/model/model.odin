@@ -3,6 +3,7 @@
 */
 package stmodel
 
+import st ".."
 import "core:fmt"
 import "core:mem"
 import "core:strings"
@@ -13,16 +14,39 @@ Vertex :: struct {
 	uv:       [2]f32,
 }
 
-Material :: struct {
-	color: [3]f32,
-	// TODO ?????
-}
-
 Mesh :: struct {
 	vertices: [dynamic]Vertex,
 	indices:  [dynamic]u32, // must be triangles
 	material: Material,
 }
+
+Material :: struct {
+	type:   Material_Type,
+	params: map[st.Tag64]Shader_Variant,
+}
+
+Builtin_Material :: enum {
+	BLINN_PHONG,
+}
+
+Material_Type :: union {
+	Builtin_Material,
+}
+
+// Common GLSL types
+Shader_Variant :: union {
+	int,
+	uint,
+	f32,
+	[2]i32,
+	[3]i32,
+	[4]i32,
+	[2]f32,
+	[3]f32,
+	[4]f32,
+}
+
+MATERIAL_COLOR := st.tag64("color   ")
 
 Model :: struct {
 	meshes: [dynamic]Mesh,

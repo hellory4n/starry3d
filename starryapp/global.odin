@@ -2,7 +2,6 @@ package starryapp
 
 import st "../starrylib"
 import "base:runtime"
-import hm "core:container/handle_map"
 import "gpu"
 
 // all the engine's global state goes here (or at least the state from this package)

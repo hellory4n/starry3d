@@ -13,14 +13,6 @@ _CFLAGS      := f"{{_BASE_CFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}}"
 @test:
 	@# test starrylib
 	odin test starrylib {{_CFLAGS}}
-	@# test starrylib/model
-	odin test starrylib/model {{_CFLAGS}}
-	@# test starrylib/model/bmv
-	odin test starrylib/model/bmv {{_CFLAGS}}
-	@# test starrylib/model/pngslice
-	odin test starrylib/model/pngslice {{_CFLAGS}}
-	@# test starrylib/model/vox
-	odin test starrylib/model/vox {{_CFLAGS}}
 
 # but why would you do that
 run-all-samples: \

@@ -8,7 +8,7 @@ Packages:
 - `starrygfx`: the 3D (and soon 2D) renderer
 - `starryluarunner`: allows using Lua for Starry projects (WIP)
 
-Get started with the [documentation](./docs/README.md) and [samples](./samples).
+Get started with the [documentation](./docs) and [samples](./samples).
 
 ## FAQ
 
