@@ -782,6 +782,7 @@ set_uniforms :: proc(dev: Device, uniforms: $T) where intrinsics.type_is_struct(
 Buffer_Target :: enum {
 	VERTEX,
 	INDEX,
+	UNIFORM,
 	STORAGE,
 }
 
@@ -805,6 +806,8 @@ new_buffer :: proc(
 		gltarget = gl.ARRAY_BUFFER
 	case .INDEX:
 		gltarget = gl.ELEMENT_ARRAY_BUFFER
+	case .UNIFORM:
+		gltarget = gl.UNIFORM_BUFFER
 	case .STORAGE:
 		gltarget = gl.SHADER_STORAGE_BUFFER
 	}
@@ -874,6 +877,15 @@ bind_index_buffer :: proc(dev: Device, buffer: Buffer)
 
 	b.gltarget = gl.ELEMENT_ARRAY_BUFFER // TODO this is likely stupid but so is opengl
 	gl.BindBuffer(b.gltarget, b.id)
+}
+
+bind_uniform_buffer :: proc(dev: Device, buffer: Buffer, slot: u32)
+{
+	b, ok := hm.get(&global.buffers, buffer)
+	assert(ok)
+
+	b.gltarget = gl.UNIFORM_BUFFER // TODO this is likely stupid but so is opengl
+	gl.BindBufferBase(b.gltarget, slot, b.id)
 }
 
 bind_storage_buffer :: proc(dev: Device, buffer: Buffer, slot: u32)

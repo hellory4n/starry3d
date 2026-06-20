@@ -17,8 +17,8 @@ _CFLAGS      := f"{{_BASE_CFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}}"
 # but why would you do that
 run-all-samples: \
 	run-hello run-custom-asset-loaders \
-	run-gpu-triangle run-gpu-bufferless run-gpu-textures run-gpu-uniforms \
-	run-gpu-framebuffers \
+	run-gpu-triangle run-gpu-bufferless run-gpu-uniform-buffers run-gpu-textures \
+	run-gpu-uniforms run-gpu-framebuffers \
 	run-3d-scene
 
 @run-hello:
@@ -36,6 +36,10 @@ run-all-samples: \
 @run-gpu-bufferless:
 	@# run gpu bufferless
 	odin run samples/gpu_bufferless {{_CFLAGS}}
+
+@run-gpu-uniform-buffers:
+	@# run gpu uniform buffers
+	odin run samples/gpu_uniform_buffers {{_CFLAGS}}
 
 @run-gpu-textures:
 	@# run gpu textures

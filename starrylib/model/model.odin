@@ -22,7 +22,7 @@ Mesh :: struct {
 
 Material :: struct {
 	type:   Material_Type,
-	params: map[st.Tag64]Shader_Variant,
+	params: st.Tag_Map(32, st.Tag64, Shader_Variant),
 }
 
 Builtin_Material :: enum {
