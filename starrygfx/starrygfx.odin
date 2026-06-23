@@ -1,11 +1,13 @@
 package starrygfx
 
 import stapp "../starryapp"
+import gpu "../starryapp/gpu"
 import hm "core:container/handle_map"
 
 @(private)
 global: struct {
-	textures: hm.Dynamic_Handle_Map(Texture_Data, hm.Handle32),
+	textures:   hm.Dynamic_Handle_Map(Texture_Data, hm.Handle32),
+	ubershader: gpu.Shader,
 }
 
 // Literally only separate from `init_gfx` so that `samples/gpu_textures` works
