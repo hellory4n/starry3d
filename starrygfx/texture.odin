@@ -5,8 +5,8 @@ import gpu "../starryapp/gpu"
 import st "../starrylib"
 import hm "core:container/handle_map"
 import "core:image"
-import "core:image/jpeg"
-import "core:image/png"
+@(require) import "core:image/jpeg"
+@(require) import "core:image/png"
 import "core:log"
 
 ASSET_TEXTURE := st.tag64("texture ")

@@ -3,6 +3,7 @@ package starryapp
 import st "../starrylib"
 import "core:log"
 import "core:math"
+import "core:mem"
 import "core:time"
 import "gpu"
 import "vendor:glfw"
@@ -135,4 +136,10 @@ delta_time :: proc() -> f64
 get_gpu :: proc() -> gpu.Device
 {
 	return engine.device
+}
+
+// but why would you do that
+get_engine_allocator :: proc() -> mem.Allocator
+{
+	return engine.ctx.allocator
 }

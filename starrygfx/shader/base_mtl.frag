@@ -35,7 +35,7 @@ layout(std430, binding = 0) buffer objects {
 
 // user code
 void material_fragment(
-	Object object,
+	vec4 material[16],
 	vec3 vert_position,
 	vec3 vert_normal,
 	vec2 vert_uv,
