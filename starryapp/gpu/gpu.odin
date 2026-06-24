@@ -141,6 +141,7 @@ free_instance :: proc()
 Gl_Version :: enum {
 	CORE_33,
 	CORE_43,
+	CORE_46,
 }
 
 Gl_Init_Glue :: struct {
@@ -166,6 +167,8 @@ new_device :: proc(glue: Init_Glue, debug: bool = ODIN_DEBUG) -> (dev: Device, o
 		gl.load_up_to(3, 3, gl_glue.get_proc_address_proc)
 	case .CORE_43:
 		gl.load_up_to(4, 3, gl_glue.get_proc_address_proc)
+	case .CORE_46:
+		gl.load_up_to(4, 6, gl_glue.get_proc_address_proc)
 	}
 
 	// this segfaults?????????????

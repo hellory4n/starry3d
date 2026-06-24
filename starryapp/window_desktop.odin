@@ -58,6 +58,9 @@ open_window :: proc(
 		case .CORE_43:
 			glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 4)
 			glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 3)
+		case .CORE_46:
+			glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 4)
+			glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 6)
 		}
 	} else {
 		glfw.WindowHint(glfw.CLIENT_API, glfw.NO_API)
