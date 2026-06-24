@@ -21,32 +21,9 @@ Mesh :: struct {
 }
 
 Material :: struct {
-	type:   Material_Type,
-	params: st.Tag_Map(16, st.Tag64, Shader_Variant),
+	tag:    st.Tag64,
+	params: [16][4]f32,
 }
-
-Builtin_Material :: enum {
-	BLINN_PHONG,
-}
-
-Material_Type :: union {
-	Builtin_Material,
-}
-
-// Common GLSL types
-Shader_Variant :: union {
-	int,
-	uint,
-	f32,
-	[2]i32,
-	[3]i32,
-	[4]i32,
-	[2]f32,
-	[3]f32,
-	[4]f32,
-}
-
-MATERIAL_COLOR := st.tag64("color   ")
 
 Model :: struct {
 	meshes: [dynamic]Mesh,

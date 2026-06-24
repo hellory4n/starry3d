@@ -7,8 +7,9 @@ import hm "core:container/handle_map"
 
 @(private)
 global: struct {
-	textures:       hm.Dynamic_Handle_Map(Texture_Data, hm.Handle32),
-	material_types: map[st.Tag64]Internal_Material,
+	material_types:  map[st.Tag64]Internal_Material,
+	// assets
+	textures:        hm.Dynamic_Handle_Map(Texture_Data, hm.Handle32),
 }
 
 // Literally only separate from `init_gfx` so that `samples/gpu_textures` works
@@ -34,14 +35,23 @@ init_gfx :: proc()
 {
 	context.allocator = stapp.get_engine_allocator()
 	init_asset_loaders()
-	
+
 	global.material_types = make(map[st.Tag64]Internal_Material)
+
+	// default materials
+	ensure(
+		new_material_type(
+			MATERIAL_EMISSIVE,
+			#load("shader/mtl_default.vert", string),
+			#load("shader/mtl_emission.frag", string),
+		),
+	)
 }
 
 free_gfx :: proc()
 {
 	context.allocator = stapp.get_engine_allocator()
-	
+
 	for _, material in global.material_types {
 		gpu.free_pipeline(material.pipeline)
 	}

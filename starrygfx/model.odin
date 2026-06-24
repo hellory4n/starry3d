@@ -1,9 +1,8 @@
 package starrygfx
 
-Vertex :: struct {
-	position: [3]f32,
-	normal:   [3]f32,
-	uv:       [2]f32,
-}
+import model "../starrylib/model"
 
-Triangle :: [3]u32
+Vertex :: model.Vertex
+Mesh :: model.Mesh
+Model :: model.Model
+gen_cube_mesh :: model.gen_cube_mesh

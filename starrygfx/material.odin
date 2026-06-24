@@ -3,16 +3,14 @@ package starrygfx
 import stapp "../starryapp"
 import gpu "../starryapp/gpu"
 import st "../starrylib"
+import model "../starrylib/model"
 import "core:strings"
+
+Material :: model.Material
 
 MATERIAL_EMISSIVE := st.tag64("emissive")
 MATERIAL_SOLID := st.tag64("solidobj")
 MATERIAL_REFLECTIVE := st.tag64("reflectv")
-
-Material :: struct {
-	tag:    st.Tag64,
-	params: [16][4]f32,
-}
 
 new_material_type :: proc(
 	tag: st.Tag64,
