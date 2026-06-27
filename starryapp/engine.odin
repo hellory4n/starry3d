@@ -35,6 +35,10 @@ run :: proc(
 		log.warnf("platform %s not officially supported", ODIN_PLATFORM_SUBTARGET)
 	}
 
+	// starrylib faffery
+	st.init_string_ids()
+	defer st.free_string_ids()
+
 	log.infof("starry engine %s for %s", st.VERSION_STR, ODIN_OS)
 	defer log.infof("exited safely")
 	engine.running = true

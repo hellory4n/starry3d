@@ -7,11 +7,11 @@ import st "../../starrylib"
 import "core:mem"
 
 app: struct {
-	pipeline:       gpu.Pipeline,
-	vertex_buffer:  gpu.Buffer,
-	index_buffer:   gpu.Buffer,
-	texture:        stapp.Asset_Handle,
-	sampler:        gpu.Sampler,
+	pipeline:      gpu.Pipeline,
+	vertex_buffer: gpu.Buffer,
+	index_buffer:  gpu.Buffer,
+	texture:       stapp.Asset_Ref,
+	sampler:       gpu.Sampler,
 }
 
 Vertex :: struct {
@@ -68,7 +68,7 @@ new_app :: proc()
 	app.sampler = gpu.new_sampler(dev, wrap = .TILE, filter = .NEAREST_NEIGHBOR)
 	// parses texture and uploads it to the gpu, through `gpu.new_texture`
 	// see starrygfx/texture.odin if you don't want to use the asset system
-	app.texture = stapp.load(stgfx.ASSET_TEXTURE, "fish.png")
+	app.texture = stapp.load(st.strid("texture"), "fish.png")
 }
 
 free_app :: proc()

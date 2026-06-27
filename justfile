@@ -19,7 +19,6 @@ run-all-samples: \
 	run-hello run-custom-asset-loaders \
 	run-gpu-triangle run-gpu-bufferless run-gpu-uniform-buffers run-gpu-textures \
 	run-gpu-framebuffers run-gpu-storage-buffers \
-	run-3d-scene
 
 @run-hello:
 	@# run hello
@@ -52,10 +51,6 @@ run-all-samples: \
 @run-gpu-storage-buffers:
 	@# run gpu storage buffers
 	odin run samples/gpu_storage_buffers {{_CFLAGS}}
-
-@run-3d-scene:
-	@# run 3D scene
-	odin run samples/3d_scene {{_CFLAGS}}
 
 @run-lua-hello:
 	@# run hello (lua)

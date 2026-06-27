@@ -6,10 +6,8 @@ the runtime.
 */
 package starrylib
 
-import "base:intrinsics"
 import "base:runtime"
 import "core:fmt"
-import "core:io"
 import "core:log"
 import "core:mem"
 import "core:os"
@@ -19,84 +17,6 @@ VERSION_STR :: "v2026.6.0-dev"
 VERSION_MAJOR :: 2026
 VERSION_MINOR :: 6
 VERSION_PATCH :: 0
-
-// A short string used in many places to uniquely identify something.
-//
-// Note that if creating those things is fully automatic, it's usually better to use an
-// incrementing 32-bit index, or `core:container/handle_map`.
-Tag32 :: distinct [4]byte
-
-// A short string used in many places to uniquely identify something.
-//
-// Note that if creating those things is fully automatic, it's usually better to use an
-// incrementing 32-bit index, or `core:container/handle_map`.
-Tag64 :: distinct [8]byte
-
-// `st.tag32("crap")` looks nicer than `st.Tag32{'c', 'r', 'a', 'p'}`
-tag32 :: #force_inline proc "contextless" (src: $T) -> Tag32 where intrinsics.type_is_string(T)
-{
-	return Tag32{src[0], src[1], src[2], src[3]}
-}
-
-// `st.tag64("crapfric")` looks nicer than `st.Tag64{'c', 'r', 'a', 'p', 'f', 'r', 'i', 'c'}`
-tag64 :: #force_inline proc "contextless" (src: $T) -> Tag64 where intrinsics.type_is_string(T)
-{
-	return Tag64{src[0], src[1], src[2], src[3], src[4], src[5], src[6], src[7]}
-}
-
-Tag32_Formatter :: proc(fi: ^fmt.Info, arg: any, verb: rune) -> (ok: bool)
-{
-	tag := cast(^Tag32)arg.data
-	switch verb {
-	case 'v', 's':
-		_, err := io.write(fi.writer, tag[:])
-		if err != nil do return false
-	case 'q':
-		_, err := io.write_rune(fi.writer, '"')
-		if err != nil do return false
-		_, err = io.write(fi.writer, tag[:])
-		if err != nil do return false
-		_, err = io.write_rune(fi.writer, '"')
-		if err != nil do return false
-	case 'w':
-		_, err := io.write_string(fi.writer, "st.tag32(\"")
-		if err != nil do return false
-		_, err = io.write(fi.writer, tag[:])
-		if err != nil do return false
-		_, err = io.write_string(fi.writer, "\")")
-		if err != nil do return false
-	case:
-		return false
-	}
-	return true
-}
-
-Tag64_Formatter :: proc(fi: ^fmt.Info, arg: any, verb: rune) -> (ok: bool)
-{
-	tag := cast(^Tag64)arg.data
-	switch verb {
-	case 'v', 's':
-		_, err := io.write(fi.writer, tag[:])
-		if err != nil do return false
-	case 'q':
-		_, err := io.write_rune(fi.writer, '"')
-		if err != nil do return false
-		_, err = io.write(fi.writer, tag[:])
-		if err != nil do return false
-		_, err = io.write_rune(fi.writer, '"')
-		if err != nil do return false
-	case 'w':
-		_, err := io.write_string(fi.writer, "st.tag64(\"")
-		if err != nil do return false
-		_, err = io.write(fi.writer, tag[:])
-		if err != nil do return false
-		_, err = io.write_string(fi.writer, "\")")
-		if err != nil do return false
-	case:
-		return false
-	}
-	return true
-}
 
 Better_Context :: struct {
 	ctx:             runtime.Context,
@@ -111,7 +31,8 @@ Better_Context :: struct {
 }
 
 // Creates a context with a logger and tracking allocator setup. Remember to actually set it as
-// your context (`context = better.ctx`)
+// your context (`context = better.ctx`). Also sets up custom formatters for some Starry types
+// because why not.
 init_better_context :: proc(track_allocs := true) -> (better: Better_Context)
 {
 	better.ctx = runtime.default_context()
@@ -155,13 +76,10 @@ init_better_context :: proc(track_allocs := true) -> (better: Better_Context)
 		better.ctx.temp_allocator = mem.tracking_allocator(better.temp_track)
 	}
 
-	// TODO might be a bit too sneaky
 	if fmt._user_formatters == nil {
 		fmt.set_user_formatters(new(map[typeid]fmt.User_Formatter))
 	}
-	err := fmt.register_user_formatter(type_info_of(Tag32).id, Tag32_Formatter)
-	assert(err == .None)
-	err = fmt.register_user_formatter(type_info_of(Tag64).id, Tag64_Formatter)
+	err := fmt.register_user_formatter(type_info_of(String_Id).id, String_Id_Formatter)
 	assert(err == .None)
 
 	return

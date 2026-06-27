@@ -10,7 +10,7 @@ import "core:strings"
 init_assets :: proc(asset_dir: string)
 {
 	engine.asset_dir = fetch_asset_dir(asset_dir)
-	engine.asset_loaders = make(map[st.Tag64]Asset_Loader)
+	engine.asset_loaders = make(map[st.String_Id]Asset_Loader)
 }
 
 @(private)
@@ -79,9 +79,9 @@ load_asset_bytes :: proc(path: string, allocator := context.allocator) -> (data:
 	return data, true
 }
 
-Asset_Handle :: struct {
+Asset_Ref :: struct {
 	path:   string,
-	type:   st.Tag64,
+	type:   st.String_Id,
 	handle: hm.Handle32,
 }
 
@@ -94,11 +94,11 @@ Asset_Loader :: struct {
 	load:       Asset_Load_Proc,
 	unload:     Asset_Unload_Proc,
 	unload_all: Asset_Unload_All_Proc,
-	cache:      map[string]Asset_Handle,
+	cache:      map[string]Asset_Ref,
 }
 
 register_asset_loader :: proc(
-	tag: st.Tag64,
+	asset_type: st.String_Id,
 	loader: Asset_Load_Proc,
 	unloader: Asset_Unload_Proc,
 	unload_all: Asset_Unload_All_Proc,
@@ -107,16 +107,16 @@ register_asset_loader :: proc(
 	assert(loader != nil)
 	assert(unloader != nil)
 
-	engine.asset_loaders[tag] = {
+	engine.asset_loaders[asset_type] = {
 		load       = loader,
 		unload     = unloader,
 		unload_all = unload_all,
-		cache      = make(map[string]Asset_Handle, engine.ctx.allocator),
+		cache      = make(map[string]Asset_Ref, engine.ctx.allocator),
 	}
 }
 
 // Forces an asset to be reloaded from its path.
-reload :: proc(asset_type: st.Tag64, path: string) -> (h: Asset_Handle, ok: bool) #optional_ok
+reload :: proc(asset_type: st.String_Id, path: string) -> (h: Asset_Ref, ok: bool) #optional_ok
 {
 	context.allocator = engine.ctx.allocator
 
@@ -156,7 +156,7 @@ reload :: proc(asset_type: st.Tag64, path: string) -> (h: Asset_Handle, ok: bool
 }
 
 // Loads an asset, or fetches it from cache if it was already loaded before.
-load :: proc(asset_type: st.Tag64, path: string) -> (h: Asset_Handle, ok: bool) #optional_ok
+load :: proc(asset_type: st.String_Id, path: string) -> (h: Asset_Ref, ok: bool) #optional_ok
 {
 	loader: Asset_Loader
 	loader, ok = engine.asset_loaders[asset_type]
@@ -171,7 +171,7 @@ load :: proc(asset_type: st.Tag64, path: string) -> (h: Asset_Handle, ok: bool) 
 
 // Unloads an asset. Note that the engine already unloads all assets when the game closes,
 // so calling this is (usually) unnecessary.
-unload :: proc(h: Asset_Handle)
+unload :: proc(h: Asset_Ref)
 {
 	loader, ok := engine.asset_loaders[h.type]
 	assert(ok, "what the fuck?")

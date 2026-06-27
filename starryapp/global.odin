@@ -19,5 +19,5 @@ engine: struct {
 	// asset system
 	exe_dir:       string,
 	asset_dir:     string,
-	asset_loaders: map[st.Tag64]Asset_Loader,
+	asset_loaders: map[st.String_Id]Asset_Loader,
 }

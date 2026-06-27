@@ -6,12 +6,8 @@ import hm "core:container/handle_map"
 import "core:log"
 import "core:strings"
 
-// each asset type (or rather asset loader) has a tag
-// by convention, this starts with `ASSET_`
-ASSET_MY_ASSET := st.tag64("myasset!") // must be 8 characters
-
-// Asset_Handle is simply a wrapper for hm.Handle32
-// so we also need a handle map:
+// Asset_Ref is simply a wrapper for hm.Handle32
+// so we need a handle map:
 global: struct {
 	my_assets: hm.Dynamic_Handle_Map(My_Asset_Data, hm.Handle32),
 }
@@ -53,11 +49,12 @@ my_asset_unload_all :: proc()
 }
 
 // use the asset after it has been loaded:
-my_asset_text :: proc(h: stapp.Asset_Handle) -> string
+my_asset_text :: proc(h: stapp.Asset_Ref) -> string
 {
 	my_asset, ok := hm.get(&global.my_assets, h.handle)
 	assert(ok)
-	assert(h.type == ASSET_MY_ASSET)
+	// this must match the asset type used in `register_asset_loader()`
+	assert(h.type == st.strid("my asset"))
 
 	return my_asset.whatever
 }
@@ -65,14 +62,14 @@ my_asset_text :: proc(h: stapp.Asset_Handle) -> string
 new_app :: proc()
 {
 	stapp.register_asset_loader(
-		ASSET_MY_ASSET,
+		st.strid("my asset"),
 		my_asset_load,
 		my_asset_unload,
 		my_asset_unload_all,
 	)
 
 	// use this asset type:
-	asset := stapp.load(ASSET_MY_ASSET, "data.txt")
+	asset := stapp.load(st.strid("my asset"), "data.txt")
 	log.infof("my asset has: %s", my_asset_text(asset))
 }
 
