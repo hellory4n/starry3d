@@ -12,9 +12,9 @@ You need these installed:
 - [Just command runner](https://github.com/casey/just)
 - On Windows: Windows SDK
 - On Linux:
-        - Debian, Ubuntu, etc: `sudo apt install libglfw3-dev libassimp-dev`
-        - Fedora: `sudo dnf install glfw-devel assimp-devel`
-        - Arch: `sudo pacman -S glfw assimp`
+        - Debian, Ubuntu, etc: `sudo apt install libglfw3-dev`
+        - Fedora: `sudo dnf install glfw-devel`
+        - Arch: `sudo pacman -S glfw`
 
 ## Building
 
