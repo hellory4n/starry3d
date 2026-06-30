@@ -54,29 +54,50 @@ new_app :: proc()
 
 	app.pipeline = gpu.new_pipeline(
 		dev,
-		shaders = gpu.Render_Shaders{vertex = vert, fragment = frag},
-		vertex_size = size_of(Vertex),
-		vertex_layout = []gpu.Vertex_Attribute {
-			gpu.Vertex_Attribute {
-				name = "pos",
-				type = .VEC2_FLOAT32,
-				offset = offset_of(Vertex, pos),
-			},
-			gpu.Vertex_Attribute {
-				name = "color",
-				type = .VEC3_FLOAT32,
-				offset = offset_of(Vertex, color),
+		settings = gpu.Render_Pipeline_Settings {
+			vertex_shader = vert,
+			fragment_shader = frag,
+			vertex_size = size_of(Vertex),
+			vertex_layout = []gpu.Vertex_Attribute {
+				gpu.Vertex_Attribute {
+					name = "pos",
+					type = .VEC2_FLOAT32,
+					offset = offset_of(Vertex, pos),
+				},
+				gpu.Vertex_Attribute {
+					name = "color",
+					type = .VEC3_FLOAT32,
+					offset = offset_of(Vertex, color),
+				},
 			},
 		},
+		bindings = {gpu.Binding{type = .UNIFORM_BUFFER, slot = 0}},
 	)
 
-	app.uniform_buffer = gpu.new_buffer(dev, .UNIFORM, .STREAMED, size_of(Uniforms))
+	app.uniform_buffer = gpu.new_buffer(
+		dev,
+		{.UNIFORM},
+		{.TRANSFER_DST, .DYNAMIC},
+		size_of(Uniforms),
+	)
 
 	vert_bytes := mem.slice_to_bytes(VERTICES[:])
-	app.vertex_buffer = gpu.new_buffer(dev, .VERTEX, .READ_ONLY, len(vert_bytes), vert_bytes)
+	app.vertex_buffer = gpu.new_buffer(
+		dev,
+		{.VERTEX},
+		{.TRANSFER_DST},
+		len(vert_bytes),
+		vert_bytes,
+	)
 
 	idx_bytes := mem.slice_to_bytes(INDICES[:])
-	app.index_buffer = gpu.new_buffer(dev, .INDEX, .READ_ONLY, len(idx_bytes), idx_bytes)
+	app.index_buffer = gpu.new_buffer(
+		dev,
+		{.INDEX},
+		{.TRANSFER_DST},
+		len(idx_bytes),
+		idx_bytes,
+	)
 }
 
 free_app :: proc()
@@ -89,7 +110,12 @@ free_app :: proc()
 
 render_app :: proc(dt: f32, dev: gpu.Device)
 {
-	gpu.begin_render_pass(dev, gpu.default_framebuffer(dev), clear_color = [4]f32{0, 0, 0, 1})
+	gpu.begin_render_pass(
+		dev,
+		gpu.default_framebuffer(dev),
+		color_load_op = .CLEAR,
+		clear_color = {0, 0, 0, 1},
+	)
 
 	gpu.bind_pipeline(dev, app.pipeline)
 	gpu.bind_vertex_buffer(dev, app.vertex_buffer)

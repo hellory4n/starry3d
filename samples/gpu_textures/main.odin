@@ -43,27 +43,46 @@ new_app :: proc()
 
 	app.pipeline = gpu.new_pipeline(
 		dev,
-		shaders = gpu.Render_Shaders{vertex = vert, fragment = frag},
-		vertex_size = size_of(Vertex),
-		vertex_layout = []gpu.Vertex_Attribute {
-			gpu.Vertex_Attribute {
-				name = "pos",
-				type = .VEC2_FLOAT32,
-				offset = offset_of(Vertex, pos),
+		settings = gpu.Render_Pipeline_Settings {
+			vertex_shader = vert,
+			fragment_shader = frag,
+			vertex_size = size_of(Vertex),
+			vertex_layout = []gpu.Vertex_Attribute {
+				gpu.Vertex_Attribute {
+					name = "pos",
+					type = .VEC2_FLOAT32,
+					offset = offset_of(Vertex, pos),
+				},
+				gpu.Vertex_Attribute {
+					name = "uv",
+					type = .VEC2_FLOAT32,
+					offset = offset_of(Vertex, uv),
+				},
 			},
-			gpu.Vertex_Attribute {
-				name = "uv",
-				type = .VEC2_FLOAT32,
-				offset = offset_of(Vertex, uv),
-			},
+		},
+		bindings = {
+			gpu.Binding{type = .TEXTURE, slot = 0},
+			gpu.Binding{type = .SAMPLER, slot = 0},
 		},
 	)
 
 	vert_bytes := mem.slice_to_bytes(VERTICES[:])
-	app.vertex_buffer = gpu.new_buffer(dev, .VERTEX, .READ_ONLY, len(vert_bytes), vert_bytes)
+	app.vertex_buffer = gpu.new_buffer(
+		dev,
+		{.VERTEX},
+		{.TRANSFER_DST},
+		len(vert_bytes),
+		vert_bytes,
+	)
 
 	idx_bytes := mem.slice_to_bytes(INDICES[:])
-	app.index_buffer = gpu.new_buffer(dev, .INDEX, .READ_ONLY, len(idx_bytes), idx_bytes)
+	app.index_buffer = gpu.new_buffer(
+		dev,
+		{.INDEX},
+		{.TRANSFER_DST},
+		len(idx_bytes),
+		idx_bytes,
+	)
 
 	app.sampler = gpu.new_sampler(dev, wrap = .TILE, filter = .NEAREST_NEIGHBOR)
 	// parses texture and uploads it to the gpu, through `gpu.new_texture`
@@ -83,7 +102,12 @@ free_app :: proc()
 
 render_app :: proc(dt: f32, dev: gpu.Device)
 {
-	gpu.begin_render_pass(dev, gpu.default_framebuffer(dev), clear_color = [4]f32{0, 0, 0, 1})
+	gpu.begin_render_pass(
+		dev,
+		gpu.default_framebuffer(dev),
+		color_load_op = .CLEAR,
+		clear_color = {0, 0, 0, 1},
+	)
 
 	gpu.bind_pipeline(dev, app.pipeline)
 	gpu.bind_vertex_buffer(dev, app.vertex_buffer)

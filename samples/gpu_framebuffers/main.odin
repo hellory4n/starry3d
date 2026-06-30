@@ -37,7 +37,10 @@ new_app :: proc()
 
 	app.tri_pipeline = gpu.new_pipeline(
 		dev,
-		shaders = gpu.Render_Shaders{vertex = tri_vert, fragment = tri_frag},
+		settings = gpu.Render_Pipeline_Settings {
+			vertex_shader = tri_vert,
+			fragment_shader = tri_frag,
+		},
 	)
 
 	postfx_vert := gpu.new_shader(dev, #load("postfx.vert"), .VERTEX)
@@ -47,7 +50,14 @@ new_app :: proc()
 
 	app.postfx_pipeline = gpu.new_pipeline(
 		dev,
-		shaders = gpu.Render_Shaders{vertex = postfx_vert, fragment = postfx_frag},
+		settings = gpu.Render_Pipeline_Settings {
+			vertex_shader = postfx_vert,
+			fragment_shader = postfx_frag,
+		},
+		bindings = {
+			gpu.Binding{type = .TEXTURE, slot = 0},
+			gpu.Binding{type = .SAMPLER, slot = 0},
+		},
 	)
 
 	app.sampler = gpu.new_sampler(dev, wrap = .CLAMP_TO_BORDER, filter = .NEAREST_NEIGHBOR)
@@ -63,7 +73,12 @@ free_app :: proc()
 render_app :: proc(dt: f32, dev: gpu.Device)
 {
 	// first pass - render triangle
-	gpu.begin_render_pass(dev, app.framebuffer, clear_color = [4]f32{0, 0, 0, 1})
+	gpu.begin_render_pass(
+		dev,
+		app.framebuffer,
+		color_load_op = .CLEAR,
+		clear_color = {0, 0, 0, 1},
+	)
 	gpu.bind_pipeline(dev, app.tri_pipeline)
 
 	gpu.draw(dev, vertex_count = 3)
@@ -71,7 +86,12 @@ render_app :: proc(dt: f32, dev: gpu.Device)
 
 	// second pass - postprocessing
 	// the framebuffer is sampled as a texture, and then rendered as a fullscreen quad
-	gpu.begin_render_pass(dev, gpu.default_framebuffer(dev), clear_color = [4]f32{1, 0, 1, 1})
+	gpu.begin_render_pass(
+		dev,
+		gpu.default_framebuffer(dev),
+		color_load_op = .CLEAR,
+		clear_color = {1, 0, 1, 1}, // texture should cover it
+	)
 	gpu.bind_pipeline(dev, app.postfx_pipeline)
 
 	color_fb := gpu.framebuffer_color_attachment(app.framebuffer, idx = 0)

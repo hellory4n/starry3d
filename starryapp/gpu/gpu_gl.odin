@@ -27,6 +27,12 @@ import gl "vendor:OpenGL"
 // TODO custom validation layers
 
 Device :: distinct hm.Handle32
+Pipeline :: distinct hm.Handle32
+Shader :: distinct hm.Handle32
+Buffer :: distinct hm.Handle32
+Texture :: distinct hm.Handle32
+Sampler :: distinct hm.Handle32
+Framebuffer :: distinct hm.Handle32
 
 @(private)
 Gl_Device :: struct {
@@ -36,8 +42,6 @@ Gl_Device :: struct {
 	swap_buffers_proc:   proc(window: rawptr),
 	default_framebuffer: Framebuffer,
 }
-
-Pipeline :: distinct hm.Handle32
 
 @(private)
 Gl_Pipeline :: struct {
@@ -51,15 +55,11 @@ Gl_Pipeline :: struct {
 	compute:       bool,
 }
 
-Shader :: distinct hm.Handle32
-
 @(private)
 Gl_Shader :: struct {
 	handle: Shader,
 	id:     u32,
 }
-
-Buffer :: distinct hm.Handle32
 
 @(private)
 Gl_Buffer :: struct {
@@ -70,28 +70,16 @@ Gl_Buffer :: struct {
 	glusage:  u32,
 }
 
-Texture :: distinct hm.Handle32
-
 @(private)
 Gl_Texture :: struct {
 	handle: Texture,
 	id:     u32,
 }
 
-Sampler :: distinct hm.Handle32
-
 @(private)
 Gl_Sampler :: struct {
 	handle: Sampler,
 	id:     u32,
-}
-
-Framebuffer :: distinct hm.Handle32
-
-Gl_Framebuffer_Attachment :: struct {
-	handle:       Texture,
-	id:           u32,
-	renderbuffer: bool,
 }
 
 @(private)
@@ -100,6 +88,13 @@ Gl_Framebuffer :: struct {
 	id:                       u32,
 	color_attachments:        [dynamic]Gl_Framebuffer_Attachment,
 	depth_stencil_attachment: Gl_Framebuffer_Attachment,
+}
+
+@(private)
+Gl_Framebuffer_Attachment :: struct {
+	handle:       Texture,
+	id:           u32,
+	renderbuffer: bool,
 }
 
 global: struct {
@@ -186,6 +181,8 @@ new_device :: proc(glue: Init_Glue, debug: bool = ODIN_DEBUG) -> (dev: Device, o
 	// 			userparam: rawptr,
 	// 		)
 	// 		{
+	// 			// TODO pass context as userdata dumbass
+	// 			// you could use context's own `user_ptr` if you ever needed
 	// 			context = runtime.default_context()
 	// 			switch severity {
 	// 			case gl.DEBUG_SEVERITY_HIGH:
@@ -257,12 +254,26 @@ present_and_swap_buffers :: proc(dev: Device)
 	d.swap_buffers_proc(d.window)
 }
 
-// Doesn't clear the screen if `clear_color` is nil
+Load_Op :: enum {
+	DONT_CARE,
+	LOAD,
+	CLEAR,
+}
+
+Store_Op :: enum {
+	STORE,
+	DONT_CARE,
+}
+
 begin_render_pass :: proc(
 	dev: Device,
 	framebuffer: Framebuffer,
-	clear_color: Maybe([4]f32) = nil,
-	clear_depth: Maybe(f32) = nil,
+	color_load_op: Load_Op,
+	color_store_op: Store_Op = .STORE,
+	depth_load_op: Load_Op = .DONT_CARE,
+	depth_store_op: Store_Op = .DONT_CARE,
+	clear_color: [4]f32 = {},
+	clear_depth: f32 = 0,
 )
 {
 	fb, ok := hm.get(&global.framebuffers, framebuffer)
@@ -271,15 +282,13 @@ begin_render_pass :: proc(
 	gl.BindFramebuffer(gl.FRAMEBUFFER, fb.id)
 
 	clear_bits: u32
-	switch v in clear_color {
-	case [4]f32:
-		gl.ClearColor(v.r, v.g, v.b, v.a)
+	if color_load_op == .CLEAR {
+		gl.ClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a)
 		clear_bits |= gl.COLOR_BUFFER_BIT
 	}
 
-	switch v in clear_depth {
-	case f32:
-		gl.ClearDepthf(v)
+	if depth_load_op == .CLEAR {
+		gl.ClearDepthf(clear_depth)
 		clear_bits |= gl.DEPTH_BUFFER_BIT
 	}
 
@@ -306,6 +315,7 @@ new_shader :: proc(
 	native_code: []byte,
 	stage: Shader_Stage,
 	entry_point := "main",
+	label := "a Starry shader",
 ) -> (
 	shader: Shader,
 	ok: bool,
@@ -348,15 +358,6 @@ free_shader :: proc(shader: Shader)
 
 	gl.DeleteShader(s.id)
 	hm.remove(&global.shaders, shader)
-}
-
-Render_Shaders :: struct {
-	vertex:   Shader,
-	fragment: Shader,
-}
-
-Shaders :: union {
-	Render_Shaders,
 }
 
 Topology :: enum {
@@ -413,15 +414,46 @@ Vertex_Attribute :: struct {
 	normalized: bool,
 }
 
+Binding_Type :: enum {
+	UNIFORM_BUFFER,
+	STORAGE_BUFFER,
+	TEXTURE,
+	SAMPLER,
+}
+
+Binding :: struct {
+	type:  Binding_Type,
+	slot:  u32,
+	count: Binding_Count,
+}
+
+Binding_Count :: union #no_nil {
+	Single_Binding,
+	u32,
+}
+
+Single_Binding :: distinct u32 // dummy type
+
+Render_Pipeline_Settings :: struct {
+	vertex_shader:   Shader,
+	fragment_shader: Shader,
+	topology:        Topology,
+	front_face:      Winding_Order,
+	cull:            Cull_Face,
+	vertex_layout:   []Vertex_Attribute,
+	vertex_size:     int,
+}
+
+// TODO should be #no_nil but Compute_Pipeline_Desc doesn't exist yet
+Pipeline_Settings :: union {
+	Render_Pipeline_Settings,
+}
+
 new_pipeline :: proc(
 	dev: Device,
-	shaders: Shaders,
-	topology := Topology.TRIANGLE_LIST,
-	front_face := Winding_Order.COUNTER_CLOCKWISE,
-	cull := Cull_Face.NONE,
-	vertex_layout: []Vertex_Attribute = nil,
-	vertex_size: int = 0,
-	allocator := context.allocator,
+	settings: Pipeline_Settings,
+	bindings: []Binding = nil,
+	label := "a Starry pipeline",
 ) -> (
 	pipeline: Pipeline,
 	ok: bool,
@@ -429,15 +461,16 @@ new_pipeline :: proc(
 {
 	id: u32
 	compute: bool
+	render_desc := settings.(Render_Pipeline_Settings)
 
-	switch s in shaders {
-	case Render_Shaders:
+	switch s in settings {
+	case Render_Pipeline_Settings:
 		compute = false
 
 		vert, frag: ^Gl_Shader
-		vert, ok = hm.get(&global.shaders, s.vertex)
+		vert, ok = hm.get(&global.shaders, s.vertex_shader)
 		assert(ok)
-		frag, ok = hm.get(&global.shaders, s.fragment)
+		frag, ok = hm.get(&global.shaders, s.fragment_shader)
 		assert(ok)
 
 		id = gl.CreateProgram()
@@ -458,34 +491,38 @@ new_pipeline :: proc(
 		}
 	}
 
-	vhuyvfyfhbvhyf := vertex_layout
-	if vertex_layout != nil {
-		vhuyvfyfhbvhyf = make([]Vertex_Attribute, len(vertex_layout), allocator)
-		copy(vhuyvfyfhbvhyf, vertex_layout)
+	vhuyvfyfhbvhyf := render_desc.vertex_layout
+	if render_desc.vertex_layout != nil {
+		vhuyvfyfhbvhyf = make(
+			[]Vertex_Attribute,
+			len(render_desc.vertex_layout),
+			global.allocator,
+		)
+		copy(vhuyvfyfhbvhyf, render_desc.vertex_layout)
 	}
 
 	return hm.add(
 			&global.pipelines,
 			Gl_Pipeline {
 				id = id,
-				topology = topology,
-				front_face = front_face,
-				cull = cull,
+				topology = render_desc.topology,
+				front_face = render_desc.front_face,
+				cull = render_desc.cull,
 				compute = compute,
 				vertex_layout = vhuyvfyfhbvhyf,
-				vertex_size = vertex_size,
+				vertex_size = render_desc.vertex_size,
 			},
 		),
 		true
 }
 
-free_pipeline :: proc(pipeline: Pipeline, allocator := context.allocator)
+free_pipeline :: proc(pipeline: Pipeline)
 {
 	p, ok := hm.get(&global.pipelines, pipeline)
 	assert(ok)
 
 	gl.DeleteProgram(p.id)
-	delete(p.vertex_layout, allocator)
+	delete(p.vertex_layout, global.allocator)
 	hm.remove(&global.pipelines, pipeline)
 }
 
@@ -646,6 +683,14 @@ draw_indexed :: proc(dev: Device, index_count: u32, instance_count := u32(1))
 	)
 }
 
+Buffer_Flags :: bit_set[Buffer_Flag]
+
+Buffer_Flag :: enum {
+	TRANSFER_SRC,
+	TRANSFER_DST,
+	DYNAMIC, // frequently updated
+}
+
 Buffer_Target :: enum {
 	VERTEX,
 	INDEX,
@@ -653,40 +698,53 @@ Buffer_Target :: enum {
 	STORAGE,
 }
 
-Buffer_Usage :: enum {
-	READ_ONLY,
-	MUTABLE,
-	STREAMED,
-}
+Buffer_Targets :: bit_set[Buffer_Target]
 
 new_buffer :: proc(
 	dev: Device,
-	target: Buffer_Target,
-	usage: Buffer_Usage,
+	targets: Buffer_Targets,
+	usage: Buffer_Flags,
 	size: int,
 	data: []byte = nil,
+	label := "a Starry buffer",
 ) -> Buffer
 {
+	// idiot proofing
+	if data != nil {
+		target_count := 0
+		if Buffer_Target.VERTEX in targets do target_count += 1
+		if Buffer_Target.INDEX in targets do target_count += 1
+		if Buffer_Target.UNIFORM in targets do target_count += 1
+		if Buffer_Target.STORAGE in targets do target_count += 1
+
+		if target_count == 0 {
+			panic(
+				"trying to fill buffer at creation, but no target is specified. should be VERTEX, INDEX, UNIFORM, or STORAGE.",
+			)
+		}
+		if target_count > 1 {
+			panic(
+				"trying to fill buffer at creation, but more than one target is being specified; choose only one (VERTEX, INDEX, UNIFORM, or STORAGE)",
+			)
+		}
+	}
+
 	gltarget: u32
-	switch target {
-	case .VERTEX:
+	if Buffer_Target.VERTEX in targets {
 		gltarget = gl.ARRAY_BUFFER
-	case .INDEX:
+	} else if Buffer_Target.INDEX in targets {
 		gltarget = gl.ELEMENT_ARRAY_BUFFER
-	case .UNIFORM:
+	} else if Buffer_Target.UNIFORM in targets {
 		gltarget = gl.UNIFORM_BUFFER
-	case .STORAGE:
+	} else if Buffer_Target.STORAGE in targets {
 		gltarget = gl.SHADER_STORAGE_BUFFER
 	}
 
 	glusage: u32
-	switch usage {
-	case .READ_ONLY:
+	if Buffer_Flag.DYNAMIC in usage {
 		glusage = gl.STATIC_DRAW
-	case .MUTABLE:
+	} else {
 		glusage = gl.DYNAMIC_DRAW
-	case .STREAMED:
-		glusage = gl.STREAM_DRAW
 	}
 
 	id: u32
@@ -780,6 +838,7 @@ new_texture :: proc(
 	gpu_format: Texture_Format,
 	input_format: Texture_Format,
 	data: []byte = nil,
+	label := "a Starry texture",
 ) -> Texture
 {
 	id: u32
@@ -855,7 +914,12 @@ Texture_Filter :: enum {
 	BILINEAR,
 }
 
-new_sampler :: proc(dev: Device, wrap: Texture_Wrap, filter: Texture_Filter) -> Sampler
+new_sampler :: proc(
+	dev: Device,
+	wrap: Texture_Wrap,
+	filter: Texture_Filter,
+	label := "a Starry sampler",
+) -> Sampler
 {
 	id: u32
 	gl.GenSamplers(1, &id)
@@ -1020,6 +1084,7 @@ new_framebuffer :: proc(
 	size: [2]i32,
 	color_attachments: []Attachment,
 	depth_stencil_attachment: Maybe(Attachment) = nil,
+	label := "a Starry framebuffer",
 ) -> Framebuffer
 {
 	new_renderbuffer :: proc(dev: Device, size: [2]i32, format: Texture_Format) -> u32

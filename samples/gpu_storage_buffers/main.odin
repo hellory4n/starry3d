@@ -48,11 +48,21 @@ new_app :: proc()
 
 	app.pipeline = gpu.new_pipeline(
 		dev,
-		shaders = gpu.Render_Shaders{vertex = vert, fragment = frag},
+		settings = gpu.Render_Pipeline_Settings {
+			vertex_shader = vert,
+			fragment_shader = frag,
+		},
+		bindings = {gpu.Binding{type = .STORAGE_BUFFER, slot = 0}},
 	)
 
 	tris_bytes := mem.slice_to_bytes(TRIANGLES[:])
-	app.storage_buffer = gpu.new_buffer(dev, .STORAGE, .READ_ONLY, len(tris_bytes), tris_bytes)
+	app.storage_buffer = gpu.new_buffer(
+		dev,
+		{.STORAGE},
+		{.TRANSFER_DST},
+		len(tris_bytes),
+		tris_bytes,
+	)
 }
 
 free_app :: proc()
@@ -63,7 +73,12 @@ free_app :: proc()
 
 render_app :: proc(dt: f32, dev: gpu.Device)
 {
-	gpu.begin_render_pass(dev, gpu.default_framebuffer(dev), clear_color = [4]f32{0, 0, 0, 1})
+	gpu.begin_render_pass(
+		dev,
+		gpu.default_framebuffer(dev),
+		color_load_op = .CLEAR,
+		clear_color = {0, 0, 0, 1},
+	)
 	gpu.bind_pipeline(dev, app.pipeline)
 	gpu.bind_storage_buffer(dev, app.storage_buffer, slot = 0)
 
