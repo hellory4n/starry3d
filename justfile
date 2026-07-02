@@ -19,6 +19,7 @@ run-all-samples: \
 	run-hello run-custom-asset-loaders \
 	run-gpu-triangle run-gpu-bufferless run-gpu-uniform-buffers run-gpu-textures \
 	run-gpu-framebuffers run-gpu-storage-buffers \
+	run-imgui
 
 @run-hello:
 	@# run hello
@@ -51,6 +52,10 @@ run-all-samples: \
 @run-gpu-storage-buffers:
 	@# run gpu storage buffers
 	odin run samples/gpu_storage_buffers {{_CFLAGS}}
+
+@run-imgui:
+	@# run imgui
+	odin run samples/imgui {{_CFLAGS}}
 
 @run-lua-hello:
 	@# run hello (lua)
