@@ -7,6 +7,7 @@ Packages:
 - `starryapp`: manages the app lifecycle, GPU context, and asset system
 - `starrygfx`: the renderer (WIP)
 - `starryluarunner`: allows using Lua for Starry projects (WIP)
+- `studio`: the editor
 
 Get started with the [documentation](./docs) and [samples](./samples).
 

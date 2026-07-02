@@ -5,7 +5,6 @@ import gpu "../../starryapp/gpu"
 import "../../starryapp/imgui_impl_starry"
 import st "../../starrylib"
 import im "../../thirdparty/imgui"
-import "core:log"
 
 new_app :: proc()
 {

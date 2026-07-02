@@ -14,6 +14,9 @@ _CFLAGS      := f"{{_BASE_CFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}}"
 	@# test starrylib
 	odin test starrylib {{_CFLAGS}}
 
+@studio:
+	odin run studio {{_CFLAGS}}
+
 # but why would you do that
 run-all-samples: \
 	run-hello run-custom-asset-loaders \
