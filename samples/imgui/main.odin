@@ -1,4 +1,4 @@
-package hello
+package imgui_example
 
 import stapp "../../starryapp"
 import gpu "../../starryapp/gpu"
@@ -53,7 +53,7 @@ main :: proc()
 	context = ctx.ctx
 
 	stapp.run(
-		app_name = "hello starry",
+		app_name = "imgui",
 		app_version = {0, 1, 0},
 		asset_dir = "samples/hello",
 		init_proc = new_app,

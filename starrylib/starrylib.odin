@@ -12,10 +12,10 @@ import "core:log"
 import "core:mem"
 import "core:os"
 
-VERSION_NUM :: 2026_06_00 // v2026.6.0
-VERSION_STR :: "v2026.6.0-dev"
-VERSION_MAJOR :: 2026
-VERSION_MINOR :: 6
+VERSION_NUM :: 26_07_00
+VERSION_STR :: "v26.7.0-dev"
+VERSION_MAJOR :: 26
+VERSION_MINOR :: 7
 VERSION_PATCH :: 0
 
 Better_Context :: struct {
