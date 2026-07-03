@@ -5,9 +5,14 @@ import gpu "../../starryapp/gpu"
 import stgfx "../../starrygfx"
 import st "../../starrylib"
 
+global: struct {
+	texture: stapp.Asset_Ref,
+}
+
 new_app :: proc()
 {
 	stgfx.init_gfx()
+	global.texture = stapp.load(st.strid("texture"), "fish.png")
 }
 
 free_app :: proc()
@@ -18,13 +23,25 @@ free_app :: proc()
 render_app :: proc(dt: f32, dev: gpu.Device)
 {
 	stgfx.clear_screen(dev)
-	
-	stgfx.draw_colored_rect(pos = {256, 256}, size = {50, 50}, color = {1, 0, 1, 1})
-	stgfx.draw_colored_rect(pos = {0, 0}, size = {10, 10}, color = {1, 1, 1, 1})
+
+	stgfx.draw_texture_rect(
+		pos = {200, 300},
+		size = {200, 200},
+		texture = global.texture,
+		modulate = {0.3, 1, 0.3, 1},
+	)
+	stgfx.draw_texture_rect(
+		pos = {256, 256},
+		size = {200, 200},
+		texture = global.texture,
+		modulate = {1, 1, 1, 0.5},
+	)
+
+	stgfx.draw_colored_rect(pos = {0, 0}, size = {50, 10}, color = {1, 1, 1, 1})
 	stgfx.draw_colored_rect(
 		pos = stapp.mouse_position(),
 		size = {20, 20},
-		color = {1, 1, 0, 1},
+		color = {1, 0, 0, 1},
 	)
 
 	stgfx.render_2d(dev)

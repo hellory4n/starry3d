@@ -11,6 +11,7 @@ global: struct {
 	// renderers
 	gfx2d:    struct {
 		pipelines:      [Command_2D_Type]gpu.Pipeline,
+		samplers:       [gpu.Texture_Filter]gpu.Sampler,
 		uniform_buffer: gpu.Buffer,
 		commands:       [dynamic]Command_2D,
 	},

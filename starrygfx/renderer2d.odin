@@ -52,6 +52,7 @@ Texture_Command_2D :: struct {
 	size:     [2]f32,
 	modulate: [4]f32,
 	texture:  gpu.Texture,
+	filter:   gpu.Texture_Filter,
 }
 
 @(private)
@@ -101,11 +102,49 @@ init_2d :: proc()
 		},
 		bindings = {gpu.Binding{type = .UNIFORM_BUFFER, slot = 0}},
 	)
+
+	texture_vert := gpu.new_shader(
+		dev,
+		#load("shader/2d_texture.vert"),
+		.VERTEX,
+		label = "gfx2d texture (vert)",
+	)
+	defer gpu.free_shader(texture_vert)
+
+	texture_frag := gpu.new_shader(
+		dev,
+		#load("shader/2d_texture.frag"),
+		.FRAGMENT,
+		label = "gfx2d texture (frag)",
+	)
+	defer gpu.free_shader(texture_frag)
+
+	global.gfx2d.pipelines[.TEXTURE] = gpu.new_pipeline(
+		dev,
+		gpu.Render_Pipeline_Settings {
+			vertex_shader = texture_vert,
+			fragment_shader = texture_frag,
+		},
+		bindings = {
+			gpu.Binding{type = .UNIFORM_BUFFER, slot = 0},
+			gpu.Binding{type = .SAMPLER, slot = 0},
+			gpu.Binding{type = .TEXTURE, slot = 0},
+		},
+	)
+
+	for &sampler, filter in global.gfx2d.samplers {
+		// wrap doesn't really matter
+		sampler = gpu.new_sampler(dev, wrap = .CLAMP_TO_BORDER, filter = filter)
+	}
 }
 
 @(private)
 free_2d :: proc()
 {
+	for sampler in global.gfx2d.samplers {
+		gpu.free_sampler(sampler)
+	}
+
 	for pipeline in global.gfx2d.pipelines {
 		// .NIL is a command type, and it is, well, nil
 		// so we can't free .NIL
@@ -114,6 +153,7 @@ free_2d :: proc()
 		}
 	}
 
+	gpu.free_buffer(global.gfx2d.uniform_buffer)
 	delete(global.gfx2d.commands)
 }
 
@@ -163,23 +203,36 @@ render_2d :: proc(dev: gpu.Device)
 			gpu.draw(dev, vertex_count = 6)
 
 		case Texture_Command_2D:
-			unimplemented()
+			uniforms := Uniform_2D {
+				color      = c.modulate,
+				resolution = stapp.framebuffer_sizef(),
+				pos        = c.pos,
+				size       = c.size,
+			}
+			gpu.update_buffer(
+				dev,
+				global.gfx2d.uniform_buffer,
+				mem.ptr_to_bytes(&uniforms),
+			)
+
+			gpu.bind_sampler(dev, global.gfx2d.samplers[c.filter], slot = 0)
+			gpu.bind_texture(dev, c.texture, slot = 0)
+
+			gpu.draw(dev, vertex_count = 6)
 		}
 	}
 }
 
 draw_colored_rect :: proc(pos, size: [2]f32, color: [4]f32)
 {
-	append(
-		&global.gfx2d.commands,
-		Rect_Command_2D{pos = pos, size = size, color = color},
-	)
+	append(&global.gfx2d.commands, Rect_Command_2D{pos = pos, size = size, color = color})
 }
 
 draw_texture_rect :: proc(
 	pos, size: [2]f32,
 	texture: stapp.Asset_Ref,
 	modulate := [4]f32{1, 1, 1, 1},
+	filter := gpu.Texture_Filter.BILINEAR,
 )
 {
 	tex_data, ok := hm.get(&global.textures, texture.handle)
