@@ -22,7 +22,7 @@ run-all-samples: \
 	run-hello run-custom-asset-loaders \
 	run-gpu-triangle run-gpu-bufferless run-gpu-uniform-buffers run-gpu-textures \
 	run-gpu-framebuffers run-gpu-storage-buffers \
-	run-imgui
+	run-imgui run-gfx2d \
 
 @run-hello:
 	@# run hello
@@ -59,6 +59,10 @@ run-all-samples: \
 @run-imgui:
 	@# run imgui
 	odin run samples/imgui {{_CFLAGS}}
+
+@run-gfx2d:
+	@# run gfx2d
+	odin run samples/gfx2d {{_CFLAGS}}
 
 @run-lua-hello:
 	@# run hello (lua)

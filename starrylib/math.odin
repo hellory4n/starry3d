@@ -2,7 +2,6 @@ package starrylib
 
 import "base:intrinsics"
 import "core:math"
-import "core:math/linalg"
 
 @(require_results)
 approx_eql_f16 :: #force_inline proc(x, y: f16) -> bool
@@ -53,10 +52,10 @@ unpack_argb_from_u32 :: #force_inline proc(src: u32) -> (dst: [4]u8)
 @(require_results)
 rgba8_to_rgbaf32_unorm :: #force_inline proc(src: [4]u8) -> (dst: [4]f32)
 {
-	dst.r = f32(src.r) / 1.0
-	dst.g = f32(src.g) / 1.0
-	dst.b = f32(src.b) / 1.0
-	dst.a = f32(src.a) / 1.0
+	dst.r = f32(src.r) / 255.0
+	dst.g = f32(src.g) / 255.0
+	dst.b = f32(src.b) / 255.0
+	dst.a = f32(src.a) / 255.0
 	return
 }
 
@@ -112,9 +111,4 @@ area_3d :: #force_inline proc(size: [3]$T) -> T where intrinsics.type_is_numeric
 area :: proc {
 	area_2d,
 	area_3d,
-}
-
-quat_to_vec4 :: #force_inline proc(q: quaternion128) -> [4]f32
-{
-	return {q.x, q.y, q.z, q.w}
 }
