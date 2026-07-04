@@ -81,10 +81,7 @@ about_window :: proc(p_open: ^bool)
 	window_size := im.GetWindowViewport().Size * {0.4, 0.5}
 	im.SetNextWindowSize(window_size, cond = .Appearing)
 
-	// TODO i know it says "don't use" on .Modal but somehow it's the only way to make it
-	// properly centered, as calculating the position manually mysteriously leaves the
-	// window slightly off-center
-	im.Begin("About Starry", p_open, {.Modal, .NoResize})
+	im.Begin("About Starry", p_open, {.NoResize})
 	defer im.End()
 
 	im.Text("The Starry Project %s", st.VERSION_STR)
@@ -95,6 +92,21 @@ about_window :: proc(p_open: ^bool)
 
 	if im.BeginTabBar("about tabs", {.NoTooltip}) {
 		defer im.EndTabBar()
+
+		if im.BeginTabItem("Licenses") {
+			defer im.EndTabItem()
+
+			// TODO render proper markdown here
+			// this will do for now
+			LICENSES :: #load("../COPYRIGHT.md", cstring)
+			im.InputTextMultiline(
+				"##licenses",
+				LICENSES,
+				len(LICENSES) + 1,
+				size = im.GetContentRegionAvail(),
+				flags = {.WordWrap, .ReadOnly},
+			)
+		}
 
 		if im.BeginTabItem("Build info") {
 			defer im.EndTabItem()
@@ -120,21 +132,6 @@ about_window :: proc(p_open: ^bool)
 				"false" when ODIN_DISABLE_ASSERT else "true",
 			)
 			im.Text("Built with Odin %s", st.temp_cstr(ODIN_VERSION))
-		}
-
-		if im.BeginTabItem("License") {
-			defer im.EndTabItem()
-
-			// TODO render proper markdown here
-			// this will do for now
-			LICENSES :: #load("../COPYRIGHT.md", cstring)
-			im.InputTextMultiline(
-				"##licenses",
-				LICENSES,
-				len(LICENSES) + 1,
-				size = im.GetContentRegionAvail(),
-				flags = {.WordWrap, .ReadOnly},
-			)
 		}
 	}
 }

@@ -33,7 +33,7 @@ Starry depends on a number of thirdparty libraries, all compatible with its Zlib
 ## [Lua](https://lua.org)
 
 - License: MIT (https://www.lua.org/license.html)
-- Copyright © 1994–2025 Lua.org, PUC-Rio.
+- Copyright © 1994-2025 Lua.org, PUC-Rio.
 - Files: external: https://github.com/odin-lang/Odin/tree/master/vendor/lua/5.4
 
 ## [odin-imgui](https://gitlab.com/L-4/odin-imgui)
