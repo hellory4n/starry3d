@@ -14,12 +14,12 @@ app_init :: proc()
 	io.ConfigFlags += {.DockingEnable}
 	imgui_impl_starry.init()
 
-	// dockspacing it
-	im.DockSpaceOverViewport(0, im.GetMainViewport(), {.PassthruCentralNode})
+	studio_ui_init()
 }
 
 app_free :: proc()
 {
+	studio_ui_free()
 	imgui_impl_starry.shutdown()
 	im.DestroyContext()
 }
@@ -29,8 +29,7 @@ app_update :: proc(dt: f32)
 	imgui_impl_starry.new_frame()
 	im.NewFrame()
 
-	// TODO fucking ui stuff here
-	im.ShowDemoWindow()
+	studio_ui()
 }
 
 app_render :: proc(dt: f32, dev: gpu.Device)
@@ -41,7 +40,7 @@ app_render :: proc(dt: f32, dev: gpu.Device)
 		dev,
 		gpu.default_framebuffer(dev),
 		color_load_op = .CLEAR,
-		clear_color = {0.1, 0.2, 0.5, 1},
+		clear_color = {0, 0, 0, 1},
 	)
 	imgui_impl_starry.render_draw_data(dev, im.GetDrawData())
 	gpu.end_render_pass(dev)
@@ -61,5 +60,7 @@ main :: proc()
 		free_proc = app_free,
 		update_proc = app_update,
 		render_proc = app_render,
+		width = 1280,
+		height = 720,
 	)
 }

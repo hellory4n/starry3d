@@ -11,12 +11,14 @@ import "core:fmt"
 import "core:log"
 import "core:mem"
 import "core:os"
+import "core:strings"
 
 VERSION_NUM :: 26_07_00
 VERSION_STR :: "v26.7.0-dev"
 VERSION_MAJOR :: 26
 VERSION_MINOR :: 7
 VERSION_PATCH :: 0
+VERSION_PRERELEASE :: true
 
 Better_Context :: struct {
 	ctx:             runtime.Context,
@@ -124,4 +126,10 @@ poor_mans_valgrind :: proc(track: mem.Tracking_Allocator)
 			log.debugf("%p @ %v", entry.memory, entry.location)
 		}
 	}
+}
+
+// For the laziest of hands
+temp_cstr :: proc(src: string) -> cstring
+{
+	return strings.clone_to_cstring(src, context.temp_allocator)
 }

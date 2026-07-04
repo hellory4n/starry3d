@@ -1,3 +1,7 @@
 package studio
 
-global: struct{}
+global: struct {
+	popups: struct {
+		about: bool,
+	},
+}
