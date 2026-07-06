@@ -4,10 +4,11 @@
 *.bin
 *.exe
 *.pdb
+*.so
+*.dll
+*.dylib
+*.a
 
 # engine garbage
 log.txt
 imgui.ini
-
-# dev garbage
-testout/
