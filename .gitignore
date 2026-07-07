@@ -8,6 +8,10 @@
 *.dll
 *.dylib
 *.a
+*.lib
+*.o
+*.obj
+build
 
 # engine garbage
 log.txt
