@@ -38,6 +38,6 @@ Starry depends on a number of thirdparty libraries, all compatible with its Zlib
 
 ## [odin-imgui](https://gitlab.com/L-4/odin-imgui)
 
-- License: MIT (`thirdparty/imgui/LICENSE`)
+- License: MIT (`starry/thirdparty/imgui/LICENSE`)
 - Copyright (c) 2024 Trevin Sorenson
-- Files: `thirdparty/imgui/*`
+- Files: `starry/thirdparty/imgui/*`
