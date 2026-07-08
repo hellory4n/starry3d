@@ -23,3 +23,9 @@ This list does not include libraries from `vendor:`.
 	- `imgui_windows_x64.lib`
 	- `lib_name.odin`
 	- `LICENSE`
+
+## luajit
+
+Based on Odin v2026.07's `vendor:lua/5.1` package, but with the binaries replaced by [LuaJIT](https://luajit.org) commit `acb223497d84c65139a7eaaac395b42f112249ac` (custom build)
+
+See `luajit/LICENSE` for licensing information.
