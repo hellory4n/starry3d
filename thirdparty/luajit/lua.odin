@@ -11,7 +11,7 @@ import c "core:c/libc"
 // LUA_SHARED :: #config(LUA_SHARED, false)
 LUA_SHARED :: false
 
-when ODIN_OS == .Windows {
+when ODIN_OS == .Windows && ODIN_ARCH == .amd64 {
 	foreign import lib "windows/lua51.lib"
 } else when ODIN_OS == .Linux && ODIN_ARCH == .amd64 {
 	foreign import lib "linux/libluajit.a"

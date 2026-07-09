@@ -26,6 +26,10 @@ This list does not include libraries from `vendor:`.
 
 ## luajit
 
-Based on Odin v2026.07's `vendor:lua/5.1` package, but with the binaries replaced by [LuaJIT](https://luajit.org) commit `acb223497d84c65139a7eaaac395b42f112249ac` (custom build)
+Based on Odin v2026.07's `vendor:lua/5.1` package, but with the binaries replaced by [LuaJIT](https://luajit.org) commit `acb223497d84c65139a7eaaac395b42f112249ac`
+
+The binaries were built using:
+- Linux: `make BUILDMODE=static STATIC_CC="gcc -fPIC"`
+- Windows: `msvcbuild.bat static`
 
 See `luajit/LICENSE` for licensing information.
