@@ -1,5 +1,8 @@
 function app_init()
-	print(st.vec2(1, 1))
-	print(st.vec2(1))
-	print(st.vec2())
+	print(vec2(1, 2))
+	print(vec2(1))
+	print(vec2())
+	print(vec2(5) - 1)
+	print(vec2(5) - vec2(1, 2))
+	print(vec3(5) / 2)
 end
