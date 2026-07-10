@@ -1,4 +1,84 @@
 -- preloaded code: math.lua
+local ffi = require("ffi")
+
+--- math functions have to be redefined to support vectors
+--- @class oldmath: mathlib
+local oldmath = table.shallow_copy(math)
+--- @class starrymath: table
+math = { pi = oldmath.pi, huge = oldmath.huge }
+
+ffi.cdef [[
+float st_round(float);
+]]
+
+--- Rounds a number. Mysteriously this isn't included in Lua by default.
+--- @param value number
+--- @return number
+--- @nodiscard
+function oldmath.round(value)
+	return ffi.C.st_round(value)
+end
+
+--- Converts radians to degrees
+--- @param x number
+--- @return number
+--- @nodiscard
+function oldmath.rad2deg(x)
+	return x * (180.0 / math.pi);
+end
+
+--- Converts degrees to radians
+--- @param x number
+--- @return number
+--- @nodiscard
+function oldmath.deg2rad(x)
+	return x * (math.pi / 180.0);
+end
+
+oldmath.radians = oldmath.deg2rad
+oldmath.degrees = oldmath.rad2deg
+
+--- Clamps X between min and max.
+--- @param x number
+--- @param min number
+--- @param max number
+--- @return number
+--- @nodiscard
+function oldmath.clamp(x, min, max)
+	return oldmath.min(oldmath.max(min, x), max);
+end
+
+--- Linear interpolation
+--- @param a number
+--- @param b number
+--- @param t number
+--- @return number
+--- @nodiscard
+function oldmath.lerp(a, b, t)
+	return (1.0 - t) * a + t * b
+end
+
+--- Similar to lerp, but inverse.
+--- @param a number
+--- @param b number
+--- @param v number
+--- @return number
+--- @nodiscard
+function oldmath.inverse_lerp(a, b, v)
+	return (v - a) / (b - a)
+end
+
+--- Converts a number from one scale to another
+--- @param val number
+--- @param src_min number
+--- @param src_max number
+--- @param dst_min number
+--- @param dst_max number
+--- @return number
+--- @nodiscard
+function oldmath.remap(val, src_min, src_max, dst_min, dst_max)
+	return oldmath.lerp(dst_min, dst_max, oldmath.inverse_lerp(src_min, src_max, val))
+end
 
 --- @class Vec2: table
 --- @field x number
@@ -576,4 +656,15 @@ end
 --- @return Vec4
 function Vec4:clone()
 	return vec4(self.x, self.y, self.z, self.w)
+end
+
+-- redefine math functions to support vectors
+
+--- Returns the absolute value of `x`.
+--- @param x number | Vec2 | Vec3 | Vec4
+--- @return number | Vec2 | Vec3 | Vec4
+--- @nodiscard
+--- @diagnostic disable-next-line: duplicate-set-field
+function math.abs(x)
+
 end

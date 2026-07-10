@@ -5,4 +5,6 @@ function app_init()
 	print(vec2(5) - 1)
 	print(vec2(5) - vec2(1, 2))
 	print(vec3(5) / 2)
+	print(math.degrees(math.pi))
+	print(math.radians(math.degrees(math.pi)))
 end
