@@ -8,7 +8,7 @@ import "core:fmt"
 // if it works it works.
 
 @(export)
-stlua_test :: proc "c" ()
+st_test :: proc "c" ()
 {
 	context = global.ctx
 	fmt.println(":)")

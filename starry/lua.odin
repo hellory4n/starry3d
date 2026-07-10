@@ -13,7 +13,7 @@ init_lua :: proc()
 	}
 
 	lua.L_openlibs(L)
-	lua_run(L, #load("builtin.lua", cstring))
+	lua_run(L, #load("lua/builtin.lua", cstring))
 }
 
 free_lua :: proc()
@@ -59,7 +59,7 @@ call_lua_function :: proc(L: ^lua.State, func_name: cstring, args: ..Lua_Variant
 		case lua.Integer:
 			lua.pushinteger(L, v)
 		case string:
-			lua.pushlstring(L, transmute(cstring)raw_data(v), c.size_t(len(v)))
+			lua.pushlstring(L, cast(cstring)raw_data(v), c.size_t(len(v)))
 		case cstring:
 			lua.pushstring(L, v)
 		case b32:
