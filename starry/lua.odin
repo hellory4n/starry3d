@@ -15,7 +15,6 @@ init_lua :: proc()
 	lua.L_openlibs(L)
 	lua_run(L, #load("lua/table.lua", cstring))
 	lua_run(L, #load("lua/math.lua", cstring))
-	lua_run(L, #load("lua/builtin.lua", cstring))
 }
 
 free_lua :: proc()

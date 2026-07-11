@@ -1,19 +1,13 @@
 -- preloaded code: math.lua
 local ffi = require("ffi")
 
---- math functions have to be redefined to support vectors
---- @class oldmath: mathlib
-local oldmath = table.shallow_copy(math)
---- @class starrymath: table
-math = {
-	pi = oldmath.pi,
-	huge = oldmath.huge,
-	random = oldmath.random,
-	randomseed = oldmath.randomseed,
-}
-
 ffi.cdef [[
+typedef struct { float x, y; } C_Vec2;
+typedef struct { float x, y, z; } C_Vec3;
+typedef struct { float x, y, z, w; } C_Vec4;
 float st_round(float);
+C_Vec4 st_euler_to_quat(float x, float y, float z);
+C_Vec3 st_quat_to_euler(float x, float y, float z, float w);
 ]]
 
 --- @class Vec2: table
@@ -636,7 +630,104 @@ function Vec4:clone()
 	return vec4(self.x, self.y, self.z, self.w)
 end
 
+--- Quaternion
+--- @class Quat: table
+--- @field x number
+--- @field y number
+--- @field z number
+--- @field w number
+Quat = {}
+Quat.__index = Quat
+
+--- No arguments creates an identity quaternion (0, 0, 0, 1)
+--- @param x number?
+--- @param y number?
+--- @param z number?
+--- @param w number?
+--- @return Quat
+function quat(x, y, z, w)
+	if not x then
+		return setmetatable({ x = 0, y = 0, z = 0, w = 1 }, Quat)
+	end
+
+	return setmetatable({
+		x = x or 0,
+		y = y or 0,
+		z = z or 0,
+		w = w or 1
+	}, Quat)
+end
+
+Quat.identity = quat()
+
+function Quat.__mul(a, b)
+	if type(b) == "number" then
+		return quat(a.x * b, a.y * b, a.z * b, a.w * b)
+	end
+	if type(a) == "number" then
+		return quat(a * b.x, a * b.y, a * b.z, a * b.w)
+	end
+	-- quat * quat
+	return quat(
+		a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+		a.w * b.y + a.y * b.w + a.z * b.x - a.x * b.z,
+		a.w * b.z + a.z * b.w + a.x * b.y - a.y * b.x,
+		a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z
+	)
+end
+
+--- @param a Quat
+--- @param b Quat
+--- @return Quat
+function Quat.__add(a, b)
+	return vec4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w)
+end
+
+--- @param a Quat
+--- @param b Quat
+--- @return Quat
+function Quat.__sub(a, b)
+	return quat(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w)
+end
+
+--- @param a Quat
+--- @return Quat
+function Quat.__unm(a)
+	return quat(-a.x, -a.y, -a.z, -a.w)
+end
+
+--- @param a Quat
+--- @param b Quat
+--- @return boolean
+function Quat.__eq(a, b)
+	if type(a) ~= type(b) then return false end
+	if getmetatable(a) ~= getmetatable(b) then return false end
+	return a.x == b.x and a.y == b.y and a.z == b.z and a.w == b.w
+end
+
+function Quat:__tostring()
+	return string.format("quat(%.4f, %.4f, %.4f, %.4f)", self.x, self.y, self.z, self.w)
+end
+
+--- @return Quat
+function Quat:clone()
+	return quat(self.x, self.y, self.z, self.w)
+end
+
 -- redefine math functions to support vectors
+
+--- math functions have to be redefined to support vectors
+--- @class oldmath: mathlib
+local oldmath = table.shallow_copy(math)
+--- @class starrymath: table
+math = {
+	pi = oldmath.pi,
+	huge = oldmath.huge,
+	-- Smallest number such that `1.0 + math.epsilon != 1.0`.
+	epsilon = 1.192092896e-07,
+	random = oldmath.random,
+	randomseed = oldmath.randomseed,
+}
 
 --- @generic T number | Vec2 | Vec3 | Vec4
 --- @param func function
@@ -1074,7 +1165,7 @@ function math.remap(val, src_min, src_max, dst_min, dst_max)
 end
 
 --- Returns the dot product of `a` and `b`
---- @generic T Vec2 | Vec3 | Vec4
+--- @generic T Vec2 | Vec3 | Vec4 | Quat
 --- @param a T
 --- @param b T
 --- @return number
@@ -1087,10 +1178,16 @@ function math.dot(a, b)
 end
 
 --- Returns the magnitude of a vector
---- @param vec Vec2 | Vec3 | Vec4
+--- @param vec Vec2 | Vec3 | Vec4 | Quat
 --- @return number
 function math.length(vec)
 	return math.sqrt(math.dot(vec, vec))
+end
+
+--- @param vec Vec2 | Vec3 | Vec4 | Quat
+--- @return number
+function math.length_squared(vec)
+	return math.dot(vec, vec)
 end
 
 --- Returns the distance between `a` and `b`
@@ -1111,7 +1208,7 @@ function math.cross(a, b)
 end
 
 --- Returns a vector in the same direction but with a length of 1
---- @generic T Vec2 | Vec3 | Vec4
+--- @generic T Vec2 | Vec3 | Vec4 | Quat
 --- @param vec T
 --- @return T
 function math.normalize(vec)
@@ -1123,7 +1220,146 @@ function math.normalize(vec)
 			return vec3()
 		elseif getmetatable(vec) == Vec4 then
 			return vec4()
+		elseif getmetatable(vec) == Quat then
+			return quat()
 		end
 	end
 	return vec / len
+end
+
+--- Returns true if the 2 numbers are approximately equal
+--- @generic T number | Vec2 | Vec3 | Vec4
+--- @param x T
+--- @param y T
+--- @param epsilon number? Defaults to `math.epsilon`
+--- @return T
+function math.approx_equal(x, y, epsilon)
+	local epsilon_but_vec = nil
+	if type(x) == "number" then
+		epsilon_but_vec = epsilon or math.epsilon
+	elseif getmetatable(x) == Vec2 then
+		epsilon_but_vec = vec2(epsilon or math.epsilon)
+	elseif getmetatable(x) == Vec3 then
+		epsilon_but_vec = vec3(epsilon or math.epsilon)
+	elseif getmetatable(x) == Vec4 then
+		epsilon_but_vec = vec4(epsilon or math.epsilon)
+	end
+
+	local function base_approx_equal(x_, y_, epsilon_)
+		return math.abs(x_ - y_) < epsilon_
+	end
+	return oldmath_call3(base_approx_equal, x, y, epsilon_but_vec)
+end
+
+--- Converts a color from the 0-255 range to the 0.0-1.0 range
+--- @generic T Vec3 | Vec4
+--- @param src T
+--- @return T
+function math.normalize_8bit_color(src)
+	return src / 255.0
+end
+
+--- Creates a quaternion from axis + angle (angle in radians)
+--- @param axis Vec3
+--- @param angle number
+--- @return Quat
+function math.axis_angle(axis, angle)
+	local s = math.sin(angle * 0.5)
+	return quat(
+		axis.x * s,
+		axis.y * s,
+		axis.z * s,
+		math.cos(angle * 0.5)
+	)
+end
+
+--- Returns a quaternion from an Euler angle (all in radians)
+--- @param pitch number
+--- @param yaw number
+--- @param roll number
+--- @return Quat
+function math.euler_to_quat(pitch, yaw, roll)
+	local q = ffi.C.st_euler_to_quat(pitch, yaw, roll)
+	return quat(q.x, q.y, q.z, q.w)
+end
+
+--- Returns a quaternion from an Euler angle (all in radians)
+--- @param vec Vec3 X = pitch, Y = yaw, Z = roll
+--- @return Quat
+function math.vec3_to_quat(vec)
+	return math.euler_to_quat(vec.x, vec.y, vec.z)
+end
+
+--- Converts a quaternion to Euler angle (radians)
+--- @param quat Quat
+--- @return Vec3 X = pitch, Y = yaw, Z = roll
+function math.quat_to_euler(quat)
+	local v = ffi.C.st_quat_to_euler(quat.x, quat.y, quat.z, quat.w)
+	return vec3(v.x, v.y, v.z)
+end
+
+--- @param quat Quat
+--- @return Quat
+function math.conjugate(quat)
+	return quat(-quat.x, -quat.y, -quat.z, quat.w)
+end
+
+--- @param quat Quat
+--- @return Quat
+function math.inverse(quat)
+	local conj = math.conjugate(quat)
+	local lensq = math.length_squared(quat)
+	if lensq == 0 then return quat() end
+	return quat(conj.x / lensq, conj.y / lensq, conj.z / lensq, conj.w / lensq)
+end
+
+--- SLERP (Spherical Linear Interpolation)
+--- @param a Quat
+--- @param b Quat
+--- @param t number
+--- @return Quat
+function math.slerp(a, b, t)
+	local cos_theta = math.dot(a, b)
+	if cos_theta < 0 then
+		--- @diagnostic disable-next-line: cast-local-type -- mate i defined the operators
+		b = -b
+		cos_theta = -cos_theta
+	end
+
+	if cos_theta > 0.9995 then
+		-- lerp for small angles
+		local result = a + (b - a) * t
+		return result:normalize()
+	end
+
+	local theta = math.acos(math.min(math.max(cos_theta, -1), 1))
+	local sin_theta = math.sin(theta)
+
+	local wa = math.sin((1 - t) * theta) / sin_theta
+	local wb = math.sin(t * theta) / sin_theta
+
+	return (a * wa) + (b * wb)
+end
+
+--- Get rotation angle (radians)
+--- @param quat Quat
+--- @return number
+function math.angle(quat)
+	return 2 * math.acos(math.abs(quat.w))
+end
+
+--- Get rotation axis
+--- @param quat Quat
+--- @return Vec3
+function math.axis(quat)
+	local s = math.sqrt(1 - quat.w * quat.w)
+	if s < 0.0001 then
+		return { x = 1, y = 0, z = 0 } -- arbitrary axis
+	end
+
+	return vec3(
+		quat.x / s,
+		quat.y / s,
+		quat.z / s
+	)
 end

@@ -9,4 +9,6 @@ function app_init()
 	print(math.min(5, 1, -2, 62346, 4))
 	print(math.max(5, 1, -2, 62346, 4))
 	print(math.normalize(vec3(72472, 424, 13)))
+	print(math.euler_to_quat(1, 2, 3))
+	print(math.quat_to_euler(math.euler_to_quat(math.pi, math.pi / 2, 0)))
 end
