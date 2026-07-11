@@ -8,6 +8,7 @@ import "core:math"
 import vmem "core:mem/virtual"
 import "core:os"
 import "core:time"
+import "gpu"
 import "vendor:glfw"
 
 Config :: struct {
@@ -15,13 +16,13 @@ Config :: struct {
 	main:   string,
 	width:  int,
 	height: int,
-	// options: "noresize"
 	flags:  []string,
 }
 
 // unpacked from the string array
 Config_Flags :: struct {
-	noresize: bool,
+	no_resize:   bool,
+	no_high_dpi: bool,
 }
 
 load_app_config :: proc()
@@ -38,10 +39,19 @@ load_app_config :: proc()
 		fmt.panicf("error parsing app.json: %s", jerr)
 	}
 
+	if global.config.width == 0 {
+		global.config.width = 800
+	}
+	if global.config.height == 0 {
+		global.config.height = 600
+	}
+
 	for flag in global.config.flags {
 		switch flag {
-		case "noresize":
-			global.config_flags.noresize = true
+		case "no_resize":
+			global.config_flags.no_resize = true
+		case "no_high_dpi":
+			global.config_flags.no_high_dpi = true
 		case:
 			fmt.printfln("unknown flag %q", flag)
 		}
@@ -70,7 +80,35 @@ init_app_window :: proc()
 	// bothered to support multiple windows everywhere else
 	global.windows = make([dynamic]^Window)
 
-	open_window(global.config.name)
+	open_window(
+		title = global.config.name,
+		width = global.config.width,
+		height = global.config.height,
+		resizable = !global.config_flags.no_resize,
+		high_dpi = !global.config_flags.no_high_dpi,
+		setup_gl_ctx = true,
+	)
+
+	// gpu crap
+	gpu.init_instance()
+
+	ok: bool
+	global.device, ok = gpu.new_device(gpu.Gl_Init_Glue {
+		window = main_window(),
+		get_proc_address_proc = proc(p: rawptr, name: cstring)
+		{
+			_proc := cast(^rawptr)p
+			_proc^ = glfw.GetProcAddress(name)
+		},
+		swap_buffers_proc = proc(w: rawptr)
+		{
+			window := cast(^Window)w
+			glfw.SwapBuffers(window.glfw)
+		},
+	})
+	if !ok {
+		fmt.panicf("couldn't create GPU device")
+	}
 
 	glfw.SetFramebufferSizeCallback(
 		main_window().glfw,
@@ -91,6 +129,9 @@ init_app_window :: proc()
 
 free_app_window :: proc()
 {
+	gpu.free_device(global.device)
+	gpu.free_instance()
+	close_window(main_window())
 	delete(global.windows)
 }
 
@@ -102,6 +143,17 @@ main_loop :: proc()
 		return
 	}
 
+	// gpuing it
+	gpu.begin_frame(global.device)
+	// TODO remove this from here
+	gpu.begin_render_pass(
+		global.device,
+		gpu.default_framebuffer(global.device),
+		.CLEAR,
+		clear_color = {1, 0, 0, 1},
+	)
+	gpu.end_render_pass(global.device)
+
 	// timing it
 	global.current_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0
 	delta_time := math.clamp(global.current_time - global.prev_time, 0.0001, 1)
@@ -111,5 +163,26 @@ main_loop :: proc()
 	L := global.lua
 	call_lua_function(L, "app_update", lua.Number(delta_time), can_be_nil = true)
 
+	// gpuing it 2
+	gpu.end_frame(global.device)
+	gpu.present_and_swap_buffers(global.device)
 	poll_events()
+}
+
+// Returns the current time since the engine started, in seconds
+now_in_seconds :: proc() -> f64
+{
+	return global.current_time - global.start_time
+}
+
+// Returns the time between the current frame and last frame
+delta_time :: proc() -> f64
+{
+	return math.clamp(global.current_time - global.prev_time, 0.0001, 1)
+}
+
+// Returns the current GPU device
+gpu_device :: proc() -> gpu.Device
+{
+	return global.device
 }

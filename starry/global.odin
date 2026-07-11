@@ -3,6 +3,7 @@ package starry
 import lua "../thirdparty/luajit"
 import "base:runtime"
 import vmem "core:mem/virtual"
+import "gpu"
 
 global: struct {
 	// pre-init
@@ -22,4 +23,7 @@ global: struct {
 	current_time: f64,
 	prev_time:    f64,
 	running:      bool,
+
+	// graphics
+	device:       gpu.Device,
 }
