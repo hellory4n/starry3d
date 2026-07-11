@@ -692,27 +692,6 @@ local function oldmath_call3(func, arg1, arg2, arg3)
 	return ret
 end
 
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param func function
---- @param arg1 T
---- @param arg2 T
---- @param arg3 T
---- @param arg4 T
---- @param arg5 T
-local function oldmath_call5(func, arg1, arg2, arg3, arg4, arg5)
-	if type(arg1) == "number" then
-		return func(arg1, arg2, arg3, arg4, arg5)
-	end
-
-	ret = {}
-	setmetatable(ret, getmetatable(arg1))
-
-	for key, _ in pairs(arg1) do
-		ret[key] = func(arg1[key], arg2[key], arg3[key], arg4[key], arg5[key])
-	end
-	return ret
-end
-
 --- Returns the absolute value of `x`.
 --- @generic T number | Vec2 | Vec3 | Vec4
 --- @param x T
@@ -1090,6 +1069,61 @@ end
 --- @param dst_max T
 --- @return T
 --- @nodiscard
-function oldmath.remap(val, src_min, src_max, dst_min, dst_max)
-	return oldmath.lerp(dst_min, dst_max, oldmath.inverse_lerp(src_min, src_max, val))
+function math.remap(val, src_min, src_max, dst_min, dst_max)
+	return math.lerp(dst_min, dst_max, math.inverse_lerp(src_min, src_max, val))
+end
+
+--- Returns the dot product of `a` and `b`
+--- @generic T Vec2 | Vec3 | Vec4
+--- @param a T
+--- @param b T
+--- @return number
+function math.dot(a, b)
+	local ret = 0
+	for key, _ in pairs(a) do
+		ret = ret + a[key] * b[key]
+	end
+	return ret
+end
+
+--- Returns the magnitude of a vector
+--- @param vec Vec2 | Vec3 | Vec4
+--- @return number
+function math.length(vec)
+	return math.sqrt(math.dot(vec, vec))
+end
+
+--- Returns the distance between `a` and `b`
+--- @generic T Vec2 | Vec3 | Vec4
+--- @param a T
+--- @param b T
+--- @return number
+function math.distance(a, b)
+	return math.length(a - b)
+end
+
+--- Returns the cross product of `a` and `b`
+--- @param a Vec3
+--- @param b Vec3
+--- @return Vec3
+function math.cross(a, b)
+	return vec3(a.y * b.z - b.y * a.z, a.z * b.x - b.z * a.x, a.x * b.y - b.x * a.y)
+end
+
+--- Returns a vector in the same direction but with a length of 1
+--- @generic T Vec2 | Vec3 | Vec4
+--- @param vec T
+--- @return T
+function math.normalize(vec)
+	local len = math.length(vec)
+	if len == 0 then
+		if getmetatable(vec) == Vec2 then
+			return vec2()
+		elseif getmetatable(vec) == Vec3 then
+			return vec3()
+		elseif getmetatable(vec) == Vec4 then
+			return vec4()
+		end
+	end
+	return vec / len
 end
