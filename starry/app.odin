@@ -145,14 +145,6 @@ main_loop :: proc()
 
 	// gpuing it
 	gpu.begin_frame(global.device)
-	// TODO remove this from here
-	gpu.begin_render_pass(
-		global.device,
-		gpu.default_framebuffer(global.device),
-		.CLEAR,
-		clear_color = {1, 0, 0, 1},
-	)
-	gpu.end_render_pass(global.device)
 
 	// timing it
 	global.current_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0

@@ -254,15 +254,15 @@ present_and_swap_buffers :: proc(dev: Device)
 	d.swap_buffers_proc(d.window)
 }
 
-Load_Op :: enum {
-	DONT_CARE,
-	LOAD,
-	CLEAR,
+Load_Op :: enum i32 {
+	DONT_CARE = 0,
+	LOAD      = 1,
+	CLEAR     = 2,
 }
 
-Store_Op :: enum {
-	STORE,
-	DONT_CARE,
+Store_Op :: enum i32 {
+	DONT_CARE = 0,
+	STORE     = 1,
 }
 
 begin_render_pass :: proc(
