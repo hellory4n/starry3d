@@ -12,3 +12,14 @@ function app_init()
 	print(math.euler_to_quat(1, 2, 3))
 	print(math.quat_to_euler(math.euler_to_quat(math.pi, math.pi / 2, 0)))
 end
+
+--- @param dt number
+function app_update(dt)
+	print("hi!")
+end
+
+--- @param width integer
+--- @param height integer
+function app_on_resize(width, height)
+	print("resize!")
+end

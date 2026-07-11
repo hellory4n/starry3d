@@ -1,32 +1,7 @@
-## Starry
+The Starry engine and runtime depends on a number of thirdparty libraries, all compatible with its Zlib license. The following is a list of all of them and their licenses.
 
-All source files, unless stated otherwise, are licensed under the Zlib license:
-
-Copyright (c) 2025-2026 hellory4n <hellory4n@gmail.com>
-
-This software is provided 'as-is', without any express or implied
-warranty. In no event will the authors be held liable for any damages
-arising from the use of this software.
-
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute it
-freely, subject to the following restrictions:
-
-1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgment in the product documentation would be
-   appreciated but is not required.
-2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
-3. This notice may not be removed or altered from any source distribution.
-
-# Third-party libraries
-Starry depends on a number of thirdparty libraries, all compatible with its Zlib license. The following is a list of all of them and their licenses.
-
-## [GLFW](https://www.glfw.org)
-
-- Files: external: https://github.com/odin-lang/Odin/tree/master/vendor/glfw
-- License: Zlib
+========================================
+GLFW
 
 Copyright (c) 2002-2006 Marcus Geelnard
 
@@ -51,13 +26,7 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source
    distribution.
 
-## [LuaJIT](https://luajit.org)
-
-- License: MIT
-- Files: `thirdparty/luajit`
-
-```plaintext
-===============================================================================
+========================================
 LuaJIT -- a Just-In-Time Compiler for Lua. https://luajit.org/
 
 Copyright (C) 2005-2026 Mike Pall. All rights reserved.
@@ -113,12 +82,9 @@ Doug Lea and released to the public domain, as explained at
 https://creativecommons.org/licenses/publicdomain
 
 ===============================================================================
-```
 
-## [odin-imgui](https://gitlab.com/L-4/odin-imgui)
-
-- License: MIT
-- Files: `thirdparty/imgui`
+========================================
+odin-imgui
 
 MIT License
 
@@ -142,10 +108,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## [Dear ImGui](https://github.com/ocornut/imgui)
-
-- License: MIT
-- Files: `thirdparty/imgui/imgui_linux_x64.a`, `thirdparty/imgui/imgui_windows_x64.lib`
+========================================
+Dear ImGui
 
 The MIT License (MIT)
 

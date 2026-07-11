@@ -49,7 +49,14 @@ main :: proc()
 	fmt.printfln("app directory: %s", app_dir())
 
 	load_app_config()
+	init_app_window()
 	init_lua()
 	init_app()
+
+	defer free_app_window()
 	defer free_lua()
+
+	for global.running {
+		main_loop()
+	}
 }

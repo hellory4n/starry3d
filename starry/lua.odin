@@ -13,8 +13,8 @@ init_lua :: proc()
 	}
 
 	lua.L_openlibs(L)
-	lua_run(L, #load("lua/table.lua", cstring))
-	lua_run(L, #load("lua/math.lua", cstring))
+	lua_run(L, #load("lua/table.lua"), "lua/table.lua")
+	lua_run(L, #load("lua/math.lua"), "lua/table.lua")
 }
 
 free_lua :: proc()
@@ -23,11 +23,15 @@ free_lua :: proc()
 	lua.close(L)
 }
 
-lua_run :: proc(L: ^lua.State, code: cstring) -> bool
+lua_run :: proc(L: ^lua.State, code: []byte, path: cstring = "unknown script") -> bool
 {
-	if lua.L_dostring(L, code) != i32(lua.OK) {
+	if lua.L_loadbuffer(L, raw_data(code), len(code), path) != lua.OK {
 		lua_error(L)
 		return false
+	}
+
+	if lua.pcall(L, 0, 0, 0) != i32(lua.OK) {
+		lua_error(L)
 	}
 	return true
 }
@@ -49,7 +53,14 @@ Lua_Variant :: union {
 }
 
 // expects the function to have no returns
-call_lua_function :: proc(L: ^lua.State, func_name: cstring, args: ..Lua_Variant) -> (ok: bool)
+call_lua_function :: proc(
+	L: ^lua.State,
+	func_name: cstring,
+	args: ..Lua_Variant,
+	can_be_nil := false,
+) -> (
+	ok: bool,
+)
 {
 	lua.getglobal(L, func_name)
 
@@ -73,7 +84,9 @@ call_lua_function :: proc(L: ^lua.State, func_name: cstring, args: ..Lua_Variant
 	}
 
 	if lua.pcall(L, nargs = i32(len(args)), nresults = 0, errfunc = 0) != i32(lua.OK) {
-		lua_error(L)
+		if !can_be_nil {
+			lua_error(L)
+		}
 		return false
 	}
 
