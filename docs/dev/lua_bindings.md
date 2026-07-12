@@ -55,7 +55,7 @@ If you're making a new file, you must run it from `starry/lua.odin`:
 ```odin
 lua.L_openlibs(L)
 // everything else...
-lua_run(L, #load("lua/newmodule.lua"), "lua/newmodule.lua")
+lua_run(L, #load("../lualibs/newmodule.lua"), "lualibs/newmodule.lua")
 ```
 
 ## Step 3

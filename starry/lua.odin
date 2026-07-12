@@ -13,9 +13,9 @@ init_lua :: proc()
 	}
 
 	lua.L_openlibs(L)
-	lua_run(L, #load("lua/table.lua"), "lua/table.lua")
-	lua_run(L, #load("lua/math.lua"), "lua/table.lua")
-	lua_run(L, #load("lua/gpu.lua"), "lua/gpu.lua")
+	lua_run(L, #load("../lualibs/table.lua"), "lualibs/table.lua")
+	lua_run(L, #load("../lualibs/math.lua"), "lualibs/table.lua")
+	lua_run(L, #load("../lualibs/gpu.lua"), "lualibs/gpu.lua")
 }
 
 free_lua :: proc()
