@@ -41,13 +41,21 @@ st_add :: proc "c" (a, b: f32) -> f32
 
 ## Step 2
 
-Bind it to Lua in `starry/lua/builtin.lua`:
+Bind it to Lua in `starry/lua`:
 
 ```lua
 ffi.cdef[[
 // everything else...
 float st_add(float a, float b);
 ]]
+```
+
+If you're making a new file, you must run it from `starry/lua.odin`:
+
+```odin
+lua.L_openlibs(L)
+// everything else...
+lua_run(L, #load("lua/newmodule.lua"), "lua/newmodule.lua")
 ```
 
 ## Step 3
