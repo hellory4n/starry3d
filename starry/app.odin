@@ -7,6 +7,7 @@ import "core:fmt"
 import "core:math"
 import vmem "core:mem/virtual"
 import "core:os"
+import "core:strings"
 import "core:time"
 import "gpu"
 import "vendor:glfw"
@@ -31,6 +32,27 @@ load_app_config :: proc()
 
 	config_bytes, ferr := read_from_exe_dir("app.json", init_alloc)
 	if ferr != nil {
+		// TODO move this out into a custom panic() or whatever
+
+		// if the exe == starry then this is from a starry release, not an
+		// exported game
+		user_is_dev := strings.contains(os.args[0], "starry")
+		msg: string
+
+		if user_is_dev {
+			msg = fmt.tprintf(
+				"Couldn't read app.json: %s\nNote: starry.exe isn't meant to be run directly, run studio.exe or one of the samples instead",
+				os.error_string(ferr),
+			)
+		} else {
+			// horrible error message but will do for now
+			msg = fmt.tprintf(
+				"Couldn't read app.json: %s\nIs the app installation corrupted?",
+				os.error_string(ferr),
+			)
+		}
+		message_box(.ERROR, msg)
+
 		fmt.panicf("couldn't read app.json: %s", os.error_string(ferr))
 	}
 

@@ -167,6 +167,9 @@ poll_window_events :: proc(window: ^Window)
 
 main_window :: proc() -> ^Window
 {
+	if len(global.windows) == 0 {
+		return nil
+	}
 	return global.windows[0]
 }
 
