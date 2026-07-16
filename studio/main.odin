@@ -13,10 +13,12 @@ app_init :: proc()
 	io.ConfigFlags += {.DockingEnable}
 	imgui_impl_starry.init()
 
+	studio_ui_init()
 }
 
 app_free :: proc()
 {
+	studio_ui_free()
 	imgui_impl_starry.shutdown()
 	im.DestroyContext()
 }
@@ -26,10 +28,7 @@ app_update :: proc()
 	imgui_impl_starry.new_frame()
 	im.NewFrame()
 
-	{
-		// crap
-		im.ShowDemoWindow()
-	}
+	studio_ui()
 
 	im.Render()
 

@@ -1,4 +1,6 @@
 {
     "name": "Starry Studio",
-    "main": "no"
+    "main": "no",
+    "width": 1280,
+    "height": 720
 }
