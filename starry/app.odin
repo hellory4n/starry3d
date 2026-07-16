@@ -44,9 +44,8 @@ load_app_config :: proc()
 
 		if user_is_dev {
 			msg = fmt.tprintf(
-				"Couldn't read app.json: %s\nNote: starry.exe isn't meant to be run directly, run studio%s or one of the samples instead",
+				"Couldn't read app.json: %s\nNote: starry.exe isn't meant to be run directly, run studio.exe or one of the samples instead",
 				os.error_string(ferr),
-				".cmd" when ODIN_OS == .Windows else ".sh",
 			)
 		} else {
 			// horrible error message but will do for now
@@ -161,7 +160,7 @@ free_app_window :: proc()
 	delete(global.windows)
 }
 
-main_loop :: proc()
+main_loop :: proc(update_proc: proc())
 {
 	defer free_all(context.temp_allocator)
 	if is_closing() {
@@ -178,8 +177,9 @@ main_loop :: proc()
 	global.prev_time = global.current_time
 
 	// running it
-	L := global.lua
-	call_lua_function(L, "app_update", lua.Number(delta_time), can_be_nil = true)
+	if update_proc != nil {
+		update_proc()
+	}
 
 	// gpuing it 2
 	gpu.end_frame(global.device)

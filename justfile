@@ -10,17 +10,24 @@ _TARGET    := if TARGET   == "" { "" }                  else { f"-target:{{TARGE
 _BASE_CFLAGS := "-vet-cast -vet-shadowing -vet-using-stmt"
 
 _EXE_NAME := if os() == "windows" { "./starry.exe" } else { "./starry.bin" }
+_STUDIO_EXE := if os() == "windows" { "./studio.exe" } else { "./studio.bin" }
 
 # evil luajit ffi fuckery requires us to exports symbols to ourselves
 _LDFLAGS := if os() == "windows" { "" } else { "-extra-linker-flags:\"-rdynamic\"" }
 
 _CFLAGS := \
-	f"{{_BASE_CFLAGS}} {{_LDFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}} -out:{{_EXE_NAME}}"
+	f"{{_BASE_CFLAGS}} {{_LDFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}}"
 
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
 build-starry:
-	odin build starry {{_CFLAGS}}
+	odin build starry {{_CFLAGS}} -out:{{_EXE_NAME}}
+
+studio:
+	odin run studio {{_CFLAGS}} -- -app-dir:studio
+
+build-studio:
+	odin build studio {{_CFLAGS}} -out:{{_STUDIO_EXE}}
 
 @release:
 	python misc/release.py

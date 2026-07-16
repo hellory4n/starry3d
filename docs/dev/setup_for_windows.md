@@ -15,6 +15,7 @@ Examples:
 
 ```sh
 just build-starry # build starry alone
+just studio       # launch editor
 just run-hello    # test one of the samples with run-*
 just release      # prepares everything for release
 ```

@@ -2,7 +2,10 @@ import os
 import shutil
 
 print("building starry...")
-assert os.system("just build-starry") == 0
+assert os.system("just --set RELEASE speed build-starry") == 0
+
+print("building studio...")
+assert os.system("just --set RELEASE speed build-studio") == 0
 
 if os.path.exists("dist"):
 	print("dist/ directory already exists, cleaning up")
@@ -10,6 +13,7 @@ if os.path.exists("dist"):
 
 print("copying files...")
 starryexe = "starry.exe" if os.name == "nt" else "starry.bin"
+studioexe = "studio.exe" if os.name == "nt" else "studio.bin"
 
 os.makedirs("dist")
 
@@ -25,6 +29,10 @@ shutil.copytree("lualibs", "dist/lualibs")
 shutil.copytree("samples", "dist/samples")
 shutil.copytree("docs", "dist/docs", ignore=lambda _, __: "docs/dev")
 
+# studio is special
+shutil.copy2(studioexe, f"dist/{studioexe.replace(".bin", "")}")
+shutil.copy2("studio/app.json", "dist/app.json")
+
 print("creating shortcuts...")
 samples = ["hello"]
 for sample in samples:
@@ -35,6 +43,6 @@ for sample in samples:
 	else:
 		with open(f"dist/samples/{sample}.sh", 'w') as f:
 			f.write("#!/usr/bin/sh\n")
-			f.write(f"../starry -app-dir:{sample}")
+			f.write(f"../starry -app-dir:{sample}\n")
 
 		assert os.system(f"chmod +x dist/samples/{sample}.sh") == 0
