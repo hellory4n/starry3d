@@ -36,13 +36,17 @@ load_app_config :: proc()
 
 		// if the exe == starry then this is from a starry release, not an
 		// exported game
-		user_is_dev := strings.contains(os.args[0], "starry")
+		user_is_dev := strings.ends_with(
+			global.exe_name,
+			"starry" when ODIN_OS != .Windows else "starry.exe",
+		)
 		msg: string
 
 		if user_is_dev {
 			msg = fmt.tprintf(
-				"Couldn't read app.json: %s\nNote: starry.exe isn't meant to be run directly, run studio.exe or one of the samples instead",
+				"Couldn't read app.json: %s\nNote: starry.exe isn't meant to be run directly, run studio%s or one of the samples instead",
 				os.error_string(ferr),
+				".cmd" when ODIN_OS == .Windows else ".sh",
 			)
 		} else {
 			// horrible error message but will do for now

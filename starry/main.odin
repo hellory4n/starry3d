@@ -36,10 +36,21 @@ main :: proc()
 	if ferr != nil {
 		fmt.panicf("couldn't get exe directory: %s", os.error_string(ferr))
 	}
+	global.exe_name, ferr = os.get_executable_path(init_alloc)
+	if ferr != nil {
+		fmt.panicf("couldn't get exe directory: %s", os.error_string(ferr))
+	}
+
 	// don't mix forward slashes with backslashes
 	// windows has supported forward slashes since 1995, it doesn't matter
 	global.exe_dir, _ = strings.replace_all(
 		global.exe_dir,
+		old = "\\",
+		new = "/",
+		allocator = init_alloc,
+	)
+	global.exe_name, _ = strings.replace_all(
+		global.exe_name,
 		old = "\\",
 		new = "/",
 		allocator = init_alloc,

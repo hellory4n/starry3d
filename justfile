@@ -17,8 +17,7 @@ _LDFLAGS := if os() == "windows" { "" } else { "-extra-linker-flags:\"-rdynamic\
 _CFLAGS := \
 	f"{{_BASE_CFLAGS}} {{_LDFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}} -out:{{_EXE_NAME}}"
 
-[windows]
-set shell := ["powershell.exe", "-NoLogo", "-Command"]
+set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
 build-starry:
 	odin build starry {{_CFLAGS}}

@@ -11,6 +11,7 @@ global: struct {
 	args:         Args,
 	init_arena:   vmem.Arena,
 	exe_dir:      string,
+	exe_name:     string,
 
 	// app
 	lua:          ^lua.State,

@@ -33,4 +33,8 @@ for sample in samples:
 			f.write("@echo off\r\n")
 			f.write(f"\"%~dp0\\..\\starry.exe\" -app-dir:%~dp0\\{sample}\r\n")
 	else:
-		assert False, "TODO"
+		with open(f"dist/samples/{sample}.sh", 'w') as f:
+			f.write("#!/usr/bin/sh\n")
+			f.write(f"../starry -app-dir:{sample}")
+
+		assert os.system(f"chmod +x dist/samples/{sample}.sh") == 0
