@@ -3,26 +3,16 @@ package studio
 import st "../starry"
 import im "../thirdparty/imgui"
 
-studio_ui_init :: proc()
+ui_studio :: proc()
 {
-	set_theme()
-}
-
-studio_ui_free :: proc()
-{
-	// TODO
-}
-
-studio_ui :: proc()
-{
-	dockspace()
-	menu_bar()
+	ui_dockspace()
+	ui_menu_bar()
 	im.ShowDemoWindow()
 
-	if global.popups.about do about_window(&global.popups.about)
+	if global.popups.about do ui_about_window(&global.popups.about)
 }
 
-dockspace :: proc()
+ui_dockspace :: proc()
 {
 	window_flags := im.WindowFlags {
 		.NoDocking,
@@ -47,7 +37,7 @@ dockspace :: proc()
 	im.PopStyleVar()
 }
 
-menu_bar :: proc()
+ui_menu_bar :: proc()
 {
 	if im.BeginMainMenuBar() {
 		defer im.EndMainMenuBar()
@@ -75,7 +65,7 @@ menu_bar :: proc()
 	}
 }
 
-about_window :: proc(p_open: ^bool)
+ui_about_window :: proc(p_open: ^bool)
 {
 	window_size := im.GetWindowViewport().Size * {0.4, 0.5}
 	im.SetNextWindowSize(window_size, cond = .Appearing)

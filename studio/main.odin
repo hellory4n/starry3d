@@ -13,12 +13,11 @@ app_init :: proc()
 	io.ConfigFlags += {.DockingEnable}
 	imgui_impl_starry.init()
 
-	studio_ui_init()
+	set_theme()
 }
 
 app_free :: proc()
 {
-	studio_ui_free()
 	imgui_impl_starry.shutdown()
 	im.DestroyContext()
 }
@@ -28,7 +27,15 @@ app_update :: proc()
 	imgui_impl_starry.new_frame()
 	im.NewFrame()
 
-	studio_ui()
+	// open project manager if there's no project loaded
+	if !is_project_loaded() do global.popups.project_manager = true
+	
+	if is_project_loaded() {
+		ui_studio()
+	}
+	if global.popups.project_manager {
+		ui_project_manager()
+	}
 
 	im.Render()
 
