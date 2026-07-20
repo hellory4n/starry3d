@@ -31,7 +31,7 @@ end
 
 --- Returns a table containing elements from `table` that match the criteria given by `func`
 --- @param t table
---- @param func function(key: any, value: any, table: table): boolean
+--- @param func fun(key: any, value: any, table: table): boolean
 --- @return table
 function table.filter(t, func)
 	if not t then
