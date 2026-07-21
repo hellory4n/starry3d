@@ -29,6 +29,9 @@ studio:
 build-studio:
 	odin build studio {{_CFLAGS}} -out:{{_STUDIO_EXE}}
 
+bindgen:
+	odin run starry {{_CFLAGS}} -- -gen-lua-bind
+
 @release:
 	python misc/release.py
 

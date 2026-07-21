@@ -7,9 +7,12 @@ import vmem "core:mem/virtual"
 import "core:os"
 import "core:strings"
 
+DISABLE_DEV_TOOLS :: #config(ST_DISABLE_DEV_TOOLS, !ODIN_DEBUG)
+
 Args :: struct {
-	app_dir: string `usage:"Defaults to the executable directory (where starry.exe is placed)"`,
-	version: bool `usage:"Outputs the engine version and quits."`,
+	app_dir:      string `usage:"Defaults to the executable directory (where starry.exe is placed)"`,
+	version:      bool `usage:"Outputs the engine version and quits."`,
+	gen_lua_bind: bool `args:"hidden" usage:"Automagically generates Odin code to bind the engine to Lua"`,
 }
 
 main :: proc()
@@ -46,6 +49,15 @@ run :: proc(init_proc: proc(), free_proc: proc(), update_proc: proc())
 	if global.args.version {
 		fmt.printfln("Starry runtime %s", VERSION_STR)
 		return
+	}
+	if global.args.gen_lua_bind {
+		when DISABLE_DEV_TOOLS {
+			fmt.println("unsupported")
+			return
+		} else {
+			bindgen()
+			return
+		}
 	}
 
 	ferr: os.Error
