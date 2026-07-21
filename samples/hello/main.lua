@@ -1,4 +1,5 @@
 function app_init()
+	app.set_title("balls")
 end
 
 --- @param dt number

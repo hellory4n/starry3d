@@ -37,8 +37,8 @@ bindgen_module_app :: proc() -> (err: os.Error)
 	bindgen_write_function(&mod, now_in_seconds) or_return
 	bindgen_write_function(&mod, delta_time) or_return
 	bindgen_write_function(&mod, is_closing) or_return
-	bindgen_write_function(&mod, mouse_position) or_return
-	bindgen_write_function(&mod, delta_mouse_position) or_return
+	// bindgen_write_function(&mod, mouse_position) or_return
+	// bindgen_write_function(&mod, delta_mouse_position) or_return
 	// bindgen_write_function(&mod, is_key_just_pressed) or_return
 	// bindgen_write_function(&mod, is_key_held) or_return
 	// bindgen_write_function(&mod, is_key_just_released) or_return
@@ -78,7 +78,6 @@ bindgen_module_end :: proc(mod: ^Module_Bindgen_State) -> (err: os.Error)
 {
 	fmt.fprintfln(mod.odinf, `lua_open_%s :: proc "c" (L: ^lua.State)`, mod.name)
 	fmt.fprintfln(mod.odinf, "{{")
-	fmt.fprintfln(mod.odinf, "\tL := global.lua")
 	fmt.fprintfln(mod.odinf, "\tmod := []lua.L_Reg{{")
 	for func_name in mod.func_names {
 		fmt.fprintfln(
@@ -125,6 +124,24 @@ bindgen_write_function :: proc(
 	fmt.fprintfln(mod.odinf, "{{")
 	fmt.fprintfln(mod.odinf, "\tcontext = global.ctx")
 
+	if proc_ti.params != nil {
+		bindgen_write_params(mod, proc_ti)
+	}
+	bindgen_write_function_call(mod, proc_ti, name)
+	if proc_ti.results != nil {
+		bindgen_write_returns(mod, proc_ti)
+	} else {
+		fmt.fprintfln(mod.odinf, "\treturn 0")
+	}
+
+	fmt.fprintfln(mod.odinf, "}}")
+	fmt.fprintfln(mod.odinf, "")
+
+	return nil
+}
+
+bindgen_write_params :: proc(mod: ^Module_Bindgen_State, proc_ti: runtime.Type_Info_Procedure)
+{
 	// why is this a goofy soa thing
 	params := proc_ti.params.variant.(runtime.Type_Info_Parameters)
 	assert(len(params.names) == len(params.types))
@@ -135,40 +152,116 @@ bindgen_write_function :: proc(
 
 		#partial switch v in param_type.variant {
 		case runtime.Type_Info_Integer:
-			fmt.fprintfln(mod.odinf, "\targ%d := lua.L_checkinteger(L, %d)", i, i)
+			fmt.fprintfln(
+				mod.odinf,
+				"\targ%d := lua.L_checkinteger(L, %d)",
+				i + 1,
+				i + 1,
+			)
 
 		case runtime.Type_Info_Float:
-			fmt.fprintfln(mod.odinf, "\targ%d := lua.L_checknumber(L, %d)", i, i)
+			fmt.fprintfln(
+				mod.odinf,
+				"\targ%d := lua.L_checknumber(L, %d)",
+				i + 1,
+				i + 1,
+			)
 
 		case runtime.Type_Info_String:
-			fmt.fprintfln(mod.odinf, "\targ%d_len: c.size_t", i)
+			fmt.fprintfln(mod.odinf, "\targ%d_len: c.size_t", i + 1)
 			fmt.fprintfln(
 				mod.odinf,
 				"\targ%d_cstr := lua.L_checkstring(L, %d, &arg%d_len)",
-				i,
-				i,
-				i,
+				i + 1,
+				i + 1,
+				i + 1,
 			)
 			fmt.fprintfln(
 				mod.odinf,
-				"\targ%d := string(((transmute([^]byte)arg%d_cstr)[:arg%d_len])",
-				i,
-				i,
-				i,
+				"\targ%d := string((cast([^]byte)arg%d_cstr)[:arg%d_len])",
+				i + 1,
+				i + 1,
+				i + 1,
 			)
 
 		case runtime.Type_Info_Boolean:
-			fmt.fprintfln(mod.odinf, "\targ%d := bool(lua.L_checknumber(L, %d))", i, i)
+			fmt.fprintfln(
+				mod.odinf,
+				"\targ%d := bool(lua.L_checkinteger(L, %d))",
+				i + 1,
+				i + 1,
+			)
+
+		case:
+			unimplemented()
+		}
+	}
+}
+
+bindgen_write_function_call :: proc(
+	mod: ^Module_Bindgen_State,
+	proc_ti: runtime.Type_Info_Procedure,
+	name: string,
+)
+{
+	fmt.fprintf(mod.odinf, "\t")
+
+	if proc_ti.results != nil {
+		returns := proc_ti.results.variant.(runtime.Type_Info_Parameters)
+		for _, i in returns.names {
+			fmt.fprintf(mod.odinf, "res%i", i + 1)
+			if i < len(returns.names) - 1 {
+				fmt.fprintf(mod.odinf, ", ")
+			}
+
+			fmt.fprintf(mod.odinf, " := ")
+		}
+	}
+
+	fmt.fprintf(mod.odinf, "%s(", name)
+
+	if proc_ti.params != nil {
+		params := proc_ti.params.variant.(runtime.Type_Info_Parameters)
+		for _, i in params.names {
+			fmt.fprintf(mod.odinf, "arg%d, ", i + 1)
+		}
+	}
+
+	fmt.fprintln(mod.odinf, ")")
+}
+
+bindgen_write_returns :: proc(mod: ^Module_Bindgen_State, proc_ti: runtime.Type_Info_Procedure)
+{
+	// why is this a goofy soa thing
+	returns := proc_ti.results.variant.(runtime.Type_Info_Parameters)
+	assert(len(returns.names) == len(returns.types))
+
+	for i in 0 ..< len(returns.names) {
+		ret_name := returns.names[i]
+		ret_type := returns.types[i]
+
+		#partial switch v in ret_type.variant {
+		case runtime.Type_Info_Integer:
+			fmt.fprintfln(mod.odinf, "\tlua.pushinteger(L, lua.Integer(res%d))", i + 1)
+
+		case runtime.Type_Info_Float:
+			fmt.fprintfln(mod.odinf, "\tlua.pushnumber(L, lua.Number(res%d))", i + 1)
+
+		case runtime.Type_Info_String:
+			fmt.fprintfln(
+				mod.odinf,
+				"\tlua.pushlstring(L, transmute(cstring)raw_data(res%d), c.size_t(res%d))",
+				i + 1,
+				i + 1,
+			)
+
+		case runtime.Type_Info_Boolean:
+			fmt.fprintfln(mod.odinf, "\tlua.pushboolean(L, b32(res%d))", i + 1)
 
 		case:
 			unimplemented()
 		}
 	}
 
-	// TODO returns
-
-	fmt.fprintfln(mod.odinf, "\t")
-	fmt.fprintfln(mod.odinf, "}}")
-
-	return nil
+	fmt.fprintfln(mod.odinf, "\treturn %d", len(returns.names))
 }
