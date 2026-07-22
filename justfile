@@ -23,6 +23,9 @@ set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 build-starry:
 	odin build starry {{_CFLAGS}} -out:{{_EXE_NAME}}
 
+test: build-starry
+	{{_EXE_NAME}} -app-dir:test
+
 studio:
 	odin run studio {{_CFLAGS}} -- -app-dir:studio
 

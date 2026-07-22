@@ -22,8 +22,9 @@ Config :: struct {
 
 // unpacked from the string array
 Config_Flags :: struct {
-	no_resize:   bool,
-	no_high_dpi: bool,
+	no_resize:      bool,
+	no_high_dpi:    bool,
+	engine_testing: bool,
 }
 
 load_app_config :: proc()
@@ -77,6 +78,8 @@ load_app_config :: proc()
 			global.config_flags.no_resize = true
 		case "no_high_dpi":
 			global.config_flags.no_high_dpi = true
+		case "engine_testing":
+			global.config_flags.engine_testing = true
 		case:
 			fmt.printfln("unknown flag %q", flag)
 		}
@@ -101,6 +104,11 @@ init_app_window :: proc()
 	// look nice
 	global.running = true
 	global.start_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0
+
+	if is_headless() {
+		return
+	}
+
 	// TODO window_desktop.odin was written to support multiple windows but i can't be
 	// bothered to support multiple windows everywhere else
 	global.windows = make([dynamic]^Window)
@@ -154,22 +162,31 @@ init_app_window :: proc()
 
 free_app_window :: proc()
 {
-	gpu.free_device(global.device)
-	gpu.free_instance()
-	close_window(main_window())
-	delete(global.windows)
+	if !is_headless() {
+		gpu.free_device(global.device)
+		gpu.free_instance()
+		close_window(main_window())
+		delete(global.windows)
+	}
 }
 
 main_loop :: proc(update_proc: proc())
 {
 	defer free_all(context.temp_allocator)
-	if is_closing() {
-		global.running = false
-		return
-	}
 
-	// gpuing it
-	gpu.begin_frame(global.device)
+	if !is_headless() {
+		if is_closing() {
+			global.running = false
+			return
+		}
+
+		// gpuing it
+		gpu.begin_frame(global.device)
+	} else {
+		if global.config_flags.engine_testing {
+			global.running = false
+		}
+	}
 
 	// timing it
 	global.current_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0
@@ -182,9 +199,11 @@ main_loop :: proc(update_proc: proc())
 	}
 
 	// gpuing it 2
-	gpu.end_frame(global.device)
-	gpu.present_and_swap_buffers(global.device)
-	poll_events()
+	if !is_headless() {
+		gpu.end_frame(global.device)
+		gpu.present_and_swap_buffers(global.device)
+		poll_events()
+	}
 }
 
 // Returns the current time since the engine started, in seconds
@@ -203,4 +222,10 @@ delta_time :: proc() -> f64
 gpu_device :: proc() -> gpu.Device
 {
 	return global.device
+}
+
+// Returns true if the engine is in headless mode (no window or GPU context)
+is_headless :: proc() -> bool
+{
+	return global.config_flags.engine_testing
 }

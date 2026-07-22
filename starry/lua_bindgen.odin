@@ -37,6 +37,8 @@ bindgen_module_app :: proc() -> (err: os.Error)
 	bindgen_write_function(&mod, now_in_seconds) or_return
 	bindgen_write_function(&mod, delta_time) or_return
 	bindgen_write_function(&mod, is_closing) or_return
+	bindgen_write_function(&mod, is_headless) or_return
+	bindgen_write_function(&mod, app_dir, lua_name = "dir") or_return
 	// bindgen_write_function(&mod, mouse_position) or_return
 	// bindgen_write_function(&mod, delta_mouse_position) or_return
 	// bindgen_write_function(&mod, is_key_just_pressed) or_return
@@ -104,12 +106,13 @@ bindgen_wrapper_name :: proc(src: string, mod: string) -> string
 bindgen_write_function :: proc(
 	mod: ^Module_Bindgen_State,
 	p: $T,
-	name: string = #caller_expression(p),
+	lua_name: string = #caller_expression(p),
+	call_name: string = #caller_expression(p),
 ) -> (
 	err: os.Error,
 ) where intrinsics.type_is_proc(T)
 {
-	append(&mod.func_names, name)
+	append(&mod.func_names, lua_name)
 
 	proc_ti := type_info_of(T).variant.(runtime.Type_Info_Procedure)
 	if proc_ti.variadic {
@@ -119,7 +122,7 @@ bindgen_write_function :: proc(
 	fmt.fprintfln(
 		mod.odinf,
 		`%s :: proc "c" (L: ^lua.State) -> c.int`,
-		bindgen_wrapper_name(name, mod.name),
+		bindgen_wrapper_name(lua_name, mod.name),
 	)
 	fmt.fprintfln(mod.odinf, "{{")
 	fmt.fprintfln(mod.odinf, "\tcontext = global.ctx")
@@ -127,7 +130,7 @@ bindgen_write_function :: proc(
 	if proc_ti.params != nil {
 		bindgen_write_params(mod, proc_ti)
 	}
-	bindgen_write_function_call(mod, proc_ti, name)
+	bindgen_write_function_call(mod, proc_ti, call_name)
 	if proc_ti.results != nil {
 		bindgen_write_returns(mod, proc_ti)
 	} else {
@@ -250,7 +253,7 @@ bindgen_write_returns :: proc(mod: ^Module_Bindgen_State, proc_ti: runtime.Type_
 		case runtime.Type_Info_String:
 			fmt.fprintfln(
 				mod.odinf,
-				"\tlua.pushlstring(L, transmute(cstring)raw_data(res%d), c.size_t(res%d))",
+				"\tlua.pushlstring(L, cast(cstring)raw_data(res%d), c.size_t(len(res%d)))",
 				i + 1,
 				i + 1,
 			)

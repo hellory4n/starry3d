@@ -28,6 +28,22 @@ lua_app_is_closing :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+lua_app_is_headless :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	res1 := is_headless()
+	lua.pushboolean(L, b32(res1))
+	return 1
+}
+
+lua_app_dir :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	res1 := app_dir()
+	lua.pushlstring(L, cast(cstring)raw_data(res1), c.size_t(len(res1)))
+	return 1
+}
+
 lua_app_aspect_ratio :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -98,6 +114,8 @@ lua_open_app :: proc "c" (L: ^lua.State)
 		{name = "now_in_seconds", func = lua_app_now_in_seconds},
 		{name = "delta_time", func = lua_app_delta_time},
 		{name = "is_closing", func = lua_app_is_closing},
+		{name = "is_headless", func = lua_app_is_headless},
+		{name = "dir", func = lua_app_dir},
 		{name = "aspect_ratio", func = lua_app_aspect_ratio},
 		{name = "is_high_dpi", func = lua_app_is_high_dpi},
 		{name = "scale_factor", func = lua_app_scale_factor},

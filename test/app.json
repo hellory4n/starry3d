@@ -1,0 +1,7 @@
+{
+    "name": "test runner",
+    "main": "main.lua",
+    "flags": [
+        "engine_testing"
+    ]
+}

@@ -727,6 +727,23 @@ math = {
 	epsilon = 1.192092896e-07,
 	random = oldmath.random,
 	randomseed = oldmath.randomseed,
+	acos = oldmath.acos,
+	asin = oldmath.asin,
+	atan = oldmath.atan,
+	atan2 = oldmath.atan2,
+	cos = oldmath.cos,
+	sin = oldmath.sin,
+	tan = oldmath.tan,
+	cosh = oldmath.cosh,
+	sinh = oldmath.sinh,
+	tanh = oldmath.tanh,
+	exp = oldmath.exp,
+	ldexp = oldmath.ldexp,
+	frexp = oldmath.frexp,
+	log = oldmath.log,
+	log10 = oldmath.log10,
+	modf = oldmath.modf,
+	sqrt = oldmath.sqrt,
 }
 
 --- @generic T number | Vec2 | Vec3 | Vec4
@@ -793,47 +810,6 @@ function math.abs(x)
 	return oldmath_call1(oldmath.abs, x)
 end
 
---- Returns the arc cosine of `x` (in radians).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.acos(x)
-	return oldmath_call1(oldmath.acos, x)
-end
-
---- Returns the arc sine of `x` (in radians).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.asin(x)
-	return oldmath_call1(oldmath.asin, x)
-end
-
---- Returns the arc tangent of `x` (in radians).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.atan(x)
-	return oldmath_call1(oldmath.atan, x)
-end
-
---- Returns the arc tangent of `y/x` (in radians).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param y T
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.atan2(y, x)
-	return oldmath_call2(oldmath.atan2, y, x)
-end
-
 --- Returns the smallest integral value larger than or equal to `x`.
 --- @generic T number | Vec2 | Vec3 | Vec4
 --- @param x T
@@ -844,26 +820,6 @@ function math.ceil(x)
 	return oldmath_call1(oldmath.ceil, x)
 end
 
---- Returns the cosine of `x` (assumed to be in radians).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.cos(x)
-	return oldmath_call1(oldmath.cos, x)
-end
-
---- Returns the hyperbolic cosine of `x` (assumed to be in radians).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.cosh(x)
-	return oldmath_call1(oldmath.cosh, x)
-end
-
 --- Converts the angle `x` from radians to degrees.
 --- @generic T number | Vec2 | Vec3 | Vec4
 --- @param x T
@@ -872,16 +828,6 @@ end
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.deg(x)
 	return oldmath_call1(oldmath.deg, x)
-end
-
---- Returns the value `e^x` (where `e` is the base of natural logarithms).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.exp(x)
-	return oldmath_call1(oldmath.exp, x)
 end
 
 --- Returns the largest integral value smaller than or equal to `x`.
@@ -903,60 +849,6 @@ end
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.fmod(x, y)
 	return oldmath_call2(oldmath.fmod, x, y)
-end
-
---- Returns two numbers `m` and `e` such that `x = m * (2 ^ e)`, where `e` is an integer. When `x` is zero, NaN, +inf, or -inf, `m` is equal to `x`; otherwise, the absolute value of `m` is in the range [0.5, 1).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T m
---- @return T e
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.frexp(x)
-	if type(x) == "number" then
-		return oldmath.frexp(x)
-	end
-
-	m = {}
-	e = {}
-	setmetatable(ret, getmetatable(x))
-
-	for key, val in pairs(x) do
-		m[key], e[key] = oldmath.frexp(val)
-	end
-	return m, e
-end
-
---- Returns `m * (2 ^ e)`, where `e` is an integer.
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param m T
---- @param e T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.ldexp(m, e)
-	return oldmath_call2(oldmath.ldexp, m, e)
-end
-
---- Returns the logarithm of `x` in the given base.
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @param base T?
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.log(x, base)
-	return oldmath_call2(oldmath.log, x, base)
-end
-
---- Returns the base-10 logarithm of x.
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.log10(x)
-	return oldmath_call1(oldmath.log10, x)
 end
 
 --- Returns the argument with the maximum value, according to the Lua operator `<`.
@@ -1003,28 +895,6 @@ function math.min(...)
 	return min
 end
 
---- Returns the integral part of `x` and the fractional part of `x`.
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T | integer integral
---- @return T fractional
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.modf(x)
-	if type(x) == "number" then
-		return oldmath.modf(x)
-	end
-
-	integral = {}
-	fractional = {}
-	setmetatable(ret, getmetatable(x))
-
-	for key, val in pairs(x) do
-		integral[key], fractional[key] = oldmath.modf(val)
-	end
-	return integral, fractional
-end
-
 --- Returns `x ^ y` .
 --- @generic T number | Vec2 | Vec3 | Vec4
 --- @param x T
@@ -1044,56 +914,6 @@ end
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.rad(x)
 	return oldmath_call1(oldmath.rad, x)
-end
-
---- Returns the sine of `x` (assumed to be in radians).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.sin(x)
-	return oldmath_call1(oldmath.sin, x)
-end
-
---- Returns the hyperbolic sine of `x` (assumed to be in radians).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.sinh(x)
-	return oldmath_call1(oldmath.sinh, x)
-end
-
---- Returns the square root of `x`.
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.sqrt(x)
-	return oldmath_call1(oldmath.sqrt, x)
-end
-
---- Returns the tangent of `x` (assumed to be in radians).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.tan(x)
-	return oldmath_call1(oldmath.tan, x)
-end
-
---- Returns the hyperbolic tangent of `x` (assumed to be in radians).
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param x T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.tanh(x)
-	return oldmath_call1(oldmath.tanh, x)
 end
 
 --- Rounds a number. Mysteriously this isn't included in Lua by default.

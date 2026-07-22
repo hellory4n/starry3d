@@ -14,6 +14,10 @@
 	"flags": [
 		"no_resize", // disable resizing the app's window
 		"no_high_dpi", // forces the application to be high DPI-unaware
+
+		// internal flag to run the engine's tests
+		// disables windowing
+		"engine_testing",
 	],
 }
 ```
