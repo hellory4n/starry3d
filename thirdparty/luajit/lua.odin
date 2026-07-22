@@ -239,6 +239,8 @@ foreign lib {
 
 	atpanic :: proc(L: ^State, panicf: CFunction) -> CFunction ---
 
+	version :: proc(L: ^State) -> Number ---
+
 	/*
 	** basic stack manipulation
 	*/
@@ -246,6 +248,7 @@ foreign lib {
 	gettop :: proc(L: ^State) -> c.int ---
 	settop :: proc(L: ^State, idx: c.int) ---
 	pushvalue :: proc(L: ^State, idx: c.int) ---
+	copy :: proc(L: ^State, fromidx, toidx: c.int) ---
 	remove :: proc(L: ^State, idx: c.int) ---
 	insert :: proc(L: ^State, idx: c.int) ---
 	replace :: proc(L: ^State, idx: c.int) ---
@@ -269,6 +272,10 @@ foreign lib {
 	rawequal :: proc(L: ^State, idx1, idx2: c.int) -> b32 ---
 	lessthan :: proc(L: ^State, idx1, idx2: c.int) -> b32 ---
 
+	@(link_name = "lua_tonumberx")
+	tonumber :: proc(L: ^State, idx: c.int, isnum: ^b32 = nil) -> Number ---
+	@(link_name = "lua_tointegerx")
+	tointeger :: proc(L: ^State, idx: c.int, isnum: ^b32 = nil) -> Integer ---
 	toboolean :: proc(L: ^State, idx: c.int) -> b32 ---
 	tolstring :: proc(L: ^State, idx: c.int, len: ^c.size_t) -> cstring ---
 	objlen :: proc(L: ^State, idx: c.int) -> c.size_t ---
@@ -343,6 +350,7 @@ foreign lib {
 	yield :: proc(L: ^State, nresults: c.int) -> Status ---
 	resume :: proc(L: ^State, narg: c.int) -> Status ---
 	status :: proc(L: ^State) -> Status ---
+	isyieldable :: proc(L: ^State) -> b32 ---
 
 	/*
 	** garbage-collection function and options
@@ -376,6 +384,9 @@ foreign lib {
 	setlocal :: proc(L: ^State, ar: ^Debug, n: c.int) -> cstring ---
 	getupvalue :: proc(L: ^State, funcindex: c.int, n: c.int) -> cstring ---
 	setupvalue :: proc(L: ^State, funcindex: c.int, n: c.int) -> cstring ---
+
+	upvalueid :: proc(L: ^State, fidx, n: c.int) -> rawptr ---
+	upvaluejoin :: proc(L: ^State, fidx1, n1, fidx2, n2: c.int) ---
 
 	sethook :: proc(L: ^State, func: Hook, mask: HookMask, count: c.int) -> c.int ---
 	gethook :: proc(L: ^State) -> Hook ---
@@ -448,6 +459,8 @@ foreign lib {
 	L_checkany :: proc(L: ^State, narg: c.int) ---
 
 	L_newmetatable :: proc(L: ^State, tname: cstring) -> c.int ---
+	L_setmetatable :: proc(L: ^State, tname: cstring) ---
+	L_testudata :: proc(L: ^State, ud: c.int, tname: cstring) -> rawptr ---
 	L_checkudata :: proc(L: ^State, ud: c.int, tname: cstring) -> rawptr ---
 
 	L_where :: proc(L: ^State, lvl: c.int) ---
@@ -455,12 +468,17 @@ foreign lib {
 
 	L_checkoption :: proc(L: ^State, narg: c.int, def: cstring, lst: [^]cstring) -> c.int ---
 
+	L_fileresult :: proc(L: ^State, stat: c.int, fname: cstring) -> c.int ---
+	L_execresult :: proc(L: ^State, stat: c.int) -> c.int ---
+
 	L_ref :: proc(L: ^State, t: c.int) -> c.int ---
 	L_unref :: proc(L: ^State, t: c.int, ref: c.int) ---
 
 	L_loadfile :: proc(L: ^State, filename: cstring) -> Status ---
+	L_loadfilex :: proc(L: ^State, filename: cstring, mode: cstring = nil) -> Status ---
 
 	L_loadbuffer :: proc(L: ^State, buff: [^]byte, sz: c.size_t, name: cstring) -> Status ---
+	L_loadbufferx :: proc(L: ^State, buff: [^]byte, sz: c.size_t, name: cstring, mode: cstring = nil) -> Status ---
 	L_loadstring :: proc(L: ^State, s: cstring) -> Status ---
 
 	L_newstate :: proc() -> ^State ---
@@ -468,6 +486,9 @@ foreign lib {
 	L_gsub :: proc(L: ^State, s, p, r: cstring) -> cstring ---
 
 	L_findtable :: proc(L: ^State, idx: c.int, fname: cstring, szhint: c.int) -> cstring ---
+
+	L_traceback :: proc(L: ^State, L1: ^State, msg: cstring, level: c.int) ---
+	L_setfuncs :: proc(L: ^State, l: [^]L_Reg, nup: c.int) ---
 }
 /*
 ** {======================================================
@@ -647,6 +668,17 @@ unref :: #force_inline proc "c" (L: ^State, ref: c.int)
 getref :: #force_inline proc "c" (L: ^State, ref: Integer)
 {
 	rawgeti(L, REGISTRYINDEX, ref)
+}
+
+L_newlibtable :: #force_inline proc "c" (L: ^State, l: []L_Reg)
+{
+	createtable(L, 0, c.int(builtin.len(l) - 1))
+}
+
+L_newlib :: proc(L: ^State, l: []L_Reg)
+{
+	L_newlibtable(L, l)
+	L_setfuncs(L, raw_data(l), 0)
 }
 
 /* }============================================================== */
