@@ -33,3 +33,5 @@ Test.new("standard math", function(t)
 
 	t:assert_approx(math.sqrt(1.5), 1.2247448713916)
 end)
+
+-- TODO all other tests
