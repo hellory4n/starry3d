@@ -201,6 +201,12 @@ main_loop :: proc(update_proc: proc())
 	}
 }
 
+update_lua_app :: proc()
+{
+	L := global.lua
+	call_lua_function(L, "app_update", lua.Number(delta_time()), can_be_nil = true)
+}
+
 // Returns the current time since the engine started, in seconds
 now_in_seconds :: proc() -> f64
 {

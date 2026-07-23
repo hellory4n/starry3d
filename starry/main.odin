@@ -19,16 +19,7 @@ main :: proc()
 {
 	// starry is importable as an Odin library
 	// this is only meant for the studio though
-	run(init_proc = init_app, free_proc = nil, update_proc = proc()
-		{
-			L := global.lua
-			call_lua_function(
-				L,
-				"app_update",
-				lua.Number(delta_time()),
-				can_be_nil = true,
-			)
-		})
+	run(init_proc = init_app, free_proc = nil, update_proc = update_lua_app)
 }
 
 run :: proc(init_proc: proc(), free_proc: proc(), update_proc: proc())

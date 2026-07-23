@@ -4,6 +4,7 @@ package starry
 import "core:c"
 import lua "../thirdparty/luajit"
 
+@(private = "file")
 lua_app_now_in_seconds :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -12,6 +13,7 @@ lua_app_now_in_seconds :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
 lua_app_delta_time :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -20,6 +22,7 @@ lua_app_delta_time :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
 lua_app_is_closing :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -28,6 +31,7 @@ lua_app_is_closing :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
 lua_app_is_headless :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -36,6 +40,7 @@ lua_app_is_headless :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
 lua_app_dir :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -44,6 +49,7 @@ lua_app_dir :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
 lua_app_aspect_ratio :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -52,6 +58,7 @@ lua_app_aspect_ratio :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
 lua_app_is_high_dpi :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -60,6 +67,7 @@ lua_app_is_high_dpi :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
 lua_app_scale_factor :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -68,6 +76,7 @@ lua_app_scale_factor :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
 lua_app_lock_mouse :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -76,6 +85,7 @@ lua_app_lock_mouse :: proc "c" (L: ^lua.State) -> c.int
 	return 0
 }
 
+@(private = "file")
 lua_app_is_mouse_locked :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -84,6 +94,7 @@ lua_app_is_mouse_locked :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
 lua_app_request_quit :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -91,6 +102,7 @@ lua_app_request_quit :: proc "c" (L: ^lua.State) -> c.int
 	return 0
 }
 
+@(private = "file")
 lua_app_cancel_quit :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -98,6 +110,7 @@ lua_app_cancel_quit :: proc "c" (L: ^lua.State) -> c.int
 	return 0
 }
 
+@(private = "file")
 lua_app_set_title :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx

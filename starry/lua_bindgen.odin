@@ -118,6 +118,7 @@ bindgen_write_function :: proc(
 		unimplemented("binding variadic functions")
 	}
 
+	fmt.fprintfln(mod.odinf, `@(private = "file")`)
 	fmt.fprintfln(
 		mod.odinf,
 		`%s :: proc "c" (L: ^lua.State) -> c.int`,

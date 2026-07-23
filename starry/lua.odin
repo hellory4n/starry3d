@@ -34,7 +34,6 @@ init_lua :: proc()
 	
 	lua_run_bytes(L, #load("../lualibs/table.lua"), "table.lua (preloaded)")
 	lua_run_bytes(L, #load("../lualibs/preloaded/math.lua"), "math.lua (preloaded)")
-	lua_run_bytes(L, #load("../lualibs/preloaded/gpu.lua"), "gpu.lua (preloaded)")
 }
 
 free_lua :: proc()

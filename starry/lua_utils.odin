@@ -6,35 +6,12 @@ import "base:runtime"
 import "core:c"
 import "core:math"
 import "core:math/linalg"
-import "core:strings"
-
-// TODO not sure how string allocation should work
-// lua is gonna copy all of them anyway
-
-lua_string_replace_all :: proc "c" (L: ^lua.State) -> c.int
-{
-	context = global.ctx
-	str_len: c.size_t
-	str_cstr := lua.L_checkstring(L, 1, &str_len)
-	str := string((cast([^]byte)str_cstr)[:str_len])
-
-	oldstr_len: c.size_t
-	oldstr_cstr := lua.L_checkstring(L, 2, &oldstr_len)
-	oldstr := string((cast([^]byte)oldstr_cstr)[:oldstr_len])
-
-	newstr_len: c.size_t
-	newstr_cstr := lua.L_checkstring(L, 3, &newstr_len)
-	newstr := string((cast([^]byte)newstr_cstr)[:newstr_len])
-
-	res, _ := strings.replace_all(str, oldstr, newstr)
-
-	lua.pushlstring(L, cast(cstring)raw_data(res), c.size_t(len(res)))
-	return 1
-}
+import "gpu"
 
 // TODO crossing the C-lua boundary is bad for performance
 // a pure Lua math implementation would be better for JIT and whatnot
 
+@(private = "file")
 lua_st_round :: proc "c" (L: ^lua.State) -> c.int
 {
 	// TODO crossing the C-lua boundary is bad for performance
@@ -44,6 +21,7 @@ lua_st_round :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
 lua_st_euler_to_quat :: proc "c" (L: ^lua.State) -> c.int
 {
 	x := lua.L_checknumber(L, 1)
@@ -64,6 +42,7 @@ lua_st_euler_to_quat :: proc "c" (L: ^lua.State) -> c.int
 	return 4
 }
 
+@(private = "file")
 lua_st_quat_to_euler :: proc "c" (L: ^lua.State) -> c.int
 {
 	imag := lua.L_checknumber(L, 1)
@@ -80,13 +59,31 @@ lua_st_quat_to_euler :: proc "c" (L: ^lua.State) -> c.int
 	return 3
 }
 
+// placeholder until there's a renderer
+@(private = "file")
+lua_st_glorious_red_square :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	dev := gpu_device()
+	gpu.begin_render_pass(
+		dev,
+		framebuffer = gpu.default_framebuffer(dev),
+		color_load_op = .CLEAR,
+		clear_color = {1, 0, 0, 1},
+	)
+	gpu.end_render_pass(dev)
+	return 0
+}
+
 lua_open_utils :: proc "c" (L: ^lua.State)
 {
-	lua.getglobal(L, "string")
-	lua.pushcfunction(L, lua_string_replace_all)
-	lua.setfield(L, -2, "replace_all")
-
 	lua.getglobal(L, "__st")
 	lua.pushcfunction(L, lua_st_round)
 	lua.setfield(L, -2, "round")
+	lua.pushcfunction(L, lua_st_euler_to_quat)
+	lua.setfield(L, -2, "euler_to_quat")
+	lua.pushcfunction(L, lua_st_quat_to_euler)
+	lua.setfield(L, -2, "quat_to_euler")
+	lua.pushcfunction(L, lua_st_glorious_red_square)
+	lua.setfield(L, -2, "glorious_red_square")
 }
