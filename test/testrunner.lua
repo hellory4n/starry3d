@@ -33,7 +33,7 @@ function Test.run_all()
 	local failed_tests = 0
 	for _, test in ipairs(all_tests) do
 		local ok = xpcall(test.callback, function(x)
-			print("test " .. test.name .. " failed: " .. x)
+			print(debug.traceback(string.format("test \"%s\" failed: %s", test.name, x)))
 		end, test)
 
 		if not ok then
@@ -50,7 +50,9 @@ end
 
 function Test:assert(actual, expected)
 	if actual ~= expected then
-		error("failed assertion: expected " .. expected .. ", got " .. actual)
+		error(
+			"failed assertion: expected " ..
+			tostring(expected) .. ", got " .. tostring(actual))
 	end
 end
 
@@ -62,7 +64,9 @@ function Test:assert_approx(actual, expected, epsilon)
 	epsilon = epsilon or 1.192092896e-07
 	local difference = math.abs(actual - expected)
 	if difference > epsilon then
-		error("failed assertion: expected " .. expected .. ", got " .. actual)
+		print("failed assertion: expected " ..
+			tostring(expected) .. ", got " .. tostring(actual))
+		error()
 	end
 end
 

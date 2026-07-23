@@ -1,4 +1,3 @@
-// replacement for lua's math module
 package starry
 
 import "base:intrinsics"

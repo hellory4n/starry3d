@@ -1,15 +1,3 @@
--- preloaded code: math.lua
-local ffi = require("ffi")
-
-ffi.cdef [[
-typedef struct { float x, y; } C_Vec2;
-typedef struct { float x, y, z; } C_Vec3;
-typedef struct { float x, y, z, w; } C_Vec4;
-float st_round(float);
-C_Vec4 st_euler_to_quat(float x, float y, float z);
-C_Vec3 st_quat_to_euler(float x, float y, float z, float w);
-]]
-
 --- @class Vec2: table
 --- @field x number
 --- @field y number
@@ -923,7 +911,7 @@ end
 --- @nodiscard
 function math.round(x)
 	local function base_round(value)
-		return ffi.C.st_round(value)
+		return __st.round(value)
 	end
 	return oldmath_call1(base_round, x)
 end
@@ -1099,8 +1087,8 @@ end
 --- @param roll number
 --- @return Quat
 function math.euler_to_quat(pitch, yaw, roll)
-	local q = ffi.C.st_euler_to_quat(pitch, yaw, roll)
-	return quat(q.x, q.y, q.z, q.w)
+	local imag, jmag, kmag, real = __st.euler_to_quat(pitch, yaw, roll)
+	return quat(imag, jmag, kmag, real)
 end
 
 --- Returns a quaternion from an Euler angle (all in radians)
@@ -1114,8 +1102,8 @@ end
 --- @param quat Quat
 --- @return Vec3 X = pitch, Y = yaw, Z = roll
 function math.quat_to_euler(quat)
-	local v = ffi.C.st_quat_to_euler(quat.x, quat.y, quat.z, quat.w)
-	return vec3(v.x, v.y, v.z)
+	local x, y, z = __st.quat_to_euler(quat.x, quat.y, quat.z, quat.w)
+	return vec3(x, y, z)
 end
 
 --- @param quat Quat

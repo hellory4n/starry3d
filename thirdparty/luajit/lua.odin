@@ -132,11 +132,14 @@ OPLE :: CompareOp.LE
 /* minimum Lua stack available to a C function */
 MINSTACK :: 20
 
+// NOTE: these were originally `distinct` but i find that annoying, we only target 64-bit anyway
+#assert(size_of(uintptr) == 8)
+
 /* type of numbers in Lua */
-Number :: distinct (f32 when size_of(uintptr) == 4 else f64)
+Number :: f64
 
 /* type for integer functions */
-Integer :: distinct (i32 when size_of(uintptr) == 4 else i64)
+Integer :: i64
 
 /*
 ** Type for C functions registered with Lua

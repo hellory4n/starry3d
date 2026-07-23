@@ -34,4 +34,11 @@ Test.new("standard math", function(t)
 	t:assert_approx(math.sqrt(1.5), 1.2247448713916)
 end)
 
--- TODO all other tests
+Test.new("round", function(t)
+	t:assert_approx(math.round(1), 1)
+	t:assert_approx(math.round(1.2), 1)
+	t:assert_approx(math.round(1.6), 2)
+	t:assert_approx(math.round(1.8), 2)
+	t:assert_approx(math.round(2), 2)
+	t:assert_approx(math.round(2.1), 2)
+end)

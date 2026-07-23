@@ -88,13 +88,8 @@ load_app_config :: proc()
 
 init_app :: proc()
 {
-	main_script, ferr := read_from_exe_dir(global.config.main, context.temp_allocator)
-	if ferr != nil {
-		fmt.panicf("couldn't read %q: %s", global.config.main, os.error_string(ferr))
-	}
-
 	L := global.lua
-	lua_run(L, main_script, temp_cstr(global.config.main))
+	lua_run(L, global.config.main)
 	call_lua_function(L, "app_init")
 }
 
