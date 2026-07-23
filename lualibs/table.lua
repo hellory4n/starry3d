@@ -66,7 +66,7 @@ function table.shallow_copy(t)
 	for k, v in pairs(t) do
 		ret[k] = v
 	end
-	return ret
+	return setmetatable(ret, getmetatable(t))
 end
 
 --- Returns a deep (recursive) copy of `table`
@@ -80,5 +80,5 @@ function table.deep_copy(t)
 		if type(v) == "table" then v = table.deep_copy(v) end
 		ret[k] = v
 	end
-	return ret
+	return setmetatable(ret, getmetatable(t))
 end

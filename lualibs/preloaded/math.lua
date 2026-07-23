@@ -147,29 +147,10 @@ function Vec2.__eq(a, b)
 	return a.x == b.x and a.y == b.y
 end
 
---- @param a Vec2
---- @param b Vec2
---- @return boolean
-function Vec2.__lt(a, b)
-	return a.x < b.x and a.y < b.y
-end
-
---- @param a Vec2
---- @param b Vec2
---- @return boolean
-function Vec2.__le(a, b)
-	return a.x <= b.x and a.y <= b.y
-end
-
 --- @param v Vec2
 --- @return string
 function Vec2.__tostring(v)
 	return string.format("vec2(%.3f, %.3f)", v.x, v.y)
-end
-
---- @return Vec2
-function Vec2:clone()
-	return vec2(self.x, self.y)
 end
 
 --- @class Vec3: table
@@ -183,13 +164,13 @@ Vec3 = {}
 
 function Vec3.__index(vec, comp)
 	if comp == "r" then
-		return vec.x
+		return rawget(vec, "x")
 	elseif comp == "g" then
-		return vec.y
+		return rawget(vec, "y")
 	elseif comp == "b" then
-		return vec.z
+		return rawget(vec, "z")
 	else
-		return vec[comp]
+		return rawget(vec, comp)
 	end
 end
 
@@ -275,29 +256,10 @@ function Vec3.__eq(a, b)
 	return a.x == b.x and a.y == b.y and a.z == b.z
 end
 
---- @param a Vec3
---- @param b Vec3
---- @return boolean
-function Vec3.__lt(a, b)
-	return a.x < b.x and a.y < b.y and a.z < b.z
-end
-
---- @param a Vec3
---- @param b Vec3
---- @return boolean
-function Vec3.__le(a, b)
-	return a.x <= b.x and a.y <= b.y and a.z <= b.z
-end
-
 --- @param v Vec3
 --- @return string
 function Vec3.__tostring(v)
 	return string.format("vec3(%.3f, %.3f, %.3f)", v.x, v.y, v.z)
-end
-
---- @return Vec3
-function Vec3:clone()
-	return vec3(self.x, self.y, self.z)
 end
 
 --- @class Vec4: table
@@ -313,15 +275,15 @@ Vec4 = {}
 
 function Vec4.__index(vec, comp)
 	if comp == "r" then
-		return vec.x
+		return rawget(vec, "x")
 	elseif comp == "g" then
-		return vec.y
+		return rawget(vec, "y")
 	elseif comp == "b" then
-		return vec.z
+		return rawget(vec, "z")
 	elseif comp == "a" then
-		return vec.w
+		return rawget(vec, "w")
 	else
-		return vec[comp]
+		return rawget(vec, comp)
 	end
 end
 
@@ -409,29 +371,10 @@ function Vec4.__eq(a, b)
 	return a.x == b.x and a.y == b.y and a.z == b.z and a.w == b.w
 end
 
---- @param a Vec4
---- @param b Vec4
---- @return boolean
-function Vec4.__lt(a, b)
-	return a.x < b.x and a.y < b.y and a.z < b.z and a.w < b.w
-end
-
---- @param a Vec4
---- @param b Vec4
---- @return boolean
-function Vec4.__le(a, b)
-	return a.x <= b.x and a.y <= b.y and a.z <= b.z and a.w <= b.w
-end
-
 --- @param v Vec4
 --- @return string
 function Vec4.__tostring(v)
 	return string.format("vec4(%.3f, %.3f, %.3f, %.3f)", v.x, v.y, v.z, v.w)
-end
-
---- @return Vec4
-function Vec4:clone()
-	return vec4(self.x, self.y, self.z, self.w)
 end
 
 --- Quaternion
@@ -518,11 +461,6 @@ function Quat.__tostring(v)
 	return string.format("quat(%.4f, %.4f, %.4f, %.4f)", v.x, v.y, v.z, v.w)
 end
 
---- @return Quat
-function Quat:clone()
-	return quat(self.x, self.y, self.z, self.w)
-end
-
 -- redefine math functions to support vectors
 
 --- math functions have to be redefined to support vectors
@@ -553,6 +491,8 @@ math = {
 	log10 = oldmath.log10,
 	modf = oldmath.modf,
 	sqrt = oldmath.sqrt,
+	min = oldmath.min,
+	max = oldmath.max,
 }
 
 --- @generic T number | Vec2 | Vec3 | Vec4
@@ -658,50 +598,6 @@ end
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.fmod(x, y)
 	return oldmath_call2(oldmath.fmod, x, y)
-end
-
---- Returns the argument with the maximum value, according to the Lua operator `<`.
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param ... T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.max(...)
-	local n = select('#', ...)
-	if n == 0 then
-		error("bad argument #1 to 'math.min' (number expected)")
-	end
-
-	local max = select(1, ...)
-	for i = 2, n do
-		local v = select(i, ...)
-		if v > max then
-			max = v
-		end
-	end
-	return max
-end
-
---- Returns the argument with the minimum value, according to the Lua operator `<`.
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param ... T
---- @return T
---- @nodiscard
---- @diagnostic disable-next-line: duplicate-set-field
-function math.min(...)
-	local n = select('#', ...)
-	if n == 0 then
-		error("bad argument #1 to 'math.min' (number expected)")
-	end
-
-	local min = select(1, ...)
-	for i = 2, n do
-		local v = select(i, ...)
-		if v < min then
-			min = v
-		end
-	end
-	return min
 end
 
 --- Returns `x ^ y` .
