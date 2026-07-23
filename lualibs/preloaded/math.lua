@@ -1,3 +1,66 @@
+--- @class BVec2: table
+--- @field x boolean
+--- @field y boolean
+BVec2 = {}
+BVec2.__index = BVec2
+
+--- @param x boolean?
+--- @param y boolean?
+--- @return BVec2
+function bvec2(x, y)
+	if x == nil then x = false end
+	-- allow initializing bvec2(true) -> {true, true}
+	if y == nil then y = x end
+
+	local self = { x = x, y = y }
+	return setmetatable(self, BVec2)
+end
+
+--- @class BVec3: table
+--- @field x boolean
+--- @field y boolean
+--- @field z boolean
+BVec3 = {}
+BVec3.__index = BVec3
+
+--- @param x boolean?
+--- @param y boolean?
+--- @param z boolean?
+--- @return BVec3
+function bvec3(x, y, z)
+	if x == nil then x = false end
+	-- allow initializing bvec3(true) -> {true, true, true}
+	if z == nil then z = x end
+	if y == nil then y = x end
+
+	local self = { x = x, y = y, z = z }
+	return setmetatable(self, BVec3)
+end
+
+--- @class BVec4: table
+--- @field x boolean
+--- @field y boolean
+--- @field z boolean
+--- @field w boolean
+BVec4 = {}
+BVec4.__index = BVec4
+
+--- @param x boolean?
+--- @param y boolean?
+--- @param z boolean?
+--- @param w boolean?
+--- @return BVec4
+function bvec4(x, y, z, w)
+	if x == nil then x = false end
+	-- allow initializing bvec4(true) -> {true, true, true, true}
+	if w == nil then w = x end
+	if z == nil then z = x end
+	if y == nil then y = x end
+
+	local self = { x = x, y = y, z = z, w = w }
+	return setmetatable(self, BVec4)
+end
+
 --- @class Vec2: table
 --- @field x number
 --- @field y number
@@ -98,89 +161,10 @@ function Vec2.__le(a, b)
 	return a.x <= b.x and a.y <= b.y
 end
 
---- @param a Vec2
---- @param b Vec2
---- @return boolean
-function Vec2.all_less_than(a, b)
-	return a.x < b.x and a.y < b.y
-end
-
---- @param a Vec2
---- @param b Vec2
---- @return boolean
-function Vec2.any_less_than(a, b)
-	return a.x < b.x or a.y < b.y
-end
-
---- @param a Vec2
---- @param b Vec2
---- @return boolean
-function Vec2.all_less_than_or_equal(a, b)
-	return a.x <= b.x and a.y <= b.y
-end
-
---- @param a Vec2
---- @param b Vec2
---- @return boolean
-function Vec2.any_less_than_or_equal(a, b)
-	return a.x <= b.x or a.y <= b.y
-end
-
---- @param a Vec2
---- @param b Vec2
---- @return boolean
-function Vec2.all_greater_than(a, b)
-	return a.x > b.x and a.y > b.y
-end
-
---- @param a Vec2
---- @param b Vec2
---- @return boolean
-function Vec2.any_greater_than(a, b)
-	return a.x > b.x or a.y > b.y
-end
-
---- @param a Vec2
---- @param b Vec2
---- @return boolean
-function Vec2.all_greater_than_or_equal(a, b)
-	return a.x >= b.x and a.y >= b.y
-end
-
---- @param a Vec2
---- @param b Vec2
---- @return boolean
-function Vec2.any_greater_than_or_equal(a, b)
-	return a.x >= b.x or a.y >= b.y
-end
-
 --- @param v Vec2
 --- @return string
 function Vec2.__tostring(v)
 	return string.format("vec2(%.3f, %.3f)", v.x, v.y)
-end
-
---- @param other Vec2
---- @return number
-function Vec2:dot(other)
-	return self.x * other.x + self.y * other.y
-end
-
---- @return number
-function Vec2:length()
-	return math.sqrt(self.x * self.x + self.y * self.y)
-end
-
---- @return number
-function Vec2:length_squared()
-	return self.x * self.x + self.y * self.y
-end
-
---- @return Vec2
-function Vec2:normalize()
-	local len = self:length()
-	if len == 0 then return vec2() end
-	return self / len
 end
 
 --- @return Vec2
@@ -305,104 +289,15 @@ function Vec3.__le(a, b)
 	return a.x <= b.x and a.y <= b.y and a.z <= b.z
 end
 
---- @param a Vec3
---- @param b Vec3
---- @return boolean
-function Vec3.all_less_than(a, b)
-	return a.x < b.x and a.y < b.y and a.z < b.z
-end
-
---- @param a Vec3
---- @param b Vec3
---- @return boolean
-function Vec3.any_less_than(a, b)
-	return a.x < b.x or a.y < b.y or a.z < b.z
-end
-
---- @param a Vec3
---- @param b Vec3
---- @return boolean
-function Vec3.all_less_than_or_equal(a, b)
-	return a.x <= b.x and a.y <= b.y and a.z <= b.z
-end
-
---- @param a Vec3
---- @param b Vec3
---- @return boolean
-function Vec3.any_less_than_or_equal(a, b)
-	return a.x <= b.x or a.y <= b.y or a.z <= b.z
-end
-
---- @param a Vec3
---- @param b Vec3
---- @return boolean
-function Vec3.all_greater_than(a, b)
-	return a.x > b.x and a.y > b.y and a.z > b.z
-end
-
---- @param a Vec3
---- @param b Vec3
---- @return boolean
-function Vec3.any_greater_than(a, b)
-	return a.x > b.x or a.y > b.y or a.z > b.z
-end
-
---- @param a Vec3
---- @param b Vec3
---- @return boolean
-function Vec3.all_greater_than_or_equal(a, b)
-	return a.x >= b.x and a.y >= b.y and a.z >= b.z
-end
-
---- @param a Vec3
---- @param b Vec3
---- @return boolean
-function Vec3.any_greater_than_or_equal(a, b)
-	return a.x >= b.x or a.y >= b.y or a.z >= b.z
-end
-
 --- @param v Vec3
 --- @return string
 function Vec3.__tostring(v)
 	return string.format("vec3(%.3f, %.3f, %.3f)", v.x, v.y, v.z)
 end
 
---- @param other Vec3
---- @return number
-function Vec3:dot(other)
-	return self.x * other.x + self.y * other.y + self.z * other.z
-end
-
---- @return number
-function Vec3:length()
-	return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
-end
-
---- @return number
-function Vec3:length_squared()
-	return self.x * self.x + self.y * self.y + self.z * self.z
-end
-
---- @return Vec3
-function Vec3:normalize()
-	local len = self:length()
-	if len == 0 then return vec3() end
-	return self / len
-end
-
 --- @return Vec3
 function Vec3:clone()
 	return vec3(self.x, self.y, self.z)
-end
-
---- @param other Vec3
---- @return Vec3
-function Vec3:cross(other)
-	return vec3(
-		self.y * other.z - self.z * other.y,
-		self.z * other.x - self.x * other.z,
-		self.x * other.y - self.y * other.x
-	)
 end
 
 --- @class Vec4: table
@@ -528,89 +423,10 @@ function Vec4.__le(a, b)
 	return a.x <= b.x and a.y <= b.y and a.z <= b.z and a.w <= b.w
 end
 
---- @param a Vec4
---- @param b Vec4
---- @return boolean
-function Vec4.all_less_than(a, b)
-	return a.x < b.x and a.y < b.y and a.z < b.z and a.w < b.w
-end
-
---- @param a Vec4
---- @param b Vec4
---- @return boolean
-function Vec4.any_less_than(a, b)
-	return a.x < b.x or a.y < b.y or a.z < b.z or a.w < b.w
-end
-
---- @param a Vec4
---- @param b Vec4
---- @return boolean
-function Vec4.all_less_than_or_equal(a, b)
-	return a.x <= b.x and a.y <= b.y and a.z <= b.z and a.w <= b.w
-end
-
---- @param a Vec4
---- @param b Vec4
---- @return boolean
-function Vec4.any_less_than_or_equal(a, b)
-	return a.x <= b.x or a.y <= b.y or a.z <= b.z or a.w <= b.w
-end
-
---- @param a Vec4
---- @param b Vec4
---- @return boolean
-function Vec4.all_greater_than(a, b)
-	return a.x > b.x and a.y > b.y and a.z > b.z and a.w > b.w
-end
-
---- @param a Vec4
---- @param b Vec4
---- @return boolean
-function Vec4.any_greater_than(a, b)
-	return a.x > b.x or a.y > b.y or a.z > b.z or a.w > b.w
-end
-
---- @param a Vec4
---- @param b Vec4
---- @return boolean
-function Vec4.all_greater_than_or_equal(a, b)
-	return a.x >= b.x and a.y >= b.y and a.z >= b.z and a.w >= b.w
-end
-
---- @param a Vec4
---- @param b Vec4
---- @return boolean
-function Vec4.any_greater_than_or_equal(a, b)
-	return a.x >= b.x or a.y >= b.y or a.z >= b.z or a.w >= b.w
-end
-
 --- @param v Vec4
 --- @return string
 function Vec4.__tostring(v)
 	return string.format("vec4(%.3f, %.3f, %.3f, %.3f)", v.x, v.y, v.z, v.w)
-end
-
---- @param other Vec4
---- @return number
-function Vec4:dot(other)
-	return self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
-end
-
---- @return number
-function Vec4:length()
-	return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w)
-end
-
---- @return number
-function Vec4:length_squared()
-	return self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w
-end
-
---- @return Vec4
-function Vec4:normalize()
-	local len = self:length()
-	if len == 0 then return vec4() end
-	return self / len
 end
 
 --- @return Vec4
@@ -648,6 +464,9 @@ end
 
 Quat.identity = quat()
 
+--- @param a Quat | number
+--- @param b Quat | number
+--- @return Quat
 function Quat.__mul(a, b)
 	if type(b) == "number" then
 		return quat(a.x * b, a.y * b, a.z * b, a.w * b)
@@ -693,8 +512,10 @@ function Quat.__eq(a, b)
 	return a.x == b.x and a.y == b.y and a.z == b.z and a.w == b.w
 end
 
-function Quat:__tostring()
-	return string.format("quat(%.4f, %.4f, %.4f, %.4f)", self.x, self.y, self.z, self.w)
+--- @param v Quat
+--- @return string
+function Quat.__tostring(v)
+	return string.format("quat(%.4f, %.4f, %.4f, %.4f)", v.x, v.y, v.z, v.w)
 end
 
 --- @return Quat
@@ -1170,4 +991,106 @@ function math.axis(quat)
 		quat.y / s,
 		quat.z / s
 	)
+end
+
+--- Returns true if all components in the boolean vector are true
+--- @param vec BVec2 | BVec3 | BVec4
+--- @return boolean
+function math.all(vec)
+	if getmetatable(vec) == BVec2 then
+		return vec.x and vec.y
+	elseif getmetatable(vec) == BVec3 then
+		return vec.x and vec.y and vec.z
+	elseif getmetatable(vec) == BVec4 then
+		return vec.x and vec.y and vec.z and vec.w
+	else
+		error("expected BVec2 or BVec3 or BVec4, got " .. type(vec))
+	end
+end
+
+--- Returns true if any of the components in the boolean vector are true
+--- @param vec BVec2 | BVec3 | BVec4
+--- @return boolean
+function math.any(vec)
+	if getmetatable(vec) == BVec2 then
+		return vec.x or vec.y
+	elseif getmetatable(vec) == BVec3 then
+		return vec.x or vec.y or vec.z
+	elseif getmetatable(vec) == BVec4 then
+		return vec.x or vec.y or vec.z or vec.w
+	else
+		error("expected BVec2 or BVec3 or BVec4, got " .. type(vec))
+	end
+end
+
+--- Only for vectors
+--- @param a Vec2 | Vec3 | Vec4
+--- @param b Vec2 | Vec3 | Vec4
+--- @return BVec2 | BVec3 | BVec4
+function math.less_than(a, b)
+	assert(getmetatable(a) == getmetatable(b), "vectors should be the same length")
+
+	if getmetatable(a) == Vec2 then
+		return bvec2(a.x < b.x, a.y < b.y)
+	elseif getmetatable(a) == Vec3 then
+		return bvec3(a.x < b.x, a.y < b.y, a.z < b.z)
+	elseif getmetatable(a) == Vec4 then
+		return bvec4(a.x < b.x, a.y < b.y, a.z < b.z, a.w < b.w)
+	else
+		error("expected Vec2 or Vec3 or Vec4, got " .. type(a))
+	end
+end
+
+--- Only for vectors
+--- @param a Vec2 | Vec3 | Vec4
+--- @param b Vec2 | Vec3 | Vec4
+--- @return BVec2 | BVec3 | BVec4
+function math.less_than_equal(a, b)
+	assert(getmetatable(a) == getmetatable(b), "vectors should be the same length")
+
+	if getmetatable(a) == Vec2 then
+		return bvec2(a.x <= b.x, a.y <= b.y)
+	elseif getmetatable(a) == Vec3 then
+		return bvec3(a.x <= b.x, a.y <= b.y, a.z <= b.z)
+	elseif getmetatable(a) == Vec4 then
+		return bvec4(a.x <= b.x, a.y <= b.y, a.z <= b.z, a.w <= b.w)
+	else
+		error("expected Vec2 or Vec3 or Vec4, got " .. type(a))
+	end
+end
+
+--- Only for vectors
+--- @param a Vec2 | Vec3 | Vec4
+--- @param b Vec2 | Vec3 | Vec4
+--- @return BVec2 | BVec3 | BVec4
+function math.greater_than(a, b)
+	assert(getmetatable(a) == getmetatable(b), "vectors should be the same length")
+
+	if getmetatable(a) == Vec2 then
+		return bvec2(a.x > b.x, a.y > b.y)
+	elseif getmetatable(a) == Vec3 then
+		return bvec3(a.x > b.x, a.y > b.y, a.z > b.z)
+	elseif getmetatable(a) == Vec4 then
+		return bvec4(a.x > b.x, a.y > b.y, a.z > b.z, a.w > b.w)
+	else
+		error("expected Vec2 or Vec3 or Vec4, got " .. type(a))
+	end
+end
+
+--- Only for vectors
+--- @param a Vec2 | Vec3 | Vec4
+--- @param b Vec2 | Vec3 | Vec4
+--- @return BVec2 | BVec3 | BVec4
+function math.greater_than_equal(a, b)
+	assert(getmetatable(a) == getmetatable(b), "vectors should be the same length")
+
+	if getmetatable(a) == Vec2 then
+		return bvec2(a.x >= b.x, a.y >= b.y)
+	elseif getmetatable(a) == Vec3 then
+		return bvec3(a.x >= b.x, a.y >= b.y, a.z >= b.z)
+	elseif getmetatable(a) == Vec4 then
+		return bvec4(a.x >= b.x, a.y >= b.y, a.z >= b.z, a.w >= b.w)
+	else
+		error("expected Vec2 or Vec3 or Vec4, got " .. type(a))
+	end
 end

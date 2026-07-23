@@ -1,3 +1,4 @@
+-- starry math exte
 local Test = require("testrunner")
 
 Test.new("standard math", function(t)
@@ -42,3 +43,5 @@ Test.new("round", function(t)
 	t:assert_approx(math.round(2), 2)
 	t:assert_approx(math.round(2.1), 2)
 end)
+
+-- TODO all the other tests
