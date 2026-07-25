@@ -83,7 +83,7 @@ lua_error :: proc(L: ^lua.State)
 	lua.pop(L, 1)
 }
 
-Lua_Variant :: union {
+LuaVariant :: union {
 	lua.Number,
 	lua.Integer,
 	string,
@@ -96,7 +96,7 @@ Lua_Variant :: union {
 call_lua_function :: proc(
 	L: ^lua.State,
 	func_name: cstring,
-	args: ..Lua_Variant,
+	args: ..LuaVariant,
 	can_be_nil := false,
 ) -> (
 	ok: bool,

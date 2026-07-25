@@ -1,5 +1,7 @@
 package starry
 
+import "core:fmt"
+
 // keyboard keys on your keyboard which is key. values are the same as GLFW.
 Key :: enum u32 {
 	INVALID         = 0,
@@ -126,8 +128,256 @@ Key :: enum u32 {
 	LAST            = MENU,
 }
 
+// for interop with lua
+key_from_string :: proc(s: string) -> Key
+{
+	switch s {
+	case "invalid":
+		return .INVALID
+	case "space", " ":
+		return .SPACE
+	case "apostrophe", "'":
+		return .APOSTROPHE
+	case "comma", ",":
+		return .COMMA
+	case "minus", "-":
+		return .MINUS
+	case "period", ".":
+		return .PERIOD
+	case "slash", "/":
+		return .SLASH
+	case "num0", "0":
+		return .NUM_0
+	case "num1", "1":
+		return .NUM_1
+	case "num2", "2":
+		return .NUM_2
+	case "num3", "3":
+		return .NUM_3
+	case "num4", "4":
+		return .NUM_4
+	case "num5", "5":
+		return .NUM_5
+	case "num6", "6":
+		return .NUM_6
+	case "num7", "7":
+		return .NUM_7
+	case "num8", "8":
+		return .NUM_8
+	case "num9", "9":
+		return .NUM_9
+	case "semicolon", ";":
+		return .SEMICOLON
+	case "equal", "=":
+		return .EQUAL
+	case "a", "A":
+		return .A
+	case "b", "B":
+		return .B
+	case "c", "C":
+		return .C
+	case "d", "D":
+		return .D
+	case "e", "E":
+		return .E
+	case "f", "F":
+		return .F
+	case "g", "G":
+		return .G
+	case "h", "H":
+		return .H
+	case "i", "I":
+		return .I
+	case "j", "J":
+		return .J
+	case "k", "K":
+		return .K
+	case "m", "M":
+		return .M
+	case "n", "N":
+		return .N
+	case "o", "O":
+		return .O
+	case "p", "P":
+		return .P
+	case "q", "Q":
+		return .Q
+	case "r", "R":
+		return .R
+	case "s", "S":
+		return .S
+	case "t", "T":
+		return .T
+	case "u", "U":
+		return .U
+	case "v", "V":
+		return .V
+	case "w", "W":
+		return .W
+	case "x", "X":
+		return .X
+	case "y", "Y":
+		return .Y
+	case "z", "Z":
+		return .Z
+	case "left_bracket", "[":
+		return .LEFT_BRACKET
+	case "backslash", "\\":
+		return .BACKSLASH
+	case "right_bracket", "]":
+		return .RIGHT_BRACKET
+	case "grave", "grave_accent", "`":
+		return .GRAVE_ACCENT
+	case "international1":
+		return .INTERNATIONAL_1
+	case "international2":
+		return .INTERNATIONAL_2
+	case "escape", "esc":
+		return .ESCAPE
+	case "enter", "return":
+		return .ENTER
+	case "tab":
+		return .TAB
+	case "backspace":
+		return .BACKSPACE
+	case "insert", "ins":
+		return .INSERT
+	case "delete", "del":
+		return .DELETE
+	case "right":
+		return .RIGHT
+	case "left":
+		return .LEFT
+	case "down":
+		return .DOWN
+	case "up":
+		return .UP
+	case "page_up":
+		return .PAGE_UP
+	case "page_down":
+		return .PAGE_DOWN
+	case "home":
+		return .HOME
+	case "end":
+		return .END
+	case "caps_lock":
+		return .CAPS_LOCK
+	case "scroll_lock":
+		return .SCROLL_LOCK
+	case "num_lock":
+		return .NUM_LOCK
+	case "print", "print_screen":
+		return .PRINT_SCREEN
+	case "pause", "pause_break":
+		return .PAUSE
+	case "F1", "f1":
+		return .F1
+	case "F2", "f2":
+		return .F2
+	case "F3", "f3":
+		return .F3
+	case "F4", "f4":
+		return .F4
+	case "F5", "f5":
+		return .F5
+	case "F6", "f6":
+		return .F6
+	case "F7", "f7":
+		return .F7
+	case "F8", "f8":
+		return .F8
+	case "F9", "f9":
+		return .F9
+	case "F10", "f10":
+		return .F10
+	case "F11", "f11":
+		return .F11
+	case "F12", "f12":
+		return .F12
+	case "F13", "f13":
+		return .F13
+	case "F14", "f14":
+		return .F14
+	case "F15", "f15":
+		return .F15
+	case "F16", "f16":
+		return .F16
+	case "F17", "f17":
+		return .F17
+	case "F18", "f18":
+		return .F18
+	case "F19", "f19":
+		return .F19
+	case "F20", "f20":
+		return .F20
+	case "F21", "f21":
+		return .F21
+	case "F22", "f22":
+		return .F22
+	case "F23", "f23":
+		return .F23
+	case "F24", "f24":
+		return .F24
+	case "F25", "f25":
+		return .F25
+	case "kp0":
+		return .KP_0
+	case "kp1":
+		return .KP_1
+	case "kp2":
+		return .KP_2
+	case "kp3":
+		return .KP_3
+	case "kp4":
+		return .KP_4
+	case "kp5":
+		return .KP_5
+	case "kp6":
+		return .KP_6
+	case "kp7":
+		return .KP_7
+	case "kp8":
+		return .KP_8
+	case "kp9":
+		return .KP_9
+	case "kp_decimal":
+		return .KP_DECIMAL
+	case "kp_divide":
+		return .KP_DIVIDE
+	case "kp_multiply":
+		return .KP_MULTIPLY
+	case "kp_subtract":
+		return .KP_SUBTRACT
+	case "kp_add":
+		return .KP_ADD
+	case "kp_enter":
+		return .KP_ENTER
+	case "kp_equal":
+		return .KP_EQUAL
+	case "left_shift", "lshift":
+		return .LEFT_SHIFT
+	case "left_ctrl", "left_control", "lctrl", "lcontrol":
+		return .LEFT_CTRL
+	case "left_alt", "lalt":
+		return .LEFT_ALT
+	case "left_super", "lsuper":
+		return .LEFT_SUPER
+	case "right_shift", "rshift":
+		return .RIGHT_SHIFT
+	case "right_ctrl", "right_control", "rctrl", "rcontrol":
+		return .RIGHT_CTRL
+	case "right_alt", "ralt":
+		return .RIGHT_ALT
+	case "right_super", "rsuper":
+		return .RIGHT_SUPER
+	case "menu":
+		return .MENU
+	}
+	fmt.panicf("invalid key %q", s)
+}
+
 // the buttons located on your pointing device technological artifice. Values are the same as GLFW
-Mouse_Button :: enum u32 {
+MouseButton :: enum u32 {
 	BTN_1  = 0,
 	BTN_2  = 1,
 	BTN_3  = 2,
@@ -142,7 +392,37 @@ Mouse_Button :: enum u32 {
 	LAST   = BTN_8,
 }
 
-Input_State :: enum {
+// for interop with lua
+mouse_button_from_string :: proc(s: string) -> MouseButton
+{
+	switch s {
+	case "1":
+		return .BTN_1
+	case "2":
+		return .BTN_2
+	case "3":
+		return .BTN_3
+	case "4":
+		return .BTN_4
+	case "5":
+		return .BTN_5
+	case "6":
+		return .BTN_6
+	case "7":
+		return .BTN_7
+	case "8":
+		return .BTN_8
+	case "left":
+		return .LEFT
+	case "right":
+		return .RIGHT
+	case "middle":
+		return .MIDDLE
+	}
+	fmt.panicf("invalid mouse button %q", s)
+}
+
+InputState :: enum {
 	NOT_PRESSED,
 	JUST_PRESSED,
 	HELD,

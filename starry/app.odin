@@ -21,7 +21,7 @@ Config :: struct {
 }
 
 // unpacked from the string array
-Config_Flags :: struct {
+ConfigFlags :: struct {
 	no_resize:      bool,
 	no_high_dpi:    bool,
 	engine_testing: bool,
@@ -208,12 +208,14 @@ update_lua_app :: proc()
 }
 
 // Returns the current time since the engine started, in seconds
-now_in_seconds :: proc() -> f64
+// Lua: `app.now_secs`
+now_secs :: proc() -> f64
 {
 	return global.current_time - global.start_time
 }
 
 // Returns the time between the current frame and last frame
+// Lua: `app.delta_time`
 delta_time :: proc() -> f64
 {
 	return math.clamp(global.current_time - global.prev_time, 0.0001, 1)
@@ -226,6 +228,7 @@ gpu_device :: proc() -> gpu.Device
 }
 
 // Returns true if the engine is in headless mode (no window or GPU context)
+// Lua: `app.is_headless`
 is_headless :: proc() -> bool
 {
 	return global.config_flags.engine_testing

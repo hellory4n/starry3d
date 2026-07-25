@@ -16,7 +16,7 @@ global: struct {
 	// app
 	lua:          ^lua.State,
 	config:       Config,
-	config_flags: Config_Flags,
+	config_flags: ConfigFlags,
 
 	// window
 	windows:      [dynamic]^Window,

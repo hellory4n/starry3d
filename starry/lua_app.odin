@@ -8,7 +8,7 @@ import lua "../thirdparty/luajit"
 lua_app_now_in_seconds :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
-	res1 := now_in_seconds()
+	res1 := now_secs()
 	lua.pushnumber(L, lua.Number(res1))
 	return 1
 }
@@ -62,7 +62,7 @@ lua_app_aspect_ratio :: proc "c" (L: ^lua.State) -> c.int
 lua_app_is_high_dpi :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
-	res1 := is_high_dpi()
+	res1 := high_dpi()
 	lua.pushboolean(L, b32(res1))
 	return 1
 }

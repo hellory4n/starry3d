@@ -33,7 +33,7 @@ bindgen_module_app :: proc() -> (err: os.Error)
 	defer delete(mod.func_names)
 
 	bindgen_module_start(&mod) or_return
-	bindgen_write_function(&mod, now_in_seconds) or_return
+	bindgen_write_function(&mod, now_secs) or_return
 	bindgen_write_function(&mod, delta_time) or_return
 	bindgen_write_function(&mod, is_closing) or_return
 	bindgen_write_function(&mod, is_headless) or_return
@@ -51,7 +51,7 @@ bindgen_module_app :: proc() -> (err: os.Error)
 	// bindgen_write_function(&mod, is_mouse_button_not_pressed) or_return
 	// bindgen_write_function(&mod, framebuffer_sizef, name = "framebuffer_size") or_return
 	bindgen_write_function(&mod, aspect_ratio) or_return
-	bindgen_write_function(&mod, is_high_dpi) or_return
+	bindgen_write_function(&mod, high_dpi) or_return
 	bindgen_write_function(&mod, scale_factor) or_return
 	bindgen_write_function(&mod, lock_mouse) or_return
 	bindgen_write_function(&mod, is_mouse_locked) or_return

@@ -8,8 +8,8 @@ import "vendor:glfw"
 
 Window :: struct {
 	glfw:             glfw.WindowHandle,
-	key_state:        #sparse[Key]Input_State,
-	mouse_state:      #sparse[Mouse_Button]Input_State,
+	key_state:        #sparse[Key]InputState,
+	mouse_state:      #sparse[MouseButton]InputState,
 	current_mouse:    [2]f32,
 	delta_mouse:      [2]f32,
 	prev_mouse:       [2]f32,
@@ -122,7 +122,7 @@ poll_events :: proc()
 @(private = "file")
 poll_window_events :: proc(window: ^Window)
 {
-	window.current_mouse = window_mouse_position(window)
+	window.current_mouse = window_mouse_pos(window)
 	window.delta_mouse = window.current_mouse - window.prev_mouse
 	window.prev_mouse = window.current_mouse
 
@@ -147,7 +147,7 @@ poll_window_events :: proc(window: ^Window)
 		}
 	}
 
-	for btn in Mouse_Button(0) ..< Mouse_Button.LAST {
+	for btn in MouseButton(0) ..< MouseButton.LAST {
 		is_down := glfw.GetMouseButton(window.glfw, c.int(btn)) == glfw.PRESS
 		was_down :=
 			window.mouse_state[btn] != .NOT_PRESSED &&
@@ -179,7 +179,7 @@ window_is_closing :: proc(window: ^Window) -> bool
 }
 
 // aligned to the top left of the screen
-window_mouse_position :: proc(window: ^Window) -> [2]f32
+window_mouse_pos :: proc(window: ^Window) -> [2]f32
 {
 	x, y := glfw.GetCursorPos(window.glfw)
 	return {f32(x), f32(y)}
@@ -187,64 +187,64 @@ window_mouse_position :: proc(window: ^Window) -> [2]f32
 
 // returns how much the mouse position changed in the last frame, aligned to the top left of
 // the screen
-window_delta_mouse_position :: proc(window: ^Window) -> [2]f32
+window_delta_mouse_pos :: proc(window: ^Window) -> [2]f32
 {
 	return window.delta_mouse
 }
 
-window_is_key_just_pressed :: proc(window: ^Window, key: Key) -> bool
+window_key_just_pressed :: proc(window: ^Window, key: Key) -> bool
 {
 	return window.key_state[key] == .JUST_PRESSED
 }
 
-window_is_key_just_released :: proc(window: ^Window, key: Key) -> bool
+window_key_just_released :: proc(window: ^Window, key: Key) -> bool
 {
 	return window.key_state[key] == .JUST_RELEASED
 }
 
-window_is_key_held :: proc(window: ^Window, key: Key) -> bool
+window_key_held :: proc(window: ^Window, key: Key) -> bool
 {
 	return window.key_state[key] == .HELD || window.key_state[key] == .JUST_PRESSED
 }
 
-window_is_key_not_pressed :: proc(window: ^Window, key: Key) -> bool
+window_key_not_pressed :: proc(window: ^Window, key: Key) -> bool
 {
-	return !window_is_key_held(window, key)
+	return !window_key_held(window, key)
 }
 
-window_is_mouse_button_just_pressed :: proc(window: ^Window, btn: Mouse_Button) -> bool
+window_mouse_just_pressed :: proc(window: ^Window, btn: MouseButton) -> bool
 {
 	return window.mouse_state[btn] == .JUST_PRESSED
 }
 
-window_is_mouse_button_just_released :: proc(window: ^Window, btn: Mouse_Button) -> bool
+window_mouse_just_released :: proc(window: ^Window, btn: MouseButton) -> bool
 {
 	return window.mouse_state[btn] == .JUST_RELEASED
 }
 
-window_is_mouse_button_held :: proc(window: ^Window, btn: Mouse_Button) -> bool
+window_mouse_held :: proc(window: ^Window, btn: MouseButton) -> bool
 {
 	return window.mouse_state[btn] == .HELD || window.mouse_state[btn] == .JUST_PRESSED
 }
 
-window_is_mouse_button_not_pressed :: proc(window: ^Window, btn: Mouse_Button) -> bool
+window_mouse_not_pressed :: proc(window: ^Window, btn: MouseButton) -> bool
 {
-	return !window_is_mouse_button_held(window, btn)
+	return !window_mouse_held(window, btn)
 }
 
-window_framebuffer_sizei :: proc(window: ^Window) -> [2]i32
+window_frame_sizei :: proc(window: ^Window) -> [2]i32
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
 	return {i32(x), i32(y)}
 }
 
-window_framebuffer_sizeu :: proc(window: ^Window) -> [2]u32
+window_frame_sizeu :: proc(window: ^Window) -> [2]u32
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
 	return {u32(x), u32(y)}
 }
 
-window_framebuffer_sizef :: proc(window: ^Window) -> [2]f32
+window_sizef :: proc(window: ^Window) -> [2]f32
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
 	return {f32(x), f32(y)}
@@ -252,12 +252,12 @@ window_framebuffer_sizef :: proc(window: ^Window) -> [2]f32
 
 window_aspect_ratio :: proc(window: ^Window) -> f32
 {
-	size := window_framebuffer_sizef(window)
+	size := window_sizef(window)
 	return size.x / size.y
 }
 
 // returns true if high DPI is enabled and the app is actually running in a high DPI setting
-window_is_high_dpi :: proc(window: ^Window) -> bool
+window_high_dpi :: proc(window: ^Window) -> bool
 {
 	xscale, yscale := glfw.GetWindowContentScale(window.glfw)
 	return window.high_dpi_enabled && approx_eql(xscale, 1) && approx_eql(yscale, 1)
@@ -305,118 +305,138 @@ window_set_title :: proc(window: ^Window, title: string)
 
 // man
 
+// lua: `app.is_closing`
 is_closing :: proc() -> bool
 {
 	return window_is_closing(main_window())
 }
 
 // aligned to the top left of the screen
-mouse_position :: proc() -> [2]f32
+// lua: `app.mouse_pos`
+mouse_pos :: proc() -> [2]f32
 {
-	return window_mouse_position(main_window())
+	return window_mouse_pos(main_window())
 }
 
 // returns how much the mouse position changed in the last frame, aligned to the top left of
 // the screen
-delta_mouse_position :: proc() -> [2]f32
+// lua: `app.delta_mouse_pos`
+delta_mouse_pos :: proc() -> [2]f32
 {
-	return window_delta_mouse_position(main_window())
+	return window_delta_mouse_pos(main_window())
 }
 
-is_key_just_pressed :: proc(key: Key) -> bool
+// lua: `app.key_just_pressed`
+key_just_pressed :: proc(key: Key) -> bool
 {
-	return window_is_key_just_pressed(main_window(), key)
+	return window_key_just_pressed(main_window(), key)
 }
 
-is_key_held :: proc(key: Key) -> bool
+// lua: `app.key_held`
+key_held :: proc(key: Key) -> bool
 {
-	return window_is_key_held(main_window(), key)
+	return window_key_held(main_window(), key)
 }
 
-is_key_just_released :: proc(key: Key) -> bool
+// lua: `app.key_just_released`
+key_just_released :: proc(key: Key) -> bool
 {
-	return window_is_key_just_released(main_window(), key)
+	return window_key_just_released(main_window(), key)
 }
 
-is_key_not_pressed :: proc(key: Key) -> bool
+// lua: `app.key_not_pressed`
+key_not_pressed :: proc(key: Key) -> bool
 {
-	return window_is_key_not_pressed(main_window(), key)
+	return window_key_not_pressed(main_window(), key)
 }
 
-is_mouse_button_just_pressed :: proc(btn: Mouse_Button) -> bool
+// lua: `app.mouse_just_pressed`
+mouse_just_pressed :: proc(btn: MouseButton) -> bool
 {
-	return window_is_mouse_button_just_pressed(main_window(), btn)
+	return window_mouse_just_pressed(main_window(), btn)
 }
 
-is_mouse_button_held :: proc(btn: Mouse_Button) -> bool
+// lua: `app.mouse_held`
+mouse_held :: proc(btn: MouseButton) -> bool
 {
-	return window_is_mouse_button_held(main_window(), btn)
+	return window_mouse_held(main_window(), btn)
 }
 
-is_mouse_button_just_released :: proc(btn: Mouse_Button) -> bool
+// lua: `app.mouse_just_released`
+mouse_just_released :: proc(btn: MouseButton) -> bool
 {
-	return window_is_mouse_button_just_released(main_window(), btn)
+	return window_mouse_just_released(main_window(), btn)
 }
 
-is_mouse_button_not_pressed :: proc(btn: Mouse_Button) -> bool
+// lua: `app.mouse_not_pressed`
+mouse_not_pressed :: proc(btn: MouseButton) -> bool
 {
-	return window_is_mouse_button_not_pressed(main_window(), btn)
+	return window_mouse_not_pressed(main_window(), btn)
 }
 
-framebuffer_sizei :: proc() -> [2]i32
+frame_sizei :: proc() -> [2]i32
 {
-	return window_framebuffer_sizei(main_window())
+	return window_frame_sizei(main_window())
 }
 
-framebuffer_sizeu :: proc() -> [2]u32
+frame_sizeu :: proc() -> [2]u32
 {
-	return window_framebuffer_sizeu(main_window())
+	return window_frame_sizeu(main_window())
 }
 
-framebuffer_sizef :: proc() -> [2]f32
+// lua: `app.frame_size`
+frame_sizef :: proc() -> [2]f32
 {
-	return window_framebuffer_sizef(main_window())
+	return window_sizef(main_window())
 }
 
+// lua: `app.aspect_ratio`
 aspect_ratio :: proc() -> f32
 {
 	return window_aspect_ratio(main_window())
 }
 
 // returns true if high DPI is enabled and the app is actually running in a high DPI setting
-is_high_dpi :: proc() -> bool
+// lua: `app.high_dpi`
+high_dpi :: proc() -> bool
 {
-	return window_is_high_dpi(main_window())
+	return window_high_dpi(main_window())
 }
 
+// lua: `app.scale_factor`
 scale_factor :: proc() -> f32
 {
 	return window_scale_factor(main_window())
 }
 
 // if true, locks the mouse inside the window and enables raw mouse input, otherwise unlocks it.
+// lua: `app.lock_mouse`
 lock_mouse :: proc(lock: bool)
 {
 	window_lock_mouse(main_window(), lock)
 }
 
+// lua: `app.is_mouse_locked`
 is_mouse_locked :: proc() -> bool
 {
 	return window_is_mouse_locked(main_window())
 }
 
 // asks nicely for the window to close (you can handle it and not actually quit)
+// lua: `app.request_quit`
 request_quit :: proc()
 {
 	window_request_quit(main_window())
 }
 
 // cancel a pending quit from `request_quit` or the OS
+// lua: `app.cancel_quit`
 cancel_quit :: proc()
 {
 	window_cancel_quit(main_window())
 }
 
+// lua: `app.set_title`
 set_title :: proc(title: string)
 {
 	window_set_title(main_window(), title)

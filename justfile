@@ -12,11 +12,8 @@ _BASE_CFLAGS := "-vet-cast -vet-shadowing -vet-using-stmt"
 _EXE_NAME := if os() == "windows" { "./starry.exe" } else { "./starry.bin" }
 _STUDIO_EXE := if os() == "windows" { "./studio.exe" } else { "./studio.bin" }
 
-# evil luajit ffi fuckery requires us to exports symbols to ourselves
-_LDFLAGS := if os() == "windows" { "" } else { "-extra-linker-flags:\"-rdynamic\"" }
-
 _CFLAGS := \
-	f"{{_BASE_CFLAGS}} {{_LDFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}}"
+	f"{{_BASE_CFLAGS}} {{_TARGET}} {{_RELEASE}} {{_SANITIZE}}"
 
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 

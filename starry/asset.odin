@@ -4,6 +4,7 @@ import "core:fmt"
 import "core:mem"
 import "core:os"
 
+// Lua: `app.dir`
 app_dir :: proc() -> string
 {
 	if len(global.args.app_dir) > 0 {
