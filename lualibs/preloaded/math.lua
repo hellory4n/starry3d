@@ -498,30 +498,13 @@ math = {
 --- @generic T number | Vec2 | Vec3 | Vec4
 --- @param func function
 --- @param arg1 T
-local function oldmath_call1(func, arg1)
-	if type(arg1) == "number" then
-		return func(arg1)
-	end
-
-	ret = {}
-	setmetatable(ret, getmetatable(arg1))
-
-	for key, val in pairs(arg1) do
-		ret[key] = func(val)
-	end
-	return ret
-end
-
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param func function
---- @param arg1 T
 --- @param arg2 T
 local function oldmath_call2(func, arg1, arg2)
 	if type(arg1) == "number" then
 		return func(arg1, arg2)
 	end
 
-	ret = {}
+	local ret = {}
 	setmetatable(ret, getmetatable(arg1))
 
 	for key, _ in pairs(arg1) do
@@ -540,7 +523,7 @@ local function oldmath_call3(func, arg1, arg2, arg3)
 		return func(arg1, arg2, arg3)
 	end
 
-	ret = {}
+	local ret = {}
 	setmetatable(ret, getmetatable(arg1))
 
 	for key, _ in pairs(arg1) do
@@ -556,7 +539,17 @@ end
 --- @nodiscard
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.abs(x)
-	return oldmath_call1(oldmath.abs, x)
+	if type(x) == "number" then
+		return oldmath.abs(x)
+	end
+
+	local ret = {}
+	setmetatable(ret, getmetatable(x))
+
+	for key, val in pairs(x) do
+		ret[key] = oldmath.abs(val)
+	end
+	return ret
 end
 
 --- Returns the smallest integral value larger than or equal to `x`.
@@ -566,7 +559,17 @@ end
 --- @nodiscard
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.ceil(x)
-	return oldmath_call1(oldmath.ceil, x)
+	if type(x) == "number" then
+		return oldmath.ceil(x)
+	end
+
+	local ret = {}
+	setmetatable(ret, getmetatable(x))
+
+	for key, val in pairs(x) do
+		ret[key] = oldmath.ceil(val)
+	end
+	return ret
 end
 
 --- Converts the angle `x` from radians to degrees.
@@ -576,7 +579,17 @@ end
 --- @nodiscard
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.deg(x)
-	return oldmath_call1(oldmath.deg, x)
+	if type(x) == "number" then
+		return oldmath.deg(x)
+	end
+
+	local ret = {}
+	setmetatable(ret, getmetatable(x))
+
+	for key, val in pairs(x) do
+		ret[key] = oldmath.deg(val)
+	end
+	return ret
 end
 
 --- Returns the largest integral value smaller than or equal to `x`.
@@ -586,7 +599,17 @@ end
 --- @nodiscard
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.floor(x)
-	return oldmath_call1(oldmath.floor, x)
+	if type(x) == "number" then
+		return oldmath.floor(x)
+	end
+
+	local ret = {}
+	setmetatable(ret, getmetatable(x))
+
+	for key, val in pairs(x) do
+		ret[key] = oldmath.floor(val)
+	end
+	return ret
 end
 
 --- Returns the remainder of the division of `x` by `y` that rounds the quotient towards zero.
@@ -597,7 +620,38 @@ end
 --- @nodiscard
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.fmod(x, y)
-	return oldmath_call2(oldmath.fmod, x, y)
+	if type(x) == "number" and type(y) == "number" then
+		return oldmath.fmod(x, y)
+	end
+
+	-- handle mixed scalar/vector types
+	if type(x) == "table" and type(y) == "table" then
+		local ret = {}
+		setmetatable(ret, getmetatable(x))
+
+		for key, _ in pairs(x) do
+			ret[key] = oldmath.fmod(x[key], y[key])
+		end
+		return ret
+	elseif type(x) == "number" then
+		local ret = {}
+		setmetatable(ret, getmetatable(y))
+
+		for key, _ in pairs(y) do
+			ret[key] = oldmath.fmod(x, y[key])
+		end
+		return ret
+	elseif type(y) == "number" then
+		local ret = {}
+		setmetatable(ret, getmetatable(x))
+
+		for key, _ in pairs(x) do
+			ret[key] = oldmath.fmod(x[key], y)
+		end
+		return ret
+	else
+		error("math.fmod: unexpected types: " .. type(x) .. ", " .. type(y))
+	end
 end
 
 --- Returns `x ^ y` .
@@ -608,7 +662,38 @@ end
 --- @nodiscard
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.pow(x, y)
-	return oldmath_call2(oldmath.pow, x, y)
+	if type(x) == "number" and type(y) == "number" then
+		return oldmath.pow(x, y)
+	end
+
+	-- handle mixed scalar/vector types
+	if type(x) == "table" and type(y) == "table" then
+		local ret = {}
+		setmetatable(ret, getmetatable(x))
+
+		for key, _ in pairs(x) do
+			ret[key] = oldmath.pow(x[key], y[key])
+		end
+		return ret
+	elseif type(x) == "number" then
+		local ret = {}
+		setmetatable(ret, getmetatable(y))
+
+		for key, _ in pairs(y) do
+			ret[key] = oldmath.pow(x, y[key])
+		end
+		return ret
+	elseif type(y) == "number" then
+		local ret = {}
+		setmetatable(ret, getmetatable(x))
+
+		for key, _ in pairs(x) do
+			ret[key] = oldmath.pow(x[key], y)
+		end
+		return ret
+	else
+		error("math.pow: unexpected types: " .. type(x) .. ", " .. type(y))
+	end
 end
 
 --- Converts the angle `x` from degrees to radians.
@@ -618,19 +703,36 @@ end
 --- @nodiscard
 --- @diagnostic disable-next-line: duplicate-set-field
 function math.rad(x)
-	return oldmath_call1(oldmath.rad, x)
+	if type(x) == "number" then
+		return oldmath.rad(x)
+	end
+
+	local ret = {}
+	setmetatable(ret, getmetatable(x))
+
+	for key, val in pairs(x) do
+		ret[key] = oldmath.rad(val)
+	end
+	return ret
 end
 
---- Rounds a number. Mysteriously this isn't included in Lua by default.
+--- Rounds a number to the nearest integral number.
 --- @generic T number | Vec2 | Vec3 | Vec4
 --- @param x T
 --- @return T
 --- @nodiscard
 function math.round(x)
-	local function base_round(value)
-		return __st.round(value)
+	if type(x) == "number" then
+		return __st.round(x)
 	end
-	return oldmath_call1(base_round, x)
+
+	local ret = {}
+	setmetatable(ret, getmetatable(x))
+
+	for key, val in pairs(x) do
+		ret[key] = __st.round(val)
+	end
+	return ret
 end
 
 --- Clamps X between min and max.
@@ -641,28 +743,55 @@ end
 --- @return T
 --- @nodiscard
 function math.clamp(x, min, max)
-	local function base_clamp(x_, min_, max_)
-		return math.min(math.min(min_, x_), max_)
+	if type(x) == "number" and type(min) == "number" and type(max) == "number" then
+		return math.min(math.max(min, x), max)
 	end
-	return oldmath_call3(base_clamp, x, min, max)
+
+	assert(type(x) == "table")
+
+	local ret = {}
+	setmetatable(ret, getmetatable(x))
+
+	if type(min) == "table" and type(max) == "table" then
+		for key, _ in pairs(x) do
+			ret[key] = math.min(math.max(min[key], x[key]), max[key])
+		end
+		return ret
+	else
+		for key, _ in pairs(x) do
+			ret[key] = math.min(math.max(min, x[key]), max)
+		end
+		return ret
+	end
 end
 
 --- Linear interpolation
 --- @generic T number | Vec2 | Vec3 | Vec4
 --- @param a T
 --- @param b T
---- @param t T
+--- @param t T | number
 --- @return T
 --- @nodiscard
 function math.lerp(a, b, t)
-	local function base_lerp(a_, b_, t_)
-		return (1.0 - t_) * a_ + t_ * b_
+	if type(a) == "number" and type(b) == "number" and type(t) == "number" then
+		return (1.0 - t) * a + t * b
 	end
 
-	return oldmath_call3(base_lerp, a, b, t)
+	assert(type(a) == "table" and type(b) == "table" and
+		(type(t) == "table" or type(t) == "number"))
+	local ret = {}
+	setmetatable(ret, getmetatable(a))
+
+	for key, _ in pairs(a) do
+		if type(t) == "number" then
+			ret[key] = (1.0 - t) * a[key] + t * b[key]
+		else
+			ret[key] = (1.0 - t[key]) * a[key] + t[key] * b[key]
+		end
+	end
+	return ret
 end
 
---- Similar to lerp, but inverse.
 --- @generic T number | Vec2 | Vec3 | Vec4
 --- @param a T
 --- @param b T
@@ -670,10 +799,18 @@ end
 --- @return T
 --- @nodiscard
 function math.inverse_lerp(a, b, v)
-	local function base_inverse_lerp(a_, b_, v_)
-		return (v_ - a_) / (b_ - a_)
+	if type(a) == "number" and type(b) == "number" and type(v) == "number" then
+		return (v - a) / (b - a)
 	end
-	return oldmath_call3(base_inverse_lerp, a, b, v)
+
+	assert(type(a) == "table" and type(b) == "table" and type(v) == "table")
+	local ret = {}
+	setmetatable(ret, getmetatable(a))
+
+	for key, _ in pairs(a) do
+		ret[key] = (v[key] - a[key]) / (b[key] - a[key])
+	end
+	return ret
 end
 
 --- Converts a number from one scale to another
@@ -759,21 +896,35 @@ end
 --- @param epsilon number? Defaults to `math.epsilon`
 --- @return T
 function math.approx_equal(x, y, epsilon)
-	local epsilon_but_vec = nil
-	if type(x) == "number" then
-		epsilon_but_vec = epsilon or math.epsilon
-	elseif getmetatable(x) == Vec2 then
-		epsilon_but_vec = vec2(epsilon or math.epsilon)
-	elseif getmetatable(x) == Vec3 then
-		epsilon_but_vec = vec3(epsilon or math.epsilon)
-	elseif getmetatable(x) == Vec4 then
-		epsilon_but_vec = vec4(epsilon or math.epsilon)
+	if type(x) ~= type(y) then
+		return false
 	end
 
-	local function base_approx_equal(x_, y_, epsilon_)
-		return math.abs(x_ - y_) < epsilon_
+	local epsilon_epsilon = nil
+	if type(x) == "number" then
+		epsilon_epsilon = epsilon or math.epsilon
+	elseif getmetatable(x) == Vec2 then
+		epsilon_epsilon = vec2(epsilon or math.epsilon)
+	elseif getmetatable(x) == Vec3 then
+		epsilon_epsilon = vec3(epsilon or math.epsilon)
+	elseif getmetatable(x) == Vec4 then
+		epsilon_epsilon = vec4(epsilon or math.epsilon)
+	else
+		error("unexpected type " .. type(x))
 	end
-	return oldmath_call3(base_approx_equal, x, y, epsilon_but_vec)
+
+	if type(x) == "number" and type(y) == "number" then
+		return math.abs(x - y) < epsilon_epsilon
+	else
+		for key, _ in pairs(x) do
+			local zmjjbjz = math.abs(x[key] - y[key]) < epsilon_epsilon[key]
+			if not zmjjbjz then
+				return false
+			end
+		end
+
+		return true
+	end
 end
 
 --- Converts a color from the 0-255 range to the 0.0-1.0 range

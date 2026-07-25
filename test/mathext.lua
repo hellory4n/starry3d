@@ -35,15 +35,6 @@ Test.new("standard math", function(t)
 	t:assert_approx(math.sqrt(1.5), 1.2247448713916)
 end)
 
-Test.new("round", function(t)
-	t:assert_approx(math.round(1), 1)
-	t:assert_approx(math.round(1.2), 1)
-	t:assert_approx(math.round(1.6), 2)
-	t:assert_approx(math.round(1.8), 2)
-	t:assert_approx(math.round(2), 2)
-	t:assert_approx(math.round(2.1), 2)
-end)
-
 Test.new("vec2 constructor", function(t)
 	-- default
 	local zero = vec2()
@@ -407,4 +398,213 @@ Test.new("vec4 equality", function(t)
 
 	t:assert(a == b, true)
 	t:assert(a == c, false)
+end)
+
+Test.new("math.abs", function(t)
+	-- number
+	t:assert(math.abs(-5), 5)
+	t:assert(math.abs(5), 5)
+	t:assert(math.abs(0), 0)
+
+	-- vec2
+	local v2 = math.abs(vec2(-3, 4))
+	t:assert(v2.x, 3)
+	t:assert(v2.y, 4)
+
+	-- vec3
+	local v3 = math.abs(vec3(-1, 2, -3))
+	t:assert(v3.x, 1)
+	t:assert(v3.y, 2)
+	t:assert(v3.z, 3)
+
+	-- vec4
+	local v4 = math.abs(vec4(-1, 2, -3, 4))
+	t:assert(v4.x, 1)
+	t:assert(v4.y, 2)
+	t:assert(v4.z, 3)
+	t:assert(v4.w, 4)
+end)
+
+Test.new("math.ceil", function(t)
+	-- number
+	t:assert(math.ceil(1.2), 2)
+	t:assert(math.ceil(-1.2), -1)
+	t:assert(math.ceil(5), 5)
+
+	-- vec2
+	local v2 = math.ceil(vec2(1.2, -1.8))
+	t:assert(v2.x, 2)
+	t:assert(v2.y, -1)
+
+	-- vec3
+	local v3 = math.ceil(vec3(0.1, 2.0, -0.5))
+	t:assert(v3.x, 1)
+	t:assert(v3.y, 2)
+	t:assert(v3.z, 0)
+end)
+
+Test.new("math.floor", function(t)
+	-- number
+	t:assert(math.floor(1.8), 1)
+	t:assert(math.floor(-1.2), -2)
+	t:assert(math.floor(5), 5)
+
+	-- vec2
+	local v2 = math.floor(vec2(1.8, -1.2))
+	t:assert(v2.x, 1)
+	t:assert(v2.y, -2)
+
+	-- vec4
+	local v4 = math.floor(vec4(3.9, -0.1, 2.0, -4.7))
+	t:assert(v4.x, 3)
+	t:assert(v4.y, -1)
+	t:assert(v4.z, 2)
+	t:assert(v4.w, -5)
+end)
+
+Test.new("math.round", function(t)
+	-- number
+	t:assert(math.round(1.4), 1)
+	t:assert(math.round(1.5), 2)
+	t:assert(math.round(-1.5), -2)
+	t:assert(math.round(-1.4), -1)
+
+	-- vec2
+	local v2 = math.round(vec2(1.4, 1.6))
+	t:assert(v2.x, 1)
+	t:assert(v2.y, 2)
+
+	-- vec3
+	local v3 = math.round(vec3(-1.5, 2.3, 0.5))
+	t:assert(v3.x, -2)
+	t:assert(v3.y, 2)
+	t:assert(v3.z, 1)
+end)
+
+Test.new("math.deg", function(t)
+	-- number
+	t:assert_approx(math.deg(math.pi), 180)
+	t:assert_approx(math.deg(math.pi / 2), 90)
+
+	-- vec2
+	local v2 = math.deg(vec2(math.pi, math.pi / 2))
+	t:assert_approx(v2.x, 180)
+	t:assert_approx(v2.y, 90)
+end)
+
+Test.new("math.rad", function(t)
+	-- number
+	t:assert_approx(math.rad(180), math.pi)
+	t:assert_approx(math.rad(90), math.pi / 2)
+
+	-- vec3
+	local v3 = math.rad(vec3(180, 90, 0))
+	t:assert_approx(v3.x, math.pi)
+	t:assert_approx(v3.y, math.pi / 2)
+	t:assert_approx(v3.z, 0)
+end)
+
+Test.new("math.fmod", function(t)
+	-- number
+	t:assert(math.fmod(10, 3), 1)
+	t:assert(math.fmod(-10, 3), -1)
+
+	-- vec2
+	local v2 = math.fmod(vec2(10, 7), vec2(3, 4))
+	t:assert(v2.x, 1)
+	t:assert(v2.y, 3)
+
+	-- mixed scalar
+	local v2s = math.fmod(vec2(10, 7), 3)
+	t:assert(v2s.x, 1)
+	t:assert(v2s.y, 1)
+end)
+
+Test.new("math.pow", function(t)
+	-- number
+	t:assert(math.pow(2, 3), 8)
+	t:assert_approx(math.pow(4, 0.5), 2)
+
+	-- vec2
+	local v2 = math.pow(vec2(2, 3), vec2(3, 2))
+	t:assert(v2.x, 8)
+	t:assert(v2.y, 9)
+
+	-- vec ^ scalar
+	local v2s = math.pow(vec2(2, 4), 2)
+	t:assert(v2s.x, 4)
+	t:assert(v2s.y, 16)
+end)
+
+Test.new("math.clamp", function(t)
+	-- number
+	t:assert(math.clamp(5, 0, 10), 5)
+	t:assert(math.clamp(-5, 0, 10), 0)
+	t:assert(math.clamp(15, 0, 10), 10)
+
+	-- vec2
+	local v2 = math.clamp(vec2(-5, 15), vec2(0, 0), vec2(10, 10))
+	t:assert(v2.x, 0)
+	t:assert(v2.y, 10)
+
+	-- vec3 with scalar bounds
+	local v3 = math.clamp(vec3(-1, 5, 20), 0, 10)
+	t:assert(v3.x, 0)
+	t:assert(v3.y, 5)
+	t:assert(v3.z, 10)
+end)
+
+Test.new("math.lerp", function(t)
+	-- number
+	t:assert_approx(math.lerp(0, 10, 0.5), 5)
+	t:assert_approx(math.lerp(0, 10, 0), 0)
+	t:assert_approx(math.lerp(0, 10, 1), 10)
+
+	-- vec2
+	local v2 = math.lerp(vec2(0, 0), vec2(10, 20), 0.5)
+	t:assert_approx(v2.x, 5)
+	t:assert_approx(v2.y, 10)
+
+	-- vec3 with vector t
+	local v3 = math.lerp(vec3(0, 0, 0), vec3(10, 20, 30), vec3(0.5, 0.25, 0))
+	t:assert_approx(v3.x, 5)
+	t:assert_approx(v3.y, 5)
+	t:assert_approx(v3.z, 0)
+end)
+
+Test.new("math.inverse_lerp", function(t)
+	-- number
+	t:assert_approx(math.inverse_lerp(0, 10, 5), 0.5)
+	t:assert_approx(math.inverse_lerp(0, 10, 0), 0)
+	t:assert_approx(math.inverse_lerp(0, 10, 10), 1)
+
+	-- vec2
+	local v2 = math.inverse_lerp(vec2(0, 0), vec2(10, 20), vec2(5, 10))
+	t:assert_approx(v2.x, 0.5)
+	t:assert_approx(v2.y, 0.5)
+end)
+
+Test.new("math.remap", function(t)
+	-- number
+	t:assert_approx(math.remap(5, 0, 10, 0, 100), 50)
+	t:assert_approx(math.remap(0, 0, 10, 0, 100), 0)
+	t:assert_approx(math.remap(10, 0, 10, 0, 100), 100)
+
+	-- vec2
+	local v2 = math.remap(vec2(5, 2), vec2(0, 0), vec2(10, 4), vec2(0, 0), vec2(100, 200))
+	t:assert_approx(v2.x, 50)
+	t:assert_approx(v2.y, 100)
+end)
+
+Test.new("math.approx_equal", function(t)
+	-- number
+	t:assert(math.approx_equal(1.0, 1.0), true)
+	t:assert(math.approx_equal(1.0, 1.0000001), true)
+	t:assert(math.approx_equal(1.0, 1.1), false)
+	t:assert(math.approx_equal(1.0, 1.1, 0.2), true)
+
+	-- vec2
+	t:assert(math.approx_equal(vec2(1, 2), vec2(1, 2)), true)
+	t:assert(math.approx_equal(vec2(1, 2), vec2(1.0000001, 2)), true)
+	t:assert(math.approx_equal(vec2(1, 2), vec2(1, 3)), false)
 end)
