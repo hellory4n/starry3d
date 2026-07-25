@@ -4,16 +4,16 @@ end
 
 --- @param dt number
 function app_update(dt)
-	__st.glorious_red_square()
+	__st.glorious_red_square(vec3(0, 0, 0))
 
 	if app.key_just_pressed("a") then
 		print(":)")
 	end
-	print(app.mouse_pos())
+	-- print(app.mouse_pos())
 end
 
 --- @param width integer
 --- @param height integer
 function app_on_resize(width, height)
-	print("resize!")
+	print("resizing it")
 end

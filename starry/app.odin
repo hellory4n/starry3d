@@ -204,6 +204,12 @@ main_loop :: proc(update_proc: proc())
 update_lua_app :: proc()
 {
 	L := global.lua
+
+	if key_just_pressed(.R) && mod_keys_pressed({.ALT}) {
+		lua_run(L, global.config.main)
+		fmt.printfln("reloaded lua scripts")
+	}
+
 	call_lua_function(L, "app_update", lua.Number(delta_time()), can_be_nil = true)
 }
 

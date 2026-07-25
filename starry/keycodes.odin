@@ -422,6 +422,17 @@ mouse_button_from_string :: proc(s: string) -> MouseButton
 	fmt.panicf("invalid mouse button %q", s)
 }
 
+// values are the same as glfw
+ModifierKey :: enum {
+	SHIFT     = 0x1,
+	CTRL      = 0x2,
+	ALT       = 0x4,
+	SUPER     = 0x8,
+	CAPS_LOCK = 0x10,
+	NUM_LOCK  = 0x20,
+}
+ModifierKeys :: bit_set[ModifierKey]
+
 InputState :: enum {
 	NOT_PRESSED,
 	JUST_PRESSED,

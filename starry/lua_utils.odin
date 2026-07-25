@@ -64,12 +64,27 @@ lua_st_quat_to_euler :: proc "c" (L: ^lua.State) -> c.int
 lua_st_glorious_red_square :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
+
+	lua.L_checktype(L, 1, i32(lua.TTABLE))
+
+	lua.getfield(L, 1, "x")
+	red := lua.L_optnumber(L, -1, def = 0.0)
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "y")
+	green := lua.L_optnumber(L, -1, def = 0.0)
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "z")
+	blue := lua.L_optnumber(L, -1, def = 0.0)
+	lua.pop(L, 1)
+
 	dev := gpu_device()
 	gpu.begin_render_pass(
 		dev,
 		framebuffer = gpu.default_framebuffer(dev),
 		color_load_op = .CLEAR,
-		clear_color = {1, 0, 0, 1},
+		clear_color = cast([4]f32)[4]f64{red, green, blue, 1},
 	)
 	gpu.end_render_pass(dev)
 	return 0
