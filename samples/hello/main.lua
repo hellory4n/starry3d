@@ -5,6 +5,11 @@ end
 --- @param dt number
 function app_update(dt)
 	__st.glorious_red_square()
+
+	if app.key_just_pressed("a") then
+		print(":)")
+	end
+	print(app.mouse_pos())
 end
 
 --- @param width integer

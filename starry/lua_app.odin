@@ -5,7 +5,7 @@ import "core:c"
 import lua "../thirdparty/luajit"
 
 @(private = "file")
-lua_app_now_in_seconds :: proc "c" (L: ^lua.State) -> c.int
+lua_app_now_secs :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
 	res1 := now_secs()
@@ -50,6 +50,131 @@ lua_app_dir :: proc "c" (L: ^lua.State) -> c.int
 }
 
 @(private = "file")
+lua_app_mouse_pos :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	res1 := mouse_pos()
+	lua.newtable(L)
+	lua.getglobal(L, "Vec2")
+	lua.setmetatable(L, -2)
+	lua.pushnumber(L, lua.Number(res1[0]))
+	lua.setfield(L, -2, "x")
+	lua.pushnumber(L, lua.Number(res1[1]))
+	lua.setfield(L, -2, "y")
+	return 1
+}
+
+@(private = "file")
+lua_app_delta_mouse_pos :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	res1 := delta_mouse_pos()
+	lua.newtable(L)
+	lua.getglobal(L, "Vec2")
+	lua.setmetatable(L, -2)
+	lua.pushnumber(L, lua.Number(res1[0]))
+	lua.setfield(L, -2, "x")
+	lua.pushnumber(L, lua.Number(res1[1]))
+	lua.setfield(L, -2, "y")
+	return 1
+}
+
+@(private = "file")
+lua_app_key_just_pressed :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	arg1 := key_from_string(string(lua.L_checkstring(L, 1)))
+	res1 := key_just_pressed(arg1, )
+	lua.pushboolean(L, b32(res1))
+	return 1
+}
+
+@(private = "file")
+lua_app_key_held :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	arg1 := key_from_string(string(lua.L_checkstring(L, 1)))
+	res1 := key_held(arg1, )
+	lua.pushboolean(L, b32(res1))
+	return 1
+}
+
+@(private = "file")
+lua_app_key_just_released :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	arg1 := key_from_string(string(lua.L_checkstring(L, 1)))
+	res1 := key_just_released(arg1, )
+	lua.pushboolean(L, b32(res1))
+	return 1
+}
+
+@(private = "file")
+lua_app_key_not_pressed :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	arg1 := key_from_string(string(lua.L_checkstring(L, 1)))
+	res1 := key_not_pressed(arg1, )
+	lua.pushboolean(L, b32(res1))
+	return 1
+}
+
+@(private = "file")
+lua_app_mouse_just_pressed :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	arg1 := mouse_button_from_string(string(lua.L_checkstring(L, 1)))
+	res1 := mouse_just_pressed(arg1, )
+	lua.pushboolean(L, b32(res1))
+	return 1
+}
+
+@(private = "file")
+lua_app_mouse_held :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	arg1 := mouse_button_from_string(string(lua.L_checkstring(L, 1)))
+	res1 := mouse_held(arg1, )
+	lua.pushboolean(L, b32(res1))
+	return 1
+}
+
+@(private = "file")
+lua_app_mouse_just_released :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	arg1 := mouse_button_from_string(string(lua.L_checkstring(L, 1)))
+	res1 := mouse_just_released(arg1, )
+	lua.pushboolean(L, b32(res1))
+	return 1
+}
+
+@(private = "file")
+lua_app_mouse_not_pressed :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	arg1 := mouse_button_from_string(string(lua.L_checkstring(L, 1)))
+	res1 := mouse_not_pressed(arg1, )
+	lua.pushboolean(L, b32(res1))
+	return 1
+}
+
+@(private = "file")
+lua_app_frame_size :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	res1 := frame_sizef()
+	lua.newtable(L)
+	lua.getglobal(L, "Vec2")
+	lua.setmetatable(L, -2)
+	lua.pushnumber(L, lua.Number(res1[0]))
+	lua.setfield(L, -2, "x")
+	lua.pushnumber(L, lua.Number(res1[1]))
+	lua.setfield(L, -2, "y")
+	return 1
+}
+
+@(private = "file")
 lua_app_aspect_ratio :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -59,7 +184,7 @@ lua_app_aspect_ratio :: proc "c" (L: ^lua.State) -> c.int
 }
 
 @(private = "file")
-lua_app_is_high_dpi :: proc "c" (L: ^lua.State) -> c.int
+lua_app_high_dpi :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
 	res1 := high_dpi()
@@ -124,13 +249,24 @@ lua_app_set_title :: proc "c" (L: ^lua.State) -> c.int
 lua_open_app :: proc "c" (L: ^lua.State)
 {
 	mod := []lua.L_Reg{
-		{name = "now_in_seconds", func = lua_app_now_in_seconds},
+		{name = "now_secs", func = lua_app_now_secs},
 		{name = "delta_time", func = lua_app_delta_time},
 		{name = "is_closing", func = lua_app_is_closing},
 		{name = "is_headless", func = lua_app_is_headless},
 		{name = "dir", func = lua_app_dir},
+		{name = "mouse_pos", func = lua_app_mouse_pos},
+		{name = "delta_mouse_pos", func = lua_app_delta_mouse_pos},
+		{name = "key_just_pressed", func = lua_app_key_just_pressed},
+		{name = "key_held", func = lua_app_key_held},
+		{name = "key_just_released", func = lua_app_key_just_released},
+		{name = "key_not_pressed", func = lua_app_key_not_pressed},
+		{name = "mouse_just_pressed", func = lua_app_mouse_just_pressed},
+		{name = "mouse_held", func = lua_app_mouse_held},
+		{name = "mouse_just_released", func = lua_app_mouse_just_released},
+		{name = "mouse_not_pressed", func = lua_app_mouse_not_pressed},
+		{name = "frame_size", func = lua_app_frame_size},
 		{name = "aspect_ratio", func = lua_app_aspect_ratio},
-		{name = "is_high_dpi", func = lua_app_is_high_dpi},
+		{name = "high_dpi", func = lua_app_high_dpi},
 		{name = "scale_factor", func = lua_app_scale_factor},
 		{name = "lock_mouse", func = lua_app_lock_mouse},
 		{name = "is_mouse_locked", func = lua_app_is_mouse_locked},

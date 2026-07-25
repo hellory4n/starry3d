@@ -17,20 +17,28 @@ bindgen :: proc()
 }
 
 Module_Bindgen_State :: struct {
-	odinf:      ^os.File,
-	func_names: [dynamic]string,
-	name:       string,
+	odinf:                ^os.File,
+	name:                 string,
+	func_names:           [dynamic]string,
+	string_to_enum_funcs: map[string]string,
 }
 
 bindgen_module_app :: proc() -> (err: os.Error)
 {
+	// setup module
 	mod := Module_Bindgen_State{}
+	mod.name = "app"
 	mod.odinf = os.open("starry/lua_app.odin", {.Write, .Create}) or_return
 	mod.func_names = make([dynamic]string)
-	mod.name = "app"
+	mod.string_to_enum_funcs = make(map[string]string)
 
 	defer os.close(mod.odinf)
 	defer delete(mod.func_names)
+	defer delete(mod.string_to_enum_funcs)
+
+	// config
+	bindgen_add_string_to_enum_func(&mod, "Key", key_from_string)
+	bindgen_add_string_to_enum_func(&mod, "MouseButton", mouse_button_from_string)
 
 	bindgen_module_start(&mod) or_return
 	bindgen_write_function(&mod, now_secs) or_return
@@ -38,18 +46,17 @@ bindgen_module_app :: proc() -> (err: os.Error)
 	bindgen_write_function(&mod, is_closing) or_return
 	bindgen_write_function(&mod, is_headless) or_return
 	bindgen_write_function(&mod, app_dir, lua_name = "dir") or_return
-	// bindgen_write_function(&mod, mouse_position) or_return
-	// bindgen_write_function(&mod, delta_mouse_position) or_return
-	// bindgen_write_function(&mod, is_key_just_pressed) or_return
-	// bindgen_write_function(&mod, is_key_held) or_return
-	// bindgen_write_function(&mod, is_key_just_released) or_return
-	// bindgen_write_function(&mod, is_key_not_pressed) or_return
-	// bindgen_write_function(&mod, is_mouse_button_just_pressed) or_return
-	// bindgen_write_function(&mod, is_mouse_button_held) or_return
-	// bindgen_write_function(&mod, is_mouse_button_just_released) or_return
-	// bindgen_write_function(&mod, is_mouse_button_just_released) or_return
-	// bindgen_write_function(&mod, is_mouse_button_not_pressed) or_return
-	// bindgen_write_function(&mod, framebuffer_sizef, name = "framebuffer_size") or_return
+	bindgen_write_function(&mod, mouse_pos) or_return
+	bindgen_write_function(&mod, delta_mouse_pos) or_return
+	bindgen_write_function(&mod, key_just_pressed) or_return
+	bindgen_write_function(&mod, key_held) or_return
+	bindgen_write_function(&mod, key_just_released) or_return
+	bindgen_write_function(&mod, key_not_pressed) or_return
+	bindgen_write_function(&mod, mouse_just_pressed) or_return
+	bindgen_write_function(&mod, mouse_held) or_return
+	bindgen_write_function(&mod, mouse_just_released) or_return
+	bindgen_write_function(&mod, mouse_not_pressed) or_return
+	bindgen_write_function(&mod, frame_sizef, lua_name = "frame_size") or_return
 	bindgen_write_function(&mod, aspect_ratio) or_return
 	bindgen_write_function(&mod, high_dpi) or_return
 	bindgen_write_function(&mod, scale_factor) or_return
@@ -95,6 +102,17 @@ bindgen_module_end :: proc(mod: ^Module_Bindgen_State) -> (err: os.Error)
 	fmt.fprintfln(mod.odinf, "}}")
 
 	return nil
+}
+
+// this function only exists for #caller_expression
+bindgen_add_string_to_enum_func :: proc(
+	mod: ^Module_Bindgen_State,
+	type_name: string,
+	p: proc(s: string) -> $T,
+	call_name: string = #caller_expression(p),
+)
+{
+	mod.string_to_enum_funcs[type_name] = call_name
 }
 
 bindgen_wrapper_name :: proc(src: string, mod: string) -> string
@@ -153,51 +171,63 @@ bindgen_write_params :: proc(mod: ^Module_Bindgen_State, proc_ti: runtime.Type_I
 		param_name := params.names[i]
 		param_type := params.types[i]
 
-		#partial switch v in param_type.variant {
-		case runtime.Type_Info_Integer:
-			fmt.fprintfln(
-				mod.odinf,
-				"\targ%d := lua.L_checkinteger(L, %d)",
-				i + 1,
-				i + 1,
-			)
+		bindgen_write_function_arg(mod, param_type, i + 1)
+	}
+}
 
-		case runtime.Type_Info_Float:
-			fmt.fprintfln(
-				mod.odinf,
-				"\targ%d := lua.L_checknumber(L, %d)",
-				i + 1,
-				i + 1,
-			)
+bindgen_write_function_arg :: proc(
+	mod: ^Module_Bindgen_State,
+	param_type: ^runtime.Type_Info,
+	i: int,
+)
+{
+	#partial switch v in param_type.variant {
+	case runtime.Type_Info_Integer:
+		fmt.fprintfln(mod.odinf, "\targ%d := lua.L_checkinteger(L, %d)", i, i)
 
-		case runtime.Type_Info_String:
-			fmt.fprintfln(mod.odinf, "\targ%d_len: c.size_t", i + 1)
-			fmt.fprintfln(
-				mod.odinf,
-				"\targ%d_cstr := lua.L_checkstring(L, %d, &arg%d_len)",
-				i + 1,
-				i + 1,
-				i + 1,
-			)
-			fmt.fprintfln(
-				mod.odinf,
-				"\targ%d := string((cast([^]byte)arg%d_cstr)[:arg%d_len])",
-				i + 1,
-				i + 1,
-				i + 1,
-			)
+	case runtime.Type_Info_Float:
+		fmt.fprintfln(mod.odinf, "\targ%d := lua.L_checknumber(L, %d)", i, i)
 
-		case runtime.Type_Info_Boolean:
+	case runtime.Type_Info_String:
+		fmt.fprintfln(mod.odinf, "\targ%d_len: c.size_t", i)
+		fmt.fprintfln(
+			mod.odinf,
+			"\targ%d_cstr := lua.L_checkstring(L, %d, &arg%d_len)",
+			i,
+			i,
+			i,
+		)
+		fmt.fprintfln(
+			mod.odinf,
+			"\targ%d := string((cast([^]byte)arg%d_cstr)[:arg%d_len])",
+			i,
+			i,
+			i,
+		)
+
+	case runtime.Type_Info_Boolean:
+		fmt.fprintfln(mod.odinf, "\targ%d := bool(lua.L_checkinteger(L, %d))", i, i)
+
+	// why
+	case runtime.Type_Info_Named:
+		#partial switch vv in v.base.variant {
+		case runtime.Type_Info_Enum:
+			converter_proc, ok := mod.string_to_enum_funcs[v.name]
+			if !ok {
+				fmt.panicf("no string -> enum converter for %s", param_type)
+			}
+
 			fmt.fprintfln(
 				mod.odinf,
-				"\targ%d := bool(lua.L_checkinteger(L, %d))",
-				i + 1,
-				i + 1,
+				"\targ%d := %s(string(lua.L_checkstring(L, %d)))",
+				i,
+				converter_proc,
+				i,
 			)
-
-		case:
-			unimplemented()
 		}
+
+	case:
+		unimplemented(fmt.tprintf("%#v", v))
 	}
 }
 
@@ -261,8 +291,89 @@ bindgen_write_returns :: proc(mod: ^Module_Bindgen_State, proc_ti: runtime.Type_
 		case runtime.Type_Info_Boolean:
 			fmt.fprintfln(mod.odinf, "\tlua.pushboolean(L, b32(res%d))", i + 1)
 
+		case runtime.Type_Info_Array:
+			fmt.fprintfln(mod.odinf, "\tlua.newtable(L)")
+
+			switch v.count {
+			case 2:
+				fmt.fprintfln(mod.odinf, "\tlua.getglobal(L, \"Vec2\")")
+				fmt.fprintfln(mod.odinf, "\tlua.setmetatable(L, -2)")
+
+				fmt.fprintfln(
+					mod.odinf,
+					"\tlua.pushnumber(L, lua.Number(res%d[0]))",
+					i + 1,
+				)
+				fmt.fprintfln(mod.odinf, "\tlua.setfield(L, -2, \"x\")")
+				fmt.fprintfln(
+					mod.odinf,
+					"\tlua.pushnumber(L, lua.Number(res%d[1]))",
+					i + 1,
+				)
+				fmt.fprintfln(mod.odinf, "\tlua.setfield(L, -2, \"y\")")
+
+			case 3:
+				fmt.fprintfln(mod.odinf, "\tlua.getglobal(L, \"Vec3\")")
+				fmt.fprintfln(mod.odinf, "\tlua.setmetatable(L, -2)")
+
+				fmt.fprintfln(
+					mod.odinf,
+					"\tlua.pushnumber(L, lua.Number(res%d[0]))",
+					i + 1,
+				)
+				fmt.fprintfln(mod.odinf, "\tlua.setfield(L, -2, \"x\")")
+
+				fmt.fprintfln(
+					mod.odinf,
+					"\tlua.pushnumber(L, lua.Number(res%d[1]))",
+					i + 1,
+				)
+				fmt.fprintfln(mod.odinf, "\tlua.setfield(L, -2, \"y\")")
+
+				fmt.fprintfln(
+					mod.odinf,
+					"\tlua.pushnumber(L, lua.Number(res%d[2]))",
+					i + 1,
+				)
+				fmt.fprintfln(mod.odinf, "\tlua.setfield(L, -2, \"z\")")
+
+			case 4:
+				fmt.fprintfln(mod.odinf, "\tlua.getglobal(L, \"Vec4\")")
+				fmt.fprintfln(mod.odinf, "\tlua.setmetatable(L, -2)")
+
+				fmt.fprintfln(
+					mod.odinf,
+					"\tlua.pushnumber(L, lua.Number(res%d[0]))",
+					i + 1,
+				)
+				fmt.fprintfln(mod.odinf, "\tlua.setfield(L, -2, \"x\")")
+
+				fmt.fprintfln(
+					mod.odinf,
+					"\tlua.pushnumber(L, lua.Number(res%d[1]))",
+					i + 1,
+				)
+				fmt.fprintfln(mod.odinf, "\tlua.setfield(L, -2, \"y\")")
+
+				fmt.fprintfln(
+					mod.odinf,
+					"\tlua.pushnumber(L, lua.Number(res%d[2]))",
+					i + 1,
+				)
+				fmt.fprintfln(mod.odinf, "\tlua.setfield(L, -2, \"z\")")
+
+				fmt.fprintfln(
+					mod.odinf,
+					"\tlua.pushnumber(L, lua.Number(res%d[3]))",
+					i + 1,
+				)
+				fmt.fprintfln(mod.odinf, "\tlua.setfield(L, -2, \"w\")")
+			case:
+				unimplemented()
+			}
+
 		case:
-			unimplemented()
+			unimplemented(fmt.tprintf("%#v", v))
 		}
 	}
 
