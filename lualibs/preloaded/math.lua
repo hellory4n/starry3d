@@ -426,18 +426,31 @@ function Quat.__mul(a, b)
 	)
 end
 
---- @param a Quat
---- @param b Quat
+--- @param a Quat | number
+--- @param b Quat | number
 --- @return Quat
 function Quat.__add(a, b)
-	return vec4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w)
+	local left = type(a) == "number" and quat(a) or a
+	local right = type(b) == "number" and quat(b) or b
+	return quat(left.x + right.x, left.y + right.y, left.z + right.z, left.w + right.w)
 end
 
---- @param a Quat
---- @param b Quat
+--- @param a Quat | number
+--- @param b Quat | number
 --- @return Quat
 function Quat.__sub(a, b)
-	return quat(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w)
+	local left = type(a) == "number" and vec4(a) or a
+	local right = type(b) == "number" and vec4(b) or b
+	return quat(left.x - right.x, left.y - right.y, left.z - right.z, left.w - right.w)
+end
+
+--- @param a Quat | number
+--- @param b Quat | number
+--- @return Quat
+function Quat.__div(a, b)
+	local left = type(a) == "number" and vec4(a) or a
+	local right = type(b) == "number" and vec4(b) or b
+	return quat(left.x / right.x, left.y / right.y, left.z / right.z, left.w / right.w)
 end
 
 --- @param a Quat
@@ -494,43 +507,6 @@ math = {
 	min = oldmath.min,
 	max = oldmath.max,
 }
-
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param func function
---- @param arg1 T
---- @param arg2 T
-local function oldmath_call2(func, arg1, arg2)
-	if type(arg1) == "number" then
-		return func(arg1, arg2)
-	end
-
-	local ret = {}
-	setmetatable(ret, getmetatable(arg1))
-
-	for key, _ in pairs(arg1) do
-		ret[key] = func(arg1[key], arg2[key])
-	end
-	return ret
-end
-
---- @generic T number | Vec2 | Vec3 | Vec4
---- @param func function
---- @param arg1 T
---- @param arg2 T
---- @param arg3 T
-local function oldmath_call3(func, arg1, arg2, arg3)
-	if type(arg1) == "number" then
-		return func(arg1, arg2, arg3)
-	end
-
-	local ret = {}
-	setmetatable(ret, getmetatable(arg1))
-
-	for key, _ in pairs(arg1) do
-		ret[key] = func(arg1[key], arg2[key], arg3[key])
-	end
-	return ret
-end
 
 --- Returns the absolute value of `x`.
 --- @generic T number | Vec2 | Vec3 | Vec4
@@ -931,8 +907,16 @@ end
 --- @generic T Vec3 | Vec4
 --- @param src T
 --- @return T
-function math.normalize_8bit_color(src)
+function math.normalize_color_from_rgb8(src)
 	return src / 255.0
+end
+
+--- Converts a color from the 0.0-1.0 range to the 0-255 range
+--- @generic T Vec3 | Vec4
+--- @param src T
+--- @return T
+function math.rgb8_from_normalized_color(src)
+	return math.round(src * 255.0)
 end
 
 --- Creates a quaternion from axis + angle (angle in radians)
@@ -967,24 +951,24 @@ function math.vec3_to_quat(vec)
 end
 
 --- Converts a quaternion to Euler angle (radians)
---- @param quat Quat
+--- @param q Quat
 --- @return Vec3 X = pitch, Y = yaw, Z = roll
-function math.quat_to_euler(quat)
-	local x, y, z = __st.quat_to_euler(quat.x, quat.y, quat.z, quat.w)
+function math.quat_to_euler(q)
+	local x, y, z = __st.quat_to_euler(q.x, q.y, q.z, q.w)
 	return vec3(x, y, z)
 end
 
---- @param quat Quat
+--- @param q Quat
 --- @return Quat
-function math.conjugate(quat)
-	return quat(-quat.x, -quat.y, -quat.z, quat.w)
+function math.conjugate(q)
+	return quat(-q.x, -q.y, -q.z, q.w)
 end
 
---- @param quat Quat
+--- @param q Quat
 --- @return Quat
-function math.inverse(quat)
-	local conj = math.conjugate(quat)
-	local lensq = math.length_squared(quat)
+function math.inverse(q)
+	local conj = math.conjugate(q)
+	local lensq = math.length_squared(q)
 	if lensq == 0 then return quat() end
 	return quat(conj.x / lensq, conj.y / lensq, conj.z / lensq, conj.w / lensq)
 end
