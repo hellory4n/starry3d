@@ -4,7 +4,7 @@ end
 
 --- @param dt number
 function app_update(dt)
-	__st.glorious_red_square(vec3(0, 0, 0))
+	__st.glorious_red_square(vec3(1, 0, 0))
 
 	if app.key_just_pressed("a") then
 		print(":)")

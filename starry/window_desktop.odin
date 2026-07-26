@@ -136,11 +136,11 @@ poll_window_events :: proc(window: ^Window)
 			window.key_state[key] != .NOT_PRESSED &&
 			window.key_state[key] != .JUST_RELEASED
 
-		if (!was_down && is_down) {
+		if !was_down && is_down {
 			window.key_state[key] = .JUST_PRESSED
-		} else if (was_down && is_down) {
+		} else if was_down && is_down {
 			window.key_state[key] = .HELD
-		} else if (was_down && !is_down) {
+		} else if was_down && !is_down {
 			window.key_state[key] = .JUST_RELEASED
 		} else {
 			window.key_state[key] = .NOT_PRESSED
@@ -153,11 +153,11 @@ poll_window_events :: proc(window: ^Window)
 			window.mouse_state[btn] != .NOT_PRESSED &&
 			window.mouse_state[btn] != .JUST_RELEASED
 
-		if (!was_down && is_down) {
+		if !was_down && is_down {
 			window.mouse_state[btn] = .JUST_PRESSED
-		} else if (was_down && is_down) {
+		} else if was_down && is_down {
 			window.mouse_state[btn] = .HELD
-		} else if (was_down && !is_down) {
+		} else if was_down && !is_down {
 			window.mouse_state[btn] = .JUST_RELEASED
 		} else {
 			window.mouse_state[btn] = .NOT_PRESSED

@@ -205,7 +205,7 @@ update_lua_app :: proc()
 {
 	L := global.lua
 
-	if key_just_pressed(.R) && mod_keys_pressed({.ALT}) {
+	if (key_held(.LEFT_ALT) || key_held(.RIGHT_ALT)) && key_just_pressed(.R) {
 		lua_run(L, global.config.main)
 		fmt.printfln("reloaded lua scripts")
 	}
