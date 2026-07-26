@@ -31,7 +31,7 @@ load_app_config :: proc()
 {
 	init_alloc := vmem.arena_allocator(&global.init_arena)
 
-	config_bytes, ferr := read_from_exe_dir("app.json", init_alloc)
+	config_bytes, ferr := read_from_app_dir("app.json", init_alloc)
 	if ferr != nil {
 		// TODO move this out into a custom panic() or whatever
 

@@ -1,6 +1,5 @@
 package starry
 
-import lua "../thirdparty/luajit"
 import "core:flags"
 import "core:fmt"
 import vmem "core:mem/virtual"
@@ -18,7 +17,8 @@ Args :: struct {
 main :: proc()
 {
 	// starry is importable as an Odin library
-	// this is only meant for the studio though
+	// but why would you do that
+	// TODO don't
 	run(init_proc = init_app, free_proc = nil, update_proc = update_lua_app)
 }
 
@@ -79,13 +79,17 @@ run :: proc(init_proc: proc(), free_proc: proc(), update_proc: proc())
 	fmt.printfln("starry %s", VERSION_STR)
 	fmt.printfln("app directory: %s", app_dir())
 
+	init_string_ids()
 	load_app_config()
 	init_app_window()
 	init_lua()
+	init_asset_system()
 	if init_proc != nil do init_proc()
 
+	defer free_string_ids()
 	defer free_app_window()
 	defer free_lua()
+	defer init_asset_system()
 	defer if free_proc != nil do free_proc()
 
 	for global.running {
