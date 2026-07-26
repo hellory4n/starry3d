@@ -83,13 +83,11 @@ run :: proc(init_proc: proc(), free_proc: proc(), update_proc: proc())
 	load_app_config()
 	init_app_window()
 	init_lua()
-	init_asset_system()
 	if init_proc != nil do init_proc()
 
 	defer free_string_ids()
 	defer free_app_window()
 	defer free_lua()
-	defer init_asset_system()
 	defer if free_proc != nil do free_proc()
 
 	for global.running {

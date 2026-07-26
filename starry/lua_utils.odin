@@ -1,4 +1,4 @@
-// export a bunch of useful functions from Odin core to lua
+// export a bunch of useful functions to lua
 package starry
 
 import lua "../thirdparty/luajit"
@@ -59,6 +59,20 @@ lua_st_quat_to_euler :: proc "c" (L: ^lua.State) -> c.int
 	return 3
 }
 
+@(private = "file")
+lua_app_read_from_app_dir :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	path := string(lua.L_checkstring(L, 1))
+
+	data, err := read_from_app_dir(path, context.allocator)
+	defer delete(data)
+
+	lua.pushlstring(L, cast(cstring)raw_data(data), c.size_t(len(data)))
+	lua.pushboolean(L, b32(err == nil)) // ok
+	return 2
+}
+
 // placeholder until there's a renderer
 @(private = "file")
 lua_st_glorious_red_square :: proc "c" (L: ^lua.State) -> c.int
@@ -101,4 +115,8 @@ lua_open_utils :: proc "c" (L: ^lua.State)
 	lua.setfield(L, -2, "quat_to_euler")
 	lua.pushcfunction(L, lua_st_glorious_red_square)
 	lua.setfield(L, -2, "glorious_red_square")
+
+	lua.getglobal(L, "app")
+	lua.pushcfunction(L, lua_app_read_from_app_dir)
+	lua.setfield(L, -2, "read_from_app_dir")
 }

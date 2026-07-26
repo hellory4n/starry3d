@@ -281,7 +281,7 @@ window_lock_mouse :: proc(window: ^Window, lock: bool)
 	)
 }
 
-window_is_mouse_locked :: proc(window: ^Window) -> bool
+window_mouse_locked :: proc(window: ^Window) -> bool
 {
 	return glfw.GetInputMode(window.glfw, glfw.CURSOR) == glfw.CURSOR_DISABLED
 }
@@ -416,10 +416,10 @@ lock_mouse :: proc(lock: bool)
 	window_lock_mouse(main_window(), lock)
 }
 
-// lua: `app.is_mouse_locked`
-is_mouse_locked :: proc() -> bool
+// lua: `app.mouse_locked`
+mouse_locked :: proc() -> bool
 {
-	return window_is_mouse_locked(main_window())
+	return window_mouse_locked(main_window())
 }
 
 // asks nicely for the window to close (you can handle it and not actually quit)

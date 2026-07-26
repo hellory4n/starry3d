@@ -43,8 +43,6 @@ bindgen_module_app :: proc() -> (err: os.Error)
 	bindgen_module_start(&mod) or_return
 	bindgen_write_function(&mod, now_secs) or_return
 	bindgen_write_function(&mod, delta_time) or_return
-	bindgen_write_function(&mod, is_closing) or_return
-	bindgen_write_function(&mod, is_headless) or_return
 	bindgen_write_function(&mod, app_dir, lua_name = "dir") or_return
 	bindgen_write_function(&mod, mouse_pos) or_return
 	bindgen_write_function(&mod, delta_mouse_pos) or_return
@@ -61,9 +59,8 @@ bindgen_module_app :: proc() -> (err: os.Error)
 	bindgen_write_function(&mod, high_dpi) or_return
 	bindgen_write_function(&mod, scale_factor) or_return
 	bindgen_write_function(&mod, lock_mouse) or_return
-	bindgen_write_function(&mod, is_mouse_locked) or_return
+	bindgen_write_function(&mod, mouse_locked) or_return
 	bindgen_write_function(&mod, request_quit) or_return
-	bindgen_write_function(&mod, cancel_quit) or_return
 	bindgen_write_function(&mod, set_title) or_return
 	bindgen_module_end(&mod) or_return
 

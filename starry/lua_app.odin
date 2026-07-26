@@ -23,24 +23,6 @@ lua_app_delta_time :: proc "c" (L: ^lua.State) -> c.int
 }
 
 @(private = "file")
-lua_app_is_closing :: proc "c" (L: ^lua.State) -> c.int
-{
-	context = global.ctx
-	res1 := is_closing()
-	lua.pushboolean(L, b32(res1))
-	return 1
-}
-
-@(private = "file")
-lua_app_is_headless :: proc "c" (L: ^lua.State) -> c.int
-{
-	context = global.ctx
-	res1 := is_headless()
-	lua.pushboolean(L, b32(res1))
-	return 1
-}
-
-@(private = "file")
 lua_app_dir :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -211,10 +193,10 @@ lua_app_lock_mouse :: proc "c" (L: ^lua.State) -> c.int
 }
 
 @(private = "file")
-lua_app_is_mouse_locked :: proc "c" (L: ^lua.State) -> c.int
+lua_app_mouse_locked :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
-	res1 := is_mouse_locked()
+	res1 := mouse_locked()
 	lua.pushboolean(L, b32(res1))
 	return 1
 }
@@ -224,14 +206,6 @@ lua_app_request_quit :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
 	request_quit()
-	return 0
-}
-
-@(private = "file")
-lua_app_cancel_quit :: proc "c" (L: ^lua.State) -> c.int
-{
-	context = global.ctx
-	cancel_quit()
 	return 0
 }
 
@@ -251,8 +225,6 @@ lua_open_app :: proc "c" (L: ^lua.State)
 	mod := []lua.L_Reg{
 		{name = "now_secs", func = lua_app_now_secs},
 		{name = "delta_time", func = lua_app_delta_time},
-		{name = "is_closing", func = lua_app_is_closing},
-		{name = "is_headless", func = lua_app_is_headless},
 		{name = "dir", func = lua_app_dir},
 		{name = "mouse_pos", func = lua_app_mouse_pos},
 		{name = "delta_mouse_pos", func = lua_app_delta_mouse_pos},
@@ -269,9 +241,8 @@ lua_open_app :: proc "c" (L: ^lua.State)
 		{name = "high_dpi", func = lua_app_high_dpi},
 		{name = "scale_factor", func = lua_app_scale_factor},
 		{name = "lock_mouse", func = lua_app_lock_mouse},
-		{name = "is_mouse_locked", func = lua_app_is_mouse_locked},
+		{name = "mouse_locked", func = lua_app_mouse_locked},
 		{name = "request_quit", func = lua_app_request_quit},
-		{name = "cancel_quit", func = lua_app_cancel_quit},
 		{name = "set_title", func = lua_app_set_title},
 		{name = nil, func = nil},
 	}

@@ -29,19 +29,11 @@ init_lua :: proc()
 		lua_open_app(L)
 	}
 
-	lua_run_bytes(
-		L,
-		#load("../lualibs/preloaded/boot.lua"),
-		"(preloaded) lualibs/preloaded/boot.lua",
-	)
+	lua_run_bytes(L, #load("../lualibs/boot.lua"), "(preloaded) lualibs/boot.lua")
 	lua_open_utils(L)
 
 	lua_run_bytes(L, #load("../lualibs/table.lua"), "(preloaded) lualibs/preloaded/boot.lua")
-	lua_run_bytes(
-		L,
-		#load("../lualibs/preloaded/math.lua"),
-		"(preloaded) lualibs/preloaded/math.lua",
-	)
+	lua_run_bytes(L, #load("../lualibs/math.lua"), "(preloaded) lualibs/math.lua")
 }
 
 free_lua :: proc()

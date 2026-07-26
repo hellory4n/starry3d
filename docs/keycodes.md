@@ -1,0 +1,123 @@
+# Keycodes
+
+This is a list of all keycodes accepted by Starry.
+
+- `"space`", `" "`
+- `"apostrophe`", `"'"`
+- `"comma"`, `","`
+- `"minus"`, `"-"`
+- `"period"`, `"."`
+- `"slash"`, `"/"`
+- `"num0"`, `"0"`
+- `"num1"`, `"1"`
+- `"num2"`, `"2"`
+- `"num3"`, `"3"`
+- `"num4"`, `"4"`
+- `"num5"`, `"5"`
+- `"num6"`, `"6"`
+- `"num7"`, `"7"`
+- `"num8"`, `"8"`
+- `"num9"`, `"9"`
+- `"semicolon"`, `";"`
+- `"equal"`, `"="`
+- `"a"`, `"A"`
+- `"b"`, `"B"`
+- `"c"`, `"C"`
+- `"d"`, `"D"`
+- `"e"`, `"E"`
+- `"f"`, `"F"`
+- `"g"`, `"G"`
+- `"h"`, `"H"`
+- `"i"`, `"I"`
+- `"j"`, `"J"`
+- `"k"`, `"K"`
+- `"m"`, `"M"`
+- `"n"`, `"N"`
+- `"o"`, `"O"`
+- `"p"`, `"P"`
+- `"q"`, `"Q"`
+- `"r"`, `"R"`
+- `"s"`, `"S"`
+- `"t"`, `"T"`
+- `"u"`, `"U"`
+- `"v"`, `"V"`
+- `"w"`, `"W"`
+- `"x"`, `"X"`
+- `"y"`, `"Y"`
+- `"z"`, `"Z"`
+- `"left_bracket"`, `"["`
+- `"backslash"`, `"\"`
+- `"right_bracket"`, `"]"`
+- `"grave"`, `"grave_accent"`, ``"`"``
+- `"international1"` (non-US keyboard layouts)
+- `"international2"` (non-US keyboard layouts)
+- `"escape"`, `"esc"`
+- `"enter"`, `"return"`
+- `"tab"`
+- `"backspace"`
+- `"insert"`, `"ins"`
+- `"delete"`, `"del"`
+- `"right"`
+- `"left"`
+- `"down"`
+- `"up"`
+- `"page_up"`
+- `"page_down"`
+- `"home"`
+- `"end"`
+- `"caps_lock"`
+- `"scroll_lock"`
+- `"num_lock"`
+- `"print"`, `"print_screen"`
+- `"pause"`, `"pause_break"`
+- `"F1"`, `"f1"`
+- `"F2"`, `"f2"`
+- `"F3"`, `"f3"`
+- `"F4"`, `"f4"`
+- `"F5"`, `"f5"`
+- `"F6"`, `"f6"`
+- `"F7"`, `"f7"`
+- `"F8"`, `"f8"`
+- `"F9"`, `"f9"`
+- `"F10"`, `"f10"`
+- `"F11"`, `"f11"`
+- `"F12"`, `"f12"`
+- `"F13"`, `"f13"`
+- `"F14"`, `"f14"`
+- `"F15"`, `"f15"`
+- `"F16"`, `"f16"`
+- `"F17"`, `"f17"`
+- `"F18"`, `"f18"`
+- `"F19"`, `"f19"`
+- `"F20"`, `"f20"`
+- `"F21"`, `"f21"`
+- `"F22"`, `"f22"`
+- `"F23"`, `"f23"`
+- `"F24"`, `"f24"`
+- `"F25"`, `"f25"`
+- `"kp0"`
+- `"kp1"`
+- `"kp2"`
+- `"kp3"`
+- `"kp4"`
+- `"kp5"`
+- `"kp6"`
+- `"kp7"`
+- `"kp8"`
+- `"kp9"`
+- `"kp_decimal"`
+- `"kp_divide"`
+- `"kp_multiply"`
+- `"kp_subtract"`
+- `"kp_add"`
+- `"kp_enter"`
+- `"kp_equal"`
+- `"left_shift"`, `"lshift"`
+- `"left_ctrl"`, `"left_control"`, `"lctrl"`, `"lcontrol"`
+- `"left_alt"`, `"lalt"`
+- `"left_super"`, `"lsuper"`
+- `"right_shift"`, `"rshift"`
+- `"right_ctrl"`, `"right_control"`, `"rctrl"`, `"rcontrol"`
+- `"right_alt"`, `"ralt"`
+- `"right_super"`, `"rsuper"`
+- `"menu"`

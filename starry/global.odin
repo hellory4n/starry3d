@@ -36,8 +36,4 @@ global: struct {
 		id_to_str:   map[StringId]string,
 		initialized: bool,
 	},
-
-	// assets
-	asset_loaders: map[StringId]AssetLoader,
-	textures:      hm.Dynamic_Handle_Map(Texture_Data, hm.Handle32),
 }
