@@ -146,87 +146,87 @@ key_from_string :: proc(s: string) -> Key
 		return .PERIOD
 	case "slash", "/":
 		return .SLASH
-	case "num0", "0":
+	case "0":
 		return .NUM_0
-	case "num1", "1":
+	case "1":
 		return .NUM_1
-	case "num2", "2":
+	case "2":
 		return .NUM_2
-	case "num3", "3":
+	case "3":
 		return .NUM_3
-	case "num4", "4":
+	case "4":
 		return .NUM_4
-	case "num5", "5":
+	case "5":
 		return .NUM_5
-	case "num6", "6":
+	case "6":
 		return .NUM_6
-	case "num7", "7":
+	case "7":
 		return .NUM_7
-	case "num8", "8":
+	case "8":
 		return .NUM_8
-	case "num9", "9":
+	case "9":
 		return .NUM_9
-	case "semicolon", ";":
+	case ";":
 		return .SEMICOLON
-	case "equal", "=":
+	case "=":
 		return .EQUAL
-	case "a", "A":
+	case "a":
 		return .A
-	case "b", "B":
+	case "b":
 		return .B
-	case "c", "C":
+	case "c":
 		return .C
-	case "d", "D":
+	case "d":
 		return .D
-	case "e", "E":
+	case "e":
 		return .E
-	case "f", "F":
+	case "f":
 		return .F
-	case "g", "G":
+	case "g":
 		return .G
-	case "h", "H":
+	case "h":
 		return .H
-	case "i", "I":
+	case "i":
 		return .I
-	case "j", "J":
+	case "j":
 		return .J
-	case "k", "K":
+	case "k":
 		return .K
-	case "m", "M":
+	case "m":
 		return .M
-	case "n", "N":
+	case "n":
 		return .N
-	case "o", "O":
+	case "o":
 		return .O
-	case "p", "P":
+	case "p":
 		return .P
-	case "q", "Q":
+	case "q":
 		return .Q
-	case "r", "R":
+	case "r":
 		return .R
-	case "s", "S":
+	case "s":
 		return .S
-	case "t", "T":
+	case "t":
 		return .T
-	case "u", "U":
+	case "u":
 		return .U
-	case "v", "V":
+	case "v":
 		return .V
-	case "w", "W":
+	case "w":
 		return .W
-	case "x", "X":
+	case "x":
 		return .X
-	case "y", "Y":
+	case "y":
 		return .Y
-	case "z", "Z":
+	case "z":
 		return .Z
-	case "left_bracket", "[":
+	case "left bracket", "lbracket", "[":
 		return .LEFT_BRACKET
 	case "backslash", "\\":
 		return .BACKSLASH
-	case "right_bracket", "]":
+	case "right bracket", "rbracket", "]":
 		return .RIGHT_BRACKET
-	case "grave", "grave_accent", "`":
+	case "grave", "grave accent", "`":
 		return .GRAVE_ACCENT
 	case "international1":
 		return .INTERNATIONAL_1
@@ -252,73 +252,73 @@ key_from_string :: proc(s: string) -> Key
 		return .DOWN
 	case "up":
 		return .UP
-	case "page_up":
+	case "page up":
 		return .PAGE_UP
-	case "page_down":
+	case "page down":
 		return .PAGE_DOWN
 	case "home":
 		return .HOME
 	case "end":
 		return .END
-	case "caps_lock":
+	case "caps lock":
 		return .CAPS_LOCK
-	case "scroll_lock":
+	case "scroll lock":
 		return .SCROLL_LOCK
-	case "num_lock":
+	case "num lock":
 		return .NUM_LOCK
-	case "print", "print_screen":
+	case "print", "print screen":
 		return .PRINT_SCREEN
-	case "pause", "pause_break":
+	case "pause", "pause break":
 		return .PAUSE
-	case "F1", "f1":
+	case "f1":
 		return .F1
-	case "F2", "f2":
+	case "f2":
 		return .F2
-	case "F3", "f3":
+	case "f3":
 		return .F3
-	case "F4", "f4":
+	case "f4":
 		return .F4
-	case "F5", "f5":
+	case "f5":
 		return .F5
-	case "F6", "f6":
+	case "f6":
 		return .F6
-	case "F7", "f7":
+	case "f7":
 		return .F7
-	case "F8", "f8":
+	case "f8":
 		return .F8
-	case "F9", "f9":
+	case "f9":
 		return .F9
-	case "F10", "f10":
+	case "f10":
 		return .F10
-	case "F11", "f11":
+	case "f11":
 		return .F11
-	case "F12", "f12":
+	case "f12":
 		return .F12
-	case "F13", "f13":
+	case "f13":
 		return .F13
-	case "F14", "f14":
+	case "f14":
 		return .F14
-	case "F15", "f15":
+	case "f15":
 		return .F15
-	case "F16", "f16":
+	case "f16":
 		return .F16
-	case "F17", "f17":
+	case "f17":
 		return .F17
-	case "F18", "f18":
+	case "f18":
 		return .F18
-	case "F19", "f19":
+	case "f19":
 		return .F19
-	case "F20", "f20":
+	case "f20":
 		return .F20
-	case "F21", "f21":
+	case "f21":
 		return .F21
-	case "F22", "f22":
+	case "f22":
 		return .F22
-	case "F23", "f23":
+	case "f23":
 		return .F23
-	case "F24", "f24":
+	case "f24":
 		return .F24
-	case "F25", "f25":
+	case "f25":
 		return .F25
 	case "kp0":
 		return .KP_0
@@ -340,35 +340,35 @@ key_from_string :: proc(s: string) -> Key
 		return .KP_8
 	case "kp9":
 		return .KP_9
-	case "kp_decimal":
+	case "kp decimal":
 		return .KP_DECIMAL
-	case "kp_divide":
+	case "kp divide":
 		return .KP_DIVIDE
-	case "kp_multiply":
+	case "kp multiply":
 		return .KP_MULTIPLY
-	case "kp_subtract":
+	case "kp subtract":
 		return .KP_SUBTRACT
-	case "kp_add":
+	case "kp add":
 		return .KP_ADD
-	case "kp_enter":
+	case "kp enter":
 		return .KP_ENTER
-	case "kp_equal":
+	case "kp equal":
 		return .KP_EQUAL
-	case "left_shift", "lshift":
+	case "left shift", "lshift":
 		return .LEFT_SHIFT
-	case "left_ctrl", "left_control", "lctrl", "lcontrol":
+	case "left ctrl", "left control", "lctrl", "lcontrol":
 		return .LEFT_CTRL
-	case "left_alt", "lalt":
+	case "left alt", "lalt":
 		return .LEFT_ALT
-	case "left_super", "lsuper":
+	case "left super", "lsuper":
 		return .LEFT_SUPER
-	case "right_shift", "rshift":
+	case "right shift", "rshift":
 		return .RIGHT_SHIFT
-	case "right_ctrl", "right_control", "rctrl", "rcontrol":
+	case "right ctrl", "right control", "rctrl", "rcontrol":
 		return .RIGHT_CTRL
-	case "right_alt", "ralt":
+	case "right alt", "ralt":
 		return .RIGHT_ALT
-	case "right_super", "rsuper":
+	case "right super", "rsuper":
 		return .RIGHT_SUPER
 	case "menu":
 		return .MENU

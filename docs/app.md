@@ -12,11 +12,11 @@ Returns the app directory. (usually this is where the executable is located)
 
 ### `app.now_secs(): number`
 
-Returns the current time since the engine started, in seconds
+Returns the time since the engine started, in seconds
 
 ### `app.delta_time(): number`
 
-Returns the time between the current frame and last frame
+Returns the time between the current frame and last frame, in seconds
 
 ### `app.mouse_pos(): vec2`
 

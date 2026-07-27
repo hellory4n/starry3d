@@ -8,47 +8,47 @@ This is a list of all keycodes accepted by Starry.
 - `"minus"`, `"-"`
 - `"period"`, `"."`
 - `"slash"`, `"/"`
-- `"num0"`, `"0"`
-- `"num1"`, `"1"`
-- `"num2"`, `"2"`
-- `"num3"`, `"3"`
-- `"num4"`, `"4"`
-- `"num5"`, `"5"`
-- `"num6"`, `"6"`
-- `"num7"`, `"7"`
-- `"num8"`, `"8"`
-- `"num9"`, `"9"`
+- `"0"`
+- `"1"`
+- `"2"`
+- `"3"`
+- `"4"`
+- `"5"`
+- `"6"`
+- `"7"`
+- `"8"`
+- `"9"`
 - `"semicolon"`, `";"`
 - `"equal"`, `"="`
-- `"a"`, `"A"`
-- `"b"`, `"B"`
-- `"c"`, `"C"`
-- `"d"`, `"D"`
-- `"e"`, `"E"`
-- `"f"`, `"F"`
-- `"g"`, `"G"`
-- `"h"`, `"H"`
-- `"i"`, `"I"`
-- `"j"`, `"J"`
-- `"k"`, `"K"`
-- `"m"`, `"M"`
-- `"n"`, `"N"`
-- `"o"`, `"O"`
-- `"p"`, `"P"`
-- `"q"`, `"Q"`
-- `"r"`, `"R"`
-- `"s"`, `"S"`
-- `"t"`, `"T"`
-- `"u"`, `"U"`
-- `"v"`, `"V"`
-- `"w"`, `"W"`
-- `"x"`, `"X"`
-- `"y"`, `"Y"`
-- `"z"`, `"Z"`
-- `"left_bracket"`, `"["`
+- `"a"`
+- `"b"`
+- `"c"`
+- `"d"`
+- `"e"`
+- `"f"`
+- `"g"`
+- `"h"`
+- `"i"`
+- `"j"`
+- `"k"`
+- `"m"`
+- `"n"`
+- `"o"`
+- `"p"`
+- `"q"`
+- `"r"`
+- `"s"`
+- `"t"`
+- `"u"`
+- `"v"`
+- `"w"`
+- `"x"`
+- `"y"`
+- `"z"`
+- `"left bracket"`, `"["`
 - `"backslash"`, `"\"`
-- `"right_bracket"`, `"]"`
-- `"grave"`, `"grave_accent"`, ``"`"``
+- `"right bracket"`, `"]"`
+- `"grave"`, `"grave accent"`, ``"`"``
 - `"international1"` (non-US keyboard layouts)
 - `"international2"` (non-US keyboard layouts)
 - `"escape"`, `"esc"`
@@ -61,40 +61,40 @@ This is a list of all keycodes accepted by Starry.
 - `"left"`
 - `"down"`
 - `"up"`
-- `"page_up"`
-- `"page_down"`
+- `"page up"`
+- `"page down"`
 - `"home"`
 - `"end"`
-- `"caps_lock"`
-- `"scroll_lock"`
-- `"num_lock"`
-- `"print"`, `"print_screen"`
-- `"pause"`, `"pause_break"`
-- `"F1"`, `"f1"`
-- `"F2"`, `"f2"`
-- `"F3"`, `"f3"`
-- `"F4"`, `"f4"`
-- `"F5"`, `"f5"`
-- `"F6"`, `"f6"`
-- `"F7"`, `"f7"`
-- `"F8"`, `"f8"`
-- `"F9"`, `"f9"`
-- `"F10"`, `"f10"`
-- `"F11"`, `"f11"`
-- `"F12"`, `"f12"`
-- `"F13"`, `"f13"`
-- `"F14"`, `"f14"`
-- `"F15"`, `"f15"`
-- `"F16"`, `"f16"`
-- `"F17"`, `"f17"`
-- `"F18"`, `"f18"`
-- `"F19"`, `"f19"`
-- `"F20"`, `"f20"`
-- `"F21"`, `"f21"`
-- `"F22"`, `"f22"`
-- `"F23"`, `"f23"`
-- `"F24"`, `"f24"`
-- `"F25"`, `"f25"`
+- `"caps lock"`
+- `"scroll lock"`
+- `"num lock"`
+- `"print"`, `"print screen"`
+- `"pause"`, `"pause break"`
+- `"f1"`
+- `"f2"`
+- `"f3"`
+- `"f4"`
+- `"f5"`
+- `"f6"`
+- `"f7"`
+- `"f8"`
+- `"f9"`
+- `"f10"`
+- `"f11"`
+- `"f12"`
+- `"f13"`
+- `"f14"`
+- `"f15"`
+- `"f16"`
+- `"f17"`
+- `"f18"`
+- `"f19"`
+- `"f20"`
+- `"f21"`
+- `"f22"`
+- `"f23"`
+- `"f24"`
+- `"f25"`
 - `"kp0"`
 - `"kp1"`
 - `"kp2"`
@@ -105,19 +105,19 @@ This is a list of all keycodes accepted by Starry.
 - `"kp7"`
 - `"kp8"`
 - `"kp9"`
-- `"kp_decimal"`
-- `"kp_divide"`
-- `"kp_multiply"`
-- `"kp_subtract"`
-- `"kp_add"`
-- `"kp_enter"`
-- `"kp_equal"`
-- `"left_shift"`, `"lshift"`
-- `"left_ctrl"`, `"left_control"`, `"lctrl"`, `"lcontrol"`
-- `"left_alt"`, `"lalt"`
-- `"left_super"`, `"lsuper"`
-- `"right_shift"`, `"rshift"`
-- `"right_ctrl"`, `"right_control"`, `"rctrl"`, `"rcontrol"`
-- `"right_alt"`, `"ralt"`
-- `"right_super"`, `"rsuper"`
+- `"kp decimal"`
+- `"kp divide"`
+- `"kp multiply"`
+- `"kp subtract"`
+- `"kp add"`
+- `"kp enter"`
+- `"kp equal"`
+- `"left shift"`, `"lshift"`
+- `"left ctrl"`, `"left control"`, `"lctrl"`, `"lcontrol"`
+- `"left alt"`, `"lalt"`
+- `"left super"`, `"lsuper"`
+- `"right shift"`, `"rshift"`
+- `"right ctrl"`, `"right control"`, `"rctrl"`, `"rcontrol"`
+- `"right alt"`, `"ralt"`
+- `"right super"`, `"rsuper"`
 - `"menu"`

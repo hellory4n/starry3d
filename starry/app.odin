@@ -213,7 +213,7 @@ update_lua_app :: proc()
 	call_lua_function(L, "app_update", lua.Number(delta_time()), can_be_nil = true)
 }
 
-// Returns the current time since the engine started, in seconds
+// Returns the time since the engine started, in seconds
 // Lua: `app.now_secs`
 now_secs :: proc() -> f64
 {
