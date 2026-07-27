@@ -354,3 +354,12 @@ Returns true if all components in the boolean vector are true.
 ### `math.any(v: bvec2 | bvec3 | bvec4): boolean`
 
 Returns true if any of the components in the boolean vector are true.
+
+## TODO
+
+- `vec[1]`, `quat[1]`
+- `!bvec`
+- `math.none(bvec)`
+- `quat * vec3 -> vec3`
+- `mat4`, maybe other matrices too
+- swizzling
