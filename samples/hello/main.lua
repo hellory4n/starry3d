@@ -1,8 +1,17 @@
 function app_init()
 	app.set_title("balls")
 	g_texture = gfx.load_texture("fish.png")
-	g_atlas = gfx.load_texture("atlas.png")
-	counter = 0
+
+	-- you can also handle any errors found
+	local ok = false
+	g_atlas, ok = gfx.load_texture("atlas.png")
+	if not ok then
+		error("uh oh")
+	end
+
+	-- g_font = gfx.load_font("OpenSans-Medium.ttf")
+
+	g_counter = 0
 end
 
 --- @param dt number
@@ -10,8 +19,8 @@ function app_update(dt)
 	gfx.clear(vec4(1, 0, 1, 1))
 
 	if app.key_just_pressed("a") then
-		counter = counter + 1
-		print("counter: " .. counter)
+		g_counter = g_counter + 1
+		print("counter: " .. g_counter)
 	end
 
 	-- amazing background
@@ -62,6 +71,14 @@ function app_update(dt)
 		origin = vec2(0.5),
 		texture = g_texture,
 	})
+
+	-- gfx.draw_text({
+	-- 	text = ":)",
+	-- 	pos = vec2(50, 50),
+	-- 	size = 16,
+	-- 	color = vec4(1),
+	-- 	font = g_font,
+	-- })
 
 	gfx.end_drawing_2d()
 end

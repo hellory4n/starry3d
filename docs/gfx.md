@@ -4,13 +4,9 @@ The graphics module contains everything graphics.
 
 ## Textures
 
-### `gfx.load_texture(path: string): gfx.Texture`
+### `gfx.load_texture(path: string): (gfx.Texture, ok: boolean)`
 
 Loads a texture from the app directory. This should be a `.png` or `.jpeg`.
-
-### `gfx.load_texture_from_memory(data: string): gfx.Texture`
-
-Loads a texture from a buffer. This should be a PNG or JPEG buffer.
 
 ### `gfx.Texture.id: integer`
 
@@ -22,9 +18,23 @@ The size of the texture, in pixels.
 
 ### `gfx.Texture.path: string`
 
-The path from which the texture was loaded, if any.
+The path from which the texture was loaded.
 
-## 2D graphics
+## Fonts
+
+### `gfx.load_font(path: string): (gfx.Font, ok: boolean)`
+
+Loads a font from the app directory.
+
+### `gfx.Font.id: integer`
+
+The internal ID used by the engine.
+
+### `gfx.Font.path: string`
+
+The path from which the font was loaded.
+
+## 2D rendering
 
 ### `gfx.clear([color: vec4])`
 
@@ -65,4 +75,31 @@ gfx.draw_rectangle({
 	texture_pos = vec2(50, 10),
 	texture_size = vec2(100, 100)
 })
-``
+```
+
+### `gfx.draw_text(args)`
+
+Draws text. Options:
+
+```lua
+gfx.draw_text({
+	-- supported scripts:
+	-- - ASCII
+	-- - latin extended
+	-- - cyrillic
+	-- - greek
+	-- other scripts will not render properly
+	text = "Hej världen!",
+
+	pos = vec2(10, 15),
+	size = 16,
+	color = vec4(1, 1, 1, 1),
+
+	font = gfx.load_texture("font.ttf"), -- don't call every frame!
+
+	-- defaults to "left"
+	halign = "left" | "center" | "right",
+	-- defaults to "baseline"
+	valign = "top" | "middle" | "bottom" | "baseline"
+})
+```

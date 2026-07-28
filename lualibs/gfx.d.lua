@@ -6,17 +6,23 @@ gfx = {}
 --- @class gfx.Texture
 --- @field id integer The internal ID used by the engine.
 --- @field size Vec2 The size of the texture, in pixels.
---- @field path string The path from which the texture was loaded, if any.
+--- @field path string The path from which the texture was loaded.
 
 --- Loads a texture from the app directory. This should be a `.png` or `.jpeg`.
 --- @param path string
---- @return gfx.Texture
+--- @return gfx.Texture texture
+--- @return boolean ok
 function gfx.load_texture(path) end
 
---- Loads a texture from a buffer. This should be a PNG or JPEG buffer.
---- @param data string
---- @return gfx.Texture
-function gfx.load_texture_from_memory(data) end
+--- @class gfx.Font
+--- @field id integer The internal ID used by the engine.
+--- @field path string The path from which the font was loaded.
+
+--- Loads a font from the app directory.
+--- @param path string
+--- @return gfx.Font font
+--- @return boolean ok
+function gfx.load_font(path) end
 
 --- Clears the screen and prepares rendering for this frame. If `color` is missing, clears the screen to black.
 --- @param color Vec4?
@@ -39,3 +45,16 @@ function gfx.end_drawing_2d() end
 --- Draws a rectangle.
 --- @param args gfx.DrawRectangleDesc
 function gfx.draw_rectangle(args) end
+
+--- @class gfx.DrawTextDesc: table
+--- @field text string
+--- @field pos Vec2
+--- @field size number
+--- @field color Vec4
+--- @field font gfx.Font
+--- @field halign "left" | "center" | "right"?
+--- @field valign "top" | "middle" | "bottom" | "baseline"?
+
+--- Draws text.
+--- @param args gfx.DrawTextDesc
+function gfx.draw_text(args) end

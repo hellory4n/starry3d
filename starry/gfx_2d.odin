@@ -23,7 +23,7 @@ init_2d_renderer :: proc()
 {
 	dev := gpu_device()
 
-	global.gfx2d.uniform_buffer = gpu.new_buffer(
+	global.gfx2d.rect_uniforms = gpu.new_buffer(
 		dev,
 		{.UNIFORM},
 		{.TRANSFER_DST},
@@ -74,7 +74,7 @@ free_2d_renderer :: proc()
 	}
 
 	gpu.free_pipeline(global.gfx2d.rect_pipeline)
-	gpu.free_buffer(global.gfx2d.uniform_buffer)
+	gpu.free_buffer(global.gfx2d.rect_uniforms)
 }
 
 // lua: `gfx.clear`
@@ -134,8 +134,36 @@ draw_rectangle :: proc(desc: DrawRectangleDesc)
 		rot          = desc.rot,
 		has_texture  = texdata.img != nil,
 	}
-	gpu.update_buffer(dev, global.gfx2d.uniform_buffer, mem.ptr_to_bytes(&uniforms))
-	gpu.bind_uniform_buffer(dev, global.gfx2d.uniform_buffer, slot = 0)
+	gpu.update_buffer(dev, global.gfx2d.rect_uniforms, mem.ptr_to_bytes(&uniforms))
+	gpu.bind_uniform_buffer(dev, global.gfx2d.rect_uniforms, slot = 0)
 
 	gpu.draw(dev, vertex_count = 6)
+}
+
+DrawTextDesc :: struct {
+	text:   string,
+	pos:    [2]f32,
+	size:   f32,
+	color:  [4]f32,
+	font:   hm.Handle32,
+	halign: enum {
+		LEFT,
+		CENTER,
+		RIGHT,
+	},
+	valign: enum {
+		TOP,
+		MIDDLE,
+		BOTTOM,
+		BASELINE,
+	},
+}
+
+// note: defaults are handled when binding to lua
+// lua: `gfx.draw_text`
+draw_text :: proc(desc: DrawTextDesc)
+{
+	// atlas has to be updated before rendering, but after all the draw_text calls
+	// but then we need command buffers now so that ordering is correct
+	unimplemented("big massive batched renderer")
 }

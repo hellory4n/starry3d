@@ -33,32 +33,6 @@ lua_gfx_load_texture :: proc "c" (L: ^lua.State) -> c.int
 }
 
 @(private = "file")
-lua_gfx_load_texture_from_memory :: proc "c" (L: ^lua.State) -> c.int
-{
-	context = global.ctx
-	buffer := lua_check_odin_string(L, 1)
-
-	handle, ok := load_texture_from_memory(transmute([]byte)buffer)
-	size: [2]f64
-	if ok {
-		data := texture_data(handle)
-		size.x = f64(data.img.width)
-		size.y = f64(data.img.height)
-	}
-
-	lua.newtable(L)
-	lua.L_setmetatable(L, "gfx_Texture")
-	lua.pushinteger(L, lua.Integer(transmute(u32)handle))
-	lua.setfield(L, -2, "id")
-	lua_push_vec2(L, size)
-	lua.setfield(L, -2, "size")
-	lua_push_odin_string(L, "[buffer]")
-	lua.setfield(L, -2, "path")
-
-	lua.pushboolean(L, b32(ok))
-	return 2
-}
-
 lua_gfx_texture_gc :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -71,6 +45,39 @@ lua_gfx_texture_gc :: proc "c" (L: ^lua.State) -> c.int
 	return 0
 }
 
+@(private = "file")
+lua_gfx_load_font :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	path := lua_check_odin_string(L, 1)
+
+	handle, ok := load_font(path)
+
+	lua.newtable(L)
+	lua.L_setmetatable(L, "gfx_Font")
+	lua.pushinteger(L, lua.Integer(transmute(u32)handle))
+	lua.setfield(L, -2, "id")
+	lua_push_odin_string(L, path)
+	lua.setfield(L, -2, "path")
+
+	lua.pushboolean(L, b32(ok))
+	return 2
+}
+
+@(private = "file")
+lua_gfx_font_gc :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	lua.L_checktype(L, 1, i32(lua.TTABLE))
+	lua.getfield(L, 1, "id")
+	handle := transmute(hm.Handle32)u32(lua.L_optinteger(L, -1, 0))
+	lua.pop(L, 1)
+
+	unload_font(handle)
+	return 0
+}
+
+@(private = "file")
 lua_gfx_clear :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -84,6 +91,7 @@ lua_gfx_clear :: proc "c" (L: ^lua.State) -> c.int
 	return 0
 }
 
+@(private = "file")
 lua_gfx_end_drawing_2d :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -91,6 +99,7 @@ lua_gfx_end_drawing_2d :: proc "c" (L: ^lua.State) -> c.int
 	return 0
 }
 
+@(private = "file")
 lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -175,14 +184,92 @@ lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 	return 0
 }
 
+@(private = "file")
+lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	lua.L_checktype(L, 1, i32(lua.TTABLE))
+
+	desc: DrawTextDesc
+
+	lua.getfield(L, 1, "text")
+	desc.text = lua_check_odin_string(L, -1)
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "pos")
+	desc.pos = cast([2]f32)lua_check_vec2(L, -1)
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "size")
+	desc.size = f32(lua.L_checknumber(L, -1))
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "color")
+	desc.color = cast([4]f32)lua_check_vec4(L, -1)
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "font")
+	lua.getfield(L, -1, "id")
+	desc.font = transmute(hm.Handle32)u32(lua.L_optinteger(L, -1, 0))
+	lua.pop(L, 2)
+
+	lua.getfield(L, 1, "halign")
+	if lua.isnil(L, -1) {
+		halign_str := lua_check_odin_string(L, -1)
+		switch halign_str {
+		case "left":
+			desc.halign = .LEFT
+		case "center":
+			desc.halign = .CENTER
+		case "right":
+			desc.halign = .RIGHT
+		case:
+			fmt.panicf(
+				"unexpected enum %q; should be 'left', 'center', or 'right'",
+				halign_str,
+			)
+		}
+	} else {
+		desc.halign = .LEFT
+	}
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "valign")
+	if lua.isnil(L, -1) {
+		valign_str := lua_check_odin_string(L, -1)
+		switch valign_str {
+		case "top":
+			desc.valign = .TOP
+		case "middle":
+			desc.valign = .MIDDLE
+		case "bottom":
+			desc.valign = .BOTTOM
+		case "baseline":
+			desc.valign = .BASELINE
+		case:
+			fmt.panicf(
+				"unexpected enum %q; should be 'top', 'middle', 'bottom', or 'baseline'",
+				valign_str,
+			)
+		}
+	} else {
+		desc.valign = .BASELINE
+	}
+	lua.pop(L, 1)
+
+	draw_text(desc)
+	return 0
+}
+
 lua_open_gfx :: proc "c" (L: ^lua.State)
 {
 	gfx_reg := []lua.L_Reg {
 		{"load_texture", lua_gfx_load_texture},
-		{"load_texture_from_memory", lua_gfx_load_texture_from_memory},
+		{"load_font", lua_gfx_load_font},
 		{"clear", lua_gfx_clear},
 		{"end_drawing_2d", lua_gfx_end_drawing_2d},
 		{"draw_rectangle", lua_gfx_draw_rectangle},
+		{"draw_text", lua_gfx_draw_text},
 		{nil, nil},
 	}
 	lua.L_openlib(L, "gfx", raw_data(gfx_reg), 0)
@@ -192,5 +279,11 @@ lua_open_gfx :: proc "c" (L: ^lua.State)
 	lua.setfield(L, -2, "__index")
 	// TODO not sure if this is being called
 	lua.pushcfunction(L, lua_gfx_texture_gc)
+	lua.setfield(L, -2, "__gc")
+
+	lua.L_newmetatable(L, "gfx_Font")
+	lua.pushvalue(L, -1)
+	lua.setfield(L, -2, "__index")
+	lua.pushcfunction(L, lua_gfx_font_gc)
 	lua.setfield(L, -2, "__gc")
 }
