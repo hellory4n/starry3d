@@ -363,3 +363,4 @@ Returns true if any of the components in the boolean vector are true.
 - `quat * vec3 -> vec3`
 - `mat4`, maybe other matrices too
 - swizzling
+- rect, aabb

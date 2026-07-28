@@ -169,11 +169,11 @@ lua_check_vec2 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: [2]f64)
 {
 	lua.L_checktype(L, num_arg, i32(lua.TTABLE))
 
-	lua.getfield(L, 1, "x")
+	lua.getfield(L, num_arg, "x")
 	res.x = lua.L_optnumber(L, -1, def = 0)
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "y")
+	lua.getfield(L, num_arg, "y")
 	res.y = lua.L_optnumber(L, -1, def = 0)
 	lua.pop(L, 1)
 
@@ -184,15 +184,15 @@ lua_check_vec3 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: [3]f64)
 {
 	lua.L_checktype(L, num_arg, i32(lua.TTABLE))
 
-	lua.getfield(L, 1, "x")
+	lua.getfield(L, num_arg, "x")
 	res.x = lua.L_optnumber(L, -1, def = 0)
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "y")
+	lua.getfield(L, num_arg, "y")
 	res.y = lua.L_optnumber(L, -1, def = 0)
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "z")
+	lua.getfield(L, num_arg, "z")
 	res.z = lua.L_optnumber(L, -1, def = 0)
 	lua.pop(L, 1)
 
@@ -203,19 +203,19 @@ lua_check_vec4 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: [4]f64)
 {
 	lua.L_checktype(L, num_arg, i32(lua.TTABLE))
 
-	lua.getfield(L, 1, "x")
+	lua.getfield(L, num_arg, "x")
 	res.x = lua.L_optnumber(L, -1, def = 0)
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "y")
+	lua.getfield(L, num_arg, "y")
 	res.y = lua.L_optnumber(L, -1, def = 0)
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "z")
+	lua.getfield(L, num_arg, "z")
 	res.z = lua.L_optnumber(L, -1, def = 0)
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "w")
+	lua.getfield(L, num_arg, "w")
 	res.w = lua.L_optnumber(L, -1, def = 0)
 	lua.pop(L, 1)
 

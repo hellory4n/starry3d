@@ -344,7 +344,7 @@ new_shader :: proc(
 		gl.GetShaderInfoLog(id, len(info_log_buf), nil, raw_data(info_log_buf[:]))
 		info_log := cstring(raw_data(info_log_buf[:]))
 
-		fmt.printfln("compiling shader failed: %s", info_log)
+		fmt.printfln("compiling shader %q failed: %s", label, info_log)
 		return shader, false
 	}
 

@@ -93,3 +93,8 @@ texture_data :: proc(h: hm.Handle32) -> TextureData
 	assert(ok)
 	return texture^
 }
+
+texture_is_valid :: proc(h: hm.Handle32) -> bool
+{
+	return hm.is_valid(&global.textures, h)
+}

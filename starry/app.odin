@@ -1,11 +1,11 @@
 package starry
 
-import "core:mem"
 import lua "../thirdparty/luajit"
 import "core:c"
 import "core:encoding/json"
 import "core:fmt"
 import "core:math"
+import "core:mem"
 import vmem "core:mem/virtual"
 import "core:os"
 import "core:strings"
@@ -144,6 +144,9 @@ init_app_window :: proc()
 		proc "c" (window: glfw.WindowHandle, width, height: c.int)
 		{
 			context = global.ctx
+			dev := gpu_device()
+			gpu.set_viewport(dev, pos = {}, size = {width, height})
+
 			L := global.lua
 			call_lua_function(
 				L,

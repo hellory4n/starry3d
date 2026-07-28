@@ -48,6 +48,9 @@ gfx.draw_rectangle({
 	texture = gfx.load_texture("img.png"), -- don't call every frame!
 	color = vec4(1, 1, 1, 1) -- optional
 
+	-- defaults to nearest
+	filter = "nearest" | "linear",
+
 	-- for rendering a portion of the texture
 	-- optional
 	texture_pos = vec2(50, 10),

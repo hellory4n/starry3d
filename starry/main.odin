@@ -82,11 +82,13 @@ run :: proc(init_proc: proc(), free_proc: proc(), update_proc: proc())
 	init_string_ids()
 	load_app_config()
 	init_app_window()
+	init_2d_renderer()
 	init_lua()
 	if init_proc != nil do init_proc()
 
 	defer free_string_ids()
 	defer free_app_window()
+	defer free_2d_renderer()
 	defer free_lua()
 	defer if free_proc != nil do free_proc()
 
