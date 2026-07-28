@@ -6,7 +6,6 @@ import "base:runtime"
 import "core:c"
 import "core:math"
 import "core:math/linalg"
-import "gpu"
 
 // TODO crossing the C-lua boundary is bad for performance
 // a pure Lua math implementation would be better for JIT and whatnot
@@ -59,64 +58,15 @@ lua_st_quat_to_euler :: proc "c" (L: ^lua.State) -> c.int
 	return 3
 }
 
-@(private = "file")
-lua_app_read_from_app_dir :: proc "c" (L: ^lua.State) -> c.int
-{
-	context = global.ctx
-	path := string(lua.L_checkstring(L, 1))
-
-	data, err := read_from_app_dir(path, context.allocator)
-	defer delete(data)
-
-	lua.pushlstring(L, cast(cstring)raw_data(data), c.size_t(len(data)))
-	lua.pushboolean(L, b32(err == nil)) // ok
-	return 2
-}
-
-// placeholder until there's a renderer
-@(private = "file")
-lua_st_glorious_red_square :: proc "c" (L: ^lua.State) -> c.int
-{
-	context = global.ctx
-
-	lua.L_checktype(L, 1, i32(lua.TTABLE))
-
-	lua.getfield(L, 1, "x")
-	red := lua.L_optnumber(L, -1, def = 0.0)
-	lua.pop(L, 1)
-
-	lua.getfield(L, 1, "y")
-	green := lua.L_optnumber(L, -1, def = 0.0)
-	lua.pop(L, 1)
-
-	lua.getfield(L, 1, "z")
-	blue := lua.L_optnumber(L, -1, def = 0.0)
-	lua.pop(L, 1)
-
-	dev := gpu_device()
-	gpu.begin_render_pass(
-		dev,
-		framebuffer = gpu.default_framebuffer(dev),
-		color_load_op = .CLEAR,
-		clear_color = cast([4]f32)[4]f64{red, green, blue, 1},
-	)
-	gpu.end_render_pass(dev)
-	return 0
-}
-
 lua_open_utils :: proc "c" (L: ^lua.State)
 {
+	reg := []lua.L_Reg {
+		{"round", lua_st_round},
+		{"euler_to_quat", lua_st_euler_to_quat},
+		{"quat_to_euler", lua_st_quat_to_euler},
+		{nil, nil},
+	}
 	lua.getglobal(L, "__st")
-	lua.pushcfunction(L, lua_st_round)
-	lua.setfield(L, -2, "round")
-	lua.pushcfunction(L, lua_st_euler_to_quat)
-	lua.setfield(L, -2, "euler_to_quat")
-	lua.pushcfunction(L, lua_st_quat_to_euler)
-	lua.setfield(L, -2, "quat_to_euler")
-	lua.pushcfunction(L, lua_st_glorious_red_square)
-	lua.setfield(L, -2, "glorious_red_square")
-
-	lua.getglobal(L, "app")
-	lua.pushcfunction(L, lua_app_read_from_app_dir)
-	lua.setfield(L, -2, "read_from_app_dir")
+	lua.L_setfuncs(L, raw_data(reg), 0)
+	lua.pop(L, 1)
 }

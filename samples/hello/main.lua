@@ -1,17 +1,19 @@
 function app_init()
 	app.set_title("balls")
+	local texture = gfx.load_texture("fish.png")
 	counter = 0
 end
 
 --- @param dt number
 function app_update(dt)
-	__st.glorious_red_square(vec3(0, 0, 1))
+	gfx.clear(vec4(1, 0, 0, 1))
 
 	if app.key_just_pressed("a") then
 		counter = counter + 1
 		print("counter: " .. counter)
 	end
-	-- print(app.mouse_pos())
+
+	gfx.end_drawing_2d()
 end
 
 --- @param width integer
