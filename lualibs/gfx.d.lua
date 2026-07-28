@@ -28,6 +28,8 @@ function gfx.end_drawing_2d() end
 --- @class gfx.DrawRectangleDesc: table
 --- @field pos Vec2
 --- @field size Vec2
+--- @field rot number?
+--- @field origin Vec2?
 --- @field texture gfx.Texture?
 --- @field color Vec4?
 --- @field filter "nearest" | "linear"?

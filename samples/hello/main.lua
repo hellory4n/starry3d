@@ -42,10 +42,24 @@ function app_update(dt)
 		texture_size = vec2(160),
 	})
 
+	-- movement + modulate
+	local SPEED = 5000
+	gfx.draw_rectangle({
+		pos = vec2(
+			(app.frame_size().x / 2 - 20) * math.sin(app.now_secs() * SPEED * dt) +
+			app.frame_size().x / 2 - 20, 0),
+		size = vec2(40),
+		texture = g_texture,
+		color = vec4(app.now_secs() % 2),
+	})
+
 	-- amazing cursor
+	g_rotation = (g_rotation or 0) + 5 * dt
 	gfx.draw_rectangle({
 		pos = app.mouse_pos(),
 		size = vec2(32),
+		rot = g_rotation,
+		origin = vec2(0.5),
 		texture = g_texture,
 	})
 

@@ -43,6 +43,15 @@ gfx.draw_rectangle({
 	-- position and size in pixels
 	pos = vec2(40, 50),
 	size = vec2(100, 150),
+	rot = 3.14, -- optional, in radians
+
+	-- origin point, from vec2(0.0) to vec2(1.0)
+	-- examples:
+	--     - top left:     vec2(0.0, 0.0)
+	--     - center:       vec2(0.5, 0.5)
+	--     - bottom right: vec2(1.0, 1.0)
+	-- optional
+	origin = vec2(0.5),
 
 	-- color and texture can be combined
 	texture = gfx.load_texture("img.png"), -- don't call every frame!

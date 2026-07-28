@@ -27,15 +27,27 @@ layout(std140, binding = 0) uniform world {
 	vec2 u_resolution;
 	vec2 u_pos;
 	vec2 u_size;
+	vec2 u_origin;
 	vec2 u_texture_size;
 	vec2 u_crop_pos;
 	vec2 u_crop_size;
+	float u_rot;
 	uint u_has_texture;
 };
+
+vec2 rotate(vec2 v, float angle) {
+	float s = sin(angle);
+	float c = cos(angle);
+	mat2 m = mat2(c, s, -s, c);
+	return m * v;
+}
 
 void main()
 {
 	vec2 base_pos = POSITIONS[gl_VertexID] * u_size;
+	base_pos -= u_size * u_origin;
+	base_pos = rotate(base_pos, u_rot);
+
 	vec2 ndc = vec2(
 		2.0 * (u_pos.x + base_pos.x) / u_resolution.x - 1.0,
 		1.0 - 2.0 * (u_pos.y + base_pos.y) / u_resolution.y

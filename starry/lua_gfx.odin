@@ -105,6 +105,18 @@ lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 	desc.size = cast([2]f32)lua_check_vec2(L, -1)
 	lua.pop(L, 1)
 
+	lua.getfield(L, 1, "rot")
+	if !lua.isnil(L, -1) {
+		desc.rot = f32(lua.L_checknumber(L, -1))
+	}
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "origin")
+	if !lua.isnil(L, -1) {
+		desc.origin = cast([2]f32)lua_check_vec2(L, -1)
+	}
+	lua.pop(L, 1)
+
 	lua.getfield(L, 1, "texture")
 	if !lua.isnil(L, -1) {
 		lua.getfield(L, -1, "id")

@@ -11,9 +11,11 @@ RectUniform :: struct #align (16) #max_field_align(16) {
 	resolution:   [2]f32,
 	pos:          [2]f32,
 	size:         [2]f32,
+	origin:       [2]f32,
 	texture_size: [2]f32,
 	crop_pos:     [2]f32,
 	crop_size:    [2]f32,
+	rot:          f32,
 	has_texture:  b32,
 }
 
@@ -96,6 +98,8 @@ end_drawing_2d :: proc()
 DrawRectangleDesc :: struct {
 	pos:          [2]f32,
 	size:         [2]f32,
+	origin:       [2]f32,
+	rot:          f32,
 	texture:      hm.Handle32,
 	color:        [4]f32,
 	filter:       gpu.Texture_Filter,
@@ -123,9 +127,11 @@ draw_rectangle :: proc(desc: DrawRectangleDesc)
 		resolution   = frame_sizef(),
 		pos          = desc.pos,
 		size         = desc.size,
+		origin       = desc.origin,
 		texture_size = {f32(texdata.img.width), f32(texdata.img.height)} if texdata.img != nil else {},
 		crop_pos     = desc.texture_pos,
 		crop_size    = desc.texture_size,
+		rot          = desc.rot,
 		has_texture  = texdata.img != nil,
 	}
 	gpu.update_buffer(dev, global.gfx2d.uniform_buffer, mem.ptr_to_bytes(&uniforms))
