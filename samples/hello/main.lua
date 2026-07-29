@@ -72,7 +72,7 @@ function app.on_update(dt)
 	})
 
 	gfx.draw_text({
-		text = ":)",
+		text = "hello everyone my name is welcome",
 		pos = vec2(50, 50),
 		size = 16,
 		color = vec4(1),

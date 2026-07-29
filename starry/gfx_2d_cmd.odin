@@ -68,6 +68,7 @@ run_2d_draw_command :: proc(cmd: DrawCommand2D)
 		gpu.bind_pipeline(dev, global.gfx2d.text_pipeline)
 		gpu.bind_texture(dev, global.gfx2d.text_atlas, slot = 0)
 		gpu.bind_sampler(dev, global.gfx2d.samplers[.BILINEAR], slot = 0)
+		gpu.bind_uniform_buffer(dev, global.gfx2d.text_uniforms, slot = 0)
 
 		fctx := &global.gfx2d.fonsctx
 		fons.SetFont(fctx, font_data(desc.font).font_id)
