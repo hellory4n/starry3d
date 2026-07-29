@@ -1,6 +1,10 @@
 --- @meta app
 
 --- @class applib: table
+--- @field on_init fun()? Only ever called once, after the engine has finished initializing.
+--- @field on_update fun(dt: number)? Called every frame.
+--- @field on_reload fun()? Called after the app has already been initialized, but is then reloaded with Alt+R.
+--- @field on_resize fun(new_size: Vec2)? Called when the window is resized.
 app = {}
 
 --- Reads an entire file, relative to the app directory.

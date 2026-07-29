@@ -8,10 +8,6 @@ The graphics module contains everything graphics.
 
 Loads a texture from the app directory. This should be a `.png` or `.jpeg`.
 
-### `gfx.Texture.id: integer`
-
-The internal ID used by the engine.
-
 ### `gfx.Texture.size: vec2`
 
 The size of the texture, in pixels.
@@ -25,10 +21,6 @@ The path from which the texture was loaded.
 ### `gfx.load_font(path: string): (gfx.Font, ok: boolean)`
 
 Loads a font from the app directory.
-
-### `gfx.Font.id: integer`
-
-The internal ID used by the engine.
 
 ### `gfx.Font.path: string`
 

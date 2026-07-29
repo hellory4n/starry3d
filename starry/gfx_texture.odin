@@ -70,7 +70,7 @@ load_texture :: proc(path: string) -> (h: hm.Handle32, ok: bool)
 
 	h, ok = load_texture_from_memory(buffer, path)
 	if ok {
-		fmt.printfln("loaded %s", path)
+		fmt.printfln("loaded %s (%v)", path, h)
 	}
 	return
 }
@@ -84,7 +84,7 @@ unload_texture :: proc(h: hm.Handle32)
 	gpu.free_texture(texture.tex)
 	image.destroy(texture.img)
 	hm.remove(&global.textures, h)
-	fmt.printfln("unloaded %s", texture.path)
+	fmt.printfln("unloaded %s (%v)", texture.path, h)
 }
 
 texture_data :: proc(h: hm.Handle32) -> TextureData

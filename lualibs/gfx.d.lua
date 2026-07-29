@@ -4,7 +4,6 @@
 gfx = {}
 
 --- @class gfx.Texture
---- @field id integer The internal ID used by the engine.
 --- @field size Vec2 The size of the texture, in pixels.
 --- @field path string The path from which the texture was loaded.
 
@@ -15,7 +14,6 @@ gfx = {}
 function gfx.load_texture(path) end
 
 --- @class gfx.Font
---- @field id integer The internal ID used by the engine.
 --- @field path string The path from which the font was loaded.
 
 --- Loads a font from the app directory.

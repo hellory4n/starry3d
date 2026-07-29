@@ -91,7 +91,13 @@ init_app :: proc()
 {
 	L := global.lua
 	lua_run(L, global.config.main)
-	call_lua_function(L, "app_init")
+
+	lua.getglobal(L, "app")
+	lua.getfield(L, -1, "on_init")
+	if !lua.isnil(L, -1) {
+		lua_call(L, nargs = 0, nresults = 0)
+	}
+	lua.pop(L, 1)
 }
 
 init_app_window :: proc()
@@ -148,13 +154,14 @@ init_app_window :: proc()
 			gpu.set_viewport(dev, pos = {}, size = {width, height})
 
 			L := global.lua
-			call_lua_function(
-				L,
-				"app_on_resize",
-				lua.Integer(width),
-				lua.Integer(height),
-				can_be_nil = true,
-			)
+
+			lua.getglobal(L, "app")
+			lua.getfield(L, -1, "on_resize")
+			if !lua.isnil(L, -1) {
+				lua_push_vec2(L, {lua.Number(width), lua.Number(height)})
+				lua_call(L, nargs = 1, nresults = 0)
+			}
+			lua.pop(L, 1)
 		},
 	)
 }
@@ -212,9 +219,22 @@ update_lua_app :: proc()
 	if (key_held(.LEFT_ALT) || key_held(.RIGHT_ALT)) && key_just_pressed(.R) {
 		lua_run(L, global.config.main)
 		fmt.printfln("reloaded lua scripts")
+
+		lua.getglobal(L, "app")
+		lua.getfield(L, -1, "on_reload")
+		if !lua.isnil(L, -1) {
+			lua_call(L, nargs = 0, nresults = 0)
+		}
+		lua.pop(L, 1)
 	}
 
-	call_lua_function(L, "app_update", lua.Number(delta_time()), can_be_nil = true)
+	lua.getglobal(L, "app")
+	lua.getfield(L, -1, "on_update")
+	if !lua.isnil(L, -1) {
+		lua.pushnumber(L, delta_time())
+		lua_call(L, nargs = 1, nresults = 0)
+	}
+	lua.pop(L, 1)
 }
 
 // Lua: `app.dir`

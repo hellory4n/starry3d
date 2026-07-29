@@ -1,4 +1,4 @@
-function app_init()
+function app.on_init()
 	app.set_title("balls")
 	g_texture = gfx.load_texture("fish.png")
 
@@ -14,8 +14,7 @@ function app_init()
 	g_counter = 0
 end
 
---- @param dt number
-function app_update(dt)
+function app.on_update(dt)
 	gfx.clear(vec4(1, 0, 1, 1))
 
 	if app.key_just_pressed("a") then
@@ -83,8 +82,12 @@ function app_update(dt)
 	gfx.end_drawing_2d()
 end
 
---- @param width integer
---- @param height integer
-function app_on_resize(width, height)
+function app.on_reload()
+	-- TODO have the engine do this automagically
+	g_texture = gfx.load_texture(g_texture.path)
+	g_atlas = gfx.load_texture(g_atlas.path)
+end
+
+function app.on_resize(new_size)
 	print("resizing it")
 end

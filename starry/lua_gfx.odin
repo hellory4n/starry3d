@@ -19,14 +19,17 @@ lua_gfx_load_texture :: proc "c" (L: ^lua.State) -> c.int
 		size.y = f64(data.img.height)
 	}
 
-	lua.newtable(L)
-	lua.L_setmetatable(L, "gfx_Texture")
-	lua.pushinteger(L, lua.Integer(transmute(u32)handle))
-	lua.setfield(L, -2, "id")
-	lua_push_vec2(L, size)
-	lua.setfield(L, -2, "size")
-	lua_push_odin_string(L, path)
-	lua.setfield(L, -2, "path")
+	userdata := cast(^hm.Handle32)lua.newuserdata(L, size_of(hm.Handle32))
+	userdata^ = handle
+
+	if b32(lua.L_newmetatable(L, "gfx_Texture")) {
+		lua.pushcfunction(L, lua_gfx_texture_gc)
+		lua.setfield(L, -2, "__gc")
+
+		lua.pushcfunction(L, lua_gfx_texture_index)
+		lua.setfield(L, -2, "__index")
+	}
+	lua.setmetatable(L, -2)
 
 	lua.pushboolean(L, b32(ok))
 	return 2
@@ -36,13 +39,31 @@ lua_gfx_load_texture :: proc "c" (L: ^lua.State) -> c.int
 lua_gfx_texture_gc :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
-	lua.L_checktype(L, 1, i32(lua.TTABLE))
-	lua.getfield(L, 1, "id")
-	handle := transmute(hm.Handle32)u32(lua.L_optinteger(L, -1, 0))
-	lua.pop(L, 1)
-
-	unload_texture(handle)
+	handle := cast(^hm.Handle32)lua.touserdata(L, 1)
+	unload_texture(handle^)
 	return 0
+}
+
+@(private = "file")
+lua_gfx_texture_index :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	handle := cast(^hm.Handle32)lua.touserdata(L, 1)
+	data := texture_data(handle^)
+
+	field := lua_check_odin_string(L, 2)
+
+	// trick the user into thinking this is a table
+	switch field {
+	case "path":
+		lua_push_odin_string(L, data.path)
+	case "size":
+		lua_push_vec2(L, {f64(data.img.width), f64(data.img.height)})
+	case:
+		lua.pushnil(L)
+	}
+
+	return 1
 }
 
 @(private = "file")
@@ -53,12 +74,17 @@ lua_gfx_load_font :: proc "c" (L: ^lua.State) -> c.int
 
 	handle, ok := load_font(path)
 
-	lua.newtable(L)
-	lua.L_setmetatable(L, "gfx_Font")
-	lua.pushinteger(L, lua.Integer(transmute(u32)handle))
-	lua.setfield(L, -2, "id")
-	lua_push_odin_string(L, path)
-	lua.setfield(L, -2, "path")
+	userdata := cast(^hm.Handle32)lua.newuserdata(L, size_of(hm.Handle32))
+	userdata^ = handle
+
+	if b32(lua.L_newmetatable(L, "gfx_Font")) {
+		lua.pushcfunction(L, lua_gfx_font_gc)
+		lua.setfield(L, -2, "__gc")
+
+		lua.pushcfunction(L, lua_gfx_font_index)
+		lua.setfield(L, -2, "__index")
+	}
+	lua.setmetatable(L, -2)
 
 	lua.pushboolean(L, b32(ok))
 	return 2
@@ -68,13 +94,29 @@ lua_gfx_load_font :: proc "c" (L: ^lua.State) -> c.int
 lua_gfx_font_gc :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
-	lua.L_checktype(L, 1, i32(lua.TTABLE))
-	lua.getfield(L, 1, "id")
-	handle := transmute(hm.Handle32)u32(lua.L_optinteger(L, -1, 0))
-	lua.pop(L, 1)
-
-	unload_font(handle)
+	handle := cast(^hm.Handle32)lua.touserdata(L, 1)
+	unload_font(handle^)
 	return 0
+}
+
+@(private = "file")
+lua_gfx_font_index :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	handle := cast(^hm.Handle32)lua.touserdata(L, 1)
+	data := font_data(handle^)
+
+	field := lua_check_odin_string(L, 2)
+
+	// trick the user into thinking this is a table
+	switch field {
+	case "path":
+		lua_push_odin_string(L, data.path)
+	case:
+		lua.pushnil(L)
+	}
+
+	return 1
 }
 
 @(private = "file")
@@ -128,9 +170,7 @@ lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 
 	lua.getfield(L, 1, "texture")
 	if !lua.isnil(L, -1) {
-		lua.getfield(L, -1, "id")
-		desc.texture = transmute(hm.Handle32)u32(lua.L_optinteger(L, -1, 0))
-		lua.pop(L, 1)
+		desc.texture = (cast(^hm.Handle32)lua.touserdata(L, -1))^
 	}
 	lua.pop(L, 1)
 
@@ -209,8 +249,7 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	lua.pop(L, 1)
 
 	lua.getfield(L, 1, "font")
-	lua.getfield(L, -1, "id")
-	desc.font = transmute(hm.Handle32)u32(lua.L_optinteger(L, -1, 0))
+	desc.font = (cast(^hm.Handle32)lua.touserdata(L, -1))^
 	lua.pop(L, 2)
 
 	lua.getfield(L, 1, "halign")
@@ -273,17 +312,4 @@ lua_open_gfx :: proc "c" (L: ^lua.State)
 		{nil, nil},
 	}
 	lua.L_openlib(L, "gfx", raw_data(gfx_reg), 0)
-
-	lua.L_newmetatable(L, "gfx_Texture")
-	lua.pushvalue(L, -1)
-	lua.setfield(L, -2, "__index")
-	// TODO not sure if this is being called
-	lua.pushcfunction(L, lua_gfx_texture_gc)
-	lua.setfield(L, -2, "__gc")
-
-	lua.L_newmetatable(L, "gfx_Font")
-	lua.pushvalue(L, -1)
-	lua.setfield(L, -2, "__index")
-	lua.pushcfunction(L, lua_gfx_font_gc)
-	lua.setfield(L, -2, "__gc")
 }

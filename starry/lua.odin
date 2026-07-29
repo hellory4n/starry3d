@@ -23,15 +23,13 @@ init_lua :: proc()
 		panic("aborting")
 	})
 
+	// yes it has to be this exact order
 	lua.L_openlibs(L)
 	lua_open_app(L)
-
 	lua_run_bytes(L, #load("../lualibs/boot.lua"), "(preloaded) lualibs/boot.lua")
 	lua_open_utils(L)
-
 	lua_run_bytes(L, #load("../lualibs/table.lua"), "(preloaded) lualibs/preloaded/boot.lua")
 	lua_run_bytes(L, #load("../lualibs/math.lua"), "(preloaded) lualibs/math.lua")
-
 	lua_open_gfx(L)
 }
 
@@ -74,68 +72,6 @@ lua_error :: proc(L: ^lua.State)
 	lua.pop(L, 1)
 }
 
-LuaVariant :: union {
-	lua.Number,
-	lua.Integer,
-	string,
-	cstring,
-	b32,
-	rawptr,
-}
-
-// expects the function to have no returns
-call_lua_function :: proc(
-	L: ^lua.State,
-	func_name: cstring,
-	args: ..LuaVariant,
-	can_be_nil := false,
-) -> (
-	ok: bool,
-)
-{
-	lua.getglobal(L, func_name)
-
-	if !lua.isfunction(L, -1) {
-		if can_be_nil && lua.isnil(L, -1) {
-			lua.pop(L, 1)
-			return true
-		}
-		lua.pop(L, 1)
-		return false
-	}
-
-	for arg in args {
-		switch v in arg {
-		case lua.Number:
-			lua.pushnumber(L, v)
-		case lua.Integer:
-			lua.pushinteger(L, v)
-		case string:
-			lua.pushlstring(L, cast(cstring)raw_data(v), c.size_t(len(v)))
-		case cstring:
-			lua.pushstring(L, v)
-		case b32:
-			lua.pushboolean(L, v)
-		case rawptr:
-			lua.pushlightuserdata(L, v)
-		case:
-			lua.pushnil(L)
-		}
-	}
-
-	msgh := lua.gettop(L) - c.int(len(args))
-	lua.pushcfunction(L, lua_msg_handler)
-	lua.insert(L, msgh)
-
-	if lua.pcall(L, c.int(len(args)), 0, msgh) != i32(lua.OK) {
-		lua_error(L)
-		return false
-	}
-
-	lua.remove(L, msgh)
-	return true
-}
-
 lua_msg_handler :: proc "c" (L: ^lua.State) -> c.int
 {
 	msg := lua.tostring(L, 1)
@@ -150,6 +86,19 @@ lua_msg_handler :: proc "c" (L: ^lua.State) -> c.int
 	// append stack trace
 	lua.L_traceback(L, L, msg, 1) // level 1 to skip this function
 	return 1
+}
+
+lua_call :: proc(L: ^lua.State, nargs, nresults: c.int)
+{
+	msgh := lua.gettop(L) - nargs
+	lua.pushcfunction(L, lua_msg_handler)
+	lua.insert(L, msgh)
+
+	if lua.pcall(L, nargs, nresults, msgh) != i32(lua.OK) {
+		lua_error(L)
+	}
+
+	lua.remove(L, msgh)
 }
 
 // get string arg and handle length properly
