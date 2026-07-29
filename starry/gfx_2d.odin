@@ -1,26 +1,13 @@
 package starry
 
 import hm "core:container/handle_map"
-import "core:mem"
 import "gpu"
 
 // TODO update everything to use command buffers with the new starrygpu version TREE(3)
 
-RectUniform :: struct #align (16) #max_field_align(16) {
-	color:        [4]f32,
-	resolution:   [2]f32,
-	pos:          [2]f32,
-	size:         [2]f32,
-	origin:       [2]f32,
-	texture_size: [2]f32,
-	crop_pos:     [2]f32,
-	crop_size:    [2]f32,
-	rot:          f32,
-	has_texture:  b32,
-}
-
 init_2d_renderer :: proc()
 {
+	global.gfx2d.commands = make([dynamic]DrawCommand2D)
 	dev := gpu_device()
 
 	global.gfx2d.rect_uniforms = gpu.new_buffer(
@@ -75,6 +62,7 @@ free_2d_renderer :: proc()
 
 	gpu.free_pipeline(global.gfx2d.rect_pipeline)
 	gpu.free_buffer(global.gfx2d.rect_uniforms)
+	delete(global.gfx2d.commands)
 }
 
 // lua: `gfx.clear`
@@ -87,11 +75,19 @@ clear_screen :: proc(color: [4]f32)
 		color_load_op = .CLEAR,
 		clear_color = color,
 	)
+
+	clear(&global.gfx2d.commands)
 }
 
 end_drawing_2d :: proc()
 {
 	dev := gpu_device()
+
+	// TODO prepare font atlas here
+	for cmd in global.gfx2d.commands {
+		run_2d_draw_command(cmd)
+	}
+
 	gpu.end_render_pass(dev)
 }
 
@@ -111,33 +107,7 @@ DrawRectangleDesc :: struct {
 // lua: `gfx.draw_rectangle`
 draw_rectangle :: proc(desc: DrawRectangleDesc)
 {
-	// zero driver overhead my ass
-	dev := gpu_device()
-	gpu.bind_pipeline(dev, global.gfx2d.rect_pipeline)
-
-	texdata: TextureData
-	if texture_is_valid(desc.texture) {
-		texdata = texture_data(desc.texture)
-		gpu.bind_texture(dev, texdata.tex, slot = 0)
-		gpu.bind_sampler(dev, global.gfx2d.samplers[desc.filter], slot = 0)
-	}
-
-	uniforms := RectUniform {
-		color        = desc.color,
-		resolution   = frame_sizef(),
-		pos          = desc.pos,
-		size         = desc.size,
-		origin       = desc.origin,
-		texture_size = {f32(texdata.img.width), f32(texdata.img.height)} if texdata.img != nil else {},
-		crop_pos     = desc.texture_pos,
-		crop_size    = desc.texture_size,
-		rot          = desc.rot,
-		has_texture  = texdata.img != nil,
-	}
-	gpu.update_buffer(dev, global.gfx2d.rect_uniforms, mem.ptr_to_bytes(&uniforms))
-	gpu.bind_uniform_buffer(dev, global.gfx2d.rect_uniforms, slot = 0)
-
-	gpu.draw(dev, vertex_count = 6)
+	append(&global.gfx2d.commands, desc)
 }
 
 DrawTextDesc :: struct {
@@ -163,7 +133,5 @@ DrawTextDesc :: struct {
 // lua: `gfx.draw_text`
 draw_text :: proc(desc: DrawTextDesc)
 {
-	// atlas has to be updated before rendering, but after all the draw_text calls
-	// but then we need command buffers now so that ordering is correct
-	unimplemented("big massive batched renderer")
+	append(&global.gfx2d.commands, desc)
 }

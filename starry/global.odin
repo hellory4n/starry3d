@@ -30,6 +30,7 @@ global: struct {
 	device:       gpu.Device,
 	textures:     hm.Dynamic_Handle_Map(TextureData, hm.Handle32),
 	gfx2d:        struct {
+		commands:      [dynamic]DrawCommand2D,
 		rect_pipeline: gpu.Pipeline,
 		rect_uniforms: gpu.Buffer,
 		samplers:      [gpu.Texture_Filter]gpu.Sampler,
