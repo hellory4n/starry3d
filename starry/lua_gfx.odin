@@ -10,14 +10,7 @@ lua_gfx_load_texture :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
 	path := lua_check_odin_string(L, 1)
-
 	handle, ok := load_texture(path)
-	size: [2]f64
-	if ok {
-		data := texture_data(handle)
-		size.x = f64(data.img.width)
-		size.y = f64(data.img.height)
-	}
 
 	userdata := cast(^hm.Handle32)lua.newuserdata(L, size_of(hm.Handle32))
 	userdata^ = handle
@@ -58,7 +51,7 @@ lua_gfx_texture_index :: proc "c" (L: ^lua.State) -> c.int
 	case "path":
 		lua_push_odin_string(L, data.path)
 	case "size":
-		lua_push_vec2(L, {f64(data.img.width), f64(data.img.height)})
+		lua_push_vec2(L, cast([2]f64)texture_size(handle^))
 	case:
 		lua.pushnil(L)
 	}
@@ -214,8 +207,7 @@ lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 		desc.texture_size = cast([2]f32)lua_check_vec2(L, -1)
 	} else {
 		if texture_is_valid(desc.texture) {
-			texdata := texture_data(desc.texture)
-			desc.texture_size = {f32(texdata.img.width), f32(texdata.img.height)}
+			desc.texture_size = texture_size(desc.texture)
 		}
 	}
 	lua.pop(L, 1)
@@ -229,7 +221,6 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
 	lua.L_checktype(L, 1, i32(lua.TTABLE))
-
 	desc: DrawTextDesc
 
 	lua.getfield(L, 1, "text")
@@ -250,10 +241,10 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 
 	lua.getfield(L, 1, "font")
 	desc.font = (cast(^hm.Handle32)lua.touserdata(L, -1))^
-	lua.pop(L, 2)
+	lua.pop(L, 1)
 
 	lua.getfield(L, 1, "halign")
-	if lua.isnil(L, -1) {
+	if !lua.isnil(L, -1) {
 		halign_str := lua_check_odin_string(L, -1)
 		switch halign_str {
 		case "left":
@@ -274,7 +265,7 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	lua.pop(L, 1)
 
 	lua.getfield(L, 1, "valign")
-	if lua.isnil(L, -1) {
+	if !lua.isnil(L, -1) {
 		valign_str := lua_check_odin_string(L, -1)
 		switch valign_str {
 		case "top":

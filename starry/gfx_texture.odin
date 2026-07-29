@@ -17,13 +17,11 @@ TextureData :: struct {
 	path:   string,
 }
 
-// path is for error messages, so it is not exposed to lua
-// lua: `gfx.load_texture_from_memory`
-load_texture_from_memory :: proc(data: []byte, path := "[buffer]") -> (h: hm.Handle32, ok: bool)
+load_texture_from_memory :: proc(data: []byte, label := "[buffer]") -> (h: hm.Handle32, ok: bool)
 {
 	img, err := image.load_from_bytes(data)
 	if err != nil {
-		fmt.printfln("couldn't load %s: %s", path, err)
+		fmt.printfln("couldn't load %s: %s", label, err)
 		return h, false
 	}
 	defer if !ok {
@@ -36,12 +34,14 @@ load_texture_from_memory :: proc(data: []byte, path := "[buffer]") -> (h: hm.Han
 
 	format: gpu.Texture_Format
 	switch img.channels {
+	case 1:
+		format = .GRAYSCALE_U8
+	case 2:
+		format = .GRAYSCALE_ALPHA_U8
 	case 3:
 		format = .RGB_U8
 	case 4:
 		format = .RGBA_U8
-	case:
-		unimplemented("TODO grayscale image support")
 	}
 
 	gpu_texture := gpu.new_texture(
@@ -55,7 +55,7 @@ load_texture_from_memory :: proc(data: []byte, path := "[buffer]") -> (h: hm.Han
 		gpu.free_texture(gpu_texture)
 	}
 
-	h = hm.add(&global.textures, TextureData{img = img, tex = gpu_texture, path = path})
+	h = hm.add(&global.textures, TextureData{img = img, tex = gpu_texture, path = label})
 	return h, true
 }
 
@@ -67,6 +67,7 @@ load_texture :: proc(path: string) -> (h: hm.Handle32, ok: bool)
 		fmt.printfln("couldn't load %s: %s", path, err)
 		return {}, false
 	}
+	defer delete(buffer)
 
 	h, ok = load_texture_from_memory(buffer, path)
 	if ok {
@@ -82,6 +83,8 @@ unload_texture :: proc(h: hm.Handle32)
 	assert(ok)
 
 	gpu.free_texture(texture.tex)
+	// TODO we are keeping the image data on the CPU for this long,
+	// just so that we can access the width and height
 	image.destroy(texture.img)
 	hm.remove(&global.textures, h)
 	fmt.printfln("unloaded %s (%v)", texture.path, h)
@@ -97,4 +100,10 @@ texture_data :: proc(h: hm.Handle32) -> TextureData
 texture_is_valid :: proc(h: hm.Handle32) -> bool
 {
 	return hm.is_valid(&global.textures, h)
+}
+
+texture_size :: proc(h: hm.Handle32) -> [2]f32
+{
+	texture := texture_data(h)
+	return {f32(texture.img.width), f32(texture.img.height)}
 }

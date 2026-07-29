@@ -9,7 +9,7 @@ function app.on_init()
 		error("uh oh")
 	end
 
-	-- g_font = gfx.load_font("OpenSans-Medium.ttf")
+	g_font = gfx.load_font("OpenSans-Medium.ttf")
 
 	g_counter = 0
 end
@@ -71,13 +71,13 @@ function app.on_update(dt)
 		texture = g_texture,
 	})
 
-	-- gfx.draw_text({
-	-- 	text = ":)",
-	-- 	pos = vec2(50, 50),
-	-- 	size = 16,
-	-- 	color = vec4(1),
-	-- 	font = g_font,
-	-- })
+	gfx.draw_text({
+		text = ":)",
+		pos = vec2(50, 50),
+		size = 16,
+		color = vec4(1),
+		font = g_font,
+	})
 
 	gfx.end_drawing_2d()
 end

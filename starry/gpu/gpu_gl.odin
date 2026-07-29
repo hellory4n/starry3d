@@ -354,7 +354,7 @@ new_shader :: proc(
 free_shader :: proc(shader: Shader)
 {
 	s, ok := hm.get(&global.shaders, shader)
-	assert(ok)
+	if !ok do return
 
 	gl.DeleteShader(s.id)
 	hm.remove(&global.shaders, shader)
@@ -519,7 +519,7 @@ new_pipeline :: proc(
 free_pipeline :: proc(pipeline: Pipeline)
 {
 	p, ok := hm.get(&global.pipelines, pipeline)
-	assert(ok)
+	if !ok do return
 
 	gl.DeleteProgram(p.id)
 	delete(p.vertex_layout, global.allocator)
@@ -767,7 +767,7 @@ new_buffer :: proc(
 free_buffer :: proc(buffer: Buffer)
 {
 	b, ok := hm.get(&global.buffers, buffer)
-	assert(ok)
+	if !ok do return
 
 	gl.DeleteBuffers(1, &b.id)
 	hm.remove(&global.buffers, buffer)
@@ -824,6 +824,10 @@ bind_storage_buffer :: proc(dev: Device, buffer: Buffer, slot: u32)
 }
 
 Texture_Format :: enum {
+	GRAYSCALE_U8,
+	GRAYSCALE_F32,
+	GRAYSCALE_ALPHA_U8,
+	GRAYSCALE_ALPHA_F32,
 	RGB_U8,
 	RGBA_U8,
 	RGB_F32,
@@ -857,6 +861,14 @@ new_texture :: proc(
 		gl_internal_format = gl.RGBA32F
 	case .DEPTH_F32:
 		gl_internal_format = gl.DEPTH_COMPONENT32F
+	case .GRAYSCALE_U8:
+		gl_internal_format = gl.R8
+	case .GRAYSCALE_F32:
+		gl_internal_format = gl.R32F
+	case .GRAYSCALE_ALPHA_U8:
+		gl_internal_format = gl.RG8
+	case .GRAYSCALE_ALPHA_F32:
+		gl_internal_format = gl.RG32F
 	}
 
 	gl_format: u32
@@ -867,14 +879,26 @@ new_texture :: proc(
 		gl_format = gl.RGBA
 	case .DEPTH_F32:
 		gl_format = gl.DEPTH_COMPONENT
+	case .GRAYSCALE_U8, .GRAYSCALE_F32:
+		gl_format = gl.RED
+	case .GRAYSCALE_ALPHA_U8, .GRAYSCALE_ALPHA_F32:
+		gl_format = gl.RG
 	}
 
 	gl_type: u32
 	switch input_format {
-	case .RGB_U8, .RGBA_U8:
+	case .RGB_U8, .RGBA_U8, .GRAYSCALE_U8, .GRAYSCALE_ALPHA_U8:
 		gl_type = gl.UNSIGNED_BYTE
-	case .RGB_F32, .RGBA_F32, .DEPTH_F32:
+	case .RGB_F32, .RGBA_F32, .GRAYSCALE_F32, .GRAYSCALE_ALPHA_F32, .DEPTH_F32:
 		gl_type = gl.FLOAT
+	}
+
+	// TODO probably wrong
+	#partial switch input_format {
+	case .GRAYSCALE_U8, .GRAYSCALE_F32, .GRAYSCALE_ALPHA_U8, .GRAYSCALE_ALPHA_F32:
+		gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1)
+	case:
+		gl.PixelStorei(gl.UNPACK_ALIGNMENT, 4)
 	}
 
 	gl.TexImage2D(
@@ -895,7 +919,7 @@ new_texture :: proc(
 free_texture :: proc(texture: Texture)
 {
 	t, ok := hm.get(&global.textures, texture)
-	assert(ok)
+	if !ok do return
 
 	gl.DeleteTextures(1, &t.id)
 	hm.remove(&global.textures, texture)
@@ -954,7 +978,7 @@ new_sampler :: proc(
 free_sampler :: proc(sampler: Sampler)
 {
 	s, ok := hm.get(&global.samplers, sampler)
-	assert(ok)
+	if !ok do return
 
 	gl.DeleteSamplers(1, &s.id)
 	hm.remove(&global.samplers, sampler)
@@ -1104,6 +1128,14 @@ new_framebuffer :: proc(
 			gl_internal_format = gl.RGB32F
 		case .RGBA_F32:
 			gl_internal_format = gl.RGBA32F
+		case .GRAYSCALE_U8:
+			gl_internal_format = gl.R8
+		case .GRAYSCALE_F32:
+			gl_internal_format = gl.R32F
+		case .GRAYSCALE_ALPHA_U8:
+			gl_internal_format = gl.RG8
+		case .GRAYSCALE_ALPHA_F32:
+			gl_internal_format = gl.RG32F
 		case .DEPTH_F32:
 			gl_internal_format = gl.DEPTH_COMPONENT32F
 		}
@@ -1168,6 +1200,10 @@ new_framebuffer :: proc(
 		case .DEPTH_F32:
 			attachment_type = gl.DEPTH_ATTACHMENT
 
+		case .GRAYSCALE_U8:
+		case .GRAYSCALE_F32:
+		case .GRAYSCALE_ALPHA_U8:
+		case .GRAYSCALE_ALPHA_F32:
 		case .RGB_U8:
 		case .RGBA_U8:
 		case .RGB_F32:
@@ -1221,7 +1257,7 @@ new_framebuffer :: proc(
 free_framebuffer :: proc(framebuffer: Framebuffer)
 {
 	fb, ok := hm.get(&global.framebuffers, framebuffer)
-	assert(ok)
+	if !ok do return
 
 	gl.DeleteFramebuffers(1, &fb.id)
 

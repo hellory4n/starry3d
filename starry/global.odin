@@ -5,6 +5,7 @@ import "base:runtime"
 import hm "core:container/handle_map"
 import vmem "core:mem/virtual"
 import "gpu"
+import fons "vendor:fontstash"
 
 global: struct {
 	// pre-init
@@ -29,11 +30,16 @@ global: struct {
 	// graphics
 	device:       gpu.Device,
 	textures:     hm.Dynamic_Handle_Map(TextureData, hm.Handle32),
+	fonts:        hm.Dynamic_Handle_Map(FontData, hm.Handle32),
 	gfx2d:        struct {
+		fonsctx:       fons.FontContext,
 		commands:      [dynamic]DrawCommand2D,
+		samplers:      [gpu.Texture_Filter]gpu.Sampler,
 		rect_pipeline: gpu.Pipeline,
 		rect_uniforms: gpu.Buffer,
-		samplers:      [gpu.Texture_Filter]gpu.Sampler,
+		text_pipeline: gpu.Pipeline,
+		text_uniforms: gpu.Buffer,
+		text_atlas:    gpu.Texture,
 	},
 
 	// string ids
