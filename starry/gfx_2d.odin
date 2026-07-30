@@ -2,6 +2,7 @@ package starry
 
 import hm "core:container/handle_map"
 import "core:fmt"
+import "core:mem"
 import "gpu"
 import fons "vendor:fontstash"
 

@@ -51,10 +51,10 @@ function app.on_update(dt)
 	})
 
 	-- movement + modulate
-	local SPEED = 5000
+	local SPEED = 1
 	gfx.draw_rectangle({
 		pos = vec2(
-			(app.frame_size().x / 2 - 20) * math.sin(app.now_secs() * SPEED * dt) +
+			(app.frame_size().x / 2 - 20) * math.sin(app.now_secs() * SPEED) +
 			app.frame_size().x / 2 - 20, 0),
 		size = vec2(40),
 		texture = g_texture,
@@ -62,7 +62,7 @@ function app.on_update(dt)
 	})
 
 	-- amazing cursor
-	g_rotation = (g_rotation or 0) + 5 * dt
+	g_rotation = (g_rotation or 0) + (5 * dt)
 	gfx.draw_rectangle({
 		pos = app.mouse_pos(),
 		size = vec2(32),
@@ -71,13 +71,13 @@ function app.on_update(dt)
 		texture = g_texture,
 	})
 
-	gfx.draw_text({
-		text = "hello everyone my name is welcome",
-		pos = vec2(50, 50),
-		size = 16,
-		color = vec4(1),
-		font = g_font,
-	})
+	-- gfx.draw_text({
+	-- 	text = "hello everybody my name is welcome",
+	-- 	pos = vec2(50, 50),
+	-- 	size = 16,
+	-- 	color = vec4(1),
+	-- 	font = g_font,
+	-- })
 
 	gfx.end_drawing_2d()
 end

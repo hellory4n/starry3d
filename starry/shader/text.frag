@@ -10,6 +10,6 @@ layout(binding = 0) uniform sampler2D u_texture;
 void main()
 {
 	// frag_color = vec4(fs_uv, 0, 1);
-	// frag_color = vec4(1, 0, 0, 1);
-	frag_color = texture(u_texture, fs_uv).rrrr * fs_color;
+	frag_color = vec4(1, 0, 0, 1);
+	// frag_color = texture(u_texture, fs_uv).rrrr * fs_color;
 }

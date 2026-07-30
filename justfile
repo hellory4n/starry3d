@@ -23,15 +23,6 @@ build-starry:
 test: build-starry
 	{{_EXE_NAME}} -app-dir:test
 
-studio:
-	odin run studio {{_CFLAGS}} -- -app-dir:studio
-
-build-studio:
-	odin build studio {{_CFLAGS}} -out:{{_STUDIO_EXE}}
-
-bindgen:
-	odin run starry {{_CFLAGS}} -- -gen-lua-bind
-
 @release:
 	python misc/release.py
 

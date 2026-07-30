@@ -4,16 +4,12 @@ import shutil
 print("building starry...")
 assert os.system("just --set RELEASE speed build-starry") == 0
 
-print("building studio...")
-assert os.system("just --set RELEASE speed build-studio") == 0
-
 if os.path.exists("dist"):
 	print("dist/ directory already exists, cleaning up")
 	shutil.rmtree("dist")
 
 print("copying files...")
 starryexe = "starry.exe" if os.name == "nt" else "starry.bin"
-studioexe = "studio.exe" if os.name == "nt" else "studio.bin"
 
 os.makedirs("dist")
 
@@ -28,10 +24,6 @@ shutil.copy2("3rdparty_licenses.txt", "dist/3rdparty_licenses.txt")
 shutil.copytree("lualibs", "dist/lualibs")
 shutil.copytree("samples", "dist/samples")
 shutil.copytree("docs", "dist/docs", ignore=lambda _, __: "docs/dev")
-
-# studio is special
-shutil.copy2(studioexe, f"dist/{studioexe.replace(".bin", "")}")
-shutil.copy2("studio/app.json", "dist/app.json")
 
 print("creating shortcuts...")
 samples = ["hello"]

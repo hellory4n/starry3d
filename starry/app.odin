@@ -196,7 +196,7 @@ main_loop :: proc(update_proc: proc())
 
 	// timing it
 	global.current_time = f64(time.time_to_unix_nano(time.now())) / 1_000_000_000.0
-	delta_time := math.clamp(global.current_time - global.prev_time, 0.0001, 1)
+	global.delta_time = math.clamp(global.current_time - global.prev_time, math.F64_EPSILON, 1)
 	global.prev_time = global.current_time
 
 	// running it
@@ -268,7 +268,7 @@ now_secs :: proc() -> f64
 // Lua: `app.delta_time`
 delta_time :: proc() -> f64
 {
-	return math.clamp(global.current_time - global.prev_time, 0.0001, 1)
+	return global.delta_time
 }
 
 // Returns the current GPU device

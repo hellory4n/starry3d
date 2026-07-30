@@ -67,7 +67,7 @@ run_2d_draw_command :: proc(cmd: DrawCommand2D)
 	case DrawTextDesc:
 		gpu.bind_pipeline(dev, global.gfx2d.text_pipeline)
 		gpu.bind_texture(dev, global.gfx2d.text_atlas, slot = 0)
-		gpu.bind_sampler(dev, global.gfx2d.samplers[.BILINEAR], slot = 0)
+		gpu.bind_sampler(dev, global.gfx2d.samplers[.NEAREST_NEIGHBOR], slot = 0)
 		gpu.bind_uniform_buffer(dev, global.gfx2d.text_uniforms, slot = 0)
 
 		fctx := &global.gfx2d.fonsctx
@@ -75,6 +75,7 @@ run_2d_draw_command :: proc(cmd: DrawCommand2D)
 		fons.SetSize(fctx, desc.size)
 		fons.SetAlignHorizontal(fctx, desc.halign)
 		fons.SetAlignVertical(fctx, desc.valign)
+		fons.SetSpacing(fctx, desc.size * 1.2)
 
 		// TODO make this instanced or batched i'm begging you
 

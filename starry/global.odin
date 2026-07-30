@@ -25,6 +25,7 @@ global: struct {
 	start_time:   f64,
 	current_time: f64,
 	prev_time:    f64,
+	delta_time:   f64,
 	running:      bool,
 
 	// graphics
