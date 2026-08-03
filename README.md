@@ -1,15 +1,12 @@
 # The Starry engine
 
-The most massive.
+Starry is the biggest most massive engine of all time.
 
-Packages:
-- `starrylib`: utility functions
-- `starryapp`: manages the app lifecycle, GPU context, and asset system
-- `starrygfx`: the renderer (WIP)
-- `starryluarunner`: allows using Lua for Starry projects (WIP)
-- `studio`: the editor
-
-Get started with the [documentation](./docs) and [samples](./samples).
+Features:
+- Joyful [Lua](https://lua.org) scripting with batteries-included libraries
+- 2D and 3D rendering
+- Easy to learn and use
+- More soon (TM)
 
 ## FAQ
 

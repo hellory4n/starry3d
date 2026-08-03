@@ -12,10 +12,7 @@
 *.o
 *.obj
 dist
-!thirdparty/imgui/imgui_linux_x64.a
-!thirdparty/imgui/imgui_windows_x64.lib
-!thirdparty/luajit/linux/libluajit.a
-!thirdparty/luajit/windows/lua51.lib
+!thirdparty/**
 
 # engine garbage
 log.txt

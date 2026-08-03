@@ -32,3 +32,13 @@ The binaries were built using:
 - Windows: `msvcbuild.bat static`
 
 See `luajit/LICENSE` for licensing information.
+
+## freetype
+
+- Source: https://github.com/englerj/odin-freetype
+- Commit: [`300736e1d1a03b431b22efbe8354e9333609e283`](https://github.com/englerj/odin-freetype/commit/300736e1d1a03b431b22efbe8354e9333609e283)
+- License:
+	- `freetype.odin`: MIT (Copyright (c) 2021 Josh Engler)
+	- Binaries: FreeType License (Copyright 1996-2002, 2006 by David Turner, Robert Wilhelm, and Werner Lemberg)
+
+Binaries are from release v2.14.3.
