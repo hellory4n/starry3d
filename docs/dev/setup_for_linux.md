@@ -7,11 +7,11 @@ Required packages:
 
 ```sh
 # debian/ubuntu
-sudo apt install clang just libglfw3-dev
+sudo apt install clang just libglfw3-dev libfreetype-dev
 # fedora
-sudo dnf install clang just libcxx-devel glfw-devel
+sudo dnf install clang just libcxx-devel glfw-devel freetype-devel
 # arch linux
-sudo pacman -S clang just glfw
+sudo pacman -S clang just glfw freetype2
 ```
 
 You also need [Odin](https://odin-lang.org/) dev-2026-07a (your package manager is likely out of date!)

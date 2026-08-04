@@ -8,6 +8,7 @@ import "gpu"
 
 FontData :: struct {
 	handle:   hm.Handle32,
+	buffer:   []byte,
 	path:     string,
 	face:     ft.Face,
 	textures: map[rune]FontCharacter,
@@ -36,7 +37,10 @@ load_font_from_memory :: proc(data: []byte, label := "[buffer]") -> (h: hm.Handl
 
 	textures := make(map[rune]FontCharacter, global.ctx.allocator)
 
-	return hm.add(&global.fonts, FontData{path = label, face = face, textures = textures}),
+	return hm.add(
+			&global.fonts,
+			FontData{path = label, face = face, textures = textures, buffer = data},
+		),
 		true
 }
 
@@ -48,7 +52,6 @@ load_font :: proc(path: string) -> (h: hm.Handle32, ok: bool)
 		fmt.printfln("couldn't load %s: %s", path, err)
 		return {}, false
 	}
-	defer delete(buffer)
 
 	h, ok = load_font_from_memory(buffer, path)
 	if ok {
@@ -69,6 +72,7 @@ unload_font :: proc(h: hm.Handle32)
 	delete(font.textures)
 
 	ft.done_face(font.face)
+	delete(font.buffer)
 
 	fmt.printfln("unloaded %s (%v)", font.path, h)
 	hm.remove(&global.fonts, h)
