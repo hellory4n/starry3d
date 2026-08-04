@@ -24,20 +24,19 @@ layout(location = 1) out vec2 fs_uv;
 layout(std140, binding = 0) uniform world {
 	vec4 u_color;
 	vec2 u_resolution;
-	vec2 u_xy0;
-	vec2 u_xy1;
-	vec2 u_uv0;
-	vec2 u_uv1;
+	vec2 u_pos;
+	vec2 u_char_size;
 };
 
 void main()
 {
-	fs_color = u_color;
-	fs_uv = u_uv0 + u_uv1 * UVS[gl_VertexID];
-	vec2 base_pos = u_xy0 + u_xy1 * POSITIONS[gl_VertexID];
+	vec2 base_pos = POSITIONS[gl_VertexID] * u_char_size;
 	vec2 ndc = vec2(
-		2.0 * base_pos.x / u_resolution.x - 1.0,
-		1.0 - 2.0 * base_pos.y / u_resolution.y
+		2.0 * (u_pos.x + base_pos.x) / u_resolution.x - 1.0,
+		1.0 - 2.0 * (u_pos.y + base_pos.y) / u_resolution.y
 	);
 	gl_Position = vec4(ndc, 0, 1);
+
+	fs_color = u_color;
+	fs_uv = UVS[gl_VertexID];
 }

@@ -50,8 +50,7 @@ function gfx.draw_rectangle(args) end
 --- @field size number
 --- @field color Vec4
 --- @field font gfx.Font
---- @field halign "left" | "center" | "right"?
---- @field valign "top" | "middle" | "bottom" | "baseline"?
+--- @field line_spacing number
 
 --- Draws text.
 --- @param args gfx.DrawTextDesc

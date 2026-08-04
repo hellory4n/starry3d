@@ -1,11 +1,11 @@
 package starry
 
+import ft "../thirdparty/freetype"
 import lua "../thirdparty/luajit"
 import "base:runtime"
 import hm "core:container/handle_map"
 import vmem "core:mem/virtual"
 import "gpu"
-import fons "vendor:fontstash"
 
 global: struct {
 	// pre-init
@@ -32,15 +32,14 @@ global: struct {
 	device:       gpu.Device,
 	textures:     hm.Dynamic_Handle_Map(TextureData, hm.Handle32),
 	fonts:        hm.Dynamic_Handle_Map(FontData, hm.Handle32),
+	samplers:     [gpu.Texture_Filter]gpu.Sampler,
+	ft:           ft.Library,
 	gfx2d:        struct {
-		fonsctx:       fons.FontContext,
 		commands:      [dynamic]DrawCommand2D,
-		samplers:      [gpu.Texture_Filter]gpu.Sampler,
 		rect_pipeline: gpu.Pipeline,
 		rect_uniforms: gpu.Buffer,
 		text_pipeline: gpu.Pipeline,
 		text_uniforms: gpu.Buffer,
-		text_atlas:    gpu.Texture,
 	},
 
 	// string ids

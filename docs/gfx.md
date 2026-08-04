@@ -75,23 +75,16 @@ Draws text. Options:
 
 ```lua
 gfx.draw_text({
-	-- supported scripts:
-	-- - ASCII
-	-- - latin extended
-	-- - cyrillic
-	-- - greek
-	-- other scripts will not render properly
+	-- unicode is supported! (though incomplete)
 	text = "Hej världen!",
 
 	pos = vec2(10, 15),
 	size = 16,
 	color = vec4(1, 1, 1, 1),
 
-	font = gfx.load_texture("font.ttf"), -- don't call every frame!
+	font = gfx.load_font("font.ttf"), -- don't call every frame!
 
-	-- defaults to "left"
-	halign = "left" | "center" | "right",
-	-- defaults to "baseline"
-	valign = "top" | "middle" | "bottom" | "baseline"
+	-- defaults to 2, multiplies by size
+	line_spacing = 2,
 })
 ```

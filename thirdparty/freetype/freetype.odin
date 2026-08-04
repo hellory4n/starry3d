@@ -3,7 +3,7 @@ package freetype
 import "core:c"
 
 when ODIN_OS == .Windows {
-    foreign import freetype "freetype.lib"
+    foreign import freetype "windows/freetype.lib"
 } else when ODIN_OS == .Linux {
     foreign import freetype "system:freetype"
 }
@@ -555,7 +555,7 @@ foreign freetype {
     @(link_name="FT_Load_Char")      load_char      :: proc(face: Face, char_code: c.ulong, load_flags: Load_Flags) -> Error ---
     @(link_name="FT_Set_Char_Size")  set_char_size  :: proc(face: Face, char_width, char_height: F26Dot6, horz_resolution, vert_resolution: c.uint) -> Error ---
     @(link_name="FT_Get_Char_Index") get_char_index :: proc(face: Face, code: c.ulong) -> c.uint ---
-    
+
     @(link_name="FT_Load_Glyph")   load_glyph   :: proc(face: Face, index: c.uint, flags: Load_Flags) -> Error ---
     @(link_name="FT_Render_Glyph") render_glyph :: proc(slot: Glyph_Slot, render_mode: Render_Mode) -> Error ---
 

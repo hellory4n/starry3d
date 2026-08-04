@@ -243,47 +243,11 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	desc.font = (cast(^hm.Handle32)lua.touserdata(L, -1))^
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "halign")
+	lua.getfield(L, 1, "line_spacing")
 	if !lua.isnil(L, -1) {
-		halign_str := lua_check_odin_string(L, -1)
-		switch halign_str {
-		case "left":
-			desc.halign = .LEFT
-		case "center":
-			desc.halign = .CENTER
-		case "right":
-			desc.halign = .RIGHT
-		case:
-			fmt.panicf(
-				"unexpected enum %q; should be 'left', 'center', or 'right'",
-				halign_str,
-			)
-		}
+		desc.line_spacing = f32(lua.L_checknumber(L, -1))
 	} else {
-		desc.halign = .LEFT
-	}
-	lua.pop(L, 1)
-
-	lua.getfield(L, 1, "valign")
-	if !lua.isnil(L, -1) {
-		valign_str := lua_check_odin_string(L, -1)
-		switch valign_str {
-		case "top":
-			desc.valign = .TOP
-		case "middle":
-			desc.valign = .MIDDLE
-		case "bottom":
-			desc.valign = .BOTTOM
-		case "baseline":
-			desc.valign = .BASELINE
-		case:
-			fmt.panicf(
-				"unexpected enum %q; should be 'top', 'middle', 'bottom', or 'baseline'",
-				valign_str,
-			)
-		}
-	} else {
-		desc.valign = .BASELINE
+		desc.line_spacing = 2
 	}
 	lua.pop(L, 1)
 

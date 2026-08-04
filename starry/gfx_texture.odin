@@ -90,11 +90,11 @@ unload_texture :: proc(h: hm.Handle32)
 	fmt.printfln("unloaded %s (%v)", texture.path, h)
 }
 
-texture_data :: proc(h: hm.Handle32) -> TextureData
+texture_data :: proc(h: hm.Handle32) -> ^TextureData
 {
 	texture, ok := hm.get(&global.textures, h)
 	assert(ok)
-	return texture^
+	return texture
 }
 
 texture_is_valid :: proc(h: hm.Handle32) -> bool

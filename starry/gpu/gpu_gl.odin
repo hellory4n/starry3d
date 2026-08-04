@@ -936,6 +936,7 @@ Texture_Wrap :: enum {
 Texture_Filter :: enum {
 	NEAREST_NEIGHBOR,
 	BILINEAR,
+	TRILINEAR,
 }
 
 new_sampler :: proc(
@@ -969,6 +970,9 @@ new_sampler :: proc(
 		gl.SamplerParameteri(id, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 	case .BILINEAR:
 		gl.SamplerParameteri(id, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+		gl.SamplerParameteri(id, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	case .TRILINEAR:
+		gl.SamplerParameteri(id, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
 		gl.SamplerParameteri(id, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 	}
 

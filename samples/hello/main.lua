@@ -71,13 +71,13 @@ function app.on_update(dt)
 		texture = g_texture,
 	})
 
-	-- gfx.draw_text({
-	-- 	text = "hello everybody my name is welcome",
-	-- 	pos = vec2(50, 50),
-	-- 	size = 16,
-	-- 	color = vec4(1),
-	-- 	font = g_font,
-	-- })
+	gfx.draw_text({
+		text = "hello everybody my name is welcome\nWHAÇÇT\nυοθ μετ με ατ α ωερυ γρεεκ μομεντ ιν μυ λιφε",
+		pos = vec2(50, 50),
+		size = 16,
+		color = vec4(1),
+		font = g_font,
+	})
 
 	gfx.end_drawing_2d()
 end
