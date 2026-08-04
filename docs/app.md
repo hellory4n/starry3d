@@ -50,6 +50,10 @@ Returns the current mouse position.
 
 Returns the difference between the current mouse position and the mouse position from the last frame.
 
+### `app.mouse_scroll(): vec2`
+
+Returns the mouse scroll value this frame.
+
 ### `app.key_just_pressed(key: string): boolean`
 
 Returns true if the key started being pressed this frame. See [keycodes](./keycodes.md).

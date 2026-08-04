@@ -27,10 +27,17 @@ test: build-starry
 	python misc/release.py
 
 # but why would you do that
-@run-all-samples: build-starry
-	@# building starry
-	run-hello
+run-all-samples: build-starry \
+	run-hello run-delta-time run-input-keys run-input-mouse
 
-@run-hello: build-starry
-	@# samples: hello
+run-hello: build-starry
 	{{_EXE_NAME}} -app-dir:samples/hello
+
+run-delta-time: build-starry
+	{{_EXE_NAME}} -app-dir:samples/delta_time
+
+run-input-keys: build-starry
+	{{_EXE_NAME}} -app-dir:samples/input_keys
+
+run-input-mouse: build-starry
+	{{_EXE_NAME}} -app-dir:samples/input_mouse

@@ -200,7 +200,7 @@ lua_app_scale_factor :: proc "c" (L: ^lua.State) -> c.int
 lua_app_lock_mouse :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
-	lock := bool(lua.L_checkinteger(L, 1))
+	lock := lua_check_boolean(L, 1)
 	lock_mouse(lock)
 	return 0
 }
@@ -231,6 +231,15 @@ lua_app_set_title :: proc "c" (L: ^lua.State) -> c.int
 	return 0
 }
 
+@(private = "file")
+lua_app_mouse_scroll :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	res := mouse_scroll()
+	lua_push_vec2(L, cast([2]f64)res)
+	return 1
+}
+
 lua_open_app :: proc "c" (L: ^lua.State)
 {
 	mod := []lua.L_Reg {
@@ -256,6 +265,7 @@ lua_open_app :: proc "c" (L: ^lua.State)
 		{"mouse_locked", lua_app_mouse_locked},
 		{"request_quit", lua_app_request_quit},
 		{"set_title", lua_app_set_title},
+		{"mouse_scroll", lua_app_mouse_scroll},
 		{nil, nil},
 	}
 	lua.L_openlib(L, "app", raw_data(mod), 0)

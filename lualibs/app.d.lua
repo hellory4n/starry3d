@@ -28,6 +28,10 @@ function app.delta_time() end
 --- @return Vec2
 function app.mouse_pos() end
 
+--- Returns the mouse scroll value this frame.
+--- @return Vec2
+function app.mouse_scroll() end
+
 --- Returns the difference between the current mouse position and the mouse position from the last frame.
 --- @return Vec2
 function app.delta_mouse_pos() end

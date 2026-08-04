@@ -240,7 +240,11 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	lua.pop(L, 1)
 
 	lua.getfield(L, 1, "font")
-	desc.font = (cast(^hm.Handle32)lua.touserdata(L, -1))^
+	if !lua.isnil(L, -1) {
+		desc.font = (cast(^hm.Handle32)lua.touserdata(L, -1))^
+	} else {
+		desc.font = global.default_font
+	}
 	lua.pop(L, 1)
 
 	lua.getfield(L, 1, "line_spacing")

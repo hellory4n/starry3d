@@ -369,3 +369,4 @@ Returns true if any of the components in the boolean vector are true.
 - `mat4`, maybe other matrices too
 - swizzling
 - rect, aabb
+- error messages when mixing vector lengths

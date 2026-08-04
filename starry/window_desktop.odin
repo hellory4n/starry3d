@@ -13,6 +13,7 @@ Window :: struct {
 	current_mouse:    [2]f32,
 	delta_mouse:      [2]f32,
 	prev_mouse:       [2]f32,
+	scroll:           [2]f32,
 	idx:              int,
 	high_dpi_enabled: bool,
 }
@@ -84,12 +85,13 @@ open_window :: proc(
 	glfw.SetWindowUserPointer(glfw_window, window)
 	append(&global.windows, window)
 
-	glfw.SetFramebufferSizeCallback(
+	glfw.SetScrollCallback(
 		glfw_window,
-		proc "c" (glfw_window: glfw.WindowHandle, width, height: i32)
+		proc "c" (glfw_window: glfw.WindowHandle, xoffset, yoffset: f64)
 		{
 			context = global.ctx
 			window := cast(^Window)glfw.GetWindowUserPointer(glfw_window)
+			window.scroll = {f32(xoffset), f32(yoffset)}
 		},
 	)
 
@@ -113,6 +115,9 @@ close_window :: proc(window: ^Window, allocator := context.allocator)
 
 poll_events :: proc()
 {
+	for window in global.windows {
+		window.scroll = {}
+	}
 	glfw.PollEvents()
 	for window in global.windows {
 		poll_window_events(window)
@@ -303,6 +308,11 @@ window_set_title :: proc(window: ^Window, title: string)
 	glfw.SetWindowTitle(window.glfw, temp_cstr(title))
 }
 
+window_mouse_scroll :: proc(window: ^Window) -> [2]f32
+{
+	return window.scroll
+}
+
 // man
 
 // lua: `app.is_closing`
@@ -468,4 +478,11 @@ set_title :: proc(title: string)
 {
 	if main_window() == nil do return
 	window_set_title(main_window(), title)
+}
+
+// lua: `app.mouse_scroll`
+mouse_scroll :: proc() -> [2]f32
+{
+	if main_window() == nil do return {}
+	return window_mouse_scroll(main_window())
 }

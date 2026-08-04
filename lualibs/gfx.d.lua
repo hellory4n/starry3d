@@ -49,8 +49,8 @@ function gfx.draw_rectangle(args) end
 --- @field pos Vec2
 --- @field size number
 --- @field color Vec4
---- @field font gfx.Font
---- @field line_spacing number
+--- @field font gfx.Font?
+--- @field line_spacing number?
 
 --- Draws text.
 --- @param args gfx.DrawTextDesc

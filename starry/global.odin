@@ -41,6 +41,7 @@ global: struct {
 		text_pipeline: gpu.Pipeline,
 		text_uniforms: gpu.Buffer,
 	},
+	default_font: hm.Handle32,
 
 	// string ids
 	strdb:        struct {

@@ -109,6 +109,13 @@ lua_check_odin_string :: proc "c" (L: ^lua.State, num_arg: c.int) -> string
 	return string((cast([^]byte)cstr)[:slen])
 }
 
+// why
+lua_check_boolean :: proc "c" (L: ^lua.State, num_arg: c.int) -> bool
+{
+	lua.L_checktype(L, num_arg, i32(lua.TBOOLEAN))
+	return bool(lua.toboolean(L, num_arg))
+}
+
 lua_push_odin_string :: proc "c" (L: ^lua.State, s: string)
 {
 	lua.pushlstring(L, cast(cstring)raw_data(s), c.size_t(len(s)))

@@ -79,8 +79,6 @@ init_2d_renderer :: proc()
 			fmt.printfln("couldn't initialize FreeType: %s", err)
 		}
 
-		// TODO default fallback font?
-
 		global.gfx2d.text_uniforms = gpu.new_buffer(
 			dev,
 			{.UNIFORM},
@@ -117,6 +115,14 @@ init_2d_renderer :: proc()
 				{type = .SAMPLER, slot = 0},
 			},
 		)
+
+		ok: bool
+		global.default_font, ok = load_font_from_memory(
+			#load("assets/OpenSans-Medium.ttf"),
+			label = "OpenSans-Medium.ttf (preloaded)",
+			preloaded = true,
+		)
+		assert(ok)
 	}
 }
 
@@ -126,6 +132,7 @@ free_2d_renderer :: proc()
 		return
 	}
 
+	unload_font(global.default_font)
 	ft.done_free_type(global.ft)
 
 	for sampler in global.samplers {

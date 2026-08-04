@@ -96,8 +96,6 @@ init_app :: proc()
 	lua.getfield(L, -1, "on_init")
 	if !lua.isnil(L, -1) {
 		lua_call(L, nargs = 0, nresults = 0)
-	} else {
-		fmt.printfln("warning: `app.on_init()` isn't defined. did you make a typo?")
 	}
 	lua.pop(L, 1)
 }

@@ -7,11 +7,12 @@ import "core:fmt"
 import "gpu"
 
 FontData :: struct {
-	handle:   hm.Handle32,
-	buffer:   []byte,
-	path:     string,
-	face:     ft.Face,
-	textures: map[rune]FontCharacter,
+	handle:    hm.Handle32,
+	buffer:    []byte,
+	path:      string,
+	face:      ft.Face,
+	textures:  map[rune]FontCharacter,
+	preloaded: bool,
 }
 
 FontCharacter :: struct {
@@ -25,7 +26,14 @@ FontCharacter :: struct {
 // TODO expose this?
 RENDERED_FONT_SIZE :: 64
 
-load_font_from_memory :: proc(data: []byte, label := "[buffer]") -> (h: hm.Handle32, ok: bool)
+load_font_from_memory :: proc(
+	data: []byte,
+	label := "[buffer]",
+	preloaded := false,
+) -> (
+	h: hm.Handle32,
+	ok: bool,
+)
 {
 	face: ft.Face
 	if err := ft.new_memory_face(global.ft, raw_data(data), c.long(len(data)), 0, &face);
@@ -39,7 +47,13 @@ load_font_from_memory :: proc(data: []byte, label := "[buffer]") -> (h: hm.Handl
 
 	return hm.add(
 			&global.fonts,
-			FontData{path = label, face = face, textures = textures, buffer = data},
+			FontData {
+				path = label,
+				face = face,
+				textures = textures,
+				buffer = data,
+				preloaded = preloaded,
+			},
 		),
 		true
 }
@@ -72,7 +86,9 @@ unload_font :: proc(h: hm.Handle32)
 	delete(font.textures)
 
 	ft.done_face(font.face)
-	delete(font.buffer)
+	if !font.preloaded {
+		delete(font.buffer)
+	}
 
 	fmt.printfln("unloaded %s (%v)", font.path, h)
 	hm.remove(&global.fonts, h)
