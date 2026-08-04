@@ -26,7 +26,7 @@ shutil.copytree("samples", "dist/samples")
 shutil.copytree("docs", "dist/docs", ignore=lambda _, __: "docs/dev")
 
 print("creating shortcuts...")
-samples = ["hello"]
+samples = ["hello", "delta_time", "input_keys", "input_mouse"]
 for sample in samples:
 	if os.name == "nt":
 		with open(f"dist/samples/{sample}.cmd", 'w') as f:
