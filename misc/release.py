@@ -15,9 +15,6 @@ os.makedirs("dist")
 
 # no extension is more unixpilled
 shutil.copy2(starryexe, f"dist/{starryexe.replace(".bin", "")}")
-# not strictly necessary but why not
-if os.name == "nt":
-	shutil.copy2("starry.pdb", "dist/starry.pdb")
 
 shutil.copy2("LICENSE", "dist/LICENSE.txt")
 shutil.copy2("3rdparty_licenses.txt", "dist/3rdparty_licenses.txt")
