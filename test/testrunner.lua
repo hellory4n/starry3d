@@ -64,9 +64,8 @@ function Test:assert_approx(actual, expected, epsilon)
 	epsilon = epsilon or 1.192092896e-07
 	local difference = math.abs(actual - expected)
 	if difference > epsilon then
-		print("failed assertion: expected " ..
+		error("failed assertion: expected " ..
 			tostring(expected) .. ", got " .. tostring(actual))
-		error()
 	end
 end
 

@@ -13,6 +13,10 @@ import "gpu"
 
 init_2d_renderer :: proc()
 {
+	if is_headless() {
+		return
+	}
+
 	dev := gpu_device()
 	init_shared(dev)
 	init_rect_pipeline(dev)
@@ -118,6 +122,10 @@ init_2d_renderer :: proc()
 
 free_2d_renderer :: proc()
 {
+	if is_headless() {
+		return
+	}
+
 	ft.done_free_type(global.ft)
 
 	for sampler in global.samplers {

@@ -1,3 +1,5 @@
+local bit = require("bit")
+
 --- @class BVec2: table
 --- @field x boolean
 --- @field y boolean
@@ -1124,4 +1126,49 @@ function math.greater_than_equal(a, b)
 	else
 		error("expected Vec2 or Vec3 or Vec4, got " .. type(a))
 	end
+end
+
+--- Converts a hex code to a normalized RGBA color (0-1).
+--- Supports "#RGB", "#RGBA", "#RRGGBB", "#RRGGBBAA" (with or without '#')
+--- @param x string
+--- @return Vec4
+function math.hex(x)
+	if type(x) ~= "string" then
+		error("math.hex: expected string, got " .. type(x))
+	end
+	local r, g, b, a = 0, 0, 0, 0
+
+	-- strip optional leading '#'
+	if x:sub(1, 1) == "#" then
+		x = x:sub(2)
+	end
+
+	local len = #x
+	if len == 3 or len == 4 then
+		-- RGB -> RRGGBB, RGBA -> RRGGBBAA
+		local expanded = ""
+		for i = 1, len do
+			local c = x:sub(i, i)
+			expanded = expanded .. c .. c
+		end
+		x = expanded
+		len = #x
+	end
+
+	if len == 6 then
+		r = tonumber(x:sub(1, 2), 16) or 255
+		g = tonumber(x:sub(3, 4), 16) or 255
+		b = tonumber(x:sub(5, 6), 16) or 255
+		a = 255
+	elseif len == 8 then
+		r = tonumber(x:sub(1, 2), 16) or 255
+		g = tonumber(x:sub(3, 4), 16) or 255
+		b = tonumber(x:sub(5, 6), 16) or 255
+		a = tonumber(x:sub(7, 8), 16) or 255
+	else
+		print("unexpected length " .. tostring(len) .. " in hex code string")
+		return vec4(1, 1, 1, 1)
+	end
+
+	return vec4(r / 255, g / 255, b / 255, a / 255)
 end

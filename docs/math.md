@@ -274,6 +274,11 @@ Converts a color (vec3 or vec4) from the 0-255 range to the 0.0-1.0 range.
 
 Converts a color (vec3 or vec4) from the 0.0-1.0 range to the 0-255 range.
 
+## `math.hex(src: string): vec4`
+
+Converts a hex code to a normalized RGBA color (0-1).
+Supports "#RGB", "#RGBA", "#RRGGBB", "#RRGGBBAA" (with or without '#')
+
 ## Quaternions
 
 ### `quat(x, y, z, w)`

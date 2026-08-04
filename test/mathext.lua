@@ -892,3 +892,84 @@ Test.new("math.greater_than / greater_than_equal", function(t)
 	t:assert(ge.z, false)
 	t:assert(ge.w, true)
 end)
+
+Test.new("math.hex string RGB", function(t)
+	-- short form with #
+	local c = math.hex("#F00")
+	t:assert_approx(c.r, 1)
+	t:assert_approx(c.g, 0)
+	t:assert_approx(c.b, 0)
+	t:assert_approx(c.a, 1)
+
+	-- short form without #
+	c = math.hex("0F0")
+	t:assert_approx(c.r, 0)
+	t:assert_approx(c.g, 1)
+	t:assert_approx(c.b, 0)
+	t:assert_approx(c.a, 1)
+
+	-- full form
+	c = math.hex("#00FF00")
+	t:assert_approx(c.r, 0)
+	t:assert_approx(c.g, 1)
+	t:assert_approx(c.b, 0)
+	t:assert_approx(c.a, 1)
+
+	c = math.hex("0000FF")
+	t:assert_approx(c.r, 0)
+	t:assert_approx(c.g, 0)
+	t:assert_approx(c.b, 1)
+	t:assert_approx(c.a, 1)
+end)
+
+Test.new("math.hex string RGBA", function(t)
+	-- short form
+	local c = math.hex("#F008")
+	t:assert_approx(c.r, 1)
+	t:assert_approx(c.g, 0)
+	t:assert_approx(c.b, 0)
+	t:assert_approx(c.a, 0x88 / 255)
+
+	-- full form
+	c = math.hex("#FF000080")
+	t:assert_approx(c.r, 1)
+	t:assert_approx(c.g, 0)
+	t:assert_approx(c.b, 0)
+	t:assert_approx(c.a, 0x80 / 255)
+
+	c = math.hex("00FF00FF")
+	t:assert_approx(c.r, 0)
+	t:assert_approx(c.g, 1)
+	t:assert_approx(c.b, 0)
+	t:assert_approx(c.a, 1)
+end)
+
+Test.new("math.hex edge cases", function(t)
+	-- black
+	local c = math.hex("#000")
+	t:assert_approx(c.r, 0)
+	t:assert_approx(c.g, 0)
+	t:assert_approx(c.b, 0)
+	t:assert_approx(c.a, 1)
+
+	-- white
+	c = math.hex("#FFFFFF")
+	t:assert_approx(c.r, 1)
+	t:assert_approx(c.g, 1)
+	t:assert_approx(c.b, 1)
+	t:assert_approx(c.a, 1)
+
+	-- fully transparent
+	c = math.hex("#00000000")
+	t:assert_approx(c.r, 0)
+	t:assert_approx(c.g, 0)
+	t:assert_approx(c.b, 0)
+	t:assert_approx(c.a, 0)
+
+	-- mixed case
+	c = math.hex("#aAbBcC")
+	t:assert_approx(c.r, 0xAA / 255)
+	t:assert_approx(c.g, 0xBB / 255)
+	t:assert_approx(c.b, 0xCC / 255)
+	t:assert_approx(c.a, 1)
+end)

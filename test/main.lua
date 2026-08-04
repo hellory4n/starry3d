@@ -1,6 +1,6 @@
 local Test = require("testrunner")
 
-function app_init()
+function app.on_init()
 	require("mathext")
 	Test.run_all()
 end
