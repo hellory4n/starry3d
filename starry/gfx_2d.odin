@@ -7,7 +7,7 @@ import "gpu"
 
 // TODO this is a horrible renderer:
 // - there is no batching anywhere
-// - fonts create a new texture per character, per font size
+// - fonts create a new texture per character
 // - text isn't batched or instanced
 // - the command system is useless (at least in this version)
 // - text antialiasing is kinda ugly (and it's not freetype's fault)
