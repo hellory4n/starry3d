@@ -4,9 +4,10 @@ import "core:fmt"
 import "core:hash"
 import "core:io"
 import "core:log"
-import "core:mem"
 import vmem "core:mem/virtual"
 import "core:strings"
+
+// TODO this is used nowhere
 
 StringId :: distinct u64
 

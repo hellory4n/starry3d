@@ -21,9 +21,9 @@ import "core:fmt"
 import "core:mem"
 import gl "vendor:OpenGL"
 
-// TODO separate the OpenGL implementation into its own file
-// i really can't be bothered to do that rn
-
+// TODO dynamic dispatch
+// this will allow selecting a backend at runtime
+//
 // TODO custom validation layers
 
 Device :: distinct hm.Handle32

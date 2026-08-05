@@ -13,8 +13,6 @@ import "core:math/linalg"
 @(private = "file")
 lua_st_round :: proc "c" (L: ^lua.State) -> c.int
 {
-	// TODO crossing the C-lua boundary is bad for performance
-	// a pure Lua implementation would be better for JIT and whatnot
 	x := lua.L_checknumber(L, 1)
 	lua.pushnumber(L, math.round(x))
 	return 1

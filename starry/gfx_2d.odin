@@ -10,6 +10,7 @@ import "gpu"
 // - fonts create a new texture per character, per font size
 // - text isn't batched or instanced
 // - the command system is useless (at least in this version)
+// - text antialiasing is kinda ugly (and it's not freetype's fault)
 
 init_2d_renderer :: proc()
 {
