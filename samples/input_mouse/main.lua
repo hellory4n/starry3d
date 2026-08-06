@@ -34,7 +34,7 @@ function app.on_update(dt)
 		    "scroll to change size\n" ..
 		    "press H to toggle visibility",
 		pos = vec2(10),
-		size = 12,
+		size = 20,
 		color = vec4(1),
 	})
 

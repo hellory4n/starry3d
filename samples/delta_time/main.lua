@@ -41,7 +41,7 @@ function app.on_update(dt)
 			1 / dt, dt
 		),
 		pos = vec2(10),
-		size = 12,
+		size = 20,
 		color = vec4(1),
 	})
 

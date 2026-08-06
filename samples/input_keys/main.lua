@@ -51,7 +51,7 @@ function app.on_update(dt)
 	gfx.draw_text({
 		text = "move with arrow keys",
 		pos = vec2(10),
-		size = 12,
+		size = 20,
 		color = vec4(1),
 	})
 

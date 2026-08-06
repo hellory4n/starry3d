@@ -1,4 +1,5 @@
 {
     "name": "example: hello",
-    "main": "main.lua"
+    "main": "main.lua",
+    "flags": ["no_high_dpi"]
 }
