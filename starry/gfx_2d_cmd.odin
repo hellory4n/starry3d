@@ -1,5 +1,7 @@
 package starry
 
+import "core:fmt"
+import "core:math"
 import "core:mem"
 import "gpu"
 
@@ -76,20 +78,22 @@ run_draw_text_cmd :: proc(dev: gpu.Device, desc: DrawTextDesc)
 	gpu.bind_uniform_buffer(dev, global.gfx2d.text_uniforms, slot = 0)
 	gpu.bind_sampler(dev, global.samplers[.BILINEAR], slot = 0)
 
-	tall_char_size := make_or_get_char_texture_from_font(desc.font, 'T').bearing.y
+	int_size := i32(math.ceil(desc.size))
+	tall_char_size := make_or_get_char_texture_from_font(desc.font, 'T', int_size).bearing.y
 
 	x, y := desc.pos.x, desc.pos.y
 	for r in desc.text {
 		// TODO handle more whitespace characters
 		if r == '\n' {
 			x = desc.pos.x
-			y += desc.size * desc.line_spacing
+			y += f32(tall_char_size) * desc.line_spacing
 			continue
 		}
 
-		font_char := make_or_get_char_texture_from_font(desc.font, r)
+		font_char := make_or_get_char_texture_from_font(desc.font, r, int_size)
 
-		scale := desc.size / RENDERED_FONT_SIZE
+		// for fractional sizes
+		scale := desc.size / f32(int_size)
 		xpos := x + f32(font_char.bearing.x) * scale
 		ypos := y + f32(tall_char_size - font_char.bearing.y) * scale
 		w := f32(font_char.size.x) * scale

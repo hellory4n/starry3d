@@ -24,6 +24,7 @@ init_lua :: proc()
 	})
 
 	// yes it has to be this exact order
+	// "has"
 	lua.L_openlibs(L)
 	lua_open_app(L)
 	lua_run_bytes(L, #load("../lualibs/boot.lua"), "(preloaded) lualibs/boot.lua")

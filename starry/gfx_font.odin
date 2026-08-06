@@ -11,7 +11,8 @@ FontData :: struct {
 	buffer:    []byte,
 	path:      string,
 	face:      ft.Face,
-	textures:  map[rune]FontCharacter,
+	// i32 is pixel size (rounded up if the source is a float)
+	textures:  map[i32]map[rune]FontCharacter,
 	preloaded: bool,
 }
 
@@ -21,10 +22,6 @@ FontCharacter :: struct {
 	bearing: [2]i32,
 	advance: [2]i32,
 }
-
-// should be enough for now
-// TODO expose this?
-RENDERED_FONT_SIZE :: 64
 
 load_font_from_memory :: proc(
 	data: []byte,
@@ -41,9 +38,7 @@ load_font_from_memory :: proc(
 		fmt.printfln("couldn't load %s: %s", label, err)
 	}
 
-	ft.set_pixel_sizes(face, 0, 96)
-
-	textures := make(map[rune]FontCharacter, global.ctx.allocator)
+	textures := make(map[i32]map[rune]FontCharacter, global.ctx.allocator)
 
 	return hm.add(
 			&global.fonts,
@@ -80,8 +75,11 @@ unload_font :: proc(h: hm.Handle32)
 	font, ok := hm.get(&global.fonts, h)
 	assert(ok)
 
-	for _, t in font.textures {
-		gpu.free_texture(t.texture)
+	for _, texture_map in font.textures {
+		for _, font_char in texture_map {
+			gpu.free_texture(font_char.texture)
+		}
+		delete(texture_map)
 	}
 	delete(font.textures)
 
@@ -102,14 +100,27 @@ font_data :: proc(h: hm.Handle32) -> ^FontData
 }
 
 // you'll never guess what this does
-make_or_get_char_texture_from_font :: proc(h: hm.Handle32, r: rune) -> FontCharacter
+make_or_get_char_texture_from_font :: proc(
+	h: hm.Handle32,
+	r: rune,
+	size: i32,
+) -> (
+	font_char: FontCharacter,
+)
 {
 	font := font_data(h)
-	font_char, ok := font.textures[r]
+	texture_map, ok := font.textures[size]
+	if !ok {
+		texture_map = make(map[rune]FontCharacter)
+		font.textures[size] = texture_map
+	}
+
+	font_char, ok = texture_map[r]
 	if ok {
 		return font_char
 	}
 
+	ft.set_pixel_sizes(font.face, 0, u32(size))
 	if err := ft.load_char(font.face, c.ulong(r), {.Render}); err != .Ok {
 		fmt.printfln("couldn't load glyph for font loaded from %q: %s", font.path, err)
 	}
@@ -131,6 +142,6 @@ make_or_get_char_texture_from_font :: proc(h: hm.Handle32, r: rune) -> FontChara
 		)
 	}
 
-	font.textures[r] = font_char
+	texture_map[r] = font_char
 	return font_char
 }
