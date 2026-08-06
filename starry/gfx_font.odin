@@ -109,10 +109,10 @@ make_or_get_char_texture_from_font :: proc(
 )
 {
 	font := font_data(h)
-	texture_map, ok := font.textures[size]
+	texture_map, ok := &font.textures[size]
 	if !ok {
-		texture_map = make(map[rune]FontCharacter)
-		font.textures[size] = texture_map
+		font.textures[size] = make(map[rune]FontCharacter)
+		texture_map = &font.textures[size]
 	}
 
 	font_char, ok = texture_map[r]
@@ -122,7 +122,12 @@ make_or_get_char_texture_from_font :: proc(
 
 	ft.set_pixel_sizes(font.face, 0, u32(size))
 	if err := ft.load_char(font.face, c.ulong(r), {.Render}); err != .Ok {
-		fmt.printfln("couldn't load glyph for font loaded from %q: %s", font.path, err)
+		fmt.printfln(
+			"couldn't load glyph for '%c' for font loaded from %q: %s",
+			r,
+			font.path,
+			err,
+		)
 	}
 
 	font_char = FontCharacter {
