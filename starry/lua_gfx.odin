@@ -261,8 +261,13 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 		switch wrap_str {
 		case "word":
 			desc.wrap = .WORD
+		case "character":
+			desc.wrap = .CHARACTER
 		case:
-			fmt.panicf("unexpected wrap %q, should be nil or 'word'", wrap_str)
+			fmt.panicf(
+				"unexpected wrap %q, should be nil, 'character', or 'word'",
+				wrap_str,
+			)
 		}
 	}
 	lua.pop(L, 1)

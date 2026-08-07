@@ -51,7 +51,7 @@ function gfx.draw_rectangle(args) end
 --- @field color Vec4
 --- @field font gfx.Font?
 --- @field line_spacing number?
---- @field wrap nil | "word"
+--- @field wrap nil | "character" | "word"
 --- @field bounds Vec2?
 
 --- Draws text.

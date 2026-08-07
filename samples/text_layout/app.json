@@ -1,0 +1,5 @@
+{
+    "name": "example: text_layout",
+    "main": "main.lua",
+    "flags": ["no_high_dpi"]
+}

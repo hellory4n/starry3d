@@ -24,6 +24,9 @@ FontGlyph :: struct {
 	bearing: [2]i32,
 }
 
+// shared between freetype and harfbuzz
+FT_LOAD_FLAGS :: ft.Load_Flags{.Render, .Force_Autohint}
+
 load_font_from_memory :: proc(
 	data: []byte,
 	label := "[buffer]",
@@ -43,6 +46,8 @@ load_font_from_memory :: proc(
 	ft.set_pixel_sizes(face, 0, 16)
 	hb_font := hb.ft_font_create(face, nil)
 	textures := make(map[i32]map[hb.codepoint_t]FontGlyph, global.ctx.allocator)
+
+	hb.ft_font_set_load_flags(hb_font, FT_LOAD_FLAGS)
 
 	return hm.add(
 			&global.fonts,

@@ -87,7 +87,7 @@ gfx.draw_text({
 	-- defaults to 2, multiplies by size
 	line_spacing = 2,
 
-	wrap = nil | "word",
+	wrap = nil | | "character" | "word",
 	-- only used if wrapping is enabled
 	bounds = vec2(100, 200),
 })

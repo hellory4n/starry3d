@@ -6,6 +6,9 @@ import "core:c"
 import hm "core:container/handle_map"
 import "core:math"
 import "core:mem"
+import "core:strings"
+import "core:unicode"
+import "core:unicode/utf8"
 import "gpu"
 
 AlignHorizontal :: enum {
@@ -23,6 +26,7 @@ AlignVertical :: enum {
 
 TextWrap :: enum {
 	OFF,
+	CHARACTER,
 	WORD,
 }
 
@@ -124,7 +128,158 @@ basic_text_layout :: proc(
 			line_start_idx = i + 1
 		}
 	}
-	append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:len(glyphs)]})
+
+	// last line
+	if line_start_idx < len(glyphs) {
+		append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:len(glyphs)]})
+	}
+
+	return lines
+}
+
+char_wrap_text_layout :: proc(
+	desc: DrawTextDesc,
+	glyphs: []GlyphInfo,
+	allocator := context.allocator,
+) -> [dynamic]GlyphLine
+{
+	lines := make([dynamic]GlyphLine, allocator)
+
+	line_start_idx := 0
+	line_width: f32 = 0
+	pen_x: f32 = 0
+
+	for glyph, i in glyphs {
+		visual_right_edge := pen_x + glyph.offset.x + glyph.bearing.x + glyph.size.x
+
+		if desc.text[glyph.cluster] == '\n' {
+			append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:i]})
+			line_start_idx = i + 1
+			line_width = 0
+			pen_x = 0
+			continue
+		}
+
+		if pen_x > 0 && visual_right_edge > desc.bounds.x {
+			append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:i]})
+			line_start_idx = i
+			line_width = 0
+			pen_x = 0
+		}
+
+		pen_x += glyph.advance.x
+	}
+
+	// last line
+	if line_start_idx < len(glyphs) {
+		append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:len(glyphs)]})
+	}
+
+	return lines
+}
+
+word_wrap_text_layout :: proc(
+	desc: DrawTextDesc,
+	glyphs: []GlyphInfo,
+	allocator := context.allocator,
+) -> [dynamic]GlyphLine
+{
+	lines := make([dynamic]GlyphLine, allocator)
+
+	line_start_idx := 0
+	pen_x: f32 = 0
+
+	i := 0
+	for i < len(glyphs) {
+		glyph := glyphs[i]
+
+		if desc.text[glyph.cluster] == '\n' {
+			append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:i]})
+			line_start_idx = i + 1
+			pen_x = 0
+			i += 1
+			continue
+		}
+
+		// find word length
+		// words are sequences of non-whitespace glyphs
+		word_start := i
+		word_end := i
+		word_advance: f32 = 0
+		word_visual_right: f32 = 0
+
+		for word_end < len(glyphs) {
+			g := glyphs[word_end]
+			r := utf8.rune_at(desc.text, int(g.cluster))
+
+			if unicode.is_white_space(r) {
+				break
+			}
+
+			candidate := word_advance + g.offset.x + g.bearing.x + g.size.x
+			word_visual_right = max(word_visual_right, candidate)
+			word_advance += g.advance.x
+			word_end += 1
+		}
+
+		// leading whitespace that belongs with this word (or trailing on previous)
+		// we treat spaces as breakable, so we measure them separately
+		space_end := word_end
+		space_advance: f32 = 0
+		for space_end < len(glyphs) {
+			g := glyphs[space_end]
+			r := utf8.rune_at(desc.text, int(g.cluster))
+			if !unicode.is_white_space(r) || r == '\n' {
+				break
+			}
+			space_advance += g.advance.x
+			space_end += 1
+		}
+
+		// does the whole word fit on the current line?
+		word_fits := true
+		if pen_x > 0 {
+			visual_if_placed := pen_x + word_visual_right
+			if visual_if_placed > desc.bounds.x {
+				word_fits = false
+			}
+		}
+
+		if !word_fits {
+			append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:word_start]})
+			line_start_idx = word_start
+			pen_x = 0
+		}
+
+		if word_advance > desc.bounds.x && pen_x == 0 {
+			// fallback to character wrapping on very long words
+			for j in word_start ..< word_end {
+				g := glyphs[j]
+				visual_right := pen_x + g.offset.x + g.bearing.x + g.size.x
+
+				if pen_x > 0 && visual_right > desc.bounds.x {
+					append(
+						&lines,
+						GlyphLine{glyphs = glyphs[line_start_idx:j]},
+					)
+					line_start_idx = j
+					pen_x = 0
+				}
+				pen_x += g.advance.x
+			}
+		} else {
+			pen_x += word_advance
+		}
+
+		pen_x += space_advance
+
+		i = space_end
+	}
+
+	// last line
+	if line_start_idx < len(glyphs) {
+		append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:]})
+	}
 
 	return lines
 }
@@ -138,8 +293,10 @@ text_layout :: proc(
 	switch desc.wrap {
 	case .OFF:
 		return basic_text_layout(desc, glyphs, allocator)
+	case .CHARACTER:
+		return char_wrap_text_layout(desc, glyphs, allocator)
 	case .WORD:
-		unimplemented()
+		return word_wrap_text_layout(desc, glyphs, allocator)
 	}
 	unreachable()
 }
@@ -156,7 +313,11 @@ draw_glyph_lines :: proc(desc: DrawTextDesc, lines: [dynamic]GlyphLine)
 	dev := gpu_device()
 	gpu.bind_pipeline(dev, global.gfx2d.text_pipeline)
 	gpu.bind_uniform_buffer(dev, global.gfx2d.text_uniforms, slot = 0)
-	gpu.bind_sampler(dev, global.samplers[.BILINEAR], slot = 0)
+	if desc.size <= 32 {
+		gpu.bind_sampler(dev, global.samplers[.NEAREST_NEIGHBOR], slot = 0)
+	} else {
+		gpu.bind_sampler(dev, global.samplers[.BILINEAR], slot = 0)
+	}
 
 	int_size := i32(math.ceil(desc.size))
 	scale := desc.size / f32(int_size)
@@ -179,6 +340,11 @@ draw_glyph_lines :: proc(desc: DrawTextDesc, lines: [dynamic]GlyphLine)
 
 			xpos := x + f32(glyph.bearing.x) * scale + glyph.offset.x
 			ypos := y + (f32(tall_char_size) - glyph.bearing.y) * scale
+
+			if desc.size < 20 {
+				xpos = math.round(xpos)
+				ypos = math.round(ypos)
+			}
 
 			// missing texture == size is 0 == rendering whitespace
 			if font_char.texture != {} {
