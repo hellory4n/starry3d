@@ -1,9 +1,9 @@
 package starry
 
-import "core:math"
 import hm "core:container/handle_map"
-import "gpu"
+import "core:math"
 import "core:mem"
+import "gpu"
 
 AlignHorizontal :: enum {
 	LEFT,
@@ -27,17 +27,17 @@ DrawTextDesc :: struct {
 	line_spacing: f32,
 }
 
+TextUniform :: struct #align (16) #max_field_align(16) {
+	color:      [4]f32,
+	resolution: [2]f32,
+	pos:        [2]f32,
+	char_size:  [2]f32,
+}
+
 // note: defaults are handled when binding to lua
 // lua: `gfx.draw_text`
 draw_text :: proc(desc: DrawTextDesc)
 {
-	TextUniform :: struct #align (16) #max_field_align(16) {
-		color:      [4]f32,
-		resolution: [2]f32,
-		pos:        [2]f32,
-		char_size:  [2]f32,
-	}
-
 	dev := gpu_device()
 	gpu.bind_pipeline(dev, global.gfx2d.text_pipeline)
 	gpu.bind_uniform_buffer(dev, global.gfx2d.text_uniforms, slot = 0)

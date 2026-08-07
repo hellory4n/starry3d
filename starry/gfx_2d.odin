@@ -1,9 +1,9 @@
 package starry
 
-import "core:mem"
 import ft "../thirdparty/freetype"
 import hm "core:container/handle_map"
 import "core:fmt"
+import "core:mem"
 import "gpu"
 
 // TODO this is a horrible renderer:
@@ -162,6 +162,19 @@ end_drawing_2d :: proc()
 	gpu.end_render_pass(dev)
 }
 
+RectUniform :: struct #align (16) #max_field_align(16) {
+	color:        [4]f32,
+	resolution:   [2]f32,
+	pos:          [2]f32,
+	size:         [2]f32,
+	origin:       [2]f32,
+	texture_size: [2]f32,
+	crop_pos:     [2]f32,
+	crop_size:    [2]f32,
+	rot:          f32,
+	has_texture:  b32,
+}
+
 DrawRectangleDesc :: struct {
 	pos:          [2]f32,
 	size:         [2]f32,
@@ -178,19 +191,6 @@ DrawRectangleDesc :: struct {
 // lua: `gfx.draw_rectangle`
 draw_rectangle :: proc(desc: DrawRectangleDesc)
 {
-	RectUniform :: struct #align (16) #max_field_align(16) {
-		color:        [4]f32,
-		resolution:   [2]f32,
-		pos:          [2]f32,
-		size:         [2]f32,
-		origin:       [2]f32,
-		texture_size: [2]f32,
-		crop_pos:     [2]f32,
-		crop_size:    [2]f32,
-		rot:          f32,
-		has_texture:  b32,
-	}
-
 	dev := gpu_device()
 	gpu.bind_pipeline(dev, global.gfx2d.rect_pipeline)
 
