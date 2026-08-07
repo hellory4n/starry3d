@@ -22,12 +22,19 @@ function gfx.load_texture(path) end
 --- @return boolean ok
 function gfx.load_font(path) end
 
---- Clears the screen and prepares rendering for this frame. If `color` is missing, clears the screen to black.
---- @param color Vec4?
-function gfx.clear(color) end
+--- @class gfx.RenderPassDesc
+--- @field clear_color Vec4? If nil, doesn't clear the screen.
 
---- Finishes drawing 2D graphics.
-function gfx.end_drawing_2d() end
+--- Begins 2D rendering in the default framebuffer.
+--- @param args gfx.RenderPassDesc
+function gfx.begin_render_pass(args) end
+
+--- Ends 2D rendering in this framebuffer.
+function gfx.end_render_pass() end
+
+--- Clears the current framebuffer.
+--- @param color Vec4
+function gfx.clear(color) end
 
 --- @class gfx.DrawRectangleDesc: table
 --- @field pos Vec2

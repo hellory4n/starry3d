@@ -144,19 +144,30 @@ free_2d_renderer :: proc()
 	gpu.free_buffer(global.gfx2d.rect_uniforms)
 }
 
-// lua: `gfx.clear`
-clear_screen :: proc(color: [4]f32)
-{
-	dev := gpu_device()
-	gpu.begin_render_pass(
-		dev,
-		gpu.default_framebuffer(dev),
-		color_load_op = .CLEAR,
-		clear_color = color,
-	)
+RenderPassDesc :: struct {
+	clear_color: Maybe([4]f32),
 }
 
-end_drawing_2d :: proc()
+// lua: `gfx.begin_render_pass`
+begin_render_pass :: proc(desc: RenderPassDesc)
+{
+	dev := gpu_device()
+
+	switch clear_color in desc.clear_color {
+	case [4]f32:
+		gpu.begin_render_pass(
+			dev,
+			gpu.default_framebuffer(dev),
+			color_load_op = .CLEAR,
+			clear_color = clear_color,
+		)
+
+	case:
+		gpu.begin_render_pass(dev, gpu.default_framebuffer(dev), color_load_op = .LOAD)
+	}
+}
+
+end_render_pass :: proc()
 {
 	dev := gpu_device()
 	gpu.end_render_pass(dev)

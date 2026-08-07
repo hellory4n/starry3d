@@ -113,24 +113,27 @@ lua_gfx_font_index :: proc "c" (L: ^lua.State) -> c.int
 }
 
 @(private = "file")
-lua_gfx_clear :: proc "c" (L: ^lua.State) -> c.int
+lua_gfx_begin_render_pass :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
-	color: [4]f64
-	if !lua.isnoneornil(L, 1) {
-		lua.L_checktype(L, 1, i32(lua.TTABLE))
-		color = lua_check_vec4(L, 1)
-	}
+	lua.L_checktype(L, 1, i32(lua.TTABLE))
+	desc: RenderPassDesc
 
-	clear_screen(cast([4]f32)color)
+	lua.getfield(L, 1, "clear_color")
+	if !lua.isnil(L, -1) {
+		desc.clear_color = cast([4]f32)lua_check_vec4(L, -1)
+	}
+	lua.pop(L, 1)
+
+	begin_render_pass(desc)
 	return 0
 }
 
 @(private = "file")
-lua_gfx_end_drawing_2d :: proc "c" (L: ^lua.State) -> c.int
+lua_gfx_end_render_pass :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
-	end_drawing_2d()
+	end_render_pass()
 	return 0
 }
 
@@ -287,8 +290,8 @@ lua_open_gfx :: proc "c" (L: ^lua.State)
 	gfx_reg := []lua.L_Reg {
 		{"load_texture", lua_gfx_load_texture},
 		{"load_font", lua_gfx_load_font},
-		{"clear", lua_gfx_clear},
-		{"end_drawing_2d", lua_gfx_end_drawing_2d},
+		{"begin_render_pass", lua_gfx_begin_render_pass},
+		{"end_render_pass", lua_gfx_end_render_pass},
 		{"draw_rectangle", lua_gfx_draw_rectangle},
 		{"draw_text", lua_gfx_draw_text},
 		{nil, nil},

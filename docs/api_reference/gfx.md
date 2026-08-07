@@ -28,13 +28,24 @@ The path from which the font was loaded.
 
 ## 2D rendering
 
-### `gfx.clear([color: vec4])`
+### `gfx.begin_render_pass(args)`
 
-Clears the screen and prepares rendering for this frame. If `color` is missing, clears the screen to black.
+Begins 2D rendering in the default framebuffer. Options:
 
-### `gfx.end_drawing_2d()`
+```lua
+gfx.begin_render_pass({
+	-- if nil, doesn't clear screen
+	clear_color = vec4(1),
+})
+```
 
-Finishes drawing 2D graphics.
+### `gfx.end_render_pass()`
+
+Ends 2D rendering in this framebuffer.
+
+### `gfx.clear(color: vec4)`
+
+Clears the current framebuffer.
 
 ### `gfx.draw_rectangle(args: table)`
 

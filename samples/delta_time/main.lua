@@ -31,7 +31,7 @@ function app.on_update(dt)
 	end
 
 	---- RENDERING
-	gfx.clear(vec4())
+	gfx.begin_render_pass({ clear_color = vec4() })
 
 	gfx.draw_text({
 		text = string.format(
@@ -56,5 +56,5 @@ function app.on_update(dt)
 		color = math.hex("#0000ff")
 	})
 
-	gfx.end_drawing_2d()
+	gfx.end_render_pass()
 end

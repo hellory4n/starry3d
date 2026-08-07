@@ -14,7 +14,7 @@ function app.on_update()
 		g_mode = "word wrap"
 	end
 
-	gfx.clear(vec4())
+	gfx.begin_render_pass({ clear_color = vec4() })
 
 	gfx.draw_text({
 		text = "press 1-3 to switch examples",
@@ -64,5 +64,5 @@ function app.on_update()
 		})
 	end
 
-	gfx.end_drawing_2d()
+	gfx.end_render_pass()
 end

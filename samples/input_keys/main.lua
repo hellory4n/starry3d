@@ -46,7 +46,7 @@ function app.on_update(dt)
 	end
 
 	---- RENDERING
-	gfx.clear(vec4())
+	gfx.begin_render_pass({ clear_color = vec4() })
 
 	gfx.draw_text({
 		text = "move with arrow keys",
@@ -74,5 +74,5 @@ function app.on_update(dt)
 		color = math.hex("#00ff00")
 	})
 
-	gfx.end_drawing_2d()
+	gfx.end_render_pass()
 end
