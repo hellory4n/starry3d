@@ -255,6 +255,24 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
+	lua.getfield(L, 1, "wrap")
+	if !lua.isnil(L, -1) {
+		wrap_str := lua_check_odin_string(L, -1)
+		switch wrap_str {
+		case "word":
+			desc.wrap = .WORD
+		case:
+			fmt.panicf("unexpected wrap %q, should be nil or 'word'", wrap_str)
+		}
+	}
+	lua.pop(L, 1)
+
+	if desc.wrap != .OFF {
+		lua.getfield(L, 1, "bounds")
+		desc.bounds = cast([2]f32)lua_check_vec2(L, -1)
+		lua.pop(L, 1)
+	}
+
 	draw_text(desc)
 	return 0
 }
