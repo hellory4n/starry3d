@@ -1,5 +1,6 @@
 package starry
 
+import "core:mem"
 import ft "../thirdparty/freetype"
 import hm "core:container/handle_map"
 import "core:fmt"
@@ -9,7 +10,6 @@ import "gpu"
 // - there is no batching anywhere
 // - fonts create a new texture per character, per (integer) size
 // - text isn't batched or instanced
-// - the command system is useless (at least in this version)
 // - text antialiasing is kinda ugly (and it's not freetype's fault)
 
 init_2d_renderer :: proc()
@@ -25,8 +25,6 @@ init_2d_renderer :: proc()
 
 	init_shared :: #force_inline proc(dev: gpu.Device)
 	{
-		global.gfx2d.commands = make([dynamic]DrawCommand2D)
-
 		for &sampler, filter in global.samplers {
 			// wrap doesn't really matter
 			// TODO what if wrap does matter...
@@ -144,7 +142,6 @@ free_2d_renderer :: proc()
 	gpu.free_buffer(global.gfx2d.text_uniforms)
 	gpu.free_pipeline(global.gfx2d.rect_pipeline)
 	gpu.free_buffer(global.gfx2d.rect_uniforms)
-	delete(global.gfx2d.commands)
 }
 
 // lua: `gfx.clear`
@@ -157,18 +154,11 @@ clear_screen :: proc(color: [4]f32)
 		color_load_op = .CLEAR,
 		clear_color = color,
 	)
-
-	clear(&global.gfx2d.commands)
 }
 
 end_drawing_2d :: proc()
 {
 	dev := gpu_device()
-
-	for cmd in global.gfx2d.commands {
-		run_2d_draw_command(cmd)
-	}
-
 	gpu.end_render_pass(dev)
 }
 
@@ -188,34 +178,43 @@ DrawRectangleDesc :: struct {
 // lua: `gfx.draw_rectangle`
 draw_rectangle :: proc(desc: DrawRectangleDesc)
 {
-	append(&global.gfx2d.commands, desc)
-}
+	RectUniform :: struct #align (16) #max_field_align(16) {
+		color:        [4]f32,
+		resolution:   [2]f32,
+		pos:          [2]f32,
+		size:         [2]f32,
+		origin:       [2]f32,
+		texture_size: [2]f32,
+		crop_pos:     [2]f32,
+		crop_size:    [2]f32,
+		rot:          f32,
+		has_texture:  b32,
+	}
 
-AlignHorizontal :: enum {
-	LEFT,
-	CENTER,
-	RIGHT,
-}
+	dev := gpu_device()
+	gpu.bind_pipeline(dev, global.gfx2d.rect_pipeline)
 
-AlignVertical :: enum {
-	TOP,
-	MIDDLE,
-	BOTTOM,
-	BASELINE,
-}
+	texdata: TextureData
+	if texture_is_valid(desc.texture) {
+		texdata = texture_data(desc.texture)^
+		gpu.bind_texture(dev, texdata.tex, slot = 0)
+		gpu.bind_sampler(dev, global.samplers[desc.filter], slot = 0)
+	}
 
-DrawTextDesc :: struct {
-	text:         string,
-	pos:          [2]f32,
-	size:         f32,
-	color:        [4]f32,
-	font:         hm.Handle32,
-	line_spacing: f32,
-}
+	uniforms := RectUniform {
+		color        = desc.color,
+		resolution   = frame_sizef(),
+		pos          = desc.pos,
+		size         = desc.size,
+		origin       = desc.origin,
+		texture_size = texture_size(desc.texture) if texture_is_valid(desc.texture) else {},
+		crop_pos     = desc.texture_pos,
+		crop_size    = desc.texture_size,
+		rot          = desc.rot,
+		has_texture  = b32(texture_is_valid(desc.texture)),
+	}
+	gpu.update_buffer(dev, global.gfx2d.rect_uniforms, mem.ptr_to_bytes(&uniforms))
+	gpu.bind_uniform_buffer(dev, global.gfx2d.rect_uniforms, slot = 0)
 
-// note: defaults are handled when binding to lua
-// lua: `gfx.draw_text`
-draw_text :: proc(desc: DrawTextDesc)
-{
-	append(&global.gfx2d.commands, desc)
+	gpu.draw(dev, vertex_count = 6)
 }

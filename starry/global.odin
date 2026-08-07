@@ -35,7 +35,6 @@ global: struct {
 	samplers:     [gpu.Texture_Filter]gpu.Sampler,
 	ft:           ft.Library,
 	gfx2d:        struct {
-		commands:      [dynamic]DrawCommand2D,
 		rect_pipeline: gpu.Pipeline,
 		rect_uniforms: gpu.Buffer,
 		text_pipeline: gpu.Pipeline,
