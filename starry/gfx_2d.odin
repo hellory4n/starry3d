@@ -117,8 +117,8 @@ init_2d_renderer :: proc()
 
 		ok: bool
 		global.default_font, ok = load_font_from_memory(
-			#load("assets/OpenSans-Medium.ttf"),
-			label = "OpenSans-Medium.ttf (preloaded)",
+			#load("assets/NotoSans-Medium.ttf"),
+			label = "NotoSans-Medium.ttf (preloaded)",
 			preloaded = true,
 		)
 		assert(ok)

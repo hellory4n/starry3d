@@ -59,5 +59,6 @@ Binaries are from release v2.14.3.
 	- `harfbuzz/ot/`
 	- `harfbuzz/style/`
 	- `harfbuzz/subset/`
+	- `freetype.odin` is custom
 
 Binaries are from release v12.1.0.

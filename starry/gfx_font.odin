@@ -1,10 +1,10 @@
 package starry
 
 import ft "../thirdparty/freetype"
+import hb "../thirdparty/harfbuzz"
 import "core:c"
 import hm "core:container/handle_map"
 import "core:fmt"
-@(require) import hb "../thirdparty/harfbuzz"
 import "gpu"
 
 FontData :: struct {
@@ -12,16 +12,16 @@ FontData :: struct {
 	buffer:    []byte,
 	path:      string,
 	face:      ft.Face,
+	hb_font:   ^hb.font_t,
 	// i32 is pixel size (rounded up if the source is a float)
-	textures:  map[i32]map[rune]FontCharacter,
+	textures:  map[i32]map[hb.codepoint_t]FontGlyph,
 	preloaded: bool,
 }
 
-FontCharacter :: struct {
+FontGlyph :: struct {
 	texture: gpu.Texture,
 	size:    [2]i32,
 	bearing: [2]i32,
-	advance: [2]i32,
 }
 
 load_font_from_memory :: proc(
@@ -39,13 +39,17 @@ load_font_from_memory :: proc(
 		fmt.printfln("couldn't load %s: %s", label, err)
 	}
 
-	textures := make(map[i32]map[rune]FontCharacter, global.ctx.allocator)
+	// this is wrong but harfbuzz might complain
+	ft.set_pixel_sizes(face, 0, 16)
+	hb_font := hb.ft_font_create(face, nil)
+	textures := make(map[i32]map[hb.codepoint_t]FontGlyph, global.ctx.allocator)
 
 	return hm.add(
 			&global.fonts,
 			FontData {
 				path = label,
 				face = face,
+				hb_font = hb_font,
 				textures = textures,
 				buffer = data,
 				preloaded = preloaded,
@@ -84,6 +88,8 @@ unload_font :: proc(h: hm.Handle32)
 	}
 	delete(font.textures)
 
+	hb.font_destroy(font.hb_font)
+
 	ft.done_face(font.face)
 	if !font.preloaded {
 		delete(font.buffer)
@@ -101,46 +107,45 @@ font_data :: proc(h: hm.Handle32) -> ^FontData
 }
 
 // you'll never guess what this does
-make_or_get_char_texture_from_font :: proc(
+make_or_get_glyph_texture_from_font :: proc(
 	h: hm.Handle32,
-	r: rune,
 	size: i32,
+	glyph_idx: hb.codepoint_t,
 ) -> (
-	font_char: FontCharacter,
+	font_glyph: FontGlyph,
 )
 {
 	font := font_data(h)
 	texture_map, ok := &font.textures[size]
 	if !ok {
-		font.textures[size] = make(map[rune]FontCharacter)
+		font.textures[size] = make(map[hb.codepoint_t]FontGlyph)
 		texture_map = &font.textures[size]
 	}
 
-	font_char, ok = texture_map[r]
+	font_glyph, ok = texture_map[glyph_idx]
 	if ok {
-		return font_char
+		return font_glyph
 	}
 
 	ft.set_pixel_sizes(font.face, 0, u32(size))
-	if err := ft.load_char(font.face, c.ulong(r), {.Render}); err != .Ok {
+	if err := ft.load_glyph(font.face, u32(glyph_idx), {.Render}); err != .Ok {
 		fmt.printfln(
-			"couldn't load glyph for '%c' for font loaded from %q: %s",
-			r,
+			"couldn't load glyph idx %d for font %q: %s",
+			glyph_idx,
 			font.path,
 			err,
 		)
 	}
 
-	font_char = FontCharacter {
+	font_glyph = FontGlyph {
 		size    = {i32(font.face.glyph.bitmap.width), i32(font.face.glyph.bitmap.rows)},
 		bearing = {i32(font.face.glyph.bitmap_left), i32(font.face.glyph.bitmap_top)},
-		advance = {i32(font.face.glyph.advance.x), i32(font.face.glyph.advance.y)},
 	}
 
-	if font_char.size != {0, 0} {
-		font_char.texture = gpu.new_texture(
+	if font_glyph.size != {0, 0} {
+		font_glyph.texture = gpu.new_texture(
 			gpu_device(),
-			font_char.size,
+			font_glyph.size,
 			gpu_format = .GRAYSCALE_U8,
 			input_format = .GRAYSCALE_U8,
 			data = font.face.glyph.bitmap.buffer[:font.face.glyph.bitmap.width *
@@ -148,6 +153,6 @@ make_or_get_char_texture_from_font :: proc(
 		)
 	}
 
-	texture_map[r] = font_char
-	return font_char
+	texture_map[glyph_idx] = font_glyph
+	return font_glyph
 }

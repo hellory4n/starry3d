@@ -28,7 +28,7 @@ test: build-starry
 
 # but why would you do that
 run-all-samples: build-starry \
-	run-hello run-delta-time run-input-keys run-input-mouse
+	run-hello run-delta-time run-input-keys run-input-mouse run-unicode
 
 run-hello: build-starry
 	{{_EXE_NAME}} -app-dir:samples/hello
@@ -41,3 +41,6 @@ run-input-keys: build-starry
 
 run-input-mouse: build-starry
 	{{_EXE_NAME}} -app-dir:samples/input_mouse
+
+run-unicode: build-starry
+	{{_EXE_NAME}} -app-dir:samples/unicode

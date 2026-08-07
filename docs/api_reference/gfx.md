@@ -75,7 +75,7 @@ Draws text. Options:
 
 ```lua
 gfx.draw_text({
-	-- unicode is supported! (though incomplete)
+	-- unicode is supported!
 	text = "Hej världen!",
 
 	pos = vec2(10, 15),
