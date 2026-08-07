@@ -138,6 +138,29 @@ lua_gfx_end_render_pass :: proc "c" (L: ^lua.State) -> c.int
 }
 
 @(private = "file")
+lua_gfx_set_scissor :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+
+	pos: Maybe([2]f32)
+	if lua.isnoneornil(L, 1) {
+		pos = nil
+	} else {
+		pos = cast([2]f32)lua_check_vec2(L, 1)
+	}
+
+	size: Maybe([2]f32)
+	if lua.isnoneornil(L, 2) {
+		size = nil
+	} else {
+		size = cast([2]f32)lua_check_vec2(L, 2)
+	}
+
+	set_scissor(pos, size)
+	return 0
+}
+
+@(private = "file")
 lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -292,6 +315,7 @@ lua_open_gfx :: proc "c" (L: ^lua.State)
 		{"load_font", lua_gfx_load_font},
 		{"begin_render_pass", lua_gfx_begin_render_pass},
 		{"end_render_pass", lua_gfx_end_render_pass},
+		{"set_scissor", lua_gfx_set_scissor},
 		{"draw_rectangle", lua_gfx_draw_rectangle},
 		{"draw_text", lua_gfx_draw_text},
 		{nil, nil},

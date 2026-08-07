@@ -43,9 +43,9 @@ gfx.begin_render_pass({
 
 Ends 2D rendering in this framebuffer.
 
-### `gfx.clear(color: vec4)`
+### `gfx.set_scissor([pos: vec2, size: vec2])`
 
-Clears the current framebuffer.
+Crops rendering to a section of the screen. If no arguments are passed, disables scissor testing. (same as `gfx.set_scissor(vec2(), app.frame_size())`)
 
 ### `gfx.draw_rectangle(args: table)`
 

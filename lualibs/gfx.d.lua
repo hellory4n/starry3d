@@ -32,9 +32,10 @@ function gfx.begin_render_pass(args) end
 --- Ends 2D rendering in this framebuffer.
 function gfx.end_render_pass() end
 
---- Clears the current framebuffer.
---- @param color Vec4
-function gfx.clear(color) end
+--- Crops rendering to a section of the screen. If no arguments are passed, disables scissor testing. (same as `gfx.set_scissor(vec2(), app.frame_size())`)
+--- @param pos Vec2?
+--- @param size Vec2?
+function gfx.set_scissor(pos, size) end
 
 --- @class gfx.DrawRectangleDesc: table
 --- @field pos Vec2

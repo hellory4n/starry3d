@@ -3,6 +3,7 @@ package starry
 import ft "../thirdparty/freetype"
 import hm "core:container/handle_map"
 import "core:fmt"
+import "core:math/linalg"
 import "core:mem"
 import "gpu"
 
@@ -167,10 +168,28 @@ begin_render_pass :: proc(desc: RenderPassDesc)
 	}
 }
 
+// lua: `gfx.end_render_pass`
 end_render_pass :: proc()
 {
 	dev := gpu_device()
 	gpu.end_render_pass(dev)
+}
+
+// lua: `gfx.set_scissor`
+set_scissor :: proc(pos: Maybe([2]f32), size: Maybe([2]f32))
+{
+	dev := gpu_device()
+
+	ipos, isize: Maybe([2]i32)
+	if size != nil {
+		isize = cast([2]i32)linalg.round(size.?)
+	}
+	if pos != nil {
+		ipos = cast([2]i32)linalg.round(pos.?)
+		ipos = [2]i32{ipos.?.x, frame_sizei().y - ipos.?.y - (isize.? or_else [2]i32{}).y}
+	}
+
+	gpu.set_scissor(dev, ipos, isize)
 }
 
 RectUniform :: struct #align (16) #max_field_align(16) {

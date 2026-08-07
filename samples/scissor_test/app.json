@@ -1,5 +1,5 @@
 {
-    "name": "example: text layout",
+    "name": "example: scissor test",
     "main": "main.lua",
     "flags": ["no_high_dpi"]
 }

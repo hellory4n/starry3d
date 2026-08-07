@@ -28,7 +28,8 @@ test: build-starry
 
 # but why would you do that
 run-all-samples: build-starry \
-	run-hello run-delta-time run-input-keys run-input-mouse run-unicode run-text-layout
+	run-hello run-delta-time run-input-keys run-input-mouse run-unicode run-text-layout \
+	run-scissor-test
 
 run-hello: build-starry
 	{{_EXE_NAME}} -app-dir:samples/hello
@@ -47,3 +48,6 @@ run-unicode: build-starry
 
 run-text-layout: build-starry
 	{{_EXE_NAME}} -app-dir:samples/text_layout
+
+run-scissor-test: build-starry
+	{{_EXE_NAME}} -app-dir:samples/scissor_test
