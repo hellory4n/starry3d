@@ -61,4 +61,11 @@ Binaries are from release v2.14.3.
 	- `harfbuzz/subset/`
 	- `freetype.odin` is custom
 
-Binaries are from release v12.1.0.
+Binaries are from release v13.2.1, built with:
+
+```bat
+meson setup build --default-library=static --buildtype=release --wrap-mode=default -Dtests=disabled -Dutilities=disabled -Ddocs=disabled -Dintrospection=disabled -Dfreetype=enabled -Dsubset=disabled -Db_vscrt=mt -Dcpp_link_args="/NODEFAULTLIB:msvcrt" -Dc_link_args="/NODEFAULTLIB:msvcrt"
+meson compile -C build
+```
+
+Weirdly this builds as `libharfbuzz.a` on Windows, but you can safely rename it to `harfbuzz.lib`.
