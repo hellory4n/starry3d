@@ -4,6 +4,7 @@ import ft "../thirdparty/freetype"
 import "core:c"
 import hm "core:container/handle_map"
 import "core:fmt"
+@(require) import hb "../thirdparty/harfbuzz"
 import "gpu"
 
 FontData :: struct {

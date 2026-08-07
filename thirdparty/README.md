@@ -14,7 +14,6 @@ This list does not include libraries from `vendor:`.
 	- `imgui.odin`
 	- `imconfig.odin`
 	- `imgui.odin`
-	- `imgui_enabled.odin` (modified)
 	- `imgui_internal.odin`
 	- `imgui_js.odin`
 	- `imgui_linux_x64.a` (custom build)
@@ -40,5 +39,25 @@ See `luajit/LICENSE` for licensing information.
 - License:
 	- `freetype.odin`: MIT (Copyright (c) 2021 Josh Engler)
 	- Binaries: FreeType License (Copyright 1996-2002, 2006 by David Turner, Robert Wilhelm, and Werner Lemberg)
+- Files extracted:
+	- `freetype.odin` (modified linking)
+	- `LICENSE` (from odin-imgui)
+	- `FTL.TXT` (from FreeType)
 
 Binaries are from release v2.14.3.
+
+## harfbuzz
+
+- Source: https://codeberg.org/mgavioli/odin-harfbuzz
+- Commit: [`f29df67c8270efa64493a935ba53ea9ad329638e`](https://codeberg.org/mgavioli/odin-harfbuzz/commit/f29df67c8270efa64493a935ba53ea9ad329638e)
+- License:
+	- `*.odin`: 2-Clause BSD (Copyright (c) 2024-2026, Maurizio M. Gavioli and contributors)
+	- Binaries: MIT (see `COPYING.txt` for copyright)
+- Files extracted: (modified linking on all `.odin` files)
+	- `harfbuzz/`
+	- `harfbuzz/aat/`
+	- `harfbuzz/ot/`
+	- `harfbuzz/style/`
+	- `harfbuzz/subset/`
+
+Binaries are from release v12.1.0.
