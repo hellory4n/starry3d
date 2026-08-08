@@ -1,61 +1,46 @@
 package starry
 
+import "core:c"
 import hm "core:container/handle_map"
 import "core:fmt"
-import "core:image"
-@(require) import "core:image/jpeg"
-@(require) import "core:image/png"
 import "gpu"
+import stbi "vendor:stb/image"
 
 // TODO texture caching
 // TODO expose Image (cpu-side) to lua
 
 TextureData :: struct {
 	handle: hm.Handle32,
-	img:    ^image.Image,
-	tex:    gpu.Texture,
 	path:   string,
+	size:   [2]i32,
+	tex:    gpu.Texture,
 }
 
 load_texture_from_memory :: proc(data: []byte, label := "[buffer]") -> (h: hm.Handle32, ok: bool)
 {
-	img, err := image.load_from_bytes(data)
-	if err != nil {
-		fmt.printfln("couldn't load %s: %s", label, err)
-		return h, false
-	}
-	defer if !ok {
-		image.destroy(img)
-	}
-
-	if img.depth != 8 {
-		unimplemented("bit depths other than 8")
-	}
-
-	format: gpu.Texture_Format
-	switch img.channels {
-	case 1:
-		format = .GRAYSCALE_U8
-	case 2:
-		format = .GRAYSCALE_ALPHA_U8
-	case 3:
-		format = .RGB_U8
-	case 4:
-		format = .RGBA_U8
-	}
+	x, y, channels_in_file: c.int
+	img_data := stbi.load_from_memory(
+		raw_data(data),
+		c.int(len(data)),
+		&x,
+		&y,
+		&channels_in_file,
+		desired_channels = 4,
+	)
+	defer stbi.image_free(img_data)
 
 	gpu_texture := gpu.new_texture(
 		dev = gpu_device(),
-		size = {i32(img.width), i32(img.height)},
-		input_format = format,
-		gpu_format = .RGBA_U8,
-		data = img.pixels.buf[:],
+		size = {x, y},
+		input_format = .RGBA_U8,
+		gpu_format = .RGBA_F32,
+		data = img_data[:x * y * channels_in_file],
 	)
 	defer if !ok {
 		gpu.free_texture(gpu_texture)
 	}
 
-	h = hm.add(&global.textures, TextureData{img = img, tex = gpu_texture, path = label})
+	h = hm.add(&global.textures, TextureData{size = {x, y}, tex = gpu_texture, path = label})
 	return h, true
 }
 
@@ -83,9 +68,6 @@ unload_texture :: proc(h: hm.Handle32)
 	assert(ok)
 
 	gpu.free_texture(texture.tex)
-	// TODO we are keeping the image data on the CPU for this long,
-	// just so that we can access the width and height
-	image.destroy(texture.img)
 	hm.remove(&global.textures, h)
 	fmt.printfln("unloaded %s (%v)", texture.path, h)
 }
@@ -105,5 +87,6 @@ texture_is_valid :: proc(h: hm.Handle32) -> bool
 texture_size :: proc(h: hm.Handle32) -> [2]f32
 {
 	texture := texture_data(h)
-	return {f32(texture.img.width), f32(texture.img.height)}
+	// TODO i forgot why this returns floats
+	return cast([2]f32)texture.size
 }

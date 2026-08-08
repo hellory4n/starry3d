@@ -28,14 +28,17 @@ test: build-starry
 
 # but why would you do that
 run-all-samples: build-starry \
-	run-hello run-delta-time run-input-keys run-input-mouse run-unicode run-text-layout \
-	run-scissor-test
+	run-hello run-delta-time run-input-keys run-input-mouse \
+	run-rectangles run-unicode run-text-layout run-scissor-test
 
 run-hello: build-starry
 	{{_EXE_NAME}} -app-dir:samples/hello
 
 run-delta-time: build-starry
 	{{_EXE_NAME}} -app-dir:samples/delta_time
+
+run-rectangles: build-starry
+	{{_EXE_NAME}} -app-dir:samples/rectangles
 
 run-input-keys: build-starry
 	{{_EXE_NAME}} -app-dir:samples/input_keys
