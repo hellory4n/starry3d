@@ -68,15 +68,15 @@ gfx.draw_rectangle({
 
 	-- color and texture can be combined
 	texture = gfx.load_texture("img.png"), -- don't call every frame!
-	color = vec4(1, 1, 1, 1) -- optional
+	color = math.hex("#ffffff") -- optional
 
-	-- defaults to nearest
+	-- defaults to linear
 	filter = "nearest" | "linear",
 
 	-- for rendering a portion of the texture
 	-- optional
 	texture_pos = vec2(50, 10),
-	texture_size = vec2(100, 100)
+	texture_size = vec2(100, 100),
 })
 ```
 
@@ -91,14 +91,14 @@ gfx.draw_text({
 
 	pos = vec2(10, 15),
 	size = 16,
-	color = vec4(1, 1, 1, 1),
+	color = math.hex("#ffffff"),
 
 	font = gfx.load_font("font.ttf"), -- don't call every frame!
 
 	-- defaults to 2, multiplies by size
 	line_spacing = 2,
 
-	wrap = nil | | "character" | "word",
+	wrap = nil | "character" | "word",
 	-- only used if wrapping is enabled
 	bounds = vec2(100, 200),
 })

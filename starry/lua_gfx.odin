@@ -216,7 +216,7 @@ lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 			)
 		}
 	} else {
-		desc.filter = .NEAREST_NEIGHBOR
+		desc.filter = .BILINEAR
 	}
 	lua.pop(L, 1)
 
