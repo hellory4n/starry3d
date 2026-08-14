@@ -23,6 +23,9 @@ build-starry:
 test: build-starry
 	{{_EXE_NAME}} -app-dir:test
 
+studio: build-starry
+	{{_EXE_NAME}} -app-dir:studio
+
 @release:
 	python misc/release.py
 

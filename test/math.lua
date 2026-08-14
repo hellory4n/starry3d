@@ -1,4 +1,4 @@
--- starry math exte
+-- starry math extensions
 local Test = require("testrunner")
 
 Test.new("standard math", function(t)
