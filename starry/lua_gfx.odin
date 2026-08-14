@@ -21,6 +21,9 @@ lua_gfx_load_texture :: proc "c" (L: ^lua.State) -> c.int
 
 		lua.pushcfunction(L, lua_gfx_texture_index)
 		lua.setfield(L, -2, "__index")
+
+		lua.pushcfunction(L, lua_gfx_texture_tostring)
+		lua.setfield(L, -2, "__tostring")
 	}
 	lua.setmetatable(L, -2)
 
@@ -60,6 +63,15 @@ lua_gfx_texture_index :: proc "c" (L: ^lua.State) -> c.int
 }
 
 @(private = "file")
+lua_gfx_texture_tostring :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	handle := cast(^hm.Handle32)lua.touserdata(L, 1)
+	lua_push_odin_string(L, fmt.tprintf("Texture{idx = %d, gen = %d}", handle.idx, handle.gen))
+	return 1
+}
+
+@(private = "file")
 lua_gfx_load_font :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
@@ -76,6 +88,9 @@ lua_gfx_load_font :: proc "c" (L: ^lua.State) -> c.int
 
 		lua.pushcfunction(L, lua_gfx_font_index)
 		lua.setfield(L, -2, "__index")
+
+		lua.pushcfunction(L, lua_gfx_font_tostring)
+		lua.setfield(L, -2, "__tostring")
 	}
 	lua.setmetatable(L, -2)
 
@@ -109,6 +124,15 @@ lua_gfx_font_index :: proc "c" (L: ^lua.State) -> c.int
 		lua.pushnil(L)
 	}
 
+	return 1
+}
+
+@(private = "file")
+lua_gfx_font_tostring :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	handle := cast(^hm.Handle32)lua.touserdata(L, 1)
+	lua_push_odin_string(L, fmt.tprintf("Font{idx = %d, gen = %d}", handle.idx, handle.gen))
 	return 1
 }
 

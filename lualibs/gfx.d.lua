@@ -3,22 +3,22 @@
 --- @class gfxlib: table
 gfx = {}
 
---- @class gfx.Texture
+--- @class (exact) gfx.Texture*
 --- @field size Vec2 The size of the texture, in pixels.
 --- @field path string The path from which the texture was loaded.
 
 --- Loads a texture from the app directory. This should be a `.png` or `.jpeg`.
 --- @param path string
---- @return gfx.Texture texture
+--- @return gfx.Texture* texture
 --- @return boolean ok
 function gfx.load_texture(path) end
 
---- @class gfx.Font
+--- @class (exact) gfx.Font*
 --- @field path string The path from which the font was loaded.
 
 --- Loads a font from the app directory.
 --- @param path string
---- @return gfx.Font font
+--- @return gfx.Font* font
 --- @return boolean ok
 function gfx.load_font(path) end
 
@@ -42,7 +42,7 @@ function gfx.set_scissor(pos, size) end
 --- @field size Vec2
 --- @field rot number?
 --- @field origin Vec2?
---- @field texture gfx.Texture?
+--- @field texture gfx.Texture*?
 --- @field color Vec4?
 --- @field filter "nearest" | "linear"?
 --- @field texture_pos Vec2?
@@ -57,7 +57,7 @@ function gfx.draw_rectangle(args) end
 --- @field pos Vec2
 --- @field size number
 --- @field color Vec4
---- @field font gfx.Font?
+--- @field font gfx.Font*?
 --- @field line_spacing number?
 --- @field wrap nil | "character" | "word"
 --- @field bounds Vec2?

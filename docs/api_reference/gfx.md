@@ -1,28 +1,28 @@
 # Graphics module
 
-The graphics module contains everything graphics.
+The graphics module contains everything 2D and 3D graphics.
 
 ## Textures
 
-### `gfx.load_texture(path: string): (gfx.Texture, ok: boolean)`
+### `gfx.load_texture(path: string): (Texture, ok: boolean)`
 
 Loads a texture from the app directory. This should be a `.png` or `.jpeg`.
 
-### `gfx.Texture.size: vec2`
+### `Texture.size: vec2`
 
 The size of the texture, in pixels.
 
-### `gfx.Texture.path: string`
+### `Texture.path: string`
 
 The path from which the texture was loaded.
 
 ## Fonts
 
-### `gfx.load_font(path: string): (gfx.Font, ok: boolean)`
+### `gfx.load_font(path: string): (Font, ok: boolean)`
 
 Loads a font from the app directory.
 
-### `gfx.Font.path: string`
+### `Font.path: string`
 
 The path from which the font was loaded.
 
@@ -80,7 +80,7 @@ gfx.draw_rectangle({
 })
 ```
 
-### `gfx.draw_text(args)`
+### `gfx.draw_text(args: table)`
 
 Draws text. Options:
 

@@ -1,5 +1,3 @@
-local bit = require("bit")
-
 --- @class BVec2: table
 --- @field x boolean
 --- @field y boolean
@@ -66,6 +64,12 @@ end
 --- @class Vec2: table
 --- @field x number
 --- @field y number
+--- @operator add(Vec2 | number): Vec2
+--- @operator sub(Vec2 | number): Vec2
+--- @operator mul(Vec2 | number): Vec2
+--- @operator div(Vec2 | number): Vec2
+--- @operator mod(Vec2 | number): Vec2
+--- @operator unm(Vec2): Vec2
 Vec2 = {}
 Vec2.__index = Vec2
 
@@ -162,6 +166,12 @@ end
 --- @field r number Red channel, equivalent to X.
 --- @field g number Green channel, equivalent to Y.
 --- @field b number Blue channel, equivalent to Z.
+--- @operator add(Vec3 | number): Vec3
+--- @operator sub(Vec3 | number): Vec3
+--- @operator mul(Vec3 | number): Vec3
+--- @operator div(Vec3 | number): Vec3
+--- @operator mod(Vec3 | number): Vec3
+--- @operator unm(Vec3): Vec3
 Vec3 = {}
 
 function Vec3.__index(vec, comp)
@@ -173,6 +183,18 @@ function Vec3.__index(vec, comp)
 		return rawget(vec, "z")
 	else
 		return rawget(vec, comp)
+	end
+end
+
+function Vec3.__newindex(vec, comp, val)
+	if comp == "r" then
+		return rawset(vec, "x", val)
+	elseif comp == "g" then
+		return rawset(vec, "y", val)
+	elseif comp == "b" then
+		return rawset(vec, "z", val)
+	else
+		return rawset(vec, comp, val)
 	end
 end
 
@@ -273,6 +295,12 @@ end
 --- @field g number Green channel, equivalent to Y.
 --- @field b number Blue channel, equivalent to Z.
 --- @field a number Alpha channel, equivalent to W.
+--- @operator add(Vec4 | number): Vec4
+--- @operator sub(Vec4 | number): Vec4
+--- @operator mul(Vec4 | number): Vec4
+--- @operator div(Vec4 | number): Vec4
+--- @operator mod(Vec4 | number): Vec4
+--- @operator unm(Vec4): Vec4
 Vec4 = {}
 
 function Vec4.__index(vec, comp)
@@ -286,6 +314,20 @@ function Vec4.__index(vec, comp)
 		return rawget(vec, "w")
 	else
 		return rawget(vec, comp)
+	end
+end
+
+function Vec4.__newindex(vec, comp, val)
+	if comp == "r" then
+		return rawset(vec, "x", val)
+	elseif comp == "g" then
+		return rawset(vec, "y", val)
+	elseif comp == "b" then
+		return rawset(vec, "z", val)
+	elseif comp == "a" then
+		return rawset(vec, "w", val)
+	else
+		return rawset(vec, comp, val)
 	end
 end
 
@@ -385,6 +427,11 @@ end
 --- @field y number
 --- @field z number
 --- @field w number
+--- @operator add(Quat | number): Quat
+--- @operator sub(Quat | number): Quat
+--- @operator mul(Quat | number): Quat
+--- @operator div(Quat | number): Quat
+--- @operator unm(Quat): Quat
 Quat = {}
 Quat.__index = Quat
 
@@ -991,7 +1038,7 @@ function math.slerp(a, b, t)
 	if cos_theta > 0.9995 then
 		-- lerp for small angles
 		local result = a + (b - a) * t
-		return result:normalize()
+		return math.normalize(result)
 	end
 
 	local theta = math.acos(math.min(math.max(cos_theta, -1), 1))
