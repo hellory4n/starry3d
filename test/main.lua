@@ -1,6 +1,6 @@
 local Test = require("testrunner")
 
 function app.on_init()
-	require("mathext")
+	dofile("math.lua")
 	Test.run_all()
 end

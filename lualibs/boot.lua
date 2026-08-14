@@ -1,5 +1,12 @@
--- fix require()
+-- fix require(), loadfile(), dofile()
 package.path = string.format("%s;%s/?.lua", package.path, app.dir())
 
--- functions used by the preloaded library, but not by users
-__st = {}
+local old_loadfile = loadfile
+function loadfile(filename, mode, env)
+	return old_loadfile(app.dir() .. "/" .. filename, mode, env)
+end
+
+local old_dofile = dofile
+function dofile(filename)
+	return old_dofile(app.dir() .. "/" .. filename)
+end

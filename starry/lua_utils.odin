@@ -64,7 +64,7 @@ lua_open_utils :: proc "c" (L: ^lua.State)
 		{"quat_to_euler", lua_st_quat_to_euler},
 		{nil, nil},
 	}
-	lua.getglobal(L, "__st")
+	lua.newtable(L)
 	lua.L_setfuncs(L, raw_data(reg), 0)
-	lua.pop(L, 1)
+	lua.setglobal(L, "__st")
 }
