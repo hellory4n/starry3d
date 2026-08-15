@@ -13,14 +13,6 @@ Args :: struct {
 
 main :: proc()
 {
-	// starry is importable as an Odin library
-	// but why would you do that
-	// TODO don't
-	run(init_proc = init_app, free_proc = nil, update_proc = update_lua_app)
-}
-
-run :: proc(init_proc: proc(), free_proc: proc(), update_proc: proc())
-{
 	// setup some basic things, shared by parts of the engines when initializing
 	// TODO better context:
 	// - custom logger (output to console, file, and internal buffer)
@@ -72,15 +64,14 @@ run :: proc(init_proc: proc(), free_proc: proc(), update_proc: proc())
 	init_app_window()
 	init_2d_renderer()
 	init_lua()
-	if init_proc != nil do init_proc()
+	init_app()
 
 	defer free_string_ids()
 	defer free_app_window()
 	defer free_2d_renderer()
 	defer free_lua()
-	defer if free_proc != nil do free_proc()
 
 	for global.running {
-		main_loop(update_proc)
+		main_loop()
 	}
 }

@@ -56,6 +56,33 @@ lua_st_quat_to_euler :: proc "c" (L: ^lua.State) -> c.int
 	return 3
 }
 
+@(private = "file")
+lua_os_name :: proc "c" (L: ^lua.State) -> c.int
+{
+	when ODIN_OS == .Linux {
+		when ODIN_PLATFORM_SUBTARGET == .Android {
+			lua_push_odin_string(L, "android")
+		} else {
+			lua_push_odin_string(L, "linux")
+		}
+	} else when ODIN_OS == .Windows {
+		lua_push_odin_string(L, "windows")
+	} else when ODIN_OS == .Darwin {
+		when ODIN_PLATFORM_SUBTARGET == .iPhone {
+			lua_push_odin_string(L, "ios")
+		} else {
+			lua_push_odin_string(L, "macos")
+		}
+	} else when ODIN_OS == .FreeBSD || ODIN_OS == .OpenBSD || ODIN_OS == .NetBSD {
+		lua_push_odin_string(L, "bsd")
+	} else when ODIN_OS == .JS {
+		lua_push_odin_string(L, "web")
+	} else {
+		#panic("unsupported")
+	}
+	return 1
+}
+
 lua_open_utils :: proc "c" (L: ^lua.State)
 {
 	reg := []lua.L_Reg {
@@ -67,4 +94,9 @@ lua_open_utils :: proc "c" (L: ^lua.State)
 	lua.newtable(L)
 	lua.L_setfuncs(L, raw_data(reg), 0)
 	lua.setglobal(L, "__st")
+
+	lua.getglobal(L, "os")
+	lua.pushcfunction(L, lua_os_name)
+	lua.setfield(L, -2, "name")
+	lua.pop(L, 1)
 }

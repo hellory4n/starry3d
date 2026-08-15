@@ -162,6 +162,9 @@ init_app_window :: proc()
 				lua_call(L, nargs = 1, nresults = 0)
 			}
 			lua.pop(L, 1)
+
+			// force re-render
+			main_loop()
 		},
 	)
 }
@@ -176,7 +179,7 @@ free_app_window :: proc()
 	}
 }
 
-main_loop :: proc(update_proc: proc())
+main_loop :: proc()
 {
 	defer free_all(context.temp_allocator)
 
@@ -200,20 +203,6 @@ main_loop :: proc(update_proc: proc())
 	global.prev_time = global.current_time
 
 	// running it
-	if update_proc != nil {
-		update_proc()
-	}
-
-	// gpuing it 2
-	if !is_headless() {
-		gpu.end_frame(global.device)
-		gpu.present_and_swap_buffers(global.device)
-		poll_events()
-	}
-}
-
-update_lua_app :: proc()
-{
 	L := global.lua
 
 	if (key_held(.LEFT_ALT) || key_held(.RIGHT_ALT)) && key_just_pressed(.R) {
@@ -235,6 +224,13 @@ update_lua_app :: proc()
 		lua_call(L, nargs = 1, nresults = 0)
 	}
 	lua.pop(L, 1)
+
+	// gpuing it 2
+	if !is_headless() {
+		gpu.end_frame(global.device)
+		gpu.present_and_swap_buffers(global.device)
+		poll_events()
+	}
 }
 
 // Lua: `app.dir`
