@@ -57,6 +57,7 @@ function app.on_update()
 		gfx.draw_text({
 			pos = vec2(10, 80),
 			size = g_size,
+			bounds = bounds,
 			halign = g_halign or "left",
 			valign = g_valign or "top",
 			text = "no wrap\n" .. sample_text(),
@@ -103,5 +104,6 @@ Artykuł 2
     Nie wolno ponadto czynić żadnej różnicy w zależności od sytuacji politycznej, prawnej lub międzynarodowej kraju lub obszaru, do którego dana osoba przynależy, bez względu na to, czy dany kraj lub obszar jest niepodległy, czy też podlega systemowi powiernictwa, nie rządzi się samodzielnie lub jest w jakikolwiek sposób ograniczony w swej niepodległości.
 Artykuł 3
     Każdy człowiek ma prawo do życia, wolności i bezpieczeństwa swej osoby.
-...]]
+...
+]]
 end

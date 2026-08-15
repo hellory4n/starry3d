@@ -50,6 +50,8 @@ DrawTextDesc :: struct {
 	line_spacing: f32,
 	wrap:         TextWrap,
 	bounds:       [2]f32,
+	halign:       HorizontalAlign,
+	valign:       VerticalAlign,
 }
 
 GlyphInfo :: struct {
@@ -379,7 +381,14 @@ text_layout :: proc(
 	}
 
 	ascent, line_height := font_vertical_metrics(desc)
-	layout.height = line_height
+	spacing := line_spacing_px(desc)
+	for _, i in layout.lines {
+		layout.height += ascent
+		if i + 1 < len(layout.lines) {
+			layout.height += spacing
+		}
+	}
+	
 	return layout
 }
 
@@ -408,7 +417,16 @@ draw_text_layout :: proc(desc: DrawTextDesc, layout: TextLayout)
 
 	spacing := line_spacing_px(desc)
 	font_ascent, _ := font_vertical_metrics(desc)
-	x, y := desc.pos.x, desc.pos.y
+	x := desc.pos.x
+	y: f32
+	switch desc.valign {
+	case .TOP:
+		y = desc.pos.y
+	case .CENTER:
+		y = desc.pos.y + (desc.bounds.y - layout.height) / 2
+	case .BOTTOM:
+		y = desc.pos.y + (desc.bounds.y - layout.height)
+	}
 
 	for line, i in layout.lines {
 		draw_text_line(
@@ -441,7 +459,16 @@ draw_text_line :: proc(
 {
 	dev := gpu_device()
 	baseline := y^ + font_ascent
-	x := desc.pos.x
+
+	x: f32
+	switch desc.halign {
+	case .LEFT:
+		x = desc.pos.x
+	case .CENTER:
+		x = desc.pos.x + ((desc.bounds.x - line.width) / 2)
+	case .RIGHT:
+		x = desc.pos.x + (desc.bounds.x - line.width)
+	}
 
 	for glyph in line.glyphs {
 		font_char := make_or_get_glyph_texture_from_font(desc.font, int_size, glyph.glyph)

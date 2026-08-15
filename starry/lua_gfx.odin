@@ -328,11 +328,53 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
-	if desc.wrap != .OFF {
-		lua.getfield(L, 1, "bounds")
+	lua.getfield(L, 1, "bounds")
+	if !lua.isnil(L, -1) {
 		desc.bounds = cast([2]f32)lua_check_vec2(L, -1)
-		lua.pop(L, 1)
 	}
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "halign")
+	if !lua.isnil(L, -1) {
+		halign_str := lua_check_odin_string(L, -1)
+		switch halign_str {
+		case "left":
+			desc.halign = .LEFT
+		case "center":
+			desc.halign = .CENTER
+		case "right":
+			desc.halign = .RIGHT
+		case:
+			fmt.panicf(
+				"unexpected halign %q, should be 'left', 'center', or 'right'",
+				halign_str,
+			)
+		}
+	} else {
+		desc.halign = .LEFT
+	}
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "valign")
+	if !lua.isnil(L, -1) {
+		valign_str := lua_check_odin_string(L, -1)
+		switch valign_str {
+		case "top":
+			desc.valign = .TOP
+		case "center":
+			desc.valign = .CENTER
+		case "bottom":
+			desc.valign = .BOTTOM
+		case:
+			fmt.panicf(
+				"unexpected valign %q, should be 'top', 'center', or 'bottom'",
+				valign_str,
+			)
+		}
+	} else {
+		desc.valign = .TOP
+	}
+	lua.pop(L, 1)
 
 	draw_text(desc)
 	return 0
@@ -386,11 +428,53 @@ lua_gfx_measure_text :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
-	if desc.wrap != .OFF {
-		lua.getfield(L, 1, "bounds")
+	lua.getfield(L, 1, "bounds")
+	if !lua.isnil(L, -1) {
 		desc.bounds = cast([2]f32)lua_check_vec2(L, -1)
-		lua.pop(L, 1)
 	}
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "halign")
+	if !lua.isnil(L, -1) {
+		halign_str := lua_check_odin_string(L, -1)
+		switch halign_str {
+		case "left":
+			desc.halign = .LEFT
+		case "center":
+			desc.halign = .CENTER
+		case "right":
+			desc.halign = .RIGHT
+		case:
+			fmt.panicf(
+				"unexpected halign %q, should be 'left', 'center', or 'right'",
+				halign_str,
+			)
+		}
+	} else {
+		desc.halign = .LEFT
+	}
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "valign")
+	if !lua.isnil(L, -1) {
+		valign_str := lua_check_odin_string(L, -1)
+		switch valign_str {
+		case "top":
+			desc.valign = .TOP
+		case "center":
+			desc.valign = .CENTER
+		case "bottom":
+			desc.valign = .BOTTOM
+		case:
+			fmt.panicf(
+				"unexpected valign %q, should be 'top', 'center', or 'bottom'",
+				valign_str,
+			)
+		}
+	} else {
+		desc.valign = .TOP
+	}
+	lua.pop(L, 1)
 
 	res := measure_text(desc)
 	lua_push_vec2(L, cast([2]f64)res)
