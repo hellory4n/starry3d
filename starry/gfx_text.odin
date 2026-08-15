@@ -388,7 +388,7 @@ text_layout :: proc(
 			layout.height += spacing
 		}
 	}
-	
+
 	return layout
 }
 
@@ -476,9 +476,12 @@ draw_text_line :: proc(
 		xpos := x + f32(glyph.bearing.x) * scale + glyph.offset.x
 		ypos := baseline - glyph.bearing.y * scale + glyph.offset.y
 
-		if desc.size < 16 || (desc.size < 64 && !is_fractional_size) {
+		if desc.size < 12 {
 			xpos = math.round(xpos)
 			ypos = math.round(ypos)
+		} else if desc.size < 16 || (desc.size < 64 && !is_fractional_size) {
+			xpos = math.floor(xpos)
+			ypos = math.floor(ypos)
 		}
 
 		// missing texture == size is 0 == rendering whitespace
