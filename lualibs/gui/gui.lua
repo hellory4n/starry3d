@@ -1,23 +1,15 @@
 gui = {}
 
-if gui.box({ size = { "100%", "100%" }, align = { "center", "center" } }) then
-	if gui.panel_box({ size = { "50%", "30%" }, align = { "center", "center" }, dir = "h" }) then
-		if gui.button({ text = "fuck", size = { "grow", "fit" }, variation = "primary" }) then
-			print("fuck!")
-		end
-		if gui.button({ text = "shit", size = { "grow", "fit" } }) then
-			print("shit!")
-		end
-		gui.end_box()
-	end
-	gui.end_box()
-end
+--- @alias gui.DrawCmdType "rect" | "text" | "scissor"
 
-local cmds = gui.draw()
-for i, cmd in ipairs(cmds) do
-	-- cmd = {size, pos, variation, ...}
-end
+--- @class gui.DrawCmd
+--- @field type gui.DrawCmdType
+--- @field variation gui.ThemeVariation | any
+--- @field pos Vec2
+--- @field size Vec2
+--- @field text string Available if type is "text", empty otherwise
 
--- TODO implement lol
--- ideas:
---
+--- common theme variations
+--- @alias gui.ThemeVariation "button" | "button text"
+
+function gui.box(t) end

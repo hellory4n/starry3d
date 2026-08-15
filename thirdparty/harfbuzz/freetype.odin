@@ -22,4 +22,8 @@ foreign hb
 	/*void
 	hb_ft_font_set_load_flags (hb_font_t *font, int load_flags);*/
 	ft_font_set_load_flags :: proc(font: ^font_t, load_flags: ft.Load_Flags) ---
+
+	/*hb_bool_t
+	hb_ft_hb_font_changed (hb_font_t *font);*/
+	ft_hb_font_changed :: proc(font: ^font_t) -> bool_t ---
 }

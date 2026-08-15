@@ -6,7 +6,6 @@ import "core:c"
 import hm "core:container/handle_map"
 import "core:math"
 import "core:mem"
-import "core:strings"
 import "core:unicode"
 import "core:unicode/utf8"
 import "gpu"
@@ -28,6 +27,18 @@ TextWrap :: enum {
 	OFF,
 	CHARACTER,
 	WORD,
+}
+
+HorizontalAlign :: enum {
+	LEFT,
+	CENTER,
+	RIGHT,
+}
+
+VerticalAlign :: enum {
+	TOP,
+	CENTER,
+	BOTTOM,
 }
 
 DrawTextDesc :: struct {
@@ -52,6 +63,12 @@ GlyphInfo :: struct {
 
 GlyphLine :: struct {
 	glyphs: []GlyphInfo,
+	width:  f32,
+}
+
+TextLayout :: struct {
+	lines:  [dynamic]GlyphLine,
+	height: f32,
 }
 
 shape_text :: proc(desc: DrawTextDesc, allocator := context.allocator) -> []GlyphInfo
@@ -61,7 +78,8 @@ shape_text :: proc(desc: DrawTextDesc, allocator := context.allocator) -> []Glyp
 	int_size := i32(math.ceil(desc.size))
 	scale := desc.size / f32(int_size)
 
-	ft.set_pixel_sizes(font_data.face, 0, u32(int_size))
+	hb.font_set_scale(font_data.hb_font, int_size * 64, int_size * 64)
+	hb.font_set_ppem(font_data.hb_font, u32(int_size), u32(int_size))
 
 	// TODO this is allocating every frame. you can't set custom allocators. worrying
 	buf := hb.buffer_create()
@@ -113,57 +131,85 @@ shape_text :: proc(desc: DrawTextDesc, allocator := context.allocator) -> []Glyp
 	return glyphs
 }
 
+font_vertical_metrics :: proc(desc: DrawTextDesc) -> (ascent, line_height: f32)
+{
+	font := font_data(desc.font)
+	int_size := i32(math.ceil(desc.size))
+	scale := desc.size / f32(int_size)
+
+	ft.set_pixel_sizes(font.face, 0, u32(int_size))
+	ascent = f32(font.face.size.metrics.ascender) / 64.0 * scale
+	descent := f32(-font.face.size.metrics.descender) / 64.0 * scale
+	line_height = (ascent + descent) * desc.line_spacing
+	return
+}
+
 basic_text_layout :: proc(
 	desc: DrawTextDesc,
 	glyphs: []GlyphInfo,
 	allocator := context.allocator,
-) -> [dynamic]GlyphLine
+) -> (
+	layout: TextLayout,
+)
 {
-	lines := make([dynamic]GlyphLine, allocator)
+	layout.lines = make([dynamic]GlyphLine, allocator)
 
 	line_start_idx := 0
+	pen_x: f32 = 0
+
 	for glyph, i in glyphs {
+		pen_x += glyph.advance.x
+
 		if desc.text[glyph.cluster] == '\n' {
-			append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:i]})
+			append(
+				&layout.lines,
+				GlyphLine{glyphs = glyphs[line_start_idx:i], width = pen_x},
+			)
 			line_start_idx = i + 1
+			pen_x = 0
 		}
 	}
 
 	// last line
 	if line_start_idx < len(glyphs) {
-		append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:len(glyphs)]})
+		append(&layout.lines, GlyphLine{glyphs = glyphs[line_start_idx:], width = pen_x})
 	}
 
-	return lines
+	return layout
 }
 
 char_wrap_text_layout :: proc(
 	desc: DrawTextDesc,
 	glyphs: []GlyphInfo,
 	allocator := context.allocator,
-) -> [dynamic]GlyphLine
+) -> (
+	layout: TextLayout,
+)
 {
-	lines := make([dynamic]GlyphLine, allocator)
+	layout.lines = make([dynamic]GlyphLine, allocator)
 
 	line_start_idx := 0
-	line_width: f32 = 0
 	pen_x: f32 = 0
 
 	for glyph, i in glyphs {
 		visual_right_edge := pen_x + glyph.offset.x + glyph.bearing.x + glyph.size.x
 
 		if desc.text[glyph.cluster] == '\n' {
-			append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:i]})
+			append(
+				&layout.lines,
+				GlyphLine{glyphs = glyphs[line_start_idx:i], width = pen_x},
+			)
 			line_start_idx = i + 1
-			line_width = 0
 			pen_x = 0
 			continue
 		}
 
 		if pen_x > 0 && visual_right_edge > desc.bounds.x {
-			append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:i]})
+			append(
+				&layout.lines,
+				GlyphLine{glyphs = glyphs[line_start_idx:i], width = pen_x},
+			)
 			line_start_idx = i
-			line_width = 0
 			pen_x = 0
 		}
 
@@ -172,19 +218,22 @@ char_wrap_text_layout :: proc(
 
 	// last line
 	if line_start_idx < len(glyphs) {
-		append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:len(glyphs)]})
+		append(&layout.lines, GlyphLine{glyphs = glyphs[line_start_idx:], width = pen_x})
 	}
 
-	return lines
+	return layout
 }
 
 word_wrap_text_layout :: proc(
 	desc: DrawTextDesc,
 	glyphs: []GlyphInfo,
 	allocator := context.allocator,
-) -> [dynamic]GlyphLine
+) -> (
+	layout: TextLayout,
+)
 {
-	lines := make([dynamic]GlyphLine, allocator)
+	// TODO kinda messy but i don't wanna touch it
+	layout.lines = make([dynamic]GlyphLine, allocator)
 
 	line_start_idx := 0
 	pen_x: f32 = 0
@@ -194,7 +243,10 @@ word_wrap_text_layout :: proc(
 		glyph := glyphs[i]
 
 		if desc.text[glyph.cluster] == '\n' {
-			append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:i]})
+			append(
+				&layout.lines,
+				GlyphLine{glyphs = glyphs[line_start_idx:i], width = pen_x},
+			)
 			line_start_idx = i + 1
 			pen_x = 0
 			i += 1
@@ -246,7 +298,13 @@ word_wrap_text_layout :: proc(
 		}
 
 		if !word_fits {
-			append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:word_start]})
+			append(
+				&layout.lines,
+				GlyphLine {
+					glyphs = glyphs[line_start_idx:word_start],
+					width = pen_x,
+				},
+			)
 			line_start_idx = word_start
 			pen_x = 0
 		}
@@ -259,8 +317,11 @@ word_wrap_text_layout :: proc(
 
 				if pen_x > 0 && visual_right > desc.bounds.x {
 					append(
-						&lines,
-						GlyphLine{glyphs = glyphs[line_start_idx:j]},
+						&layout.lines,
+						GlyphLine {
+							glyphs = glyphs[line_start_idx:j],
+							width = visual_right,
+						},
 					)
 					line_start_idx = j
 					pen_x = 0
@@ -278,27 +339,32 @@ word_wrap_text_layout :: proc(
 
 	// last line
 	if line_start_idx < len(glyphs) {
-		append(&lines, GlyphLine{glyphs = glyphs[line_start_idx:]})
+		append(&layout.lines, GlyphLine{glyphs = glyphs[line_start_idx:], width = pen_x})
 	}
 
-	return lines
+	return layout
 }
 
 text_layout :: proc(
 	desc: DrawTextDesc,
 	glyphs: []GlyphInfo,
 	allocator := context.allocator,
-) -> [dynamic]GlyphLine
+) -> (
+	layout: TextLayout,
+)
 {
 	switch desc.wrap {
 	case .OFF:
-		return basic_text_layout(desc, glyphs, allocator)
+		layout = basic_text_layout(desc, glyphs, allocator)
 	case .CHARACTER:
-		return char_wrap_text_layout(desc, glyphs, allocator)
+		layout = char_wrap_text_layout(desc, glyphs, allocator)
 	case .WORD:
-		return word_wrap_text_layout(desc, glyphs, allocator)
+		layout = word_wrap_text_layout(desc, glyphs, allocator)
 	}
-	unreachable()
+
+	_, line_height := font_vertical_metrics(desc)
+	layout.height = line_height * f32(len(layout.lines))
+	return layout
 }
 
 TextUniform :: struct #align (16) #max_field_align(16) {
@@ -308,29 +374,25 @@ TextUniform :: struct #align (16) #max_field_align(16) {
 	char_size:  [2]f32,
 }
 
-draw_glyph_lines :: proc(desc: DrawTextDesc, lines: [dynamic]GlyphLine)
+draw_text_layout :: proc(desc: DrawTextDesc, layout: TextLayout)
 {
 	dev := gpu_device()
 	gpu.bind_pipeline(dev, global.gfx2d.text_pipeline)
 	gpu.bind_uniform_buffer(dev, global.gfx2d.text_uniforms, slot = 0)
-	if desc.size <= 32 {
+
+	int_size := i32(math.ceil(desc.size))
+	is_fractional_size := !approx_eql(f32(int_size), desc.size)
+	scale := desc.size / f32(int_size)
+	_, line_height := font_vertical_metrics(desc)
+
+	if desc.size < 16 || (desc.size < 64 && !is_fractional_size) {
 		gpu.bind_sampler(dev, global.samplers[.NEAREST_NEIGHBOR], slot = 0)
 	} else {
 		gpu.bind_sampler(dev, global.samplers[.BILINEAR], slot = 0)
 	}
 
-	int_size := i32(math.ceil(desc.size))
-	scale := desc.size / f32(int_size)
-
-	font_data := font_data(desc.font)
-	t_glyph: hb.codepoint_t
-	ok := hb.font_get_glyph(font_data.hb_font, 'T', 0, &t_glyph)
-	ensure(bool(ok), "how is there no T in your font?????")
-	tall_char_size :=
-		make_or_get_glyph_texture_from_font(desc.font, int_size, t_glyph).bearing.y
-
 	x, y := desc.pos.x, desc.pos.y
-	for line in lines {
+	for line in layout.lines {
 		for glyph in line.glyphs {
 			font_char := make_or_get_glyph_texture_from_font(
 				desc.font,
@@ -339,9 +401,9 @@ draw_glyph_lines :: proc(desc: DrawTextDesc, lines: [dynamic]GlyphLine)
 			)
 
 			xpos := x + f32(glyph.bearing.x) * scale + glyph.offset.x
-			ypos := y + (f32(tall_char_size) - glyph.bearing.y) * scale
+			ypos := y + (line_height - glyph.bearing.y * scale)
 
-			if desc.size < 20 {
+			if desc.size < 16 || (desc.size < 64 && !is_fractional_size) {
 				xpos = math.round(xpos)
 				ypos = math.round(ypos)
 			}
@@ -368,7 +430,7 @@ draw_glyph_lines :: proc(desc: DrawTextDesc, lines: [dynamic]GlyphLine)
 		}
 
 		x = desc.pos.x
-		y += f32(tall_char_size) * desc.line_spacing
+		y += line_height
 	}
 }
 
@@ -382,6 +444,6 @@ draw_text :: proc(desc: DrawTextDesc)
 	}
 
 	glyphs := shape_text(desc, context.temp_allocator)
-	lines := text_layout(desc, glyphs, context.temp_allocator)
-	draw_glyph_lines(desc, lines)
+	layout := text_layout(desc, glyphs, context.temp_allocator)
+	draw_text_layout(desc, layout)
 }

@@ -38,29 +38,31 @@ function gfx.end_render_pass() end
 function gfx.set_scissor(pos, size) end
 
 --- @class gfx.DrawRectangleDesc: table
---- @field pos Vec2
---- @field size Vec2
---- @field rot number?
---- @field origin Vec2?
+--- @field pos Vec2 in pixels
+--- @field size Vec2 in pixels
+--- @field rot number? in radians
+--- @field origin Vec2? from vec2(0.0) to vec2(1.0), e.g. vec2(0.0) = top left, vec2(0.5) = center, vec2(1.0) = bottom right
 --- @field texture gfx.Texture*?
---- @field color Vec4?
---- @field filter "nearest" | "linear"?
---- @field texture_pos Vec2?
---- @field texture_size Vec2?
+--- @field color Vec4? defaults to vec4(1.0) (white)
+--- @field filter "nearest" | "linear"? defaults to linear
+--- @field texture_pos Vec2? crops a texture
+--- @field texture_size Vec2? crops a texture
 
 --- Draws a rectangle.
 --- @param args gfx.DrawRectangleDesc
 function gfx.draw_rectangle(args) end
 
 --- @class gfx.DrawTextDesc: table
---- @field text string
---- @field pos Vec2
---- @field size number
---- @field color Vec4
---- @field font gfx.Font*?
---- @field line_spacing number?
+--- @field text string unicode is supported!
+--- @field pos Vec2 in pixels
+--- @field size number in pixels
+--- @field color Vec4? defaults to vec4(1.0) (white)
+--- @field font gfx.Font*? defaults to Noto Sans
+--- @field line_spacing number? defaults to 1.25
 --- @field wrap nil | "character" | "word"
---- @field bounds Vec2?
+--- @field bounds Vec2? only used if wrapping is enabled
+--- @field halign "left" | "center" | "right"? defaults to "left"
+--- @field valign "top" | "center" | "bottom"? defaults to "top"
 
 --- Draws text.
 --- @param args gfx.DrawTextDesc

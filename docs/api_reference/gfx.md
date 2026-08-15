@@ -95,11 +95,16 @@ gfx.draw_text({
 
 	font = gfx.load_font("font.ttf"), -- don't call every frame!
 
-	-- defaults to 2, multiplies by size
-	line_spacing = 2,
+	-- defaults to 1.25
+	line_spacing = 1.25,
 
 	wrap = nil | "character" | "word",
 	-- only used if wrapping is enabled
 	bounds = vec2(100, 200),
+
+	-- defaults to "left"
+	halign = "left" | "center" | "right",
+	-- defaults to "top"
+	valign = "top" | "center" | "bottom",
 })
 ```

@@ -286,7 +286,11 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	lua.pop(L, 1)
 
 	lua.getfield(L, 1, "color")
-	desc.color = cast([4]f32)lua_check_vec4(L, -1)
+	if !lua.isnil(L, -1) {
+		desc.color = cast([4]f32)lua_check_vec4(L, -1)
+	} else {
+		desc.color = {1, 1, 1, 1}
+	}
 	lua.pop(L, 1)
 
 	lua.getfield(L, 1, "font")
@@ -301,7 +305,7 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	if !lua.isnil(L, -1) {
 		desc.line_spacing = f32(lua.L_checknumber(L, -1))
 	} else {
-		desc.line_spacing = 2
+		desc.line_spacing = 1.25
 	}
 	lua.pop(L, 1)
 
