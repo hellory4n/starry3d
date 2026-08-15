@@ -119,3 +119,20 @@ Gracefully closes the window, and exits the app.
 ### `app.set_title(title: string)`
 
 Sets the title of the window.
+
+## Misc
+
+### `app.engine_info(): table`
+
+Returns a table with various information about the engine:
+
+```lua
+{
+	authors = "hellory4n",
+	version_num = 00800, -- for example 12301 = v1.23.1
+	version_major = 0,
+	version_minor = 8,
+	version_patch = 0,
+	version_str = "v0.8.0",
+}
+```

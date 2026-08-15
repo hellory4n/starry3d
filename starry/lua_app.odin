@@ -240,6 +240,34 @@ lua_app_mouse_scroll :: proc "c" (L: ^lua.State) -> c.int
 	return 1
 }
 
+@(private = "file")
+lua_app_engine_info :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	res := engine_info()
+	lua.newtable(L)
+
+	lua_push_odin_string(L, res.authors)
+	lua.setfield(L, -2, "authors")
+
+	lua_push_odin_string(L, res.version_str)
+	lua.setfield(L, -2, "version_str")
+
+	lua.pushinteger(L, res.version_num)
+	lua.setfield(L, -2, "version_num")
+
+	lua.pushinteger(L, res.version_major)
+	lua.setfield(L, -2, "version_major")
+
+	lua.pushinteger(L, res.version_minor)
+	lua.setfield(L, -2, "version_minor")
+
+	lua.pushinteger(L, res.version_patch)
+	lua.setfield(L, -2, "version_patch")
+
+	return 1
+}
+
 lua_open_app :: proc "c" (L: ^lua.State)
 {
 	mod := []lua.L_Reg {
@@ -266,6 +294,7 @@ lua_open_app :: proc "c" (L: ^lua.State)
 		{"request_quit", lua_app_request_quit},
 		{"set_title", lua_app_set_title},
 		{"mouse_scroll", lua_app_mouse_scroll},
+		{"engine_info", lua_app_engine_info},
 		{nil, nil},
 	}
 	lua.L_openlib(L, "app", raw_data(mod), 0)

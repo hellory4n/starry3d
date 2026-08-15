@@ -106,3 +106,15 @@ function app.request_quit() end
 --- Sets the title of the window.
 --- @param title string
 function app.set_title(title) end
+
+--- @class app.EngineInfo
+--- @field authors string
+--- @field version_num integer For example 12301 = v1.23.1
+--- @field version_major integer
+--- @field version_minor integer
+--- @field version_patch integer
+--- @field version_str string
+
+--- Returns a table with various information about the engine.
+--- @return app.EngineInfo
+function app.engine_info() end
