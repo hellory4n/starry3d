@@ -62,13 +62,16 @@ GlyphInfo :: struct {
 }
 
 GlyphLine :: struct {
-	glyphs: []GlyphInfo,
-	width:  f32,
+	glyphs:  []GlyphInfo,
+	width:   f32,
+	ascent:  f32,
+	descent: f32,
 }
 
 TextLayout :: struct {
 	lines:  [dynamic]GlyphLine,
 	height: f32,
+	ascent: f32,
 }
 
 shape_text :: proc(desc: DrawTextDesc, allocator := context.allocator) -> []GlyphInfo
@@ -140,8 +143,45 @@ font_vertical_metrics :: proc(desc: DrawTextDesc) -> (ascent, line_height: f32)
 	ft.set_pixel_sizes(font.face, 0, u32(int_size))
 	ascent = f32(font.face.size.metrics.ascender) / 64.0 * scale
 	descent := f32(-font.face.size.metrics.descender) / 64.0 * scale
-	line_height = (ascent + descent) * desc.line_spacing
+	line_height = ascent + descent
 	return
+}
+
+glyph_line_vertical_metrics :: proc(glyphs: []GlyphInfo, size: f32) -> (ascent, descent: f32)
+{
+	int_size := i32(math.ceil(size))
+	scale := size / f32(int_size)
+
+	for g in glyphs {
+		top := g.bearing.y * scale - g.offset.y
+		bottom := (g.size.y - g.bearing.y * scale) + g.offset.y
+		ascent = max(ascent, top)
+		descent = max(descent, bottom)
+	}
+	return
+}
+
+line_spacing_px :: proc(desc: DrawTextDesc) -> f32
+{
+	em := desc.size
+	return em * max(desc.line_spacing - 1, 0)
+}
+
+finish_line :: proc(layout: ^TextLayout, desc: DrawTextDesc, glyphs: []GlyphInfo, pen_x: f32)
+{
+	line_glyphs := glyphs
+	ascent, descent := glyph_line_vertical_metrics(line_glyphs, desc.size)
+
+	if ascent == 0 && descent == 0 {
+		font_ascent, font_line_height := font_vertical_metrics(desc)
+		ascent = font_ascent
+		descent = font_line_height - font_ascent
+	}
+
+	append(
+		&layout.lines,
+		GlyphLine{glyphs = line_glyphs, width = pen_x, ascent = ascent, descent = descent},
+	)
 }
 
 basic_text_layout :: proc(
@@ -161,10 +201,7 @@ basic_text_layout :: proc(
 		pen_x += glyph.advance.x
 
 		if desc.text[glyph.cluster] == '\n' {
-			append(
-				&layout.lines,
-				GlyphLine{glyphs = glyphs[line_start_idx:i], width = pen_x},
-			)
+			finish_line(&layout, desc, glyphs[line_start_idx:i], pen_x)
 			line_start_idx = i + 1
 			pen_x = 0
 		}
@@ -172,7 +209,7 @@ basic_text_layout :: proc(
 
 	// last line
 	if line_start_idx < len(glyphs) {
-		append(&layout.lines, GlyphLine{glyphs = glyphs[line_start_idx:], width = pen_x})
+		finish_line(&layout, desc, glyphs[line_start_idx:], pen_x)
 	}
 
 	return layout
@@ -195,20 +232,14 @@ char_wrap_text_layout :: proc(
 		visual_right_edge := pen_x + glyph.offset.x + glyph.bearing.x + glyph.size.x
 
 		if desc.text[glyph.cluster] == '\n' {
-			append(
-				&layout.lines,
-				GlyphLine{glyphs = glyphs[line_start_idx:i], width = pen_x},
-			)
+			finish_line(&layout, desc, glyphs[line_start_idx:i], pen_x)
 			line_start_idx = i + 1
 			pen_x = 0
 			continue
 		}
 
 		if pen_x > 0 && visual_right_edge > desc.bounds.x {
-			append(
-				&layout.lines,
-				GlyphLine{glyphs = glyphs[line_start_idx:i], width = pen_x},
-			)
+			finish_line(&layout, desc, glyphs[line_start_idx:i], pen_x)
 			line_start_idx = i
 			pen_x = 0
 		}
@@ -218,7 +249,7 @@ char_wrap_text_layout :: proc(
 
 	// last line
 	if line_start_idx < len(glyphs) {
-		append(&layout.lines, GlyphLine{glyphs = glyphs[line_start_idx:], width = pen_x})
+		finish_line(&layout, desc, glyphs[line_start_idx:], pen_x)
 	}
 
 	return layout
@@ -243,10 +274,7 @@ word_wrap_text_layout :: proc(
 		glyph := glyphs[i]
 
 		if desc.text[glyph.cluster] == '\n' {
-			append(
-				&layout.lines,
-				GlyphLine{glyphs = glyphs[line_start_idx:i], width = pen_x},
-			)
+			finish_line(&layout, desc, glyphs[line_start_idx:i], pen_x)
 			line_start_idx = i + 1
 			pen_x = 0
 			i += 1
@@ -298,13 +326,7 @@ word_wrap_text_layout :: proc(
 		}
 
 		if !word_fits {
-			append(
-				&layout.lines,
-				GlyphLine {
-					glyphs = glyphs[line_start_idx:word_start],
-					width = pen_x,
-				},
-			)
+			finish_line(&layout, desc, glyphs[line_start_idx:word_start], pen_x)
 			line_start_idx = word_start
 			pen_x = 0
 		}
@@ -316,13 +338,7 @@ word_wrap_text_layout :: proc(
 				visual_right := pen_x + g.offset.x + g.bearing.x + g.size.x
 
 				if pen_x > 0 && visual_right > desc.bounds.x {
-					append(
-						&layout.lines,
-						GlyphLine {
-							glyphs = glyphs[line_start_idx:j],
-							width = visual_right,
-						},
-					)
+					finish_line(&layout, desc, glyphs[line_start_idx:j], pen_x)
 					line_start_idx = j
 					pen_x = 0
 				}
@@ -339,7 +355,7 @@ word_wrap_text_layout :: proc(
 
 	// last line
 	if line_start_idx < len(glyphs) {
-		append(&layout.lines, GlyphLine{glyphs = glyphs[line_start_idx:], width = pen_x})
+		finish_line(&layout, desc, glyphs[line_start_idx:], pen_x)
 	}
 
 	return layout
@@ -362,8 +378,8 @@ text_layout :: proc(
 		layout = word_wrap_text_layout(desc, glyphs, allocator)
 	}
 
-	_, line_height := font_vertical_metrics(desc)
-	layout.height = line_height * f32(len(layout.lines))
+	ascent, line_height := font_vertical_metrics(desc)
+	layout.height = line_height
 	return layout
 }
 
@@ -383,7 +399,6 @@ draw_text_layout :: proc(desc: DrawTextDesc, layout: TextLayout)
 	int_size := i32(math.ceil(desc.size))
 	is_fractional_size := !approx_eql(f32(int_size), desc.size)
 	scale := desc.size / f32(int_size)
-	_, line_height := font_vertical_metrics(desc)
 
 	if desc.size < 16 || (desc.size < 64 && !is_fractional_size) {
 		gpu.bind_sampler(dev, global.samplers[.NEAREST_NEIGHBOR], slot = 0)
@@ -391,46 +406,78 @@ draw_text_layout :: proc(desc: DrawTextDesc, layout: TextLayout)
 		gpu.bind_sampler(dev, global.samplers[.BILINEAR], slot = 0)
 	}
 
+	spacing := line_spacing_px(desc)
+	font_ascent, _ := font_vertical_metrics(desc)
 	x, y := desc.pos.x, desc.pos.y
-	for line in layout.lines {
-		for glyph in line.glyphs {
-			font_char := make_or_get_glyph_texture_from_font(
-				desc.font,
-				int_size,
-				glyph.glyph,
-			)
 
-			xpos := x + f32(glyph.bearing.x) * scale + glyph.offset.x
-			ypos := y + (line_height - glyph.bearing.y * scale)
+	for line, i in layout.lines {
+		draw_text_line(
+			desc,
+			line,
+			i,
+			len(layout.lines),
+			int_size,
+			scale,
+			spacing,
+			font_ascent,
+			is_fractional_size,
+			&y,
+		)
+	}
+}
 
-			if desc.size < 16 || (desc.size < 64 && !is_fractional_size) {
-				xpos = math.round(xpos)
-				ypos = math.round(ypos)
-			}
+draw_text_line :: proc(
+	desc: DrawTextDesc,
+	line: GlyphLine,
+	i: int,
+	line_len: int,
+	int_size: i32,
+	scale: f32,
+	spacing: f32,
+	font_ascent: f32,
+	is_fractional_size: bool,
+	y: ^f32,
+)
+{
+	dev := gpu_device()
+	baseline := y^ + font_ascent
+	x := desc.pos.x
 
-			// missing texture == size is 0 == rendering whitespace
-			if font_char.texture != {} {
-				gpu.bind_texture(dev, font_char.texture, slot = 0)
+	for glyph in line.glyphs {
+		font_char := make_or_get_glyph_texture_from_font(desc.font, int_size, glyph.glyph)
 
-				uniforms := TextUniform {
-					color      = desc.color,
-					resolution = frame_sizef(),
-					pos        = {xpos, ypos},
-					char_size  = glyph.size,
-				}
-				gpu.update_buffer(
-					dev,
-					global.gfx2d.text_uniforms,
-					mem.ptr_to_bytes(&uniforms),
-				)
-				gpu.draw(dev, vertex_count = 6)
-			}
+		xpos := x + f32(glyph.bearing.x) * scale + glyph.offset.x
+		ypos := baseline - glyph.bearing.y * scale + glyph.offset.y
 
-			x += glyph.advance.x
+		if desc.size < 16 || (desc.size < 64 && !is_fractional_size) {
+			xpos = math.round(xpos)
+			ypos = math.round(ypos)
 		}
 
-		x = desc.pos.x
-		y += line_height
+		// missing texture == size is 0 == rendering whitespace
+		if font_char.texture != {} {
+			gpu.bind_texture(dev, font_char.texture, slot = 0)
+
+			uniforms := TextUniform {
+				color      = desc.color,
+				resolution = frame_sizef(),
+				pos        = {xpos, ypos},
+				char_size  = glyph.size,
+			}
+			gpu.update_buffer(
+				dev,
+				global.gfx2d.text_uniforms,
+				mem.ptr_to_bytes(&uniforms),
+			)
+			gpu.draw(dev, vertex_count = 6)
+		}
+
+		x += glyph.advance.x
+	}
+
+	y^ += font_ascent
+	if i + 1 < line_len {
+		y^ += spacing
 	}
 }
 
@@ -446,4 +493,20 @@ draw_text :: proc(desc: DrawTextDesc)
 	glyphs := shape_text(desc, context.temp_allocator)
 	layout := text_layout(desc, glyphs, context.temp_allocator)
 	draw_text_layout(desc, layout)
+}
+
+// lua: `gfx.measure_text`
+measure_text :: proc(desc: DrawTextDesc) -> [2]f32
+{
+	glyphs := shape_text(desc, context.temp_allocator)
+	layout := text_layout(desc, glyphs, context.temp_allocator)
+
+	max_width: f32 = 0
+	for line in layout.lines {
+		if line.width > max_width {
+			max_width = line.width
+		}
+	}
+
+	return {max_width, layout.height}
 }

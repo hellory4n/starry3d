@@ -67,3 +67,16 @@ function gfx.draw_rectangle(args) end
 --- Draws text.
 --- @param args gfx.DrawTextDesc
 function gfx.draw_text(args) end
+
+--- @class gfx.MeasureTextDesc: table
+--- @field text string unicode is supported!
+--- @field size number in pixels
+--- @field font gfx.Font*? defaults to Noto Sans
+--- @field line_spacing number? defaults to 1.25
+--- @field wrap nil | "character" | "word"
+--- @field bounds Vec2? only used if wrapping is enabled
+
+--- Returns the visual width and height of the text.
+--- @param args gfx.MeasureTextDesc
+--- @return Vec2
+function gfx.measure_text(args) end

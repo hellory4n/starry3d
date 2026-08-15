@@ -40,14 +40,14 @@ function app.on_update()
 		text =
 		"press 1-3 to switch layout\npress C for center alignment, R for right alignment, B for bottom alignment\npress up/down to increase/decrease font size",
 		size = 16,
-		pos = vec2(10, 0),
+		pos = vec2(10, 10),
 	})
 
 	-- draw bounds
-	local bounds = vec2(app.frame_size().x - 20, app.frame_size().y - 110)
+	local bounds = vec2(app.frame_size().x - 20, app.frame_size().y - 90)
 	if g_mode == "character wrap" or g_mode == "word wrap" then
 		gfx.draw_rectangle({
-			pos = vec2(10, 100),
+			pos = vec2(10, 80),
 			color = math.hex("#141414"),
 			size = bounds
 		})
@@ -55,7 +55,7 @@ function app.on_update()
 
 	if g_mode == "no wrap" then
 		gfx.draw_text({
-			pos = vec2(10, 100),
+			pos = vec2(10, 80),
 			size = g_size,
 			halign = g_halign or "left",
 			valign = g_valign or "top",
@@ -65,7 +65,7 @@ function app.on_update()
 
 	if g_mode == "character wrap" then
 		gfx.draw_text({
-			pos = vec2(10, 100),
+			pos = vec2(10, 80),
 			size = g_size,
 			bounds = bounds,
 			wrap = "character",
@@ -77,7 +77,7 @@ function app.on_update()
 
 	if g_mode == "word wrap" then
 		gfx.draw_text({
-			pos = vec2(10, 100),
+			pos = vec2(10, 80),
 			size = g_size,
 			bounds = bounds,
 			wrap = "word",

@@ -26,9 +26,13 @@ Loads a font from the app directory.
 
 The path from which the font was loaded.
 
+### `gfx.measure_text(args: table): vec2`
+
+Returns the visual width and height of the text. This takes in the same parameters as `gfx.draw_text`.
+
 ## 2D rendering
 
-### `gfx.begin_render_pass(args)`
+### `gfx.begin_render_pass(args: table)`
 
 Begins 2D rendering in the default framebuffer. Options:
 

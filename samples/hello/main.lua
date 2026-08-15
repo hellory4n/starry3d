@@ -6,8 +6,8 @@ function app.on_update(dt)
 	gfx.begin_render_pass({ clear_color = vec4() })
 	gfx.draw_text({
 		text = "hello Starry!",
-		pos = vec2(32, 0),
-		size = 64,
+		pos = vec2(32, 32),
+		size = 48,
 		color = vec4(1),
 	})
 	gfx.end_render_pass()

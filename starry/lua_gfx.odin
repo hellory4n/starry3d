@@ -273,6 +273,8 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	lua.L_checktype(L, 1, i32(lua.TTABLE))
 	desc: DrawTextDesc
 
+	// note: keep this synced with gfx.measure_text
+
 	lua.getfield(L, 1, "text")
 	desc.text = lua_check_odin_string(L, -1)
 	lua.pop(L, 1)
@@ -336,11 +338,71 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	return 0
 }
 
+@(private = "file")
+lua_gfx_measure_text :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	lua.L_checktype(L, 1, i32(lua.TTABLE))
+	desc: DrawTextDesc
+
+	lua.getfield(L, 1, "text")
+	desc.text = lua_check_odin_string(L, -1)
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "size")
+	desc.size = f32(lua.L_checknumber(L, -1))
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "font")
+	if !lua.isnil(L, -1) {
+		desc.font = (cast(^hm.Handle32)lua.touserdata(L, -1))^
+	} else {
+		desc.font = global.default_font
+	}
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "line_spacing")
+	if !lua.isnil(L, -1) {
+		desc.line_spacing = f32(lua.L_checknumber(L, -1))
+	} else {
+		desc.line_spacing = 1.25
+	}
+	lua.pop(L, 1)
+
+	lua.getfield(L, 1, "wrap")
+	if !lua.isnil(L, -1) {
+		wrap_str := lua_check_odin_string(L, -1)
+		switch wrap_str {
+		case "word":
+			desc.wrap = .WORD
+		case "character":
+			desc.wrap = .CHARACTER
+		case:
+			fmt.panicf(
+				"unexpected wrap %q, should be nil, 'character', or 'word'",
+				wrap_str,
+			)
+		}
+	}
+	lua.pop(L, 1)
+
+	if desc.wrap != .OFF {
+		lua.getfield(L, 1, "bounds")
+		desc.bounds = cast([2]f32)lua_check_vec2(L, -1)
+		lua.pop(L, 1)
+	}
+
+	res := measure_text(desc)
+	lua_push_vec2(L, cast([2]f64)res)
+	return 1
+}
+
 lua_open_gfx :: proc "c" (L: ^lua.State)
 {
 	gfx_reg := []lua.L_Reg {
 		{"load_texture", lua_gfx_load_texture},
 		{"load_font", lua_gfx_load_font},
+		{"measure_text", lua_gfx_measure_text},
 		{"begin_render_pass", lua_gfx_begin_render_pass},
 		{"end_render_pass", lua_gfx_end_render_pass},
 		{"set_scissor", lua_gfx_set_scissor},
