@@ -25,7 +25,7 @@ FontGlyph :: struct {
 }
 
 // shared between freetype and harfbuzz
-FT_LOAD_FLAGS :: ft.Load_Flags{.Render, .Force_Autohint}
+FT_LOAD_FLAGS :: ft.Load_Flags{.Render}
 
 load_font_from_memory :: proc(
 	data: []byte,
