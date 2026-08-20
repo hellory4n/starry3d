@@ -52,6 +52,19 @@ function gfx.set_scissor(pos, size) end
 --- @param args gfx.DrawRectangleDesc
 function gfx.draw_rectangle(args) end
 
+--- @class gfx.DrawRectangleOutlineDesc: table
+--- @field pos Vec2 in pixels
+--- @field size Vec2 in pixels
+--- @field rot number? in radians
+--- @field origin Vec2? from vec2(0.0) to vec2(1.0), e.g. vec2(0.0) = top left, vec2(0.5) = center, vec2(1.0) = bottom right
+--- @field color Vec4
+--- @field width number
+--- @field offset "inside" | "center" | "outside"? defaults to "inside"
+
+--- Draws a rectangle outline.
+--- @param args gfx.DrawRectangleOutlineDesc
+function gfx.draw_rectangle_outline(args) end
+
 --- @class gfx.DrawTextDesc: table
 --- @field text string unicode is supported!
 --- @field pos Vec2 in pixels

@@ -15,25 +15,32 @@ function app.on_update(dt)
 	})
 
 	gfx.draw_rectangle({
-		pos = vec2(pad * 2 + size.y, pad) + size / 2,
+		pos = vec2(pad * 2 + size.x, pad) + size / 2,
 		size = size * vec2(0.5, 1),
 		rot = app.now_secs() * 2,
 		origin = vec2(0.5),
 		color = math.hex("#ff0000"),
 	})
 
+	gfx.draw_rectangle_outline({
+		pos = vec2(pad * 3 + size.x * 2, pad) + size / 2,
+		size = size * vec2(0.5, 1.0),
+		rot = app.now_secs() * 2,
+		origin = vec2(0.5),
+		width = 4,
+		color = math.hex("#00ff00"),
+	})
+
 	gfx.draw_rectangle({
 		pos = vec2(pad, pad * 2 + size.y),
 		size = size,
 		texture = g_parrot,
-		filter = "linear",
 	})
 
 	gfx.draw_rectangle({
 		pos = vec2(pad * 2 + size.x, pad * 2 + size.y),
 		size = size,
 		texture = g_parrot,
-		filter = "linear",
 		color = math.hex("#ff00ff")
 	})
 
@@ -41,7 +48,6 @@ function app.on_update(dt)
 		pos = vec2(pad * 3 + size.x * 2, pad * 2 + size.y),
 		size = size,
 		texture = g_parrot,
-		filter = "nearest",
 		texture_pos = vec2(125, 0),
 		texture_size = vec2(200, 400),
 	})
@@ -52,10 +58,22 @@ function app.on_update(dt)
 		origin = vec2(0.5),
 		rot = app.now_secs() * 2,
 		texture = g_parrot,
-		filter = "linear",
 		texture_pos = vec2(125, 0),
 		texture_size = vec2(200, 400),
 		color = math.hex("#ffff00"),
+	})
+
+	gfx.draw_rectangle({
+		pos = vec2(pad * 5 + size.x * 4, pad * 2 + size.y),
+		size = size,
+		texture = g_parrot,
+		color = math.hex("#00ffff")
+	})
+	gfx.draw_rectangle_outline({
+		pos = vec2(pad * 5 + size.x * 4, pad * 2 + size.y),
+		size = size,
+		color = vec4(1, 1, 1, 0.3),
+		width = 16,
 	})
 
 	gfx.end_render_pass()

@@ -184,40 +184,37 @@ lua_gfx_set_scissor :: proc "c" (L: ^lua.State) -> c.int
 	return 0
 }
 
-@(private = "file")
-lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
+lua_gfx_check_draw_rectangle_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: DrawRectangleDesc)
 {
-	context = global.ctx
-	lua.L_checktype(L, 1, i32(lua.TTABLE))
+	lua.L_checktype(L, narg, i32(lua.TTABLE))
 
-	desc: DrawRectangleDesc
-	lua.getfield(L, 1, "pos")
+	lua.getfield(L, narg, "pos")
 	desc.pos = cast([2]f32)lua_check_vec2(L, -1)
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "size")
+	lua.getfield(L, narg, "size")
 	desc.size = cast([2]f32)lua_check_vec2(L, -1)
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "rot")
+	lua.getfield(L, narg, "rot")
 	if !lua.isnil(L, -1) {
 		desc.rot = f32(lua.L_checknumber(L, -1))
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "origin")
+	lua.getfield(L, narg, "origin")
 	if !lua.isnil(L, -1) {
 		desc.origin = cast([2]f32)lua_check_vec2(L, -1)
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "texture")
+	lua.getfield(L, narg, "texture")
 	if !lua.isnil(L, -1) {
 		desc.texture = (cast(^hm.Handle32)lua.touserdata(L, -1))^
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "color")
+	lua.getfield(L, narg, "color")
 	if !lua.isnil(L, -1) {
 		desc.color = cast([4]f32)lua_check_vec4(L, -1)
 	} else {
@@ -225,7 +222,7 @@ lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "filter")
+	lua.getfield(L, narg, "filter")
 	if !lua.isnil(L, -1) {
 		filterstr := lua_check_odin_string(L, -1)
 		switch filterstr {
@@ -244,7 +241,7 @@ lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "texture_pos")
+	lua.getfield(L, narg, "texture_pos")
 	if !lua.isnil(L, -1) {
 		desc.texture_pos = cast([2]f32)lua_check_vec2(L, -1)
 	} else {
@@ -252,7 +249,7 @@ lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "texture_size")
+	lua.getfield(L, narg, "texture_size")
 	if !lua.isnil(L, -1) {
 		desc.texture_size = cast([2]f32)lua_check_vec2(L, -1)
 	} else {
@@ -262,32 +259,73 @@ lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
+	lua.getfield(L, narg, "width")
+	if !lua.isnil(L, -1) {
+		desc.border_width = f32(lua.L_checknumber(L, -1))
+	} else {
+		desc.border_width = 1
+	}
+	lua.pop(L, 1)
+
+	lua.getfield(L, narg, "offset")
+	if !lua.isnil(L, -1) {
+		offset_str := lua_check_odin_string(L, -1)
+		switch offset_str {
+		case "inside":
+			desc.border_offset = .INSIDE
+		case "center":
+			desc.border_offset = .CENTER
+		case "outside":
+			desc.border_offset = .OUTSIDE
+		case:
+			fmt.panicf(
+				"unexpected border offset %q, should be 'inside', 'center', or 'outside'",
+				offset_str,
+			)
+		}
+	} else {
+		desc.border_offset = .INSIDE
+	}
+	lua.pop(L, 1)
+
+	return desc
+}
+
+@(private = "file")
+lua_gfx_draw_rectangle :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	desc := lua_gfx_check_draw_rectangle_desc(L, 1)
 	draw_rectangle(desc)
 	return 0
 }
 
 @(private = "file")
-lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
+lua_gfx_draw_rectangle_outline :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
-	lua.L_checktype(L, 1, i32(lua.TTABLE))
-	desc: DrawTextDesc
+	desc := lua_gfx_check_draw_rectangle_desc(L, 1)
+	draw_rectangle_outline(desc)
+	return 0
+}
 
-	// note: keep this synced with gfx.measure_text
-
-	lua.getfield(L, 1, "text")
+@(private = "file")
+lua_gfx_check_draw_text_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: DrawTextDesc)
+{
+	lua.L_checktype(L, narg, i32(lua.TTABLE))
+	lua.getfield(L, narg, "text")
 	desc.text = lua_check_odin_string(L, -1)
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "pos")
+	lua.getfield(L, narg, "pos")
 	desc.pos = cast([2]f32)lua_check_vec2(L, -1)
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "size")
+	lua.getfield(L, narg, "size")
 	desc.size = f32(lua.L_checknumber(L, -1))
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "color")
+	lua.getfield(L, narg, "color")
 	if !lua.isnil(L, -1) {
 		desc.color = cast([4]f32)lua_check_vec4(L, -1)
 	} else {
@@ -295,7 +333,7 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "font")
+	lua.getfield(L, narg, "font")
 	if !lua.isnil(L, -1) {
 		desc.font = (cast(^hm.Handle32)lua.touserdata(L, -1))^
 	} else {
@@ -303,7 +341,7 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "line_spacing")
+	lua.getfield(L, narg, "line_spacing")
 	if !lua.isnil(L, -1) {
 		desc.line_spacing = f32(lua.L_checknumber(L, -1))
 	} else {
@@ -311,7 +349,7 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "wrap")
+	lua.getfield(L, narg, "wrap")
 	if !lua.isnil(L, -1) {
 		wrap_str := lua_check_odin_string(L, -1)
 		switch wrap_str {
@@ -328,13 +366,13 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "bounds")
+	lua.getfield(L, narg, "bounds")
 	if !lua.isnil(L, -1) {
 		desc.bounds = cast([2]f32)lua_check_vec2(L, -1)
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "halign")
+	lua.getfield(L, narg, "halign")
 	if !lua.isnil(L, -1) {
 		halign_str := lua_check_odin_string(L, -1)
 		switch halign_str {
@@ -355,7 +393,7 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, 1, "valign")
+	lua.getfield(L, narg, "valign")
 	if !lua.isnil(L, -1) {
 		valign_str := lua_check_odin_string(L, -1)
 		switch valign_str {
@@ -376,6 +414,14 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 	}
 	lua.pop(L, 1)
 
+	return desc
+}
+
+@(private = "file")
+lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
+{
+	context = global.ctx
+	desc := lua_gfx_check_draw_text_desc(L, 1)
 	draw_text(desc)
 	return 0
 }
@@ -384,98 +430,7 @@ lua_gfx_draw_text :: proc "c" (L: ^lua.State) -> c.int
 lua_gfx_measure_text :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
-	lua.L_checktype(L, 1, i32(lua.TTABLE))
-	desc: DrawTextDesc
-
-	lua.getfield(L, 1, "text")
-	desc.text = lua_check_odin_string(L, -1)
-	lua.pop(L, 1)
-
-	lua.getfield(L, 1, "size")
-	desc.size = f32(lua.L_checknumber(L, -1))
-	lua.pop(L, 1)
-
-	lua.getfield(L, 1, "font")
-	if !lua.isnil(L, -1) {
-		desc.font = (cast(^hm.Handle32)lua.touserdata(L, -1))^
-	} else {
-		desc.font = global.default_font
-	}
-	lua.pop(L, 1)
-
-	lua.getfield(L, 1, "line_spacing")
-	if !lua.isnil(L, -1) {
-		desc.line_spacing = f32(lua.L_checknumber(L, -1))
-	} else {
-		desc.line_spacing = 1.25
-	}
-	lua.pop(L, 1)
-
-	lua.getfield(L, 1, "wrap")
-	if !lua.isnil(L, -1) {
-		wrap_str := lua_check_odin_string(L, -1)
-		switch wrap_str {
-		case "word":
-			desc.wrap = .WORD
-		case "character":
-			desc.wrap = .CHARACTER
-		case:
-			fmt.panicf(
-				"unexpected wrap %q, should be nil, 'character', or 'word'",
-				wrap_str,
-			)
-		}
-	}
-	lua.pop(L, 1)
-
-	lua.getfield(L, 1, "bounds")
-	if !lua.isnil(L, -1) {
-		desc.bounds = cast([2]f32)lua_check_vec2(L, -1)
-	}
-	lua.pop(L, 1)
-
-	lua.getfield(L, 1, "halign")
-	if !lua.isnil(L, -1) {
-		halign_str := lua_check_odin_string(L, -1)
-		switch halign_str {
-		case "left":
-			desc.halign = .LEFT
-		case "center":
-			desc.halign = .CENTER
-		case "right":
-			desc.halign = .RIGHT
-		case:
-			fmt.panicf(
-				"unexpected halign %q, should be 'left', 'center', or 'right'",
-				halign_str,
-			)
-		}
-	} else {
-		desc.halign = .LEFT
-	}
-	lua.pop(L, 1)
-
-	lua.getfield(L, 1, "valign")
-	if !lua.isnil(L, -1) {
-		valign_str := lua_check_odin_string(L, -1)
-		switch valign_str {
-		case "top":
-			desc.valign = .TOP
-		case "center":
-			desc.valign = .CENTER
-		case "bottom":
-			desc.valign = .BOTTOM
-		case:
-			fmt.panicf(
-				"unexpected valign %q, should be 'top', 'center', or 'bottom'",
-				valign_str,
-			)
-		}
-	} else {
-		desc.valign = .TOP
-	}
-	lua.pop(L, 1)
-
+	desc := lua_gfx_check_draw_text_desc(L, 1)
 	res := measure_text(desc)
 	lua_push_vec2(L, cast([2]f64)res)
 	return 1
@@ -491,6 +446,7 @@ lua_open_gfx :: proc "c" (L: ^lua.State)
 		{"end_render_pass", lua_gfx_end_render_pass},
 		{"set_scissor", lua_gfx_set_scissor},
 		{"draw_rectangle", lua_gfx_draw_rectangle},
+		{"draw_rectangle_outline", lua_gfx_draw_rectangle_outline},
 		{"draw_text", lua_gfx_draw_text},
 		{nil, nil},
 	}

@@ -84,6 +84,32 @@ gfx.draw_rectangle({
 })
 ```
 
+### `gfx.draw_rectangle_outline(args: table)`
+
+Draws a rectangle outline. Options:
+
+```lua
+gfx.draw_rectangle_outline({
+	-- position and size in pixels
+	pos = vec2(40, 50),
+	size = vec2(100, 150),
+	rot = 3.14, -- optional, in radians
+	
+	color = math.hex("#ffffff"),
+	width = 2,
+	-- defaults to "inside"
+	offset = "inside" | "center" | "outside",
+
+	-- origin point, from vec2(0.0) to vec2(1.0)
+	-- examples:
+	--     - top left:     vec2(0.0, 0.0)
+	--     - center:       vec2(0.5, 0.5)
+	--     - bottom right: vec2(1.0, 1.0)
+	-- optional
+	origin = vec2(0.5),
+})
+```
+
 ### `gfx.draw_text(args: table)`
 
 Draws text. Options:
@@ -103,7 +129,7 @@ gfx.draw_text({
 	line_spacing = 1.25,
 
 	wrap = nil | "character" | "word",
-	-- only used if wrapping is enabled
+	-- only used if wrapping or aligning is enabled
 	bounds = vec2(100, 200),
 
 	-- defaults to "left"

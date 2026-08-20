@@ -3,6 +3,7 @@ package starry
 import ft "../thirdparty/freetype"
 import hm "core:container/handle_map"
 import "core:fmt"
+import "core:math"
 import "core:math/linalg"
 import "core:mem"
 import "gpu"
@@ -11,7 +12,7 @@ import "gpu"
 // - there is no batching anywhere
 // - fonts create a new texture per character, per (integer) size
 // - text isn't batched or instanced
-// - text antialiasing is kinda ugly (and it's not freetype's fault)
+// - text layout should be cached (it's not exactly trivial)
 
 init_2d_renderer :: proc()
 {
@@ -205,16 +206,25 @@ RectUniform :: struct #align (16) #max_field_align(16) {
 	has_texture:  b32,
 }
 
+OutlineOffset :: enum {
+	INSIDE,
+	CENTER,
+	OUTSIDE,
+}
+
+// for both gfx.draw_rectangle and gfx.draw_rectangle_outline
 DrawRectangleDesc :: struct {
-	pos:          [2]f32,
-	size:         [2]f32,
-	origin:       [2]f32,
-	rot:          f32,
-	texture:      hm.Handle32,
-	color:        [4]f32,
-	filter:       gpu.Texture_Filter,
-	texture_pos:  [2]f32,
-	texture_size: [2]f32,
+	pos:           [2]f32,
+	size:          [2]f32,
+	origin:        [2]f32,
+	rot:           f32,
+	texture:       hm.Handle32,
+	color:         [4]f32,
+	filter:        gpu.Texture_Filter,
+	texture_pos:   [2]f32,
+	texture_size:  [2]f32,
+	border_width:  f32,
+	border_offset: OutlineOffset,
 }
 
 // note: defaults are handled when binding to lua
@@ -247,4 +257,95 @@ draw_rectangle :: proc(desc: DrawRectangleDesc)
 	gpu.bind_uniform_buffer(dev, global.gfx2d.rect_uniforms, slot = 0)
 
 	gpu.draw(dev, vertex_count = 6)
+}
+
+// note: defaults are handled when binding to lua
+// lua: `gfx.draw_rectangle`
+draw_rectangle_outline :: proc(desc: DrawRectangleDesc)
+{
+	border_width := math.abs(desc.border_width)
+	// don't divide by 0
+	if border_width == 0 {
+		return
+	}
+
+	size: [2]f32
+	switch desc.border_offset {
+	case .INSIDE:
+		size = desc.size
+	case .CENTER:
+		size = desc.size - border_width / 2
+	case .OUTSIDE:
+		size = desc.size - border_width
+	}
+
+	pos: [2]f32
+	switch desc.border_offset {
+	case .INSIDE:
+		pos = desc.pos
+	case .CENTER:
+		pos = desc.pos - border_width / 2
+	case .OUTSIDE:
+		pos = desc.pos - border_width
+	}
+
+	origin := desc.origin
+	// left and right bars are shorter to not overdraw
+	h_short := size.y - border_width * 2
+	outer_top_left := [2]f32{pos.x - size.x * origin.x, pos.y - size.y * origin.y}
+
+	// top
+	draw_rectangle(
+		{
+			pos    = pos, // shared pivot
+			size   = {size.x, border_width},
+			origin = {origin.x, (size.y * origin.y) / border_width},
+			rot    = desc.rot,
+			color  = desc.color,
+		},
+	)
+
+	// bottom
+	draw_rectangle(
+		{
+			pos = pos,
+			size = {size.x, border_width},
+			origin = {
+				origin.x,
+				(pos.y - (outer_top_left.y + size.y - border_width)) /
+				border_width,
+			},
+			rot = desc.rot,
+			color = desc.color,
+		},
+	)
+
+	// left
+	draw_rectangle(
+		{
+			pos = pos,
+			size = {border_width, h_short},
+			origin = {
+				(size.x * origin.x) / border_width,
+				(pos.y - (outer_top_left.y + border_width)) / h_short,
+			},
+			rot = desc.rot,
+			color = desc.color,
+		},
+	)
+
+	// right (short)
+	draw_rectangle(
+		{
+			pos = pos,
+			size = {border_width, h_short},
+			origin = {
+				(pos.x - (outer_top_left.x + size.x - border_width)) /
+				border_width,
+				(pos.y - (outer_top_left.y + border_width)) / h_short,
+			},
+			rot = desc.rot,
+			color = desc.color,
+		},
+	)
 }

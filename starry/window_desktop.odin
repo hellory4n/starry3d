@@ -41,7 +41,6 @@ open_window :: proc(
 	}
 
 	title_cstr := strings.clone_to_cstring(title, context.temp_allocator)
-	defer delete(title_cstr, context.temp_allocator)
 
 	if setup_gl_ctx {
 		glfw.WindowHint(glfw.CLIENT_API, glfw.OPENGL_API)
