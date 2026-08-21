@@ -59,7 +59,6 @@ function gfx.draw_rectangle(args) end
 --- @field origin Vec2? from vec2(0.0) to vec2(1.0), e.g. vec2(0.0) = top left, vec2(0.5) = center, vec2(1.0) = bottom right
 --- @field color Vec4
 --- @field width number
---- @field offset "inside" | "center" | "outside"? defaults to "inside"
 
 --- Draws a rectangle outline.
 --- @param args gfx.DrawRectangleOutlineDesc

@@ -97,8 +97,6 @@ gfx.draw_rectangle_outline({
 	
 	color = math.hex("#ffffff"),
 	width = 2,
-	-- defaults to "inside"
-	offset = "inside" | "center" | "outside",
 
 	-- origin point, from vec2(0.0) to vec2(1.0)
 	-- examples:

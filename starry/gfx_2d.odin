@@ -206,25 +206,18 @@ RectUniform :: struct #align (16) #max_field_align(16) {
 	has_texture:  b32,
 }
 
-OutlineOffset :: enum {
-	INSIDE,
-	CENTER,
-	OUTSIDE,
-}
-
 // for both gfx.draw_rectangle and gfx.draw_rectangle_outline
 DrawRectangleDesc :: struct {
-	pos:           [2]f32,
-	size:          [2]f32,
-	origin:        [2]f32,
-	rot:           f32,
-	texture:       hm.Handle32,
-	color:         [4]f32,
-	filter:        gpu.Texture_Filter,
-	texture_pos:   [2]f32,
-	texture_size:  [2]f32,
-	border_width:  f32,
-	border_offset: OutlineOffset,
+	pos:          [2]f32,
+	size:         [2]f32,
+	origin:       [2]f32,
+	rot:          f32,
+	texture:      hm.Handle32,
+	color:        [4]f32,
+	filter:       gpu.Texture_Filter,
+	texture_pos:  [2]f32,
+	texture_size: [2]f32,
+	border_width: f32,
 }
 
 // note: defaults are handled when binding to lua
@@ -263,33 +256,17 @@ draw_rectangle :: proc(desc: DrawRectangleDesc)
 // lua: `gfx.draw_rectangle`
 draw_rectangle_outline :: proc(desc: DrawRectangleDesc)
 {
+	// TODO this sucks
 	border_width := math.abs(desc.border_width)
 	// don't divide by 0
 	if border_width == 0 {
 		return
 	}
 
-	size: [2]f32
-	switch desc.border_offset {
-	case .INSIDE:
-		size = desc.size
-	case .CENTER:
-		size = desc.size - border_width / 2
-	case .OUTSIDE:
-		size = desc.size - border_width
-	}
-
-	pos: [2]f32
-	switch desc.border_offset {
-	case .INSIDE:
-		pos = desc.pos
-	case .CENTER:
-		pos = desc.pos - border_width / 2
-	case .OUTSIDE:
-		pos = desc.pos - border_width
-	}
-
+	size := desc.size
+	pos := desc.pos
 	origin := desc.origin
+
 	// left and right bars are shorter to not overdraw
 	h_short := size.y - border_width * 2
 	outer_top_left := [2]f32{pos.x - size.x * origin.x, pos.y - size.y * origin.y}

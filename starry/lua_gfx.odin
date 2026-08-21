@@ -267,27 +267,6 @@ lua_gfx_check_draw_rectangle_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: 
 	}
 	lua.pop(L, 1)
 
-	lua.getfield(L, narg, "offset")
-	if !lua.isnil(L, -1) {
-		offset_str := lua_check_odin_string(L, -1)
-		switch offset_str {
-		case "inside":
-			desc.border_offset = .INSIDE
-		case "center":
-			desc.border_offset = .CENTER
-		case "outside":
-			desc.border_offset = .OUTSIDE
-		case:
-			fmt.panicf(
-				"unexpected border offset %q, should be 'inside', 'center', or 'outside'",
-				offset_str,
-			)
-		}
-	} else {
-		desc.border_offset = .INSIDE
-	}
-	lua.pop(L, 1)
-
 	return desc
 }
 
