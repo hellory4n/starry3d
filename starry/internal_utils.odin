@@ -46,7 +46,7 @@ approx_eql :: proc {
 }
 
 when ODIN_OS == .Windows {
-	win32_to_cstring16 :: proc(s: string, allocator: mem.Allocator) -> cstring16
+	cstring16_from_utf8 :: proc(s: string, allocator: mem.Allocator) -> cstring16
 	{
 		size := windows.MultiByteToWideChar(windows.CP_UTF8, 0, raw_data(s), -1, nil, 0)
 		ensure(size != 0)
@@ -72,9 +72,12 @@ Message_Box_Level :: enum {
 
 message_box :: proc(level: Message_Box_Level, msg: string)
 {
-	// TODO use zenity on linux
+	if is_headless() {
+		return
+	}
+
 	when ODIN_OS == .Windows {
-		msg16 := win32_to_cstring16(msg, context.temp_allocator)
+		msg16 := cstring16_from_utf8(msg, context.temp_allocator)
 		flags: windows.UINT = windows.MB_OK
 		switch level {
 		case .ERROR:
@@ -92,6 +95,6 @@ message_box :: proc(level: Message_Box_Level, msg: string)
 			uType = flags,
 		)
 	} else {
-		fmt.printfln(msg)
+		// TODO
 	}
 }

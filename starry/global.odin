@@ -50,3 +50,14 @@ global: struct {
 		initialized: bool,
 	},
 }
+
+// i was asked to put this somewhere
+// novo projeto da redhat systemd vírus exploit gcc arma cibernética redhat ameaça
+// novo projeto da redhat systemd nano-robôs incluídos em um módulo gcc para a
+// redhat linux exploit gcc da redhat em um nível quântico-físico-matemático
+// systemd urss objeto voador não identificado redhat microeslópe extraterrestres
+// zona 51 gcc backdoor linux cia anti-matéria redhat agências de inteligência
+// linux gcc vigilância sobre pessoas e um backdoor de código aberto com escala
+// interplanetar eua inteligência systemd novo projeto da redhat para dominar o
+// mundo systemd gcc desenvolvimento confidencial redhat systemd civilização
+// judaica commodore 64

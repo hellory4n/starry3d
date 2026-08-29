@@ -1,5 +1,6 @@
 package starry
 
+import "base:runtime"
 import "core:flags"
 import "core:fmt"
 import vmem "core:mem/virtual"
@@ -13,17 +14,13 @@ Args :: struct {
 
 main :: proc()
 {
-	// setup some basic things, shared by parts of the engines when initializing
-	// TODO better context:
-	// - custom logger (output to console, file, and internal buffer)
-	// - custom assertion failure proc (love2d-like, or using MessageBox)
-	// - use mem.Tracking_Allocator everywhere
+	context = init_starry_context()
+	global.ctx = context
+
 	aerr := vmem.arena_init_growing(&global.init_arena)
 	defer vmem.arena_destroy(&global.init_arena)
 	assert(aerr == .None)
 	init_alloc := vmem.arena_allocator(&global.init_arena)
-
-	global.ctx = context
 
 	flags.parse_or_exit(&global.args, os.args, allocator = init_alloc)
 	if global.args.version {
