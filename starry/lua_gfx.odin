@@ -54,7 +54,7 @@ lua_gfx_texture_index :: proc "c" (L: ^lua.State) -> c.int
 	case "path":
 		lua_push_odin_string(L, data.path)
 	case "size":
-		lua_push_vec2(L, cast([2]f64)texture_size(handle^))
+		lua_push_vec2(L, cast(dvec2)texture_size(handle^))
 	case:
 		lua.pushnil(L)
 	}
@@ -145,7 +145,7 @@ lua_gfx_begin_render_pass :: proc "c" (L: ^lua.State) -> c.int
 
 	lua.getfield(L, 1, "clear_color")
 	if !lua.isnil(L, -1) {
-		desc.clear_color = cast([4]f32)lua_check_vec4(L, -1)
+		desc.clear_color = cast(vec4)lua_check_vec4(L, -1)
 	}
 	lua.pop(L, 1)
 
@@ -166,18 +166,18 @@ lua_gfx_set_scissor :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
 
-	pos: Maybe([2]f32)
+	pos: Maybe(vec2)
 	if lua.isnoneornil(L, 1) {
 		pos = nil
 	} else {
-		pos = cast([2]f32)lua_check_vec2(L, 1)
+		pos = cast(vec2)lua_check_vec2(L, 1)
 	}
 
-	size: Maybe([2]f32)
+	size: Maybe(vec2)
 	if lua.isnoneornil(L, 2) {
 		size = nil
 	} else {
-		size = cast([2]f32)lua_check_vec2(L, 2)
+		size = cast(vec2)lua_check_vec2(L, 2)
 	}
 
 	set_scissor(pos, size)
@@ -189,11 +189,11 @@ lua_gfx_check_draw_rectangle_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: 
 	lua.L_checktype(L, narg, i32(lua.TTABLE))
 
 	lua.getfield(L, narg, "pos")
-	desc.pos = cast([2]f32)lua_check_vec2(L, -1)
+	desc.pos = cast(vec2)lua_check_vec2(L, -1)
 	lua.pop(L, 1)
 
 	lua.getfield(L, narg, "size")
-	desc.size = cast([2]f32)lua_check_vec2(L, -1)
+	desc.size = cast(vec2)lua_check_vec2(L, -1)
 	lua.pop(L, 1)
 
 	lua.getfield(L, narg, "rot")
@@ -204,7 +204,7 @@ lua_gfx_check_draw_rectangle_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: 
 
 	lua.getfield(L, narg, "origin")
 	if !lua.isnil(L, -1) {
-		desc.origin = cast([2]f32)lua_check_vec2(L, -1)
+		desc.origin = cast(vec2)lua_check_vec2(L, -1)
 	}
 	lua.pop(L, 1)
 
@@ -216,7 +216,7 @@ lua_gfx_check_draw_rectangle_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: 
 
 	lua.getfield(L, narg, "color")
 	if !lua.isnil(L, -1) {
-		desc.color = cast([4]f32)lua_check_vec4(L, -1)
+		desc.color = cast(vec4)lua_check_vec4(L, -1)
 	} else {
 		desc.color = {1, 1, 1, 1}
 	}
@@ -243,7 +243,7 @@ lua_gfx_check_draw_rectangle_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: 
 
 	lua.getfield(L, narg, "texture_pos")
 	if !lua.isnil(L, -1) {
-		desc.texture_pos = cast([2]f32)lua_check_vec2(L, -1)
+		desc.texture_pos = cast(vec2)lua_check_vec2(L, -1)
 	} else {
 		desc.texture_pos = {0, 0}
 	}
@@ -251,7 +251,7 @@ lua_gfx_check_draw_rectangle_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: 
 
 	lua.getfield(L, narg, "texture_size")
 	if !lua.isnil(L, -1) {
-		desc.texture_size = cast([2]f32)lua_check_vec2(L, -1)
+		desc.texture_size = cast(vec2)lua_check_vec2(L, -1)
 	} else {
 		if texture_is_valid(desc.texture) {
 			desc.texture_size = texture_size(desc.texture)
@@ -297,7 +297,7 @@ lua_gfx_check_draw_text_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: DrawT
 	lua.pop(L, 1)
 
 	lua.getfield(L, narg, "pos")
-	desc.pos = cast([2]f32)lua_check_vec2(L, -1)
+	desc.pos = cast(vec2)lua_check_vec2(L, -1)
 	lua.pop(L, 1)
 
 	lua.getfield(L, narg, "size")
@@ -306,7 +306,7 @@ lua_gfx_check_draw_text_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: DrawT
 
 	lua.getfield(L, narg, "color")
 	if !lua.isnil(L, -1) {
-		desc.color = cast([4]f32)lua_check_vec4(L, -1)
+		desc.color = cast(vec4)lua_check_vec4(L, -1)
 	} else {
 		desc.color = {1, 1, 1, 1}
 	}
@@ -347,7 +347,7 @@ lua_gfx_check_draw_text_desc :: proc(L: ^lua.State, narg: c.int) -> (desc: DrawT
 
 	lua.getfield(L, narg, "bounds")
 	if !lua.isnil(L, -1) {
-		desc.bounds = cast([2]f32)lua_check_vec2(L, -1)
+		desc.bounds = cast(vec2)lua_check_vec2(L, -1)
 	}
 	lua.pop(L, 1)
 
@@ -411,7 +411,7 @@ lua_gfx_measure_text :: proc "c" (L: ^lua.State) -> c.int
 	context = global.ctx
 	desc := lua_gfx_check_draw_text_desc(L, 1)
 	res := measure_text(desc)
-	lua_push_vec2(L, cast([2]f64)res)
+	lua_push_vec2(L, cast(dvec2)res)
 	return 1
 }
 

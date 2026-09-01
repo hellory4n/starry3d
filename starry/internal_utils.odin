@@ -1,12 +1,29 @@
 package starry
 
-import "core:fmt"
 import "core:math"
 import "core:mem"
 import "core:os"
 import "core:strings"
 import "core:sys/windows"
 import "vendor:glfw"
+
+vec2 :: [2]f32
+vec3 :: [3]f32
+vec4 :: [4]f32
+
+dvec2 :: [2]f64
+dvec3 :: [3]f64
+dvec4 :: [4]f64
+
+ivec2 :: [2]i32
+ivec3 :: [3]i32
+ivec4 :: [4]i32
+
+uvec2 :: [2]u32
+uvec3 :: [3]u32
+uvec4 :: [4]u32
+
+mat4 :: matrix[4, 4]f32
 
 // For the laziest of hands
 temp_cstr :: proc(src: string) -> cstring

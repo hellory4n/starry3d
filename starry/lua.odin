@@ -122,7 +122,7 @@ lua_push_odin_string :: proc "c" (L: ^lua.State, s: string)
 	lua.pushlstring(L, cast(cstring)raw_data(s), c.size_t(len(s)))
 }
 
-lua_check_vec2 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: [2]f64)
+lua_check_vec2 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: dvec2)
 {
 	lua.L_checktype(L, num_arg, i32(lua.TTABLE))
 
@@ -137,7 +137,7 @@ lua_check_vec2 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: [2]f64)
 	return res
 }
 
-lua_check_vec3 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: [3]f64)
+lua_check_vec3 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: dvec3)
 {
 	lua.L_checktype(L, num_arg, i32(lua.TTABLE))
 
@@ -156,7 +156,7 @@ lua_check_vec3 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: [3]f64)
 	return res
 }
 
-lua_check_vec4 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: [4]f64)
+lua_check_vec4 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: dvec4)
 {
 	lua.L_checktype(L, num_arg, i32(lua.TTABLE))
 
@@ -179,7 +179,7 @@ lua_check_vec4 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: [4]f64)
 	return res
 }
 
-lua_push_vec2 :: proc "c" (L: ^lua.State, v: [2]f64)
+lua_push_vec2 :: proc "c" (L: ^lua.State, v: dvec2)
 {
 	lua.newtable(L)
 	lua.getglobal(L, "Vec2")
@@ -190,7 +190,7 @@ lua_push_vec2 :: proc "c" (L: ^lua.State, v: [2]f64)
 	lua.setfield(L, -2, "y")
 }
 
-lua_push_vec3 :: proc "c" (L: ^lua.State, v: [3]f64)
+lua_push_vec3 :: proc "c" (L: ^lua.State, v: dvec3)
 {
 	lua.newtable(L)
 	lua.getglobal(L, "Vec3")
@@ -203,7 +203,7 @@ lua_push_vec3 :: proc "c" (L: ^lua.State, v: [3]f64)
 	lua.setfield(L, -2, "z")
 }
 
-lua_push_vec4 :: proc "c" (L: ^lua.State, v: [4]f64)
+lua_push_vec4 :: proc "c" (L: ^lua.State, v: dvec4)
 {
 	lua.newtable(L)
 	lua.getglobal(L, "Vec4")

@@ -12,7 +12,7 @@ import stbi "vendor:stb/image"
 TextureData :: struct {
 	handle: hm.Handle32,
 	path:   string,
-	size:   [2]i32,
+	size:   ivec2,
 	tex:    gpu.Texture,
 }
 
@@ -84,9 +84,9 @@ texture_is_valid :: proc(h: hm.Handle32) -> bool
 	return hm.is_valid(&global.textures, h)
 }
 
-texture_size :: proc(h: hm.Handle32) -> [2]f32
+texture_size :: proc(h: hm.Handle32) -> vec2
 {
 	texture := texture_data(h)
 	// TODO i forgot why this returns floats
-	return cast([2]f32)texture.size
+	return cast(vec2)texture.size
 }

@@ -20,8 +20,8 @@ FontData :: struct {
 
 FontGlyph :: struct {
 	texture: gpu.Texture,
-	size:    [2]i32,
-	bearing: [2]i32,
+	size:    ivec2,
+	bearing: ivec2,
 }
 
 // shared between freetype and harfbuzz

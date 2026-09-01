@@ -147,7 +147,7 @@ free_2d_renderer :: proc()
 }
 
 RenderPassDesc :: struct {
-	clear_color: Maybe([4]f32),
+	clear_color: Maybe(vec4),
 }
 
 // lua: `gfx.begin_render_pass`
@@ -156,7 +156,7 @@ begin_render_pass :: proc(desc: RenderPassDesc)
 	dev := gpu_device()
 
 	switch clear_color in desc.clear_color {
-	case [4]f32:
+	case vec4:
 		gpu.begin_render_pass(
 			dev,
 			gpu.default_framebuffer(dev),
@@ -177,46 +177,46 @@ end_render_pass :: proc()
 }
 
 // lua: `gfx.set_scissor`
-set_scissor :: proc(pos: Maybe([2]f32), size: Maybe([2]f32))
+set_scissor :: proc(pos: Maybe(vec2), size: Maybe(vec2))
 {
 	dev := gpu_device()
 
-	ipos, isize: Maybe([2]i32)
+	ipos, isize: Maybe(ivec2)
 	if size != nil {
-		isize = cast([2]i32)linalg.round(size.?)
+		isize = cast(ivec2)linalg.round(size.?)
 	}
 	if pos != nil {
-		ipos = cast([2]i32)linalg.round(pos.?)
-		ipos = [2]i32{ipos.?.x, frame_sizei().y - ipos.?.y - (isize.? or_else [2]i32{}).y}
+		ipos = cast(ivec2)linalg.round(pos.?)
+		ipos = ivec2{ipos.?.x, frame_sizei().y - ipos.?.y - (isize.? or_else ivec2{}).y}
 	}
 
 	gpu.set_scissor(dev, ipos, isize)
 }
 
 RectUniform :: struct #align (16) #max_field_align(16) {
-	color:        [4]f32,
-	resolution:   [2]f32,
-	pos:          [2]f32,
-	size:         [2]f32,
-	origin:       [2]f32,
-	texture_size: [2]f32,
-	crop_pos:     [2]f32,
-	crop_size:    [2]f32,
+	color:        vec4,
+	resolution:   vec2,
+	pos:          vec2,
+	size:         vec2,
+	origin:       vec2,
+	texture_size: vec2,
+	crop_pos:     vec2,
+	crop_size:    vec2,
 	rot:          f32,
 	has_texture:  b32,
 }
 
 // for both gfx.draw_rectangle and gfx.draw_rectangle_outline
 DrawRectangleDesc :: struct {
-	pos:          [2]f32,
-	size:         [2]f32,
-	origin:       [2]f32,
+	pos:          vec2,
+	size:         vec2,
+	origin:       vec2,
 	rot:          f32,
 	texture:      hm.Handle32,
-	color:        [4]f32,
+	color:        vec4,
 	filter:       gpu.Texture_Filter,
-	texture_pos:  [2]f32,
-	texture_size: [2]f32,
+	texture_pos:  vec2,
+	texture_size: vec2,
 	border_width: f32,
 }
 
@@ -269,7 +269,7 @@ draw_rectangle_outline :: proc(desc: DrawRectangleDesc)
 
 	// left and right bars are shorter to not overdraw
 	h_short := size.y - border_width * 2
-	outer_top_left := [2]f32{pos.x - size.x * origin.x, pos.y - size.y * origin.y}
+	outer_top_left := vec2{pos.x - size.x * origin.x, pos.y - size.y * origin.y}
 
 	// top
 	draw_rectangle(

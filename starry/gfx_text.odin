@@ -43,13 +43,13 @@ VerticalAlign :: enum {
 
 DrawTextDesc :: struct {
 	text:         string,
-	pos:          [2]f32,
+	pos:          vec2,
 	size:         f32,
-	color:        [4]f32,
+	color:        vec4,
 	font:         hm.Handle32,
 	line_spacing: f32,
 	wrap:         TextWrap,
-	bounds:       [2]f32,
+	bounds:       vec2,
 	halign:       HorizontalAlign,
 	valign:       VerticalAlign,
 }
@@ -57,10 +57,10 @@ DrawTextDesc :: struct {
 GlyphInfo :: struct {
 	glyph:   hb.codepoint_t,
 	cluster: u32, // original byte/rune offset
-	advance: [2]f32,
-	offset:  [2]f32,
-	size:    [2]f32,
-	bearing: [2]f32,
+	advance: vec2,
+	offset:  vec2,
+	size:    vec2,
+	bearing: vec2,
 }
 
 GlyphLine :: struct {
@@ -127,8 +127,8 @@ shape_text :: proc(desc: DrawTextDesc, allocator := context.allocator) -> []Glyp
 		}
 
 		font_char := make_or_get_glyph_texture_from_font(desc.font, int_size, gid)
-		glyph.bearing = cast([2]f32)font_char.bearing
-		glyph.size = (cast([2]f32)font_char.size) * scale
+		glyph.bearing = cast(vec2)font_char.bearing
+		glyph.size = (cast(vec2)font_char.size) * scale
 
 		glyphs[i] = glyph
 	}
@@ -393,10 +393,10 @@ text_layout :: proc(
 }
 
 TextUniform :: struct #align (16) #max_field_align(16) {
-	color:      [4]f32,
-	resolution: [2]f32,
-	pos:        [2]f32,
-	char_size:  [2]f32,
+	color:      vec4,
+	resolution: vec2,
+	pos:        vec2,
+	char_size:  vec2,
 }
 
 draw_text_layout :: proc(desc: DrawTextDesc, layout: TextLayout)
@@ -526,7 +526,7 @@ draw_text :: proc(desc: DrawTextDesc)
 }
 
 // lua: `gfx.measure_text`
-measure_text :: proc(desc: DrawTextDesc) -> [2]f32
+measure_text :: proc(desc: DrawTextDesc) -> vec2
 {
 	glyphs := shape_text(desc, context.temp_allocator)
 	layout := text_layout(desc, glyphs, context.temp_allocator)

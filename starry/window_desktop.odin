@@ -13,10 +13,10 @@ Window :: struct {
 	glfw:             glfw.WindowHandle,
 	key_state:        #sparse[Key]InputState,
 	mouse_state:      #sparse[MouseButton]InputState,
-	current_mouse:    [2]f32,
-	delta_mouse:      [2]f32,
-	prev_mouse:       [2]f32,
-	scroll:           [2]f32,
+	current_mouse:    vec2,
+	delta_mouse:      vec2,
+	prev_mouse:       vec2,
+	scroll:           vec2,
 	idx:              int,
 	high_dpi_enabled: bool,
 }
@@ -186,7 +186,7 @@ window_is_closing :: proc(window: ^Window) -> bool
 }
 
 // aligned to the top left of the screen
-window_mouse_pos :: proc(window: ^Window) -> [2]f32
+window_mouse_pos :: proc(window: ^Window) -> vec2
 {
 	x, y := glfw.GetCursorPos(window.glfw)
 	return {f32(x), f32(y)}
@@ -194,7 +194,7 @@ window_mouse_pos :: proc(window: ^Window) -> [2]f32
 
 // returns how much the mouse position changed in the last frame, aligned to the top left of
 // the screen
-window_delta_mouse_pos :: proc(window: ^Window) -> [2]f32
+window_delta_mouse_pos :: proc(window: ^Window) -> vec2
 {
 	return window.delta_mouse
 }
@@ -239,19 +239,19 @@ window_mouse_not_pressed :: proc(window: ^Window, btn: MouseButton) -> bool
 	return !window_mouse_held(window, btn)
 }
 
-window_frame_sizei :: proc(window: ^Window) -> [2]i32
+window_frame_sizei :: proc(window: ^Window) -> ivec2
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
 	return {i32(x), i32(y)}
 }
 
-window_frame_sizeu :: proc(window: ^Window) -> [2]u32
+window_frame_sizeu :: proc(window: ^Window) -> uvec2
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
 	return {u32(x), u32(y)}
 }
 
-window_sizef :: proc(window: ^Window) -> [2]f32
+window_sizef :: proc(window: ^Window) -> vec2
 {
 	x, y := glfw.GetFramebufferSize(window.glfw)
 	return {f32(x), f32(y)}
@@ -310,7 +310,7 @@ window_set_title :: proc(window: ^Window, title: string)
 	glfw.SetWindowTitle(window.glfw, temp_cstr(title))
 }
 
-window_mouse_scroll :: proc(window: ^Window) -> [2]f32
+window_mouse_scroll :: proc(window: ^Window) -> vec2
 {
 	return window.scroll
 }
@@ -326,7 +326,7 @@ is_closing :: proc() -> bool
 
 // aligned to the top left of the screen
 // lua: `app.mouse_pos`
-mouse_pos :: proc() -> [2]f32
+mouse_pos :: proc() -> vec2
 {
 	if main_window() == nil do return {}
 	return window_mouse_pos(main_window())
@@ -335,7 +335,7 @@ mouse_pos :: proc() -> [2]f32
 // returns how much the mouse position changed in the last frame, aligned to the top left of
 // the screen
 // lua: `app.delta_mouse_pos`
-delta_mouse_pos :: proc() -> [2]f32
+delta_mouse_pos :: proc() -> vec2
 {
 	if main_window() == nil do return {}
 	return window_delta_mouse_pos(main_window())
@@ -397,20 +397,20 @@ mouse_not_pressed :: proc(btn: MouseButton) -> bool
 	return window_mouse_not_pressed(main_window(), btn)
 }
 
-frame_sizei :: proc() -> [2]i32
+frame_sizei :: proc() -> ivec2
 {
 	if main_window() == nil do return {}
 	return window_frame_sizei(main_window())
 }
 
-frame_sizeu :: proc() -> [2]u32
+frame_sizeu :: proc() -> uvec2
 {
 	if main_window() == nil do return {}
 	return window_frame_sizeu(main_window())
 }
 
 // lua: `app.frame_size`
-frame_sizef :: proc() -> [2]f32
+frame_sizef :: proc() -> vec2
 {
 	if main_window() == nil do return {}
 	return window_sizef(main_window())
@@ -483,7 +483,7 @@ set_title :: proc(title: string)
 }
 
 // lua: `app.mouse_scroll`
-mouse_scroll :: proc() -> [2]f32
+mouse_scroll :: proc() -> vec2
 {
 	if main_window() == nil do return {}
 	return window_mouse_scroll(main_window())

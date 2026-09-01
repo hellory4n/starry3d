@@ -236,7 +236,7 @@ lua_app_mouse_scroll :: proc "c" (L: ^lua.State) -> c.int
 {
 	context = global.ctx
 	res := mouse_scroll()
-	lua_push_vec2(L, cast([2]f64)res)
+	lua_push_vec2(L, cast(dvec2)res)
 	return 1
 }
 
