@@ -3,7 +3,6 @@ package starry
 import "base:intrinsics"
 import "base:runtime"
 import "core:fmt"
-import "core:mem"
 
 // returns starry's custom context (logger, panic handler)
 init_starry_context :: proc() -> (ctx: runtime.Context)

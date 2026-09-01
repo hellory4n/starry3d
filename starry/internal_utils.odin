@@ -64,13 +64,13 @@ when ODIN_OS == .Windows {
 	}
 }
 
-Message_Box_Level :: enum {
+MessageBoxLevel :: enum {
 	ERROR,
 	WARNING,
 	INFO,
 }
 
-message_box :: proc(level: Message_Box_Level, msg: string)
+message_box :: proc(level: MessageBoxLevel, msg: string)
 {
 	if is_headless() {
 		return

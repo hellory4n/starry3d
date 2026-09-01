@@ -6,6 +6,9 @@ import "core:fmt"
 import "core:strings"
 import "vendor:glfw"
 
+// TODO this was originally written to support multiple windows, but it's untested,
+// and not exposed anywhere (also opengl contexts will make this obnoxious)
+
 Window :: struct {
 	glfw:             glfw.WindowHandle,
 	key_state:        #sparse[Key]InputState,
