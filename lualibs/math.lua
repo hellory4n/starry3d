@@ -174,16 +174,17 @@ end
 --- @operator unm(Vec3): Vec3
 Vec3 = {}
 
-function Vec3.__index(vec, comp)
-	if comp == "r" then
+function Vec3.__index(vec, key)
+	if key == "r" then
 		return rawget(vec, "x")
-	elseif comp == "g" then
-		return rawget(vec, "y")
-	elseif comp == "b" then
-		return rawget(vec, "z")
-	else
-		return rawget(vec, comp)
 	end
+	if key == "g" then
+		return rawget(vec, "y")
+	end
+	if key == "b" then
+		return rawget(vec, "z")
+	end
+	return rawget(vec, key)
 end
 
 function Vec3.__newindex(vec, comp, val)
@@ -303,18 +304,20 @@ end
 --- @operator unm(Vec4): Vec4
 Vec4 = {}
 
-function Vec4.__index(vec, comp)
-	if comp == "r" then
+function Vec4.__index(vec, key)
+	if key == "r" then
 		return rawget(vec, "x")
-	elseif comp == "g" then
-		return rawget(vec, "y")
-	elseif comp == "b" then
-		return rawget(vec, "z")
-	elseif comp == "a" then
-		return rawget(vec, "w")
-	else
-		return rawget(vec, comp)
 	end
+	if key == "g" then
+		return rawget(vec, "y")
+	end
+	if key == "b" then
+		return rawget(vec, "z")
+	end
+	if key == "a" then
+		return rawget(vec, "w")
+	end
+	return rawget(vec, key)
 end
 
 function Vec4.__newindex(vec, comp, val)
@@ -1218,4 +1221,125 @@ function math.hex(x)
 	end
 
 	return vec4(r / 255, g / 255, b / 255, a / 255)
+end
+
+--- @class Rect2
+--- @field pos Vec2
+--- @field size Vec2
+--- @field x number
+--- @field y number
+--- @field w number
+--- @field h number
+Rect = {}
+function Rect.__index(self, key)
+	if key == "x" then
+		return rawget(self, "pos").x
+	end
+	if key == "y" then
+		return rawget(self, "pos").y
+	end
+	if key == "w" then
+		return rawget(self, "size").x
+	end
+	if key == "h" then
+		return rawget(self, "size").y
+	end
+	return rawget(self, key)
+end
+
+function Rect.__newindex(self, key, val)
+	if key == "x" then
+		self.pos.x = val
+	end
+	if key == "y" then
+		self.pos.y = val
+	end
+	if key == "w" then
+		self.size.x = val
+	end
+	if key == "h" then
+		self.size.y = val
+	end
+	rawset(self, key, val)
+end
+
+--- Creates a new rectangle.
+--- Example:
+--- - rect(position, size)
+--- - rect(x, y, width, height)
+--- @param x number | Vec2
+--- @param y number | Vec2
+--- @param w number?
+--- @param h number?
+function rect2(x, y, w, h)
+	local self = {}
+
+	if type(x) == "number" and type(y) == "number" then
+		self.pos = vec2(x, y)
+		self.size = vec2(w, h)
+	elseif type(x) == "table" and type(y) == "table" then
+		self.pos = x
+		self.size = y
+	else
+		error("unexpected type " .. type(x))
+	end
+
+	return setmetatable(self, Rect)
+end
+
+--- Returns the area of a rectangle.
+--- @param rect Rect2
+--- @return number
+function math.area(rect)
+	return rect.size.x * rect.size.y
+end
+
+--- Returns the center of a rectangle.
+--- @param r Rect2
+--- @return Vec2
+function math.center(r)
+	return r.pos + (r.size * 0.5)
+end
+
+--- Expands a rectangle on all sides by N.
+--- @param r Rect2
+--- @param n number
+--- @return Rect2
+function math.expand(r, n)
+	return rect2(r.pos.x - n, r.pos.y - n, r.size.x + n * 2, r.size.y + n * 2);
+end
+
+--- Returns the intersection of 2 rectangles.
+--- @param a Rect2
+--- @param b Rect2
+--- @return Rect2
+function math.intersection(a, b)
+	local x1 = math.max(a.pos.x, b.pos.x)
+	local y1 = math.max(a.pos.y, b.pos.y)
+	local x2 = math.min(a.pos.x + a.size.x, b.pos.x + b.size.x)
+	local y2 = math.min(a.pos.y + a.size.y, b.pos.y + b.size.y)
+	if x2 < x1 then
+		x2 = x1
+	end
+	if y2 < y1 then
+		y2 = y1
+	end
+	return rect2(x1, y1, x2 - x1, y2 - y1)
+end
+
+--- Returns true if 2 rectangles intersect.
+--- @param a Rect2
+--- @param b Rect2
+--- @return boolean
+function math.intersects(a, b)
+	return math.any(math.greater_than(math.intersection(a, b).size, vec2()))
+end
+
+--- Returns true if the rectangle intersects with that point.
+--- @param r Rect2
+--- @param p Vec2
+--- @return boolean
+function math.has_point(r, p)
+	return p.x >= r.pos.x and p.x < r.pos.x + r.size.x and p.y >= r.pos.y and
+	    p.y < r.pos.y + r.size.y
 end

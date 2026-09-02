@@ -973,3 +973,93 @@ Test.new("math.hex edge cases", function(t)
 	t:assert_approx(c.b, 0xCC / 255)
 	t:assert_approx(c.a, 1)
 end)
+
+Test.new("rect constructor", function(t)
+	-- individual numbers
+	local r = rect2(10, 20, 30, 40)
+	t:assert(r.x, 10)
+	t:assert(r.y, 20)
+	t:assert(r.w, 30)
+	t:assert(r.h, 40)
+
+	-- position + size as vec2
+	local r2 = rect2(vec2(5, 15), vec2(25, 35))
+	t:assert(r2.x, 5)
+	t:assert(r2.y, 15)
+	t:assert(r2.w, 25)
+	t:assert(r2.h, 35)
+end)
+
+Test.new("math.area", function(t)
+	local r = rect2(0, 0, 10, 20)
+	t:assert(math.area(r), 200)
+
+	local r2 = rect2(5, 5, 0, 10)
+	t:assert(math.area(r2), 0)
+end)
+
+Test.new("math.center", function(t)
+	local r = rect2(0, 0, 10, 20)
+	local c = math.center(r)
+	t:assert(c.x, 5)
+	t:assert(c.y, 10)
+
+	local r2 = rect2(10, 20, 30, 40)
+	local c2 = math.center(r2)
+	t:assert(c2.x, 25)
+	t:assert(c2.y, 40)
+end)
+
+Test.new("math.expand", function(t)
+	local r = rect2(10, 20, 30, 40)
+	local e = math.expand(r, 5)
+	t:assert(e.x, 5)
+	t:assert(e.y, 15)
+	t:assert(e.w, 40)
+	t:assert(e.h, 50)
+
+	-- expand by 0 should be identical
+	local e0 = math.expand(r, 0)
+	t:assert(e0.x, 10)
+	t:assert(e0.y, 20)
+	t:assert(e0.w, 30)
+	t:assert(e0.h, 40)
+end)
+
+Test.new("math.intersection", function(t)
+	local a = rect2(0, 0, 10, 10)
+	local b = rect2(5, 5, 10, 10)
+	local i = math.intersection(a, b)
+	t:assert(i.x, 5)
+	t:assert(i.y, 5)
+	t:assert(i.w, 5)
+	t:assert(i.h, 5)
+
+	-- no overlap
+	local c = rect2(20, 20, 5, 5)
+	local empty = math.intersection(a, c)
+	t:assert(empty.w <= 0 or empty.h <= 0, true)
+end)
+
+Test.new("math.intersects", function(t)
+	local a = rect2(0, 0, 10, 10)
+	local b = rect2(5, 5, 10, 10)
+	t:assert(math.intersects(a, b), true)
+
+	local c = rect2(20, 20, 5, 5)
+	t:assert(math.intersects(a, c), false)
+
+	-- touching edge
+	local d = rect2(10, 0, 5, 5)
+	t:assert(math.intersects(a, d), true)
+end)
+
+Test.new("math.has_point", function(t)
+	local r = rect2(0, 0, 10, 10)
+
+	t:assert(math.has_point(r, vec2(5, 5)), true)
+	t:assert(math.has_point(r, vec2(0, 0)), true)
+	t:assert(math.has_point(r, vec2(10, 10)), false)
+	t:assert(math.has_point(r, vec2(-1, 5)), false)
+	t:assert(math.has_point(r, vec2(5, 11)), false)
+end)
