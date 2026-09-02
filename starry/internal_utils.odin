@@ -7,6 +7,7 @@ import "core:strings"
 import "core:sys/windows"
 import "vendor:glfw"
 
+// should match math.lua and glsl/glm
 vec2 :: [2]f32
 vec3 :: [3]f32
 vec4 :: [4]f32
@@ -23,7 +24,14 @@ uvec2 :: [2]u32
 uvec3 :: [3]u32
 uvec4 :: [4]u32
 
+quat :: quaternion128
+dquat :: quaternion256
 mat4 :: matrix[4, 4]f32
+dmat4 :: matrix[4, 4]f64
+
+rect2 :: struct {
+	pos, size: vec2,
+}
 
 // For the laziest of hands
 temp_cstr :: proc(src: string) -> cstring

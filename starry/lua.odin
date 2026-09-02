@@ -179,6 +179,21 @@ lua_check_vec4 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: dvec4)
 	return res
 }
 
+lua_check_rect2 :: proc "c" (L: ^lua.State, num_arg: c.int) -> (res: rect2)
+{
+	lua.L_checktype(L, num_arg, i32(lua.TTABLE))
+
+	lua.getfield(L, num_arg, "pos")
+	res.pos = vec2(lua_check_vec2(L, -1))
+	lua.pop(L, 1)
+
+	lua.getfield(L, num_arg, "size")
+	res.size = vec2(lua_check_vec2(L, -1))
+	lua.pop(L, 1)
+
+	return res
+}
+
 lua_push_vec2 :: proc "c" (L: ^lua.State, v: dvec2)
 {
 	lua.newtable(L)
@@ -216,4 +231,15 @@ lua_push_vec4 :: proc "c" (L: ^lua.State, v: dvec4)
 	lua.setfield(L, -2, "z")
 	lua.pushnumber(L, lua.Number(v[3]))
 	lua.setfield(L, -2, "w")
+}
+
+lua_push_rect2 :: proc "c" (L: ^lua.State, v: rect2)
+{
+	lua.newtable(L)
+	lua.getglobal(L, "Rect2")
+	lua.setmetatable(L, -2)
+	lua_push_vec2(L, dvec2(v.pos))
+	lua.setfield(L, -2, "pos")
+	lua_push_vec2(L, dvec2(v.size))
+	lua.setfield(L, -2, "size")
 }

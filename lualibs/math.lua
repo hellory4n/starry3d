@@ -1265,8 +1265,8 @@ end
 
 --- Creates a new rectangle.
 --- Example:
---- - rect(position, size)
---- - rect(x, y, width, height)
+--- - rect2(position, size)
+--- - rect2(x, y, width, height)
 --- @param x number | Vec2
 --- @param y number | Vec2
 --- @param w number?

@@ -360,13 +360,48 @@ Returns true if all components in the boolean vector are true.
 
 Returns true if any of the components in the boolean vector are true.
 
+## Rectangles
+
+### `rect2(x, y [, width, height])`
+
+Creates a new rectangle.
+Example:
+- `rect2(position, size) -> {}`
+- `rect2(x, y, width, height) -> {}`
+
+Rectangles may be accessed either as `{pos: vec2, size: vec2}`, or as `{x: number, y: number, w: number, h: number}`.
+
+### `math.area(r: rect2): number`
+
+Returns the area of a rectangle.
+
+### `math.center(r: rect2): vec2`
+
+Returns the center of a rectangle.
+
+### `math.expand(r: rect2, n: number): rect2`
+
+Expands a rectangle on all sides by N.
+
+### `math.intersection(a: rect2, b: rect2): rect2`
+
+Returns the intersection of 2 rectangles.
+
+### `math.intersects(a: rect2, b: rect2): boolean`
+
+Returns true if 2 rectangles intersect.
+
+### `math.has_point(r: rect2, p: vec2): boolean`
+
+Returns true if the rectangle intersects with that point.
+
 ## TODO
 
 - `vec[1]`, `quat[1]`
-- `!bvec`
+- `not bvec`
 - `math.none(bvec)`
 - `quat * vec3 -> vec3`
 - `mat4`, maybe other matrices too
 - swizzling
-- rect, aabb
+- aabb
 - error messages when mixing vector lengths
