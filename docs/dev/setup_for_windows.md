@@ -3,7 +3,7 @@
 > [!NOTE]
 > This is only necessary for internal development. If you want to create a Starry project, simply download it from releases.
 
-You need Python, [Just](https://github.com/casey/just), and [Odin](https://odin-lang.org/) dev-2026-07a installed and available from `PATH`.
+You need Python, [Just](https://github.com/casey/just), and [Odin](https://odin-lang.org/) dev-2026-09 installed and available from `PATH`.
 
 You also need MSVC and the Windows SDK. The easiest way to download those is through the Visual Studio installer, with the "Desktop development with C++" option ticked.
 

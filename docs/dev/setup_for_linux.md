@@ -14,7 +14,7 @@ sudo dnf install clang just libcxx-devel glfw-devel freetype-devel
 sudo pacman -S clang just glfw freetype2
 ```
 
-You also need [Odin](https://odin-lang.org/) dev-2026-07a (your package manager is likely out of date!)
+You also need [Odin](https://odin-lang.org/) dev-2026-09 (your package manager is likely out of date!)
 
 Now you should be able to use the `just` command runner for development:
 

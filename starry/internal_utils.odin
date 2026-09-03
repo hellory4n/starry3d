@@ -7,6 +7,10 @@ import "core:strings"
 import "core:sys/windows"
 import "vendor:glfw"
 
+when ODIN_VERSION != "dev-2026-09" {
+	#panic("Odin version should be `dev-2026-09`, got " + ODIN_VERSION)
+}
+
 // should match math.lua and glsl/glm
 vec2 :: [2]f32
 vec3 :: [3]f32
